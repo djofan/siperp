@@ -4,7 +4,10 @@ import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
 export default defineConfig({
-  schema: "prisma/schema",
+  // Core (framework) tetap di prisma/schema/; schema tiap modul ikut co-located
+  // di modules/<modul>/schema.prisma (pola Laravel Modules). Prisma men-scan
+  // seluruh project secara rekursif tapi otomatis skip node_modules & folder yang di-gitignore.
+  schema: ".",
   migrations: {
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",

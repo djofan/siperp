@@ -1,0 +1,12 @@
+{
+  "name": "lazsip",
+  "displayName": "LAZSIP",
+  "description": "Lembaga Amil Zakat Solidaritas Insan Peduli — donasi, zakat, program pemberdayaan, dan penyaluran bantuan.",
+  "version": "1.0.0",
+  "providers": {
+    "prismaSchema": "schema.prisma",
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
+}

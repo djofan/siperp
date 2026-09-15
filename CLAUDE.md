@@ -21,37 +21,51 @@ Dokumen lengkap ada di:
 
 - **Modular monolith, bukan microservices.** Satu aplikasi Next.js (App Router), satu proses, satu database MySQL. Tidak ada backend terpisah per modul.
 - **Modul bersifat flat/sejajar.** SIP, LAZSIP, SARSIP, Pendidikan, Tanwir Qurani semuanya setara — tidak ada modul yang jadi "induk" dari modul lain.
-- **Satu modul = satu set folder terisolasi.** Jangan pernah menaruh kode satu modul di folder modul lain, dan jangan mengedit folder modul lain saat sedang mengerjakan modul tertentu, kecuali memang diminta eksplisit.
-- **Satu database bersama, tabel terpisah per modul** lewat file schema Prisma per modul (lihat §5). Modul boleh mereferensi tabel Core (`users`) bila perlu, tapi hindari modul saling mereferensi tabel modul lain kecuali benar-benar diperlukan dan didiskusikan dulu.
+- **Satu modul = satu folder mandiri, pola ala Laravel Modules (nwidart/laravel-modules), versi Next.js.** Semua yang dipunyai satu modul (halaman publik, halaman admin, endpoint API, komponen, service logic, schema Prisma) hidup dalam SATU folder `modules/<modul>/` — bukan tersebar per-tipe-file di top level. Jangan pernah menaruh kode satu modul di folder modul lain, dan jangan mengedit folder modul lain saat sedang mengerjakan modul tertentu, kecuali memang diminta eksplisit. Lihat §4 untuk struktur persisnya dan alasan kenapa `app/` tetap ada (keterbatasan Next.js App Router).
+- **Satu database bersama, tabel terpisah per modul** lewat file schema Prisma yang co-located di dalam folder modul masing-masing (lihat §5). Modul boleh mereferensi tabel Core (`users`) bila perlu, tapi hindari modul saling mereferensi tabel modul lain kecuali benar-benar diperlukan dan didiskusikan dulu.
 - **Auth terpusat.** Semua modul memakai sistem login & otorisasi Core (`users` + `module_access` + `is_superadmin`) — jangan membuat sistem auth terpisah per modul.
 
 ## 4. Struktur Folder Standar
 
-```
-app/
-├── (public)/<modul>/        halaman publik modul ini
-├── admin/<modul>/            halaman admin modul ini
-├── admin/super/               khusus superadmin (kelola akun & akses modul, Core saja)
-└── api/<modul>/               endpoint modul ini (pengganti backend terpisah)
+Next.js App Router **mewajibkan** route (`page.tsx`, `layout.tsx`, `route.ts`) fisik berada di dalam `app/` supaya bisa ter-resolve jadi URL — beda dengan Laravel yang bebas menaruh route di folder mana saja karena registrasi lewat service provider. Jadi pola kita: **isi/logic modul 100% ada di `modules/<modul>/`, dan `app/` cuma berisi file "jembatan" satu baris** yang re-export dari sana. Ini yang paling dekat dengan filosofi Laravel Modules (satu folder = satu modul lengkap) yang bisa dicapai di Next.js.
 
-modules/<modul>/               business logic murni (service functions), dipanggil dari app/api
-components/<modul>/            komponen UI modul ini
+```
+modules/<modul>/
+├── module.json               metadata modul (name, deskripsi, versi)
+├── schema.prisma              tabel database modul ini (co-located, bukan di prisma/schema/)
+├── api/                        service logic + route handler asli
+│   ├── <resource>.ts           business logic murni (query Prisma, aturan bisnis)
+│   └── routes/<resource>/route.ts   isi asli endpoint (GET/POST/dst), di-re-export oleh app/api/<modul>/**
+├── components/                 semua komponen UI modul ini (ui/, sections/, admin/, dst)
+├── pages/                      isi asli halaman publik, di-re-export oleh app/(public)/<modul>/**
+└── admin/pages/                isi asli halaman admin, di-re-export oleh app/admin/<modul>/**
+
+app/
+├── (public)/<modul>/**/page.tsx   HANYA: export { default } from "@/modules/<modul>/pages/**/page";
+├── admin/<modul>/**/page.tsx      HANYA: export { default } from "@/modules/<modul>/admin/pages/**/page";
+├── admin/super/                    khusus superadmin (kelola akun & akses modul, Core saja — bukan modul)
+└── api/<modul>/**/route.ts        HANYA: export * from "@/modules/<modul>/api/routes/**/route";
+
 components/ui/                 komponen umum lintas modul (button, card, modal, table, form field)
 components/admin-shell/         layout & sidebar dashboard admin (Core, dipakai semua modul)
 
-prisma/schema/<modul>.prisma    tabel database modul ini
-prisma/schema/core.prisma       users, modules, module_access
-
-middleware.ts                   proteksi route /admin/** — cek sesi & module_access
+prisma/schema/core.prisma       users, modules, module_access — punya Core/framework, BUKAN modul, tetap di prisma/schema/
+proxy.ts                        proteksi route /admin/** — cek sesi & module_access
 ```
 
-Saat mengerjakan modul `lazsip`, semua kode baru masuk ke `app/(public)/lazsip/`, `app/admin/lazsip/`, `app/api/lazsip/`, `modules/lazsip/`, `components/lazsip/`, `prisma/schema/lazsip.prisma`. Kalau butuh komponen umum (button, card generik), taruh/pakai dari `components/ui/`, bukan duplikat di dalam folder modul.
+**Contoh konkret** (lihat implementasi nyata di `modules/lazsip/` sebagai referensi pola untuk SARSIP dkk):
+- Isi halaman `/lazsip/donasi` ada di `modules/lazsip/pages/donasi/page.tsx`; `app/(public)/lazsip/donasi/page.tsx` cuma `export { default } from "@/modules/lazsip/pages/donasi/page";`.
+- Isi endpoint `POST /api/lazsip/news` ada di `modules/lazsip/api/routes/news/route.ts`; `app/api/lazsip/news/route.ts` cuma `export * from "@/modules/lazsip/api/routes/news/route";`.
+- Service function dipanggil dari route handler ada di `modules/lazsip/api/news.ts` (bukan di `routes/`), supaya logic tetap bisa dipanggil dari tempat lain (misal dari `admin/pages/` untuk data fetching server component) tanpa lewat HTTP.
+- Komponen dipanggil sebagai `@/modules/lazsip/components/Navbar`, dst.
+
+Saat mengerjakan modul `lazsip`, semua kode baru masuk ke dalam `modules/lazsip/` sesuai sub-folder di atas — jangan bikin file baru langsung di `app/(public)/lazsip/`, `app/admin/lazsip/`, atau `app/api/lazsip/` selain file jembatan satu baris. Kalau butuh komponen umum (button, card generik), taruh/pakai dari `components/ui/`, bukan duplikat di dalam folder modul.
 
 ## 5. Skema Data — Konvensi
 
-- Satu file Prisma per modul di `prisma/schema/<modul>.prisma`, digabung otomatis saat build (multi-file schema Prisma).
+- Satu file `schema.prisma` per modul, **co-located di `modules/<modul>/schema.prisma`** (bukan di `prisma/schema/`) — hanya `core.prisma` yang tetap di `prisma/schema/` karena itu punya framework, bukan modul. Prisma otomatis men-scan seluruh project (lihat `schema: "."` di `prisma.config.ts`) dan menggabung semua `*.prisma` yang ketemu jadi satu namespace, termasuk yang co-located di dalam `modules/`.
 - Nama model pakai PascalCase (`Campaign`, `Beneficiary`), nama field pakai camelCase.
-- Karena semua file `prisma/schema/*.prisma` digabung jadi satu namespace model global, nama model **harus diprefix nama modul** kalau entitasnya generik dan berpotensi dipakai modul lain juga (mis. `LazsipNews`/`SarsipNews`, `LazsipPartner`, bukan `News`/`Partner` polos) — supaya tidak tabrakan saat modul lain dikerjakan. Nama tabel fisik (`@@map`) ikut diprefix juga (`lazsip_news`).
+- Karena semua schema digabung jadi satu namespace model global, nama model **harus diprefix nama modul** kalau entitasnya generik dan berpotensi dipakai modul lain juga (mis. `LazsipNews`/`SarsipNews`, `LazsipPartner`, bukan `News`/`Partner` polos) — supaya tidak tabrakan saat modul lain dikerjakan. Nama tabel fisik (`@@map`) ikut diprefix juga (`lazsip_news`).
 - Field privat/sensitif (lihat aturan privasi di PRD modul terkait) **tidak boleh** ikut ter-select di query yang dipakai endpoint publik — filter di level query (`select`), bukan cuma disembunyikan di UI.
 - Migration baru untuk modul tertentu tidak boleh mengubah/menghapus tabel modul lain.
 
@@ -77,23 +91,24 @@ Kalau ragu apakah sebuah field/endpoint termasuk sensitif, cek dulu ke PRD modul
 
 ## 8. Menambah Modul Baru (pola baku)
 
-Kalau diminta menambah modul baru (mis. Zakat Academy), ikuti langkah ini, **jangan mengubah kode modul yang sudah ada**:
+Kalau diminta menambah modul baru (mis. Zakat Academy), ikuti langkah ini — **satu folder `modules/<modul-baru>/` untuk semuanya**, persis pola `modules/lazsip/` yang sudah jadi referensi (lihat §4). **Jangan mengubah kode modul yang sudah ada:**
 
-1. Buat `prisma/schema/<modul-baru>.prisma`.
-2. Jalankan migration.
-3. Buat `modules/<modul-baru>/` untuk logic-nya.
-4. Buat `app/api/<modul-baru>/` untuk endpoint.
-5. Buat `components/<modul-baru>/` untuk tampilan.
-6. Buat `app/(public)/<modul-baru>/` dan `app/admin/<modul-baru>/` untuk halaman.
-7. Tambahkan satu baris modul baru ke tabel `modules` (lewat panel `/admin/super/modul` atau seed).
-8. Modul lama tidak perlu di-build ulang logicnya — cukup ikut ter-bundle ulang saat deploy karena satu aplikasi.
+1. Buat `modules/<modul-baru>/module.json` (metadata: name, description, version).
+2. Buat `modules/<modul-baru>/schema.prisma` — model diprefix nama modul (lihat §5).
+3. Jalankan migration (schema baru otomatis ketemu karena `schema: "."` di `prisma.config.ts`).
+4. Buat `modules/<modul-baru>/api/<resource>.ts` untuk business logic, dan `modules/<modul-baru>/api/routes/<resource>/route.ts` untuk isi endpoint asli.
+5. Buat `modules/<modul-baru>/components/` untuk semua komponen UI modul ini.
+6. Buat `modules/<modul-baru>/pages/` (halaman publik) dan `modules/<modul-baru>/admin/pages/` (halaman admin).
+7. Di `app/`, buat file jembatan satu baris di path yang sesuai (`app/(public)/<modul-baru>/**/page.tsx`, `app/admin/<modul-baru>/**/page.tsx`, `app/api/<modul-baru>/**/route.ts`) yang isinya cuma `export { default } from "@/modules/<modul-baru>/..."` (untuk page/layout) atau `export * from "@/modules/<modul-baru>/..."` (untuk route.ts).
+8. Tambahkan satu baris modul baru ke tabel `modules` (lewat panel `/admin/super/modul` atau seed).
+9. Modul lama tidak perlu di-build ulang logicnya — cukup ikut ter-bundle ulang saat deploy karena satu aplikasi.
 
 ## 9. Yang Harus Dihindari
 
 - Jangan bikin backend/server terpisah (Go, Express, dsb) — semua logic backend masuk `app/api/` di aplikasi Next.js yang sama.
 - Jangan bikin sistem login/JWT sendiri per modul.
 - Jangan hardcode kredensial, API key, atau connection string — selalu lewat environment variable.
-- Jangan hapus atau modifikasi `prisma/schema/<modul lain>.prisma` saat mengerjakan modul yang sedang difokuskan.
+- Jangan hapus atau modifikasi `modules/<modul lain>/schema.prisma` saat mengerjakan modul yang sedang difokuskan.
 - Jangan asumsikan payment gateway sudah final — ikuti mode simulasi sampai ada keputusan (lihat `prd-lazsip.md` §8).
 - Jangan gunakan `localStorage`/`sessionStorage` untuk data yang seharusnya persisten di database.
 
@@ -109,5 +124,5 @@ Kalau diminta menambah modul baru (mis. Zakat Academy), ikuti langkah ini, **jan
 - [ ] Data nyata dari database, tidak ada dummy/mock tersisa di kode yang di-commit.
 - [ ] Route publik tidak mengekspos field privat (cek §7).
 - [ ] Halaman admin diproteksi middleware Core, cek `module_access`.
-- [ ] Mengikuti struktur folder §4 — tidak ada file "nyasar" ke folder modul lain.
+- [ ] Mengikuti struktur folder §4 — semua logic ada di dalam `modules/<modul>/`, `app/` cuma berisi file jembatan satu baris, tidak ada file "nyasar" ke folder modul lain.
 - [ ] Sesuai *Definition of Done* di PRD modul terkait sebelum ditandai selesai.

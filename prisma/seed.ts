@@ -1,7 +1,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { seedLazsipModuleRegistration } from "@/modules/lazsip/seed";
+import { seedLazsipModuleRegistration } from "@/modules/lazsip/api/seed";
 
 async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
