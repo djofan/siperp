@@ -1,14 +1,19 @@
 import { listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { getGoldPricePerGram } from "@/modules/lazsip/api/goldPrice";
+import { getZakatFitrahPricePerJiwa } from "@/modules/lazsip/api/zakat";
 import { ZakatCalculator } from "@/modules/lazsip/components/sections/ZakatCalculator";
 
 export default async function LazsipZakatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ harta?: string }>;
+  searchParams: Promise<{ type?: string; harta?: string; jiwa?: string }>;
 }) {
-  const { harta } = await searchParams;
-  const [feeRefs, goldPricePerGram] = await Promise.all([listPaymentFeeRefs(), getGoldPricePerGram()]);
+  const { type, harta, jiwa } = await searchParams;
+  const [feeRefs, goldPricePerGram, fitrahPricePerJiwa] = await Promise.all([
+    listPaymentFeeRefs(),
+    getGoldPricePerGram(),
+    getZakatFitrahPricePerJiwa(),
+  ]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -20,10 +25,17 @@ export default async function LazsipZakatPage({
           Hitung & Bayar Zakat
         </h1>
         <p className="text-base leading-relaxed text-lazsip-secondary-700 sm:text-lg">
-          Hitung otomatis kewajiban zakat maal berdasarkan nisab 85 gram emas.
+          Hitung otomatis kewajiban zakat maal (nisab 85 gram emas) maupun zakat fitrah per jiwa.
         </p>
       </div>
-      <ZakatCalculator feeRefs={feeRefs} goldPricePerGram={goldPricePerGram} initialHarta={harta} />
+      <ZakatCalculator
+        feeRefs={feeRefs}
+        goldPricePerGram={goldPricePerGram}
+        fitrahPricePerJiwa={fitrahPricePerJiwa}
+        initialType={type}
+        initialHarta={harta}
+        initialJiwa={jiwa}
+      />
     </div>
   );
 }

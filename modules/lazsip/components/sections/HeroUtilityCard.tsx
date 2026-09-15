@@ -19,7 +19,13 @@ const TOOLS: { value: Tool; label: string; icon: string }[] = [
   },
 ];
 
-export function HeroUtilityCard({ goldPricePerGram }: { goldPricePerGram: number }) {
+export function HeroUtilityCard({
+  goldPricePerGram,
+  fitrahPricePerJiwa,
+}: {
+  goldPricePerGram: number;
+  fitrahPricePerJiwa: number;
+}) {
   const [tool, setTool] = useState<Tool>("kalkulator");
 
   return (
@@ -45,7 +51,11 @@ export function HeroUtilityCard({ goldPricePerGram }: { goldPricePerGram: number
       </div>
 
       <div className="mt-5">
-        {tool === "kalkulator" ? <HeroZakatCalculator goldPricePerGram={goldPricePerGram} /> : <HeroCekStatus />}
+        {tool === "kalkulator" ? (
+          <HeroZakatCalculator goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} />
+        ) : (
+          <HeroCekStatus />
+        )}
       </div>
     </div>
   );

@@ -4,8 +4,10 @@ import { createZakatPayment } from "@/modules/lazsip/api/zakat";
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const donorNameRaw = typeof body?.donorName === "string" ? body.donorName.trim() : "";
+  const zakatType = body?.zakatType === "fitrah" ? "fitrah" : "maal";
   const amount = Number(body?.amount);
   const goldPriceSnapshot = Number(body?.goldPriceSnapshot);
+  const jiwaCount = Number(body?.jiwaCount);
   const paymentMethod = typeof body?.paymentMethod === "string" ? body.paymentMethod : "";
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -17,8 +19,10 @@ export async function POST(request: Request) {
 
   const payment = await createZakatPayment({
     donorName: donorNameRaw || "Hamba Allah",
+    zakatType,
     amount,
-    goldPriceSnapshot: Number.isFinite(goldPriceSnapshot) ? goldPriceSnapshot : 0,
+    goldPriceSnapshot: Number.isFinite(goldPriceSnapshot) ? goldPriceSnapshot : undefined,
+    jiwaCount: Number.isFinite(jiwaCount) ? jiwaCount : undefined,
     paymentMethod,
   });
 

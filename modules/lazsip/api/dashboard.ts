@@ -65,7 +65,7 @@ export async function getRecentTransactions(limit = 10) {
     })),
     ...zakatPayments.map((z) => ({
       id: z.id,
-      label: "Zakat",
+      label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       donorName: z.donorName,
       amount: z.amount,
       status: z.status,

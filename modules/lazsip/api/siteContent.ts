@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export type SiteContentSectionKey = "hero" | "tentang" | "legalitas" | "kontak";
+export type SiteContentSectionKey = "hero" | "tentang" | "legalitas" | "kontak" | "zakatFitrah";
 
 export async function getSiteContent(sectionKey: SiteContentSectionKey) {
   const row = await prisma.lazsipSiteContent.findUnique({ where: { sectionKey } });

@@ -1,18 +1,19 @@
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
 import { SiteContentSectionForm } from "@/modules/lazsip/components/admin/SiteContentSectionForm";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 
 export default async function KontenUmumPage() {
-  const [hero, tentang, legalitas, kontak] = await Promise.all([
+  const [hero, tentang, legalitas, kontak, zakatFitrah] = await Promise.all([
     getSiteContent("hero"),
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
     getSiteContent("kontak"),
+    getSiteContent("zakatFitrah"),
   ]);
 
   return (
     <div>
-      <PageHeader
+      <AdminPageHeader
         title="Konten Umum"
         description="Hero, tentang, dan legalitas yang tampil di halaman publik LAZSIP — editable tanpa deploy ulang."
       />
@@ -54,6 +55,17 @@ export default async function KontenUmumPage() {
             { key: "youtube", label: "URL YouTube" },
           ]}
           initialValue={kontak ?? {}}
+        />
+        <SiteContentSectionForm
+          sectionKey="zakatFitrah"
+          title="Zakat Fitrah"
+          fields={[
+            {
+              key: "pricePerJiwa",
+              label: "Nominal per Jiwa (Rp) — sesuaikan dengan harga makanan pokok setempat",
+            },
+          ]}
+          initialValue={zakatFitrah ?? {}}
         />
       </div>
     </div>

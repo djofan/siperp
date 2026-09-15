@@ -1,5 +1,6 @@
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { getGoldPricePerGram } from "@/modules/lazsip/api/goldPrice";
+import { getZakatFitrahPricePerJiwa } from "@/modules/lazsip/api/zakat";
 import { Hero } from "@/modules/lazsip/components/sections/Hero";
 import { MitraMarquee } from "@/modules/lazsip/components/sections/MitraMarquee";
 import { PenyaluranBantuanSection } from "@/modules/lazsip/components/sections/PenyaluranBantuanSection";
@@ -11,11 +12,15 @@ import { TentangSection } from "@/modules/lazsip/components/sections/TentangSect
 import { TransparansiSection } from "@/modules/lazsip/components/sections/TransparansiSection";
 
 export default async function LazsipHomePage() {
-  const [hero, goldPricePerGram] = await Promise.all([getSiteContent("hero"), getGoldPricePerGram()]);
+  const [hero, goldPricePerGram, fitrahPricePerJiwa] = await Promise.all([
+    getSiteContent("hero"),
+    getGoldPricePerGram(),
+    getZakatFitrahPricePerJiwa(),
+  ]);
 
   return (
     <>
-      <Hero hero={hero ?? {}} goldPricePerGram={goldPricePerGram} />
+      <Hero hero={hero ?? {}} goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} />
       <MitraMarquee />
       <PenyaluranBantuanSection />
       <DonasiSection />

@@ -20,7 +20,7 @@ export default async function TransaksiPage() {
     ...zakatPayments.map((z) => ({
       id: z.id,
       type: "zakat" as const,
-      label: "Zakat",
+      label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       donorName: z.donorName,
       amount: z.amount,
       paymentMethod: z.paymentMethod,

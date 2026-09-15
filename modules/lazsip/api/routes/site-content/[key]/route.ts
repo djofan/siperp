@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
 import { upsertSiteContent, type SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 
-const VALID_KEYS: SiteContentSectionKey[] = ["hero", "tentang", "legalitas", "kontak"];
+const VALID_KEYS: SiteContentSectionKey[] = ["hero", "tentang", "legalitas", "kontak", "zakatFitrah"];
 
 export async function PUT(
   request: Request,

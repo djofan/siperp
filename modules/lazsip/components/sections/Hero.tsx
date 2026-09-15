@@ -5,7 +5,15 @@ interface HeroContent {
   subtitle?: string;
 }
 
-export function Hero({ hero, goldPricePerGram }: { hero: HeroContent; goldPricePerGram: number }) {
+export function Hero({
+  hero,
+  goldPricePerGram,
+  fitrahPricePerJiwa,
+}: {
+  hero: HeroContent;
+  goldPricePerGram: number;
+  fitrahPricePerJiwa: number;
+}) {
   return (
     <section id="kalkulator-zakat" className="relative overflow-hidden bg-lazsip-primary-900">
       <div
@@ -49,7 +57,7 @@ export function Hero({ hero, goldPricePerGram }: { hero: HeroContent; goldPriceP
 
         <div className="w-full max-w-sm justify-self-center lg:max-w-none lg:justify-self-end">
           <div className="rounded-3xl bg-white p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.45)] sm:p-8">
-            <HeroUtilityCard goldPricePerGram={goldPricePerGram} />
+            <HeroUtilityCard goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} />
           </div>
         </div>
       </div>

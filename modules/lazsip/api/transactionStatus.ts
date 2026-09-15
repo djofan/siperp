@@ -42,7 +42,7 @@ export async function getTransactionStatus(code: string): Promise<TransactionSta
       found: true,
       code: zakat.id,
       type: "zakat",
-      label: "Zakat Maal",
+      label: zakat.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       amount: zakat.amount,
       adminFee: 0,
       paymentMethod: zakat.paymentMethod,

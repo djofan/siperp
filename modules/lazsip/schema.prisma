@@ -96,7 +96,7 @@ model LazsipCampaign {
 
 // Settle ke SATU rekening donasi/infaq bersama, dibedakan lewat Campaign.uniqueCode saat rekonsiliasi.
 // Status "paid" HANYA boleh diubah lewat webhook gateway asli atau endpoint simulasi admin — lihat
-// app/api/lazsip/donations/[id]/simulate-payment/route.ts. Jangan pernah set dari redirect sukses client.
+// modules/lazsip/api/routes/donations/[id]/simulate-payment/route.ts. Jangan pernah set dari redirect sukses client.
 model LazsipDonation {
   id            String   @id @default(cuid())
   campaignId    String   @map("campaign_id")
@@ -109,7 +109,7 @@ model LazsipDonation {
   status        String   @default("pending") // "pending" | "paid" | "failed"
   createdAt     DateTime @default(now()) @map("created_at")
 
-  campaign LazsipCampaign @relation(fields: [campaignId], references: [id])
+  campaign LazsipCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@map("lazsip_donations")
 }
@@ -118,8 +118,10 @@ model LazsipDonation {
 model LazsipZakatPayment {
   id                String   @id @default(cuid())
   donorName         String   @map("donor_name")
+  zakatType         String   @default("maal") @map("zakat_type") // "maal" | "fitrah"
   amount            Int
-  goldPriceSnapshot Int      @map("gold_price_snapshot")
+  goldPriceSnapshot Int?     @map("gold_price_snapshot") // dipakai zakat maal saja
+  jiwaCount         Int?     @map("jiwa_count") // dipakai zakat fitrah saja
   paymentMethod     String   @map("payment_method")
   status            String   @default("pending") // "pending" | "paid" | "failed"
   createdAt         DateTime @default(now()) @map("created_at")
