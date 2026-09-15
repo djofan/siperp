@@ -1,0 +1,162 @@
+// Modul LAZSIP — lihat docs/prd-lazsip.md. Model ditambah bertahap mengikuti
+// klaster pengerjaan (bukan sekaligus semua), supaya tidak ada skema menganggur.
+//
+// Nama model diprefix "Lazsip" karena skema Prisma multi-file digabung jadi
+// satu namespace global — modul lain (SARSIP dkk) punya entitas dengan nama
+// generik yang sama (News, Campaign, Partner), jadi harus dibedakan di sini.
+
+model LazsipSiteContent {
+  id          String @id @default(cuid())
+  sectionKey  String @unique @map("section_key") // "hero" | "tentang" | "legalitas"
+  contentJson String @map("content_json") @db.Text
+
+  @@map("lazsip_site_content")
+}
+
+model LazsipNews {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  image     String?
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  status    String   @default("draft") // "draft" | "published"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("lazsip_news")
+}
+
+model LazsipPartner {
+  id   String  @id @default(cuid())
+  name String
+  logo String?
+  url  String?
+
+  @@map("lazsip_partners")
+}
+
+model LazsipProgram {
+  id               String   @id @default(cuid())
+  title            String
+  description      String   @db.Text
+  requirements     String?  @db.Text
+  image            String?
+  category         String   @default("umum") // "umum" | "pendidikan" | "sarsip"
+  isPinned         Boolean  @default(false) @map("is_pinned")
+  registrationOpen Boolean  @default(true) @map("registration_open")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  applicants LazsipProgramApplicant[]
+
+  @@map("lazsip_programs")
+}
+
+model LazsipProgramApplicant {
+  id        String   @id @default(cuid())
+  programId String   @map("program_id")
+  name      String
+  contact   String
+  status    String   @default("baru") // "baru" | "diproses" | "diterima" | "ditolak"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  program LazsipProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@map("lazsip_program_applicants")
+}
+
+model LazsipActivity {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  image       String?
+  date        DateTime
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("lazsip_activities")
+}
+
+// --- Klaster C: uang (donasi & zakat settle ke rekening terpisah — lihat CLAUDE.md §7) ---
+
+model LazsipCampaign {
+  id            String   @id @default(cuid())
+  title         String
+  description   String   @db.Text
+  targetAmount  Int      @map("target_amount")
+  currentAmount Int      @default(0) @map("current_amount")
+  image         String?
+  uniqueCode    String   @unique @map("unique_code")
+  isPinned      Boolean  @default(false) @map("is_pinned")
+  status        String   @default("active") // "active" | "completed"
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  donations LazsipDonation[]
+
+  @@map("lazsip_campaigns")
+}
+
+// Settle ke SATU rekening donasi/infaq bersama, dibedakan lewat Campaign.uniqueCode saat rekonsiliasi.
+// Status "paid" HANYA boleh diubah lewat webhook gateway asli atau endpoint simulasi admin — lihat
+// app/api/lazsip/donations/[id]/simulate-payment/route.ts. Jangan pernah set dari redirect sukses client.
+model LazsipDonation {
+  id            String   @id @default(cuid())
+  campaignId    String   @map("campaign_id")
+  donorName     String   @map("donor_name")
+  amount        Int
+  adminFee      Int      @default(0) @map("admin_fee")
+  coversFee     Boolean  @default(true) @map("covers_fee")
+  isAnonymous   Boolean  @default(false) @map("is_anonymous")
+  paymentMethod String   @map("payment_method")
+  status        String   @default("pending") // "pending" | "paid" | "failed"
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  campaign LazsipCampaign @relation(fields: [campaignId], references: [id])
+
+  @@map("lazsip_donations")
+}
+
+// Settle ke rekening KHUSUS zakat, terpisah total dari LazsipDonation — jangan disatukan logicnya.
+model LazsipZakatPayment {
+  id                String   @id @default(cuid())
+  donorName         String   @map("donor_name")
+  amount            Int
+  goldPriceSnapshot Int      @map("gold_price_snapshot")
+  paymentMethod     String   @map("payment_method")
+  status            String   @default("pending") // "pending" | "paid" | "failed"
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("lazsip_zakat_payments")
+}
+
+model LazsipPaymentFeeRef {
+  id            String @id @default(cuid())
+  method        String @unique
+  feeAmount     Int?   @map("fee_amount")
+  feePercentage Float? @map("fee_percentage")
+
+  @@map("lazsip_payment_fee_refs")
+}
+
+// --- Klaster D: privasi-sensitif (lihat CLAUDE.md §7 aturan #2 & #5) ---
+// address, birthDate, maritalStatus TIDAK BOLEH PERNAH ikut di-select oleh query
+// yang dipakai endpoint/halaman publik — lihat modules/lazsip/beneficiaries.ts,
+// fungsi *ForAdmin (semua field) vs *Public (whitelist eksplisit, exclude 3 field ini).
+model LazsipBeneficiary {
+  id             String   @id @default(cuid())
+  name           String
+  address        String   @db.Text // SENSITIF — admin only
+  problemFaced   String   @map("problem_faced") @db.Text
+  birthDate      DateTime @map("birth_date") // SENSITIF — admin only, publik cuma lihat `age`
+  age            Int
+  gender         String
+  referralSource String   @map("referral_source")
+  photo          String?
+  needs          String   @db.Text
+  aidType        String   @map("aid_type") // "pendidikan" | "kesehatan" | "kebutuhan_pokok" | "lainnya"
+  amountReceived Int      @map("amount_received")
+  verifierName   String   @map("verifier_name")
+  verifierArea   String   @map("verifier_area")
+  maritalStatus  String   @map("marital_status") // SENSITIF — admin only ("menikah" | "janda-cerai" | "janda-meninggal" | "duda-cerai" | "duda-meninggal")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("lazsip_beneficiaries")
+}

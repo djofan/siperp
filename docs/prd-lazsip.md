@@ -153,3 +153,59 @@ Donor           id, name, contact, type (infaq/zakat), total_contribution
 - Login & kontrol akses admin memakai sistem Core, bukan auth terpisah.
 - Tidak ada endpoint yang membocorkan field privat penerima manfaat lewat API publik.
 - Modul mengikuti struktur folder standar platform, siap dijadikan acuan pola untuk modul-modul berikutnya.
+
+## 10. Design Pattern 
+
+Desain ulang tampilan admin dashboard modul LAZSIP mengikuti brief berikut.
+
+REFERENSI LAYOUT
+Pakai struktur dari gambar referensi dashboard "CoachPro" (sidebar kiri,
+topbar dengan sapaan + search + notifikasi + avatar, grid kartu statistik,
+kartu promo/CTA di pojok kanan bawah, floating action button) — tapi
+di-restyle total pakai identitas warna LAZSIP di bawah, jangan pakai warna
+biru-ungu gradient dari referensinya.
+
+COLOR TOKENS
+- primary: #F79633 (oranye — dari logo LAZSIP, dipakai untuk CTA utama,
+  active state, highlight angka penting)
+- secondary: #73AE43 (hijau — dari logo LAZSIP, dipakai untuk status
+  positif/selesai, ikon sekunder, aksen)
+- ink: #5D5D5D (abu gelap — teks utama, dari warna tagline logo)
+- surface: #FFFFFF dan satu abu sangat muda #F7F7F5 untuk background
+  section, HINDARI gradient biru/ungu ala referensi
+- border/shadow: soft, tapi jangan pakai satu shadow generik yang sama
+  persis di semua kartu — beri variasi tipis sesuai hirarki (kartu
+  ringkasan lebih menonjol dari kartu daftar)
+
+TYPE
+- Satu typeface sans untuk semua (headline & body), jangan pakai dua
+  font berbeda tanpa alasan
+- Angka statistik besar (mis. total donasi bulan ini) pakai bobot bold,
+  ukuran jelas lebih besar dari label di sampingnya
+
+LAYOUT
+- Sidebar kiri: logo LAZSIP di atas, menu (Dashboard, Donasi, Zakat,
+  Program, Kegiatan, Penyaluran Bantuan, Berita, Donatur, Transaksi,
+  Pendaftar, Pengaturan), item aktif pakai background pill oranye
+  (bukan hijau — oranye lebih dominan di logo, jadi jadi warna aksi
+  utama, hijau untuk status/sekunder)
+- Topbar: "Selamat datang, [nama admin]", search, notifikasi, avatar
+- Konten utama: baris ringkasan (total donasi, total zakat bulan ini,
+  jumlah donatur baru, campaign paling laris) sebagai kartu statistik
+  dengan ikon chip warna oranye/hijau bergantian
+- Kartu "campaign donasi teraktif" dengan progress bar warna oranye
+- Satu kartu highlight (mis. "Transaksi menunggu verifikasi" atau
+  "Program hampir tutup pendaftaran") ditempatkan menonjol, bukan
+  sekadar kartu promo generik seperti "setup training" di referensi —
+  isinya harus benar-benar actionable buat admin LAZSIP hari itu
+
+PRINCIPLES
+- Rasa yang mau dicapai: hangat dan terpercaya (karena ini dashboard
+  pengelola dana zakat/donasi publik), bukan dashboard korporat generik
+  bertema fintech
+- Satu elemen pembeda: gunakan bentuk daun/tangan dari ikon logo
+  LAZSIP sebagai motif tipis (watermark sangat halus atau bentuk
+  pemisah section), supaya dashboard-nya terasa "milik LAZSIP", bukan
+  template SaaS yang di-recolor doang
+- Responsive sampai mobile, kontras warna cukup untuk keterbacaan
+  (terutama oranye di atas putih — cek kontrasnya)

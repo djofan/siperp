@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
+/*
+ * Palet platform (Core / lintas-modul) — lihat docs/prd-core.md §9.
+ * Netral (ink/surface/accent indigo), BUKAN warna satu divisi manapun.
+ * Warna per-modul (LAZSIP oranye/hijau, SARSIP emerald/amber, dst) dipakai
+ * kecil-kecil sebagai badge di components/admin-shell/moduleColors.ts,
+ * bukan di sini.
+ */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #33363b; /* ink */
+
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f6f7;
+  --color-border: #e4e5e7;
+
+  --color-accent: #4c5fd5;
+  --color-accent-hover: #3f50be;
+  --color-accent-soft: #eef0fc;
+
+  --color-success: #2fae60;
+  --color-success-soft: #e7f7ee;
+
+  --color-danger: #e5484d;
+  --color-danger-soft: #fdeeee;
+
+  /*
+   * Palet PUBLIK + ADMIN modul LAZSIP — di-porting dari referensi tampilan
+   * repo lazsiplp (lihat CLAUDE.md §10). Diprefix "lazsip-" (bukan "primary"/
+   * "secondary" polos) supaya tidak tabrakan kalau modul lain (SARSIP dkk)
+   * nanti juga butuh token warna sendiri di file global yang sama.
+   */
+  --color-lazsip-cream: #f5f1e8;
+  --color-lazsip-ink: #313832;
+
+  --color-lazsip-primary-50: #eef3ef;
+  --color-lazsip-primary-100: #dce7de;
+  --color-lazsip-primary-200: #b9cfbe;
+  --color-lazsip-primary-300: #93b49b;
+  --color-lazsip-primary-400: #6f9779;
+  --color-lazsip-primary-500: #4f7959;
+  --color-lazsip-primary-600: #3b5f45;
+  --color-lazsip-primary-700: #2b4934;
+  --color-lazsip-primary-800: #1b3a2b;
+  --color-lazsip-primary-900: #16301f;
+
+  --color-lazsip-secondary-50: #f3f6f3;
+  --color-lazsip-secondary-100: #e3ebe3;
+  --color-lazsip-secondary-200: #c9d9cb;
+  --color-lazsip-secondary-300: #acc5af;
+  --color-lazsip-secondary-400: #92b396;
+  --color-lazsip-secondary-500: #7a9b7e;
+  --color-lazsip-secondary-600: #628264;
+  --color-lazsip-secondary-700: #4f6a51;
+  --color-lazsip-secondary-800: #3e5340;
+  --color-lazsip-secondary-900: #313f32;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-lazsip-cream: var(--color-lazsip-cream);
+  --color-lazsip-ink: var(--color-lazsip-ink);
+  --color-lazsip-primary-50: var(--color-lazsip-primary-50);
+  --color-lazsip-primary-100: var(--color-lazsip-primary-100);
+  --color-lazsip-primary-200: var(--color-lazsip-primary-200);
+  --color-lazsip-primary-300: var(--color-lazsip-primary-300);
+  --color-lazsip-primary-400: var(--color-lazsip-primary-400);
+  --color-lazsip-primary-500: var(--color-lazsip-primary-500);
+  --color-lazsip-primary-600: var(--color-lazsip-primary-600);
+  --color-lazsip-primary-700: var(--color-lazsip-primary-700);
+  --color-lazsip-primary-800: var(--color-lazsip-primary-800);
+  --color-lazsip-primary-900: var(--color-lazsip-primary-900);
+  --color-lazsip-secondary-50: var(--color-lazsip-secondary-50);
+  --color-lazsip-secondary-100: var(--color-lazsip-secondary-100);
+  --color-lazsip-secondary-200: var(--color-lazsip-secondary-200);
+  --color-lazsip-secondary-300: var(--color-lazsip-secondary-300);
+  --color-lazsip-secondary-400: var(--color-lazsip-secondary-400);
+  --color-lazsip-secondary-500: var(--color-lazsip-secondary-500);
+  --color-lazsip-secondary-600: var(--color-lazsip-secondary-600);
+  --color-lazsip-secondary-700: var(--color-lazsip-secondary-700);
+  --color-lazsip-secondary-800: var(--color-lazsip-secondary-800);
+  --color-lazsip-secondary-900: var(--color-lazsip-secondary-900);
+  --font-lazsip-sans: var(--font-lazsip-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* --- Utilitas khusus tampilan LAZSIP (porting dari lazsiplp) --- */
+
+@keyframes lazsip-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.lazsip-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-lazsip-primary-50) 25%,
+    var(--color-lazsip-primary-100) 50%,
+    var(--color-lazsip-primary-50) 75%
+  );
+  background-size: 200% 100%;
+  animation: lazsip-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.lazsip-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.lazsip-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+@keyframes lazsip-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.lazsip-animate-marquee {
+  animation: lazsip-marquee-left 12s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lazsip-animate-marquee {
+    animation-play-state: paused;
+  }
+}
+
+.lazsip-public section[id] {
+  scroll-margin-top: 104px;
 }

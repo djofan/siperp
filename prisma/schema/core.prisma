@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  isSuperadmin Boolean  @default(false) @map("is_superadmin")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  moduleAccess ModuleAccess[]
+
+  @@map("users")
+}
+
+// Log aktivitas perubahan akun/akses untuk Overview Superadmin (docs/prd-core.md §9).
+// Pesan disimpan sudah jadi kalimat jadi, bukan dibangun ulang dari relasi tiap render.
+model AccessLog {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("access_logs")
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String? @db.Text
+  isActive    Boolean @default(true) @map("is_active")
+
+  moduleAccess ModuleAccess[]
+
+  @@map("modules")
+}
+
+// Satu akun bisa punya banyak baris di sini -> satu akun bisa akses lebih dari satu modul sekaligus.
+// Superadmin (User.isSuperadmin = true) otomatis bisa akses semua modul tanpa perlu baris di tabel ini.
+model ModuleAccess {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  moduleId  String   @map("module_id")
+  role      String   @default("admin")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleId])
+  @@map("module_access")
+}

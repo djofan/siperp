@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SIP Modular
 
-## Getting Started
+Platform digital terpadu Solidaritas Insan Peduli (SIP) — modular monolith Next.js (App Router) + Prisma + MySQL. Lihat `CLAUDE.md` untuk aturan kerja dan `docs/PRD.md` / `docs/prd-lazsip.md` untuk spesifikasi produk.
 
-First, run the development server:
+## Setup lokal
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Salin `.env.example` menjadi `.env`, sesuaikan `DATABASE_URL` dan isi `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD` untuk seed akun pertama.
+2. Install dependency:
+   ```bash
+   npm install
+   ```
+3. Jalankan migration (schema Prisma multi-file ada di `prisma/schema/*.prisma`):
+   ```bash
+   npm run db:migrate
+   ```
+4. Seed akun superadmin pertama (idempotent, aman dijalankan ulang):
+   ```bash
+   npm run db:seed
+   ```
+5. Jalankan dev server:
+   ```bash
+   npm run dev
+   ```
+6. Buka [http://localhost:3000/admin/login](http://localhost:3000/admin/login) dan masuk dengan akun superadmin.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Struktur folder
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Mengikuti pola modular monolith di `CLAUDE.md` §4 — satu modul = satu set folder di `app/(public)/<modul>`, `app/admin/<modul>`, `app/api/<modul>`, `modules/<modul>`, `components/<modul>`, `prisma/schema/<modul>.prisma`. Modul `core` (auth, users, module registry) dipakai bersama semua modul lain.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Skrip yang tersedia
 
-## Learn More
+- `npm run dev` — dev server (Turbopack).
+- `npm run build` / `npm run start` — build & jalankan production build.
+- `npm run lint` — ESLint.
+- `npm run db:migrate` — buat & jalankan migration baru dari perubahan schema.
+- `npm run db:seed` — jalankan `prisma/seed.ts`.
+- `npm run db:studio` — buka Prisma Studio untuk lihat/edit data langsung.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Belum dikonfigurasi — perlu keputusan hosting (VPS/PaaS), database production, dan strategi penamaan domain per modul sebelum go-live pertama.

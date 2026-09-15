@@ -17,6 +17,12 @@
 /.next/
 /out/
 
+# prisma generated client
+/generated/
+
+# file upload lokal (sementara, lihat CLAUDE.md §9 — bukan strategi storage final production)
+/public/uploads/
+
 # production
 /build
 
@@ -39,3 +45,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
