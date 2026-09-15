@@ -55,6 +55,40 @@
   --color-lazsip-secondary-700: #4f6a51;
   --color-lazsip-secondary-800: #3e5340;
   --color-lazsip-secondary-900: #313f32;
+
+  /*
+   * Palet PUBLIK + ADMIN modul SIP (portal induk) — diekstrak dari CSS asli
+   * insanpeduli.org (Elementor), bukan tebakan. Diprefix "sip-" supaya tidak
+   * tabrakan dengan token modul lain (lazsip, dst) di file global yang sama.
+   * Sengaja beda shade dari token lazsip meski satu keluarga hijau — SIP tetap
+   * punya identitas visual sendiri sebagai portal induk, bukan re-skin LAZSIP.
+   */
+  --color-sip-primary-50: #f1f6f3;
+  --color-sip-primary-100: #dfeae4;
+  --color-sip-primary-200: #bfd6cb;
+  --color-sip-primary-300: #9cbfae;
+  --color-sip-primary-400: #779b87;
+  --color-sip-primary-500: #5a8272;
+  --color-sip-primary-600: #4a6b5c;
+  --color-sip-primary-700: #3d574c;
+  --color-sip-primary-800: #33493f;
+  --color-sip-primary-900: #2c4039;
+
+  --color-sip-secondary-50: #eef6f1;
+  --color-sip-secondary-100: #dcecE2;
+  --color-sip-secondary-200: #bddcc9;
+  --color-sip-secondary-300: #94c7a8;
+  --color-sip-secondary-400: #6bb187;
+  --color-sip-secondary-500: #479e6a;
+  --color-sip-secondary-600: #3f7350;
+  --color-sip-secondary-700: #366143;
+  --color-sip-secondary-800: #2c5039;
+  --color-sip-secondary-900: #223f2f;
+
+  --color-sip-accent: #ffa301;
+  --color-sip-accent-hover: #e69200;
+  --color-sip-cream: #f7f5f0;
+  --color-sip-ink: #191616;
 }
 
 @theme inline {
@@ -96,6 +130,32 @@
   --color-lazsip-secondary-800: var(--color-lazsip-secondary-800);
   --color-lazsip-secondary-900: var(--color-lazsip-secondary-900);
   --font-lazsip-sans: var(--font-lazsip-sans);
+
+  --color-sip-primary-50: var(--color-sip-primary-50);
+  --color-sip-primary-100: var(--color-sip-primary-100);
+  --color-sip-primary-200: var(--color-sip-primary-200);
+  --color-sip-primary-300: var(--color-sip-primary-300);
+  --color-sip-primary-400: var(--color-sip-primary-400);
+  --color-sip-primary-500: var(--color-sip-primary-500);
+  --color-sip-primary-600: var(--color-sip-primary-600);
+  --color-sip-primary-700: var(--color-sip-primary-700);
+  --color-sip-primary-800: var(--color-sip-primary-800);
+  --color-sip-primary-900: var(--color-sip-primary-900);
+  --color-sip-secondary-50: var(--color-sip-secondary-50);
+  --color-sip-secondary-100: var(--color-sip-secondary-100);
+  --color-sip-secondary-200: var(--color-sip-secondary-200);
+  --color-sip-secondary-300: var(--color-sip-secondary-300);
+  --color-sip-secondary-400: var(--color-sip-secondary-400);
+  --color-sip-secondary-500: var(--color-sip-secondary-500);
+  --color-sip-secondary-600: var(--color-sip-secondary-600);
+  --color-sip-secondary-700: var(--color-sip-secondary-700);
+  --color-sip-secondary-800: var(--color-sip-secondary-800);
+  --color-sip-secondary-900: var(--color-sip-secondary-900);
+  --color-sip-accent: var(--color-sip-accent);
+  --color-sip-accent-hover: var(--color-sip-accent-hover);
+  --color-sip-cream: var(--color-sip-cream);
+  --color-sip-ink: var(--color-sip-ink);
+  --font-sip-sans: var(--font-sip-sans);
 }
 
 body {
@@ -151,5 +211,42 @@ body {
 }
 
 .lazsip-public section[id] {
+  scroll-margin-top: 104px;
+}
+
+/* --- Utilitas khusus tampilan SIP (portal induk), independen dari utilitas LAZSIP di atas --- */
+
+@keyframes sip-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.sip-skeleton {
+  background: linear-gradient(90deg, var(--color-sip-primary-50) 25%, var(--color-sip-primary-100) 50%, var(--color-sip-primary-50) 75%);
+  background-size: 200% 100%;
+  animation: sip-skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes sip-marquee-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.sip-animate-marquee {
+  animation: sip-marquee-left 12s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sip-animate-marquee {
+    animation-play-state: paused;
+  }
+}
+
+.sip-public section[id] {
   scroll-margin-top: 104px;
 }

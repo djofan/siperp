@@ -1,0 +1,81 @@
+// Modul SIP (portal induk) — tidak ada logic uang di sini sama sekali, semua model
+// diprefix "Sip" (konvensi CLAUDE.md §5) supaya tidak tabrakan dengan modul lain.
+
+model SipSiteContent {
+  id          String @id @default(cuid())
+  sectionKey  String @unique @map("section_key") // "hero" | "tentang" | "jangkauanBantuan" | "kontak"
+  contentJson String @map("content_json") @db.Text
+
+  @@map("sip_site_content")
+}
+
+model SipPengurus {
+  id        String   @id @default(cuid())
+  name      String
+  position  String
+  level     String // "pembina" | "pengurus_inti" | "pengawas" | "tim"
+  photo     String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("sip_pengurus")
+}
+
+// Halaman INFO program bantuan saja — bukan campaign donasi. Tombol infaq di halaman
+// publik link keluar ke campaignUrl (campaign LAZSIP terkait), tidak ada transaksi di sini.
+model SipProgramBantuan {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String   @db.Text
+  image       String?
+  campaignUrl String?  @map("campaign_url")
+  isPinned    Boolean  @default(false) @map("is_pinned")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sip_program_bantuan")
+}
+
+model SipBlog {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  image     String?
+  isPinned  Boolean  @default(false) @map("is_pinned")
+  status    String   @default("draft") // "draft" | "published"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("sip_blog")
+}
+
+model SipLaporan {
+  id          String   @id @default(cuid())
+  title       String
+  type        String // "bulanan" | "tahunan"
+  periodMonth Int?     @map("period_month") // 1-12, null kalau type "tahunan"
+  periodYear  Int      @map("period_year")
+  fileUrl     String   @map("file_url") // link eksternal (mis. Google Drive) ATAU path upload sendiri
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sip_laporan")
+}
+
+model SipKegiatanTerkini {
+  id          String   @id @default(cuid())
+  title       String
+  description String   @db.Text
+  image       String?
+  date        DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sip_kegiatan_terkini")
+}
+
+model SipMitra {
+  id   String  @id @default(cuid())
+  name String
+  logo String?
+  url  String?
+
+  @@map("sip_mitra")
+}

@@ -2,6 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { seedLazsipModuleRegistration } from "@/modules/lazsip/api/seed";
+import { seedSipModuleRegistration } from "@/modules/sip/api/seed";
 
 async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
@@ -26,6 +27,9 @@ async function main() {
 
   await seedLazsipModuleRegistration();
   console.log("Modul lazsip terdaftar.");
+
+  await seedSipModuleRegistration();
+  console.log("Modul sip terdaftar.");
 }
 
 main()

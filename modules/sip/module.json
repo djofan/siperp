@@ -1,0 +1,12 @@
+{
+  "name": "sip",
+  "displayName": "SIP",
+  "description": "Portal induk Yayasan Solidaritas Insan Peduli — company profile & CMS, menautkan ke semua divisi.",
+  "version": "1.0.0",
+  "providers": {
+    "prismaSchema": "schema.prisma",
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
+}
