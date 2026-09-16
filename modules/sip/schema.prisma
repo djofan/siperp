@@ -3,22 +3,10 @@
 
 model SipSiteContent {
   id          String @id @default(cuid())
-  sectionKey  String @unique @map("section_key") // "hero" | "tentang" | "jangkauanBantuan" | "kontak"
+  sectionKey  String @unique @map("section_key") // "hero" | "tentang" | "kontak"
   contentJson String @map("content_json") @db.Text
 
   @@map("sip_site_content")
-}
-
-model SipPengurus {
-  id        String   @id @default(cuid())
-  name      String
-  position  String
-  level     String // "pembina" | "pengurus_inti" | "pengawas" | "tim"
-  photo     String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@map("sip_pengurus")
 }
 
 // Halaman INFO program bantuan saja — bukan campaign donasi. Tombol infaq di halaman
@@ -36,7 +24,7 @@ model SipProgramBantuan {
   @@map("sip_program_bantuan")
 }
 
-model SipBlog {
+model SipNews {
   id        String   @id @default(cuid())
   title     String
   content   String   @db.Text
@@ -45,12 +33,14 @@ model SipBlog {
   status    String   @default("draft") // "draft" | "published"
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("sip_blog")
+  @@map("sip_news")
 }
 
 model SipLaporan {
   id          String   @id @default(cuid())
   title       String
+  description String   @db.Text
+  image       String?
   type        String // "bulanan" | "tahunan"
   periodMonth Int?     @map("period_month") // 1-12, null kalau type "tahunan"
   periodYear  Int      @map("period_year")
@@ -58,24 +48,4 @@ model SipLaporan {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("sip_laporan")
-}
-
-model SipKegiatanTerkini {
-  id          String   @id @default(cuid())
-  title       String
-  description String   @db.Text
-  image       String?
-  date        DateTime
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  @@map("sip_kegiatan_terkini")
-}
-
-model SipMitra {
-  id   String  @id @default(cuid())
-  name String
-  logo String?
-  url  String?
-
-  @@map("sip_mitra")
 }
