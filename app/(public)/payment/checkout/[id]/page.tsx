@@ -1,0 +1,1 @@
+export { default } from "@/modules/payment/pages/checkout/[id]/page";

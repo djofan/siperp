@@ -1,0 +1,39 @@
+// Modul Payment — hub pembayaran lintas divisi. Tidak boleh punya logic
+// domain (kalkulasi zakat, syarat program, dll) — itu tetap tanggung jawab
+// module asal (LazsipZakat, SarsipCampaign, dst). Modul ini cuma tau:
+// siapa bayar, berapa, status apa, cair ke rekening mana.
+
+model PaymentTransaction {
+  id                    String   @id @default(cuid())
+  moduleSource          String   @map("module_source")   // "lazsip" | "sarsip"
+  sourceType            String   @map("source_type")     // "campaign" | "zakat"
+  sourceId              String   @map("source_id")       // id record asal
+  fundType              String   @map("fund_type")        // "infak" | "zakat" | "donasi"
+  donorName             String   @map("donor_name")
+  isAnonymous           Boolean  @default(false) @map("is_anonymous")
+  amount                Int
+  adminFee              Int      @default(0) @map("admin_fee")
+  paymentMethod         String   @map("payment_method")
+  destinationAccountId  String   @map("destination_account_id")
+  status                String   @default("pending")     // pending | paid | failed
+  midtransOrderId       String?  @unique @map("midtrans_order_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  paidAt                DateTime? @map("paid_at")
+
+  destinationAccount PaymentDestinationAccount @relation(fields: [destinationAccountId], references: [id])
+
+  @@map("payment_transactions")
+}
+
+model PaymentDestinationAccount {
+  id            String @id @default(cuid())
+  moduleSource  String @map("module_source")   // "lazsip" | "sarsip"
+  fundType      String @map("fund_type")       // "infak" | "zakat" | "donasi"
+  bankName      String @map("bank_name")
+  accountNumber String @map("account_number")
+  accountName   String @map("account_name")
+
+  transactions PaymentTransaction[]
+
+  @@map("payment_destination_accounts")
+}

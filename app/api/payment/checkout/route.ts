@@ -1,0 +1,1 @@
+export * from "@/modules/payment/api/routes/checkout/route";
