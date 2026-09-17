@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { FormField, Input } from "@/components/ui/FormField";
+import { staticPanelClasses } from "@/components/ui/panel";
 import { lazsipColors } from "@/modules/lazsip/components/theme";
 import type { SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 
@@ -50,11 +51,7 @@ export function SiteContentSectionForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex max-w-xl flex-col gap-4 rounded-xl border p-5"
-      style={{ borderColor: "#EFE9E0" }}
-    >
+    <form onSubmit={handleSubmit} className={staticPanelClasses("flex max-w-xl flex-col gap-4 p-5")}>
       <h2 className="text-sm font-semibold" style={{ color: lazsipColors.ink }}>
         {title}
       </h2>

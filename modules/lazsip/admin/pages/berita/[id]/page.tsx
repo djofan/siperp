@@ -18,7 +18,7 @@ export default async function EditBeritaPage({
   return (
     <div>
       <BackLink href="/admin/lazsip/berita">Semua Berita</BackLink>
-      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900">Edit Berita</h2>
+      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">Edit Berita</h2>
       <NewsForm
         newsId={news.id}
         initialValues={{

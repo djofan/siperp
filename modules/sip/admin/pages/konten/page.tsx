@@ -3,8 +3,11 @@ import { SipSiteContentSectionForm } from "@/modules/sip/components/admin/SipSit
 import { getSiteContent } from "@/modules/sip/api/siteContent";
 
 export default async function SipKontenUmumPage() {
-  const [hero, tentang, jangkauanBantuan, kontak] = await Promise.all([
+  const [hero, berita, program, penyaluranBantuan, tentang, jangkauanBantuan, kontak] = await Promise.all([
     getSiteContent("hero"),
+    getSiteContent("berita"),
+    getSiteContent("program"),
+    getSiteContent("penyaluranBantuan"),
     getSiteContent("tentang"),
     getSiteContent("jangkauanBantuan"),
     getSiteContent("kontak"),
@@ -14,7 +17,7 @@ export default async function SipKontenUmumPage() {
     <div>
       <SipAdminPageHeader
         title="Konten Umum"
-        description="Hero, tentang, jangkauan bantuan, dan kontak yang tampil di halaman publik SIP."
+        description="Semua teks judul & deskripsi section yang tampil di landing page SIP."
       />
       <div className="flex flex-col gap-6">
         <SipSiteContentSectionForm
@@ -27,6 +30,36 @@ export default async function SipKontenUmumPage() {
             { key: "infaqUrl", label: "Link Infaq Sekarang (campaign LAZSIP)" },
           ]}
           initialValue={hero ?? {}}
+        />
+        <SipSiteContentSectionForm
+          sectionKey="berita"
+          title="Section Berita"
+          fields={[
+            { key: "eyebrow", label: "Label Kecil (eyebrow)" },
+            { key: "title", label: "Judul Section" },
+            { key: "description", label: "Deskripsi", multiline: true },
+          ]}
+          initialValue={berita ?? {}}
+        />
+        <SipSiteContentSectionForm
+          sectionKey="program"
+          title="Section Program"
+          fields={[
+            { key: "eyebrow", label: "Label Kecil (eyebrow)" },
+            { key: "title", label: "Judul Section" },
+            { key: "description", label: "Deskripsi", multiline: true },
+          ]}
+          initialValue={program ?? {}}
+        />
+        <SipSiteContentSectionForm
+          sectionKey="penyaluranBantuan"
+          title="Section Penyaluran Bantuan"
+          fields={[
+            { key: "eyebrow", label: "Label Kecil (eyebrow)" },
+            { key: "title", label: "Judul Section" },
+            { key: "description", label: "Deskripsi", multiline: true },
+          ]}
+          initialValue={penyaluranBantuan ?? {}}
         />
         <SipSiteContentSectionForm
           sectionKey="tentang"

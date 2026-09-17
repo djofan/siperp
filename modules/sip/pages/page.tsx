@@ -1,20 +1,23 @@
 import { getSiteContent } from "@/modules/sip/api/siteContent";
 import { Hero } from "@/modules/sip/components/sections/Hero";
-import { KegiatanSection } from "@/modules/sip/components/sections/KegiatanSection";
+import { BeritaSection } from "@/modules/sip/components/sections/BeritaSection";
 import { ProgramBantuanSection } from "@/modules/sip/components/sections/ProgramBantuanSection";
-import { DivisiSection } from "@/modules/sip/components/sections/DivisiSection";
-import { MitraMarquee } from "@/modules/sip/components/sections/MitraMarquee";
+import { PenyaluranBantuanSection } from "@/modules/sip/components/sections/PenyaluranBantuanSection";
 
 export default async function SipHomePage() {
-  const hero = await getSiteContent("hero");
+  const [hero, berita, program, penyaluranBantuan] = await Promise.all([
+    getSiteContent("hero"),
+    getSiteContent("berita"),
+    getSiteContent("program"),
+    getSiteContent("penyaluranBantuan"),
+  ]);
 
   return (
     <>
       <Hero hero={hero ?? {}} />
-      <KegiatanSection />
-      <ProgramBantuanSection />
-      <DivisiSection />
-      <MitraMarquee />
+      <BeritaSection content={berita ?? {}} />
+      <ProgramBantuanSection content={program ?? {}} />
+      <PenyaluranBantuanSection content={penyaluranBantuan ?? {}} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { listModules } from "@/modules/core/modules";
+import { listAccessibleModules } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
 import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
 
@@ -14,12 +14,7 @@ export default async function DashboardLayout({
     redirect("/admin/login");
   }
 
-  const modules = await listModules();
-  const accessibleModules = modules.filter(
-    (module) =>
-      module.isActive &&
-      (session.isSuperadmin || session.moduleSlugs.includes(module.slug))
-  );
+  const accessibleModules = await listAccessibleModules(session);
 
   const groups: NavGroup[] = [
     { items: [{ href: "/admin", label: "Dashboard" }] },
@@ -28,6 +23,7 @@ export default async function DashboardLayout({
   if (accessibleModules.length > 0) {
     groups.push({
       heading: "Modul",
+      collapsible: true,
       items: accessibleModules.map((module) => ({
         href: `/admin/${module.slug}`,
         label: module.name,

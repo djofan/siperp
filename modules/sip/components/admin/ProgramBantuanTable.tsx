@@ -8,6 +8,7 @@ import { SipAdminFilterBar, SipAdminSearchInput, SipAdminFilterResetButton } fro
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
 import { SipOverlayCard, SipOverlayActions } from "@/modules/sip/components/admin/SipAdminCardShell";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface ProgramBantuanRow {
   id: string;
@@ -53,7 +54,7 @@ export function ProgramBantuanTable({ programs }: { programs: ProgramBantuanRow[
       {filtered.length === 0 ? (
         <SipAdminEmptyState message="Tidak ada program yang cocok dengan pencarian." />
       ) : view === "list" ? (
-        <div className="overflow-hidden rounded-2xl border border-sip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>

@@ -1,5 +1,6 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { listModules } from "@/modules/core/modules";
 
 export default async function ModulTerdaftarPage() {
@@ -12,9 +13,7 @@ export default async function ModulTerdaftarPage() {
         description="Modul baru ditambahkan lewat migrasi/seed saat modul tersebut mulai dikerjakan."
       />
       {modules.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-foreground/40">
-          Belum ada modul terdaftar.
-        </div>
+        <EmptyState>Belum ada modul terdaftar.</EmptyState>
       ) : (
         <Table>
           <Thead>

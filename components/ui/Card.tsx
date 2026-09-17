@@ -1,11 +1,21 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+const CARD_TONES = {
+  default: "bg-surface",
+  danger: "bg-danger-soft",
+} as const;
+
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  tone?: keyof typeof CARD_TONES;
+}
+
+export function Card({ className, tone = "default", ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface p-6",
+        "rounded-2xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)]",
+        CARD_TONES[tone],
         className
       )}
       {...props}

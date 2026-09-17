@@ -36,11 +36,23 @@ model SipNews {
   @@map("sip_news")
 }
 
-model SipLaporan {
+// Dokumentasi realisasi penyaluran bantuan yang SUDAH tersalurkan (lokasi & tanggal
+// kegiatan lapangan) — beda dari SipProgramBantuan yang isinya info program yang tersedia.
+model SipPenyaluranBantuan {
   id          String   @id @default(cuid())
   title       String
   description String   @db.Text
   image       String?
+  location    String?
+  date        DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sip_penyaluran_bantuan")
+}
+
+model SipLaporan {
+  id          String   @id @default(cuid())
+  title       String
   type        String // "bulanan" | "tahunan"
   periodMonth Int?     @map("period_month") // 1-12, null kalau type "tahunan"
   periodYear  Int      @map("period_year")

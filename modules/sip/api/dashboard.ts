@@ -1,18 +1,16 @@
 import { prisma } from "@/lib/prisma";
 
 export async function getDashboardCounts() {
-  const [pengurusCount, programCount, publishedBlogCount, kegiatanCount, mitraCount, laporanCount] = await Promise.all([
-    prisma.sipPengurus.count(),
+  const [programCount, publishedNewsCount, penyaluranCount, laporanCount] = await Promise.all([
     prisma.sipProgramBantuan.count(),
-    prisma.sipBlog.count({ where: { status: "published" } }),
-    prisma.sipKegiatanTerkini.count(),
-    prisma.sipMitra.count(),
+    prisma.sipNews.count({ where: { status: "published" } }),
+    prisma.sipPenyaluranBantuan.count(),
     prisma.sipLaporan.count(),
   ]);
 
-  return { pengurusCount, programCount, publishedBlogCount, kegiatanCount, mitraCount, laporanCount };
+  return { programCount, publishedNewsCount, penyaluranCount, laporanCount };
 }
 
-export async function getRecentKegiatan(limit = 5) {
-  return prisma.sipKegiatanTerkini.findMany({ orderBy: { date: "desc" }, take: limit });
+export async function getRecentPenyaluranBantuan(limit = 5) {
+  return prisma.sipPenyaluranBantuan.findMany({ orderBy: { date: "desc" }, take: limit });
 }

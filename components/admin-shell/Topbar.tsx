@@ -2,8 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import type { Theme } from "@/lib/useTheme";
 
-export function Topbar({ userName, onMenuClick }: { userName: string; onMenuClick?: () => void }) {
+export function Topbar({
+  userName,
+  onMenuClick,
+  theme,
+  onToggleTheme,
+}: {
+  userName: string;
+  onMenuClick?: () => void;
+  theme: Theme;
+  onToggleTheme: () => void;
+}) {
   const router = useRouter();
 
   async function handleLogout() {
@@ -13,7 +25,7 @@ export function Topbar({ userName, onMenuClick }: { userName: string; onMenuClic
   }
 
   return (
-    <header className="flex h-16 items-center gap-3 border-b border-border bg-surface px-4 sm:px-6">
+    <header className="flex h-16 items-center gap-3 bg-surface px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] sm:px-6">
       {onMenuClick && (
         <button
           type="button"
@@ -27,6 +39,7 @@ export function Topbar({ userName, onMenuClick }: { userName: string; onMenuClic
         </button>
       )}
       <span className="min-w-0 flex-1 truncate text-sm text-foreground/60">Halo, {userName}</span>
+      <ThemeToggle theme={theme} onToggle={onToggleTheme} />
       <Button variant="secondary" size="sm" onClick={handleLogout}>
         Keluar
       </Button>

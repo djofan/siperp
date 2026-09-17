@@ -5,6 +5,7 @@ import { TransactionActions } from "@/modules/lazsip/components/admin/Transactio
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 export interface TransactionRow {
   id: string;
@@ -122,7 +123,7 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada transaksi yang cocok dengan filter." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>

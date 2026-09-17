@@ -5,6 +5,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import type { DonorSummary } from "@/modules/lazsip/api/donors";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDate = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(date);
@@ -58,7 +59,7 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada donatur yang cocok dengan filter." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>

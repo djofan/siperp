@@ -85,12 +85,6 @@ export default async function TentangPage() {
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
-          href="/sip/struktur-pengurus"
-          className="inline-flex items-center gap-2 rounded-full border border-sip-primary-900/20 bg-white px-6 py-3 text-sm font-semibold text-sip-primary-900 transition-colors hover:border-sip-primary-900/40"
-        >
-          Struktur Pengurus →
-        </Link>
-        <Link
           href="/sip/jangkauan-bantuan"
           className="inline-flex items-center gap-2 rounded-full border border-sip-primary-900/20 bg-white px-6 py-3 text-sm font-semibold text-sip-primary-900 transition-colors hover:border-sip-primary-900/40"
         >

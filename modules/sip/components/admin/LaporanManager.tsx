@@ -6,6 +6,7 @@ import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButto
 import { SipRowActions } from "@/modules/sip/components/admin/SipRowActions";
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface LaporanRow {
   id: string;
@@ -101,11 +102,11 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-sip-primary-100 bg-white p-5">
+      <form onSubmit={handleSubmit} className={staticPanelClasses("p-6 sm:p-8")}>
         <h3 className="text-sm font-semibold text-sip-primary-900">{editingId ? "Edit Laporan" : "Tambah Laporan"}</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-sip-primary-800/70">Judul</label>
+            <label className="text-sm font-medium text-sip-primary-900">Judul</label>
             <input
               required
               placeholder="mis. Laporan Keuangan SIP"
@@ -115,7 +116,7 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-sip-primary-800/70">Tipe</label>
+            <label className="text-sm font-medium text-sip-primary-900">Tipe</label>
             <select
               value={form.type}
               onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
@@ -126,7 +127,7 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-sip-primary-800/70">Tahun</label>
+            <label className="text-sm font-medium text-sip-primary-900">Tahun</label>
             <input
               type="number"
               required
@@ -137,7 +138,7 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
           </div>
           {form.type === "bulanan" && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-sip-primary-800/70">Bulan</label>
+              <label className="text-sm font-medium text-sip-primary-900">Bulan</label>
               <select
                 value={form.periodMonth}
                 onChange={(e) => setForm((prev) => ({ ...prev, periodMonth: e.target.value }))}
@@ -152,7 +153,7 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
             </div>
           )}
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-xs font-medium text-sip-primary-800/70">Tautan Laporan (Google Drive, dll) atau Upload PDF</label>
+            <label className="text-sm font-medium text-sip-primary-900">Tautan Laporan (Google Drive, dll) atau Upload PDF</label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 required
@@ -174,8 +175,8 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
             </div>
           </div>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex items-center gap-3">
+        {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+        <div className="mt-6 flex items-center gap-3 border-t border-sip-primary-100 pt-6">
           <SipLoadingButton type="submit" loading={isSubmitting}>
             {editingId ? "Simpan Perubahan" : "Tambah Laporan"}
           </SipLoadingButton>
@@ -190,7 +191,7 @@ export function LaporanManager({ laporan }: { laporan: LaporanRow[] }) {
       {laporan.length === 0 ? (
         <SipAdminEmptyState message="Belum ada laporan." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-sip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>

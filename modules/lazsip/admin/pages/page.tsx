@@ -11,6 +11,7 @@ import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHead
 import { DashboardStatCard } from "@/modules/lazsip/components/admin/DashboardStatCard";
 import { InflowChart } from "@/modules/lazsip/components/admin/InflowChart";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { panelClasses } from "@/components/ui/panel";
 
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDateTime = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
@@ -62,16 +63,18 @@ export default async function LazsipDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-6">
-          <h2 className="mb-1 text-sm font-semibold text-lazsip-primary-900">Dana Masuk 30 Hari Terakhir</h2>
-          <p className="mb-4 text-xs text-lazsip-primary-800/50">Total donasi + zakat berstatus lunas per hari.</p>
+        <div className={panelClasses("p-6")}>
+          <h2 className="mb-1 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Dana Masuk 30 Hari Terakhir</h2>
+          <p className="mb-4 text-xs text-lazsip-primary-800/50 dark:text-white/45">
+            Total donasi + zakat berstatus lunas per hari.
+          </p>
           <InflowChart data={dailyInflow} />
         </div>
 
-        <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-6">
-          <h2 className="mb-4 text-sm font-semibold text-lazsip-primary-900">Campaign Terlaris</h2>
+        <div className={panelClasses("p-6")}>
+          <h2 className="mb-4 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Campaign Terlaris</h2>
           {topCampaigns.length === 0 ? (
-            <p className="text-sm text-lazsip-primary-800/50">Belum ada campaign aktif.</p>
+            <p className="text-sm text-lazsip-primary-800/50 dark:text-white/45">Belum ada campaign aktif.</p>
           ) : (
             <div className="flex flex-col gap-4">
               {topCampaigns.map((campaign, i) => {
@@ -80,19 +83,21 @@ export default async function LazsipDashboardPage() {
                   <Link
                     key={campaign.id}
                     href={`/admin/lazsip/donasi/${campaign.id}`}
-                    className="block rounded-xl transition-colors hover:bg-lazsip-primary-50/50"
+                    className="block rounded-xl transition-colors hover:bg-lazsip-primary-50/50 dark:hover:bg-white/5"
                   >
                     <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2 truncate font-medium text-lazsip-primary-900">
+                      <span className="flex items-center gap-2 truncate font-medium text-lazsip-primary-900 dark:text-white">
                         <span className="text-xs font-bold text-lazsip-primary-400">#{i + 1}</span>
                         {campaign.title}
                       </span>
-                      <span className="shrink-0 text-xs text-lazsip-primary-800/50">{percentage}%</span>
+                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-lazsip-primary-100">
-                      <div className="h-full rounded-full bg-lazsip-primary-700" style={{ width: `${percentage}%` }} />
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
+                      <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
                     </div>
-                    <p className="mt-1 text-xs text-lazsip-primary-800/45">{formatRupiah(campaign.currentAmount)}</p>
+                    <p className="mt-1 text-xs text-lazsip-primary-800/45 dark:text-white/35">
+                      {formatRupiah(campaign.currentAmount)}
+                    </p>
                   </Link>
                 );
               })}
@@ -101,20 +106,23 @@ export default async function LazsipDashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-6">
+      <div className={panelClasses("p-6")}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-lazsip-primary-900">Transaksi Terbaru</h2>
-          <Link href="/admin/lazsip/transaksi" className="text-xs font-semibold text-lazsip-primary-700 hover:underline">
+          <h2 className="text-sm font-semibold text-lazsip-primary-900 dark:text-white">Transaksi Terbaru</h2>
+          <Link
+            href="/admin/lazsip/transaksi"
+            className="text-xs font-semibold text-lazsip-primary-700 hover:underline dark:text-lazsip-primary-300"
+          >
             Lihat Semua →
           </Link>
         </div>
         {recentTransactions.length === 0 ? (
-          <p className="text-sm text-lazsip-primary-800/50">Belum ada transaksi.</p>
+          <p className="text-sm text-lazsip-primary-800/50 dark:text-white/45">Belum ada transaksi.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/60">
+                <tr className="border-b border-lazsip-primary-100 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/60 dark:border-white/10 dark:text-white/45">
                   <th className="py-2.5 font-semibold">Transaksi</th>
                   <th className="py-2.5 font-semibold">Donatur</th>
                   <th className="py-2.5 font-semibold">Nominal</th>
@@ -122,13 +130,13 @@ export default async function LazsipDashboardPage() {
                   <th className="py-2.5 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {recentTransactions.map((tx) => (
                   <tr key={tx.id}>
-                    <td className="py-2.5 font-medium text-lazsip-primary-900">{tx.label}</td>
-                    <td className="py-2.5 text-lazsip-primary-800/60">{tx.donorName}</td>
-                    <td className="py-2.5 text-lazsip-primary-800/60">{formatRupiah(tx.amount)}</td>
-                    <td className="py-2.5 text-lazsip-primary-800/45">{formatDateTime(tx.createdAt)}</td>
+                    <td className="py-2.5 font-medium text-lazsip-primary-900 dark:text-white">{tx.label}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/60 dark:text-white/55">{tx.donorName}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/60 dark:text-white/55">{formatRupiah(tx.amount)}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/45 dark:text-white/35">{formatDateTime(tx.createdAt)}</td>
                     <td className="py-2.5">
                       <AdminBadge tone={STATUS_TONE[tx.status]}>{STATUS_LABEL[tx.status]}</AdminBadge>
                     </td>

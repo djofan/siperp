@@ -18,7 +18,7 @@ export default async function EditKegiatanPage({
   return (
     <div>
       <BackLink href="/admin/lazsip/kegiatan">Semua Kegiatan</BackLink>
-      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900">Edit Kegiatan</h2>
+      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">Edit Kegiatan</h2>
       <ActivityForm
         activityId={activity.id}
         initialValues={{

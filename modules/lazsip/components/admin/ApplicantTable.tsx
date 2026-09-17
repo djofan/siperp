@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ApplicantStatusSelect } from "@/modules/lazsip/components/admin/ApplicantStatusSelect";
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface ApplicantRow {
   id: string;
@@ -60,7 +61,7 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada pendaftar yang cocok dengan filter." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
