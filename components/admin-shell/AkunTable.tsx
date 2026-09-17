@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { ActiveToggle } from "@/components/admin-shell/ActiveToggle";
 import { getModuleBadgeColor } from "@/components/admin-shell/moduleColors";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 interface ModuleOption {
   id: string;
@@ -20,11 +21,7 @@ interface UserRow {
 
 export function AkunTable({ users }: { users: UserRow[] }) {
   if (users.length === 0) {
-    return (
-      <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-foreground/40">
-        Belum ada akun.
-      </div>
-    );
+    return <EmptyState>Belum ada akun.</EmptyState>;
   }
 
   return (

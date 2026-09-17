@@ -18,7 +18,7 @@ export default async function EditBeneficiaryPage({
   return (
     <div>
       <BackLink href="/admin/lazsip/penyaluran-bantuan">Semua Penerima Manfaat</BackLink>
-      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900">Edit Penerima Manfaat</h2>
+      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">Edit Penerima Manfaat</h2>
       <BeneficiaryForm
         beneficiaryId={beneficiary.id}
         initialValues={{

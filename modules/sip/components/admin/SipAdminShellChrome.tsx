@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { SipSidebar } from "@/modules/sip/components/admin/SipSidebar";
 import { SipTopbar } from "@/modules/sip/components/admin/SipTopbar";
+import { useTheme } from "@/lib/useTheme";
+import { cn } from "@/lib/utils";
 
 export function SipAdminShellChrome({
   userName,
@@ -12,10 +14,11 @@ export function SipAdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <div className="hidden shrink-0 border-r border-sip-primary-100 lg:block">
+    <div className={cn("flex h-screen overflow-hidden bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
+      <div className="hidden shrink-0 shadow-[1px_0_3px_rgba(0,0,0,0.05)] lg:block">
         <SipSidebar />
       </div>
 
@@ -28,9 +31,9 @@ export function SipAdminShellChrome({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <SipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <SipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} theme={theme} onToggleTheme={toggleTheme} />
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 export function PartnerForm({
   partnerId,
@@ -46,7 +47,7 @@ export function PartnerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-5 rounded-3xl border border-lazsip-primary-100 bg-white p-6">
+    <form onSubmit={handleSubmit} className={staticPanelClasses("flex max-w-xl flex-col gap-5 p-6")}>
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-lazsip-primary-900">
           Nama Mitra<span className="ml-0.5 text-red-600">*</span>

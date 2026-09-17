@@ -1,9 +1,10 @@
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
+import { panelClasses } from "@/components/ui/panel";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border">
+    <div className={panelClasses("overflow-x-auto")}>
       <table className={cn("w-full text-left text-sm", className)} {...props} />
     </div>
   );
@@ -18,7 +19,7 @@ export function Tbody({ className, ...props }: HTMLAttributes<HTMLTableSectionEl
 }
 
 export function Tr({ className, ...props }: HTMLAttributes<HTMLTableRowElement>) {
-  return <tr className={cn("transition-colors hover:bg-surface-muted/60", className)} {...props} />;
+  return <tr className={cn("transition-colors hover:bg-surface-muted", className)} {...props} />;
 }
 
 export function Th({ className, ...props }: ThHTMLAttributes<HTMLTableCellElement>) {

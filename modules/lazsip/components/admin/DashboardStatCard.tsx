@@ -1,3 +1,5 @@
+import { panelClasses } from "@/components/ui/panel";
+
 const ICONS: Record<string, string> = {
   fund: "M12 3v18M7 7l5-4 5 4M6 12h12M6 17h12",
   zakat: "M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z",
@@ -23,9 +25,9 @@ export function DashboardStatCard({
   trend?: { value: number; label: string };
 }) {
   return (
-    <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-5">
+    <div className={panelClasses("p-5")}>
       <div className="flex items-center justify-between">
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-lazsip-primary-50 text-lazsip-primary-700">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-lazsip-primary-50 text-lazsip-primary-700 dark:bg-white/10 dark:text-lazsip-primary-300">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
             <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[icon]} />
           </svg>
@@ -33,19 +35,26 @@ export function DashboardStatCard({
         {trend && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-              trend.value >= 0 ? "bg-lazsip-secondary-50 text-lazsip-secondary-700" : "bg-red-50 text-red-700"
+              trend.value >= 0
+                ? "bg-lazsip-secondary-50 text-lazsip-secondary-700 dark:bg-lazsip-secondary-900/40 dark:text-lazsip-secondary-300"
+                : "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400"
             }`}
           >
             {trend.value >= 0 ? "▲" : "▼"} {Math.abs(trend.value)}%
           </span>
         )}
       </div>
-      <p className="mt-4 truncate text-xl font-extrabold tracking-tight text-lazsip-primary-900" title={value}>
+      <p
+        className="mt-4 truncate text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white"
+        title={value}
+      >
         {value}
       </p>
-      <p className="mt-1 truncate text-sm text-lazsip-primary-800/60">{label}</p>
-      {hint && <p className="mt-0.5 truncate text-xs text-lazsip-primary-800/45">{hint}</p>}
-      {trend && <p className="mt-0.5 truncate text-xs text-lazsip-primary-800/45">{trend.label}</p>}
+      <p className="mt-1 truncate text-sm text-lazsip-primary-800/60 dark:text-white/55">{label}</p>
+      {hint && <p className="mt-0.5 truncate text-xs text-lazsip-primary-800/45 dark:text-white/35">{hint}</p>}
+      {trend && (
+        <p className="mt-0.5 truncate text-xs text-lazsip-primary-800/45 dark:text-white/35">{trend.label}</p>
+      )}
     </div>
   );
 }

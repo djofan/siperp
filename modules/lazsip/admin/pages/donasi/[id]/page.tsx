@@ -18,7 +18,7 @@ export default async function EditCampaignPage({
   return (
     <div>
       <BackLink href="/admin/lazsip/donasi">Semua Campaign</BackLink>
-      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900">Edit Campaign</h2>
+      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">Edit Campaign</h2>
       <CampaignForm
         campaignId={campaign.id}
         initialValues={{

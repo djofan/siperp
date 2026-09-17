@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Sidebar, type NavGroup } from "@/components/admin-shell/Sidebar";
 import { Topbar } from "@/components/admin-shell/Topbar";
+import { useTheme } from "@/lib/useTheme";
+import { cn } from "@/lib/utils";
 
 export function AdminShellChrome({
   groups,
@@ -14,10 +16,11 @@ export function AdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex min-h-screen">
-      <div className="hidden shrink-0 border-r border-border lg:block">
+    <div className={cn("flex h-screen overflow-hidden bg-surface-muted", theme === "dark" && "dark")}>
+      <div className="hidden shrink-0 lg:block">
         <Sidebar groups={groups} />
       </div>
 
@@ -30,9 +33,9 @@ export function AdminShellChrome({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar userName={userName} onMenuClick={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden bg-surface-muted p-4 sm:p-6">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <Topbar userName={userName} onMenuClick={() => setMobileOpen(true)} theme={theme} onToggleTheme={toggleTheme} />
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );

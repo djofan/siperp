@@ -7,6 +7,7 @@ import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admi
 import { AdminFilterBar, AdminSearchInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface PartnerRow {
   id: string;
@@ -51,7 +52,7 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada mitra yang cocok dengan pencarian." />
       ) : view === "list" ? (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>

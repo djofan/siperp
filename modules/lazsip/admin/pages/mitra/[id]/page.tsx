@@ -18,7 +18,7 @@ export default async function EditMitraPage({
   return (
     <div>
       <BackLink href="/admin/lazsip/mitra">Semua Mitra</BackLink>
-      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900">Edit Mitra</h2>
+      <h2 className="mb-6 mt-4 text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">Edit Mitra</h2>
       <PartnerForm partnerId={partner.id} initialValues={{ name: partner.name, logo: partner.logo ?? "", url: partner.url ?? "" }} />
     </div>
   );

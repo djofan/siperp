@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface BeneficiaryFormValues {
   name: string;
@@ -112,7 +113,7 @@ export function BeneficiaryForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="rounded-3xl border border-lazsip-primary-100 bg-white p-6">
+      <div className={staticPanelClasses("p-6")}>
         <div className="mb-5 flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lazsip-secondary-50 text-lazsip-secondary-700">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
@@ -144,7 +145,7 @@ export function BeneficiaryForm({
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900">Usia (dihitung otomatis)</label>
-            <div className="rounded-full border border-lazsip-primary-100 bg-lazsip-primary-50/60 px-4 py-2.5 text-sm text-lazsip-primary-800/70">
+            <div className="rounded-full bg-lazsip-primary-50/60 px-4 py-2.5 text-sm text-lazsip-primary-800/70">
               {age !== null ? `${age} tahun` : "Isi tanggal lahir di bagian khusus admin"}
             </div>
           </div>

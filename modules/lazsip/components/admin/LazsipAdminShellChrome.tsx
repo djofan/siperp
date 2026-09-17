@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { LazsipSidebar } from "@/modules/lazsip/components/admin/LazsipSidebar";
 import { LazsipTopbar } from "@/modules/lazsip/components/admin/LazsipTopbar";
+import { useTheme } from "@/lib/useTheme";
+import { cn } from "@/lib/utils";
 
 export function LazsipAdminShellChrome({
   userName,
@@ -12,10 +14,11 @@ export function LazsipAdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="flex min-h-screen bg-white">
-      <div className="hidden shrink-0 border-r border-lazsip-primary-100 lg:block">
+    <div className={cn("flex h-screen overflow-hidden bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
+      <div className="hidden shrink-0 shadow-[1px_0_3px_rgba(0,0,0,0.05)] lg:block">
         <LazsipSidebar />
       </div>
 
@@ -28,9 +31,9 @@ export function LazsipAdminShellChrome({
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <LazsipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} />
-        <main className="min-w-0 flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <LazsipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} theme={theme} onToggleTheme={toggleTheme} />
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

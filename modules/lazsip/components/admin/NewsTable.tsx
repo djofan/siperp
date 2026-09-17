@@ -9,6 +9,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface NewsRow {
   id: string;
@@ -100,7 +101,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message={news.length === 0 ? "Belum ada berita. Klik tombol di atas untuk menambah." : "Tidak ada berita yang cocok dengan filter."} />
       ) : view === "list" ? (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>

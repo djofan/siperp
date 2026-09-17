@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface FeeRow {
   id: string;
@@ -57,7 +58,7 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
     <div className="flex flex-col gap-6">
       <form
         onSubmit={handleSubmit}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-lazsip-primary-100 bg-white p-5"
+        className={staticPanelClasses("flex flex-wrap items-end gap-3 p-5")}
       >
         <div className="flex flex-col gap-1.5">
           <label htmlFor="fee-method" className="text-xs font-medium text-lazsip-primary-800/70">
@@ -112,7 +113,7 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
       {fees.length === 0 ? (
         <AdminEmptyState message="Belum ada referensi biaya." />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+        <div className={staticPanelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[520px] text-left text-sm">
               <thead>

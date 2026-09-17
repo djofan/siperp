@@ -1,11 +1,19 @@
 @import "tailwindcss";
 
 /*
+ * Toggle tema gelap/terang manual (bukan prefers-color-scheme) — class `.dark`
+ * dipasang oleh useTheme() pada wrapper shell admin (Core/LAZSIP/SIP), BUKAN
+ * pada <html>, supaya halaman publik (donor-facing) tidak pernah ikut gelap.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
  * Palet platform (Core / lintas-modul) — lihat docs/prd-core.md §9.
- * Netral (ink/surface/accent indigo), BUKAN warna satu divisi manapun.
- * Warna per-modul (LAZSIP oranye/hijau, SARSIP emerald/amber, dst) dipakai
- * kecil-kecil sebagai badge di components/admin-shell/moduleColors.ts,
- * bukan di sini.
+ * Aksen hijau #73AE43 = identitas warna utama Yayasan SIP (dipakai juga di
+ * halaman login), sengaja dipakai sebagai warna Core di seluruh admin panel
+ * per keputusan eksplisit — bukan lagi netral-indigo.
+ * Warna per-modul lain (SARSIP emerald/amber, dst) tetap dipakai kecil-kecil
+ * sebagai badge di components/admin-shell/moduleColors.ts, bukan di sini.
  */
 :root {
   --background: #ffffff;
@@ -15,9 +23,9 @@
   --color-surface-muted: #f5f6f7;
   --color-border: #e4e5e7;
 
-  --color-accent: #4c5fd5;
-  --color-accent-hover: #3f50be;
-  --color-accent-soft: #eef0fc;
+  --color-accent: #73ae43;
+  --color-accent-hover: #5c8b36;
+  --color-accent-soft: #eef5e8;
 
   --color-success: #2fae60;
   --color-success-soft: #e7f7ee;
@@ -89,6 +97,37 @@
   --color-sip-accent-hover: #e69200;
   --color-sip-cream: #f7f5f0;
   --color-sip-ink: #191616;
+}
+
+/*
+ * Token tema gelap Core — hanya aktif di dalam wrapper ber-class `.dark` (lihat
+ * useTheme() + AdminShellChrome). Karena ini cuma me-redefine CSS custom
+ * property yang sama, semua kelas Tailwind Core yang sudah dipakai
+ * (text-foreground, bg-surface, dst) otomatis ikut berubah.
+ * Token lazsip- dan sip- SENGAJA tidak di-override di sini — dipakai juga
+ * sebagai warna solid (mis. bg-lazsip-primary-900 di item sidebar aktif),
+ * jadi tema gelap LAZSIP/SIP diatur langsung lewat class `dark:` di komponen
+ * shell-nya masing-masing (LazsipAdminShellChrome, SipAdminShellChrome, dst).
+ */
+.dark {
+  --background: #0b0d0c;
+  --foreground: #e7e9ea;
+
+  /* Solid (bukan rgba tembus pandang) — wrapper shell butuh kanvas gelap
+     opaque yang jadi dasar, bukan overlay transparan di atas body putih. */
+  --color-surface: #16191a;
+  --color-surface-muted: #0f1211;
+  --color-border: #272b29;
+
+  --color-accent: #86c257;
+  --color-accent-hover: #9ad06d;
+  --color-accent-soft: rgba(134, 194, 87, 0.16);
+
+  --color-success: #4ade80;
+  --color-success-soft: rgba(74, 222, 128, 0.14);
+
+  --color-danger: #f87171;
+  --color-danger-soft: rgba(248, 113, 113, 0.14);
 }
 
 @theme inline {

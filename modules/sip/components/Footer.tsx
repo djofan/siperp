@@ -71,7 +71,7 @@ export function Footer({
               Pengajuan Bantuan
             </Link>
             <Link
-              href="/sip/program-bantuan"
+              href="/sip#program"
               className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
             >
               Lihat Program Bantuan

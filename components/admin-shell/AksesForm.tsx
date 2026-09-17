@@ -63,11 +63,11 @@ export function AksesForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {modules.length === 0 ? (
         <p className="text-sm text-foreground/40">Belum ada modul terdaftar.</p>
       ) : (
-        <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <div className="divide-y divide-border rounded-xl bg-surface-muted">
           {modules.map((module) => {
             const state = access[module.id];
             return (

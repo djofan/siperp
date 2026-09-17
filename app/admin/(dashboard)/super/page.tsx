@@ -1,5 +1,8 @@
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
+import { UsersIcon, ShieldIcon, GridIcon } from "@/components/ui/icons";
+import { panelClasses } from "@/components/ui/panel";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatRelativeTime } from "@/lib/utils";
 import { countUsers } from "@/modules/core/users";
 import { countActiveModules } from "@/modules/core/modules";
@@ -21,19 +24,17 @@ export default async function SuperadminOverviewPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Total akun terdaftar" value={totalUsers} />
-        <StatCard label="Modul aktif" value={totalActiveModules} />
-        <StatCard label="Perubahan akses (7 hari)" value={accessChanges7d} />
+        <StatCard icon={<UsersIcon className="h-5 w-5" />} label="Total akun terdaftar" value={totalUsers} />
+        <StatCard icon={<ShieldIcon className="h-5 w-5" />} label="Modul aktif" value={totalActiveModules} />
+        <StatCard icon={<GridIcon className="h-5 w-5" />} label="Perubahan akses (7 hari)" value={accessChanges7d} />
       </div>
 
       <div className="mt-8">
         <h2 className="mb-3 text-sm font-medium text-foreground/60">Aktivitas Terbaru</h2>
         {recentActivity.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border py-12 text-center text-sm text-foreground/40">
-            Belum ada aktivitas.
-          </div>
+          <EmptyState className="py-12">Belum ada aktivitas.</EmptyState>
         ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+          <ul className={panelClasses("divide-y divide-border")}>
             {recentActivity.map((entry) => (
               <li key={entry.id} className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm">
                 <span className="text-foreground">{entry.message}</span>

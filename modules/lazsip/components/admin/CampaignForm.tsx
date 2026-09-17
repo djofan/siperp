@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
+import { staticPanelClasses } from "@/components/ui/panel";
 
 interface CampaignFormValues {
   title: string;
@@ -69,7 +70,7 @@ export function CampaignForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className="flex flex-col gap-5 rounded-3xl border border-lazsip-primary-100 bg-white p-6">
+        <div className={staticPanelClasses("flex flex-col gap-5 p-6")}>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900">
               Judul Campaign<span className="ml-0.5 text-red-600">*</span>
@@ -100,7 +101,7 @@ export function CampaignForm({
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-4 rounded-3xl border border-lazsip-primary-100 bg-white p-6">
+          <div className={staticPanelClasses("flex flex-col gap-4 p-6")}>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900">
                 Target Nominal (Rp)<span className="ml-0.5 text-red-600">*</span>
@@ -140,7 +141,7 @@ export function CampaignForm({
               </select>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-4">
+            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4">
               <span className="text-sm font-medium text-lazsip-primary-900">Pin di halaman Donasi</span>
               <Toggle checked={isPinned} onChange={setIsPinned} label="Pin" />
             </div>

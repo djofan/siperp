@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButton";
+import { staticPanelClasses } from "@/components/ui/panel";
 import type { SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 
 interface FieldDef {
@@ -48,32 +49,34 @@ export function SipSiteContentSectionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4 rounded-2xl border border-sip-primary-100 bg-white p-5">
+    <form onSubmit={handleSubmit} className={staticPanelClasses("p-6 sm:p-8")}>
       <h2 className="text-sm font-semibold text-sip-primary-900">{title}</h2>
-      {fields.map((field) => (
-        <div key={field.key} className="flex flex-col gap-1.5">
-          <label htmlFor={`${sectionKey}-${field.key}`} className="text-xs font-medium text-sip-primary-800/70">
-            {field.label}
-          </label>
-          {field.multiline ? (
-            <textarea
-              id={`${sectionKey}-${field.key}`}
-              rows={4}
-              className="w-full rounded-2xl border border-sip-primary-200 bg-white p-3 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
-              value={values[field.key]}
-              onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-            />
-          ) : (
-            <input
-              id={`${sectionKey}-${field.key}`}
-              className="h-10 rounded-full border border-sip-primary-200 bg-white px-4 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
-              value={values[field.key]}
-              onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
-            />
-          )}
-        </div>
-      ))}
-      <div className="flex items-center gap-3">
+      <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+        {fields.map((field) => (
+          <div key={field.key} className={`flex flex-col gap-1.5 ${field.multiline ? "sm:col-span-2" : ""}`}>
+            <label htmlFor={`${sectionKey}-${field.key}`} className="text-sm font-medium text-sip-primary-900">
+              {field.label}
+            </label>
+            {field.multiline ? (
+              <textarea
+                id={`${sectionKey}-${field.key}`}
+                rows={4}
+                className="w-full rounded-2xl border border-sip-primary-200 bg-white p-3 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+                value={values[field.key]}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+              />
+            ) : (
+              <input
+                id={`${sectionKey}-${field.key}`}
+                className="h-10 rounded-full border border-sip-primary-200 bg-white px-4 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+                value={values[field.key]}
+                onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="mt-6 flex items-center gap-3 border-t border-sip-primary-100 pt-6">
         <SipLoadingButton type="submit" loading={isSubmitting}>
           Simpan
         </SipLoadingButton>

@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
 
-export type SipSiteContentSectionKey = "hero" | "tentang" | "jangkauanBantuan" | "kontak";
+export type SipSiteContentSectionKey =
+  | "hero"
+  | "berita"
+  | "program"
+  | "penyaluranBantuan"
+  | "tentang"
+  | "jangkauanBantuan"
+  | "kontak";
 
 export async function getSiteContent(sectionKey: SipSiteContentSectionKey) {
   const row = await prisma.sipSiteContent.findUnique({ where: { sectionKey } });

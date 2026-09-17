@@ -48,7 +48,7 @@ export function EditAkunForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <FormField label="Nama" htmlFor="edit-name">
         <Input id="edit-name" required value={name} onChange={(e) => setName(e.target.value)} />
       </FormField>
