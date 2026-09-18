@@ -1,32 +1,30 @@
 import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
-import { setDonationStatus } from "@/modules/lazsip/api/donations";
+import { setStatusById } from "@/modules/payment/api/transaction";
+import { prisma } from "@/lib/prisma";
 import { revalidatePaymentViews } from "@/modules/lazsip/api/revalidatePaymentViews";
 
-/**
- * [§7-CHECKPOINT] Endpoint SIMULASI khusus admin selama payment gateway asli belum
- * terpasang (docs/prd-lazsip.md §8). Ini bersama webhook gateway nanti adalah SATU-SATUNYA
- * jalan status donasi berubah jadi paid/failed — tidak boleh dipanggil dari halaman
- * redirect sukses di sisi client. Middleware/proxy tidak melindungi route API secara
- * otomatis, jadi guard superadmin/module_access wajib eksplisit di sini.
- */
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  const trx = await prisma.paymentTransaction.findUnique({ where: { id }, select: { moduleSource: true } });
+  if (!trx) {
+    return NextResponse.json({ error: "Transaksi tidak ditemukan." }, { status: 404 });
+  }
+
   const session = await getSession();
-  if (!hasModuleAccess(session, "lazsip")) {
+  if (!hasModuleAccess(session, trx.moduleSource)) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 
-  const { id } = await params;
   const body = await request.json().catch(() => null);
   if (body?.status !== "paid" && body?.status !== "failed") {
     return NextResponse.json({ error: "status wajib 'paid' atau 'failed'." }, { status: 400 });
   }
 
-  await setDonationStatus(id, body.status);
-  revalidatePaymentViews();
-
+  await setStatusById(id, body.status);
+  if (trx.moduleSource === "lazsip") revalidatePaymentViews();
   return NextResponse.json({ ok: true });
 }

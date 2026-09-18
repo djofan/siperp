@@ -9,7 +9,7 @@ export default async function DonaturPage() {
     <div>
       <AdminPageHeader
         title="Kelola Donatur"
-        description="Rekap otomatis dari transaksi yang berhasil lunas — dihitung langsung dari data transaksi, bukan tabel terpisah, supaya selalu akurat."
+        description="Identitas donatur untuk pendataan admin. Satu nomor WhatsApp menggunakan data donatur yang sama; total kontribusi dihitung dari transaksi lunas, tanpa biaya admin."
       />
       <DonorTable donors={donors} />
     </div>

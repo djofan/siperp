@@ -10,6 +10,7 @@ import { staticPanelClasses } from "@/components/ui/panel";
 export interface TransactionRow {
   id: string;
   type: "donasi" | "zakat";
+  source: "legacy-donation" | "payment" | "zakat";
   label: string;
   donorName: string;
   amount: number;
@@ -149,7 +150,7 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
                       <AdminBadge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</AdminBadge>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      {row.status === "pending" && <TransactionActions id={row.id} type={row.type} />}
+                      {row.status === "pending" && <TransactionActions id={row.id} source={row.source} />}
                     </td>
                   </tr>
                 ))}

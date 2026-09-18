@@ -33,8 +33,8 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
   };
 
   const filtered = useMemo(() => {
-    let rows = donors.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()));
-    if (segment !== "all") rows = rows.filter((d) => d.type === segment);
+    let rows = donors.filter((d) => d.name.toLowerCase().includes(search.toLowerCase()) || d.phone?.includes(search));
+    if (segment !== "all") rows = rows.filter((d) => d.types.some((type) => type === segment));
     rows = [...rows].sort((a, b) =>
       sort === "recent"
         ? b.lastContributionAt.getTime() - a.lastContributionAt.getTime()
@@ -50,7 +50,7 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
   return (
     <div>
       <AdminFilterBar>
-        <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari nama donatur..." />
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari nama atau nomor WhatsApp..." />
         <AdminFilterSelect value={segment} onChange={setSegment} options={SEGMENT_OPTIONS} ariaLabel="Filter segmen" />
         <AdminFilterSelect value={sort} onChange={setSort} options={SORT_OPTIONS} ariaLabel="Urutkan" />
         <AdminFilterResetButton onClick={resetFilters} />
@@ -65,20 +65,22 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
+                  <th className="px-4 py-3.5 font-semibold">Nomor WhatsApp</th>
                   <th className="px-4 py-3.5 font-semibold">Segmen</th>
                   <th className="px-4 py-3.5 font-semibold">Jumlah Transaksi</th>
-                  <th className="px-4 py-3.5 font-semibold">Total Kontribusi</th>
+                  <th className="px-4 py-3.5 font-semibold">Total Lunas</th>
                   <th className="px-4 py-3.5 font-semibold">Transaksi Terakhir</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50">
                 {filtered.map((donor) => (
-                  <tr key={`${donor.type}-${donor.name}`} className="transition-colors hover:bg-lazsip-primary-50/40">
+                  <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40">
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{donor.name}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
                     <td className="px-4 py-3.5">
-                      <AdminBadge tone={donor.type === "zakat" ? "primary" : "secondary"}>
-                        {donor.type === "zakat" ? "Muzakki" : "Donatur"}
-                      </AdminBadge>
+                      {donor.types.map((type) => <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
+                        {type === "zakat" ? "Muzakki" : "Donatur"}
+                      </AdminBadge>)}
                     </td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60">{donor.contributionCount}x</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{formatRupiah(donor.totalContribution)}</td>

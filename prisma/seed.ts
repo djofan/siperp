@@ -1,5 +1,8 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import "@/modules/lazsip/api/wiring";
+import "@/modules/sip/api/wiring";
+import "@/modules/payment/api/wiring";
 import { prisma } from "@/lib/prisma";
 import { seedLazsipModuleRegistration } from "@/modules/lazsip/api/seed";
 import { seedSipModuleRegistration } from "@/modules/sip/api/seed";

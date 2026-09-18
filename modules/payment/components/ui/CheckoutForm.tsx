@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { PaymentTransaction } from "@/generated/prisma/client";
 
-export function CheckoutForm({ transaction }: { transaction: PaymentTransaction }) {
+export function CheckoutForm({ transaction }: { transaction: { id: string; status: string } }) {
   const [loading, setLoading] = useState(false);
 
   async function handlePay() {

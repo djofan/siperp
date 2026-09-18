@@ -32,7 +32,10 @@ export async function calculateZakatFitrah(jiwaCount: number) {
 }
 
 export async function listZakatPaymentsForAdmin() {
-  return prisma.lazsipZakatPayment.findMany({ orderBy: { createdAt: "desc" } });
+  const payments = await prisma.lazsipZakatPayment.findMany({
+    orderBy: { createdAt: "desc" }, include: { donor: { select: { name: true } } },
+  });
+  return payments.map((p) => ({ ...p, donorName: p.donor.name }));
 }
 
 interface CreateZakatPaymentInput {
@@ -47,7 +50,7 @@ interface CreateZakatPaymentInput {
 export async function createZakatPayment(input: CreateZakatPaymentInput) {
   return prisma.lazsipZakatPayment.create({
     data: {
-      donorName: input.donorName,
+      donor: { create: { name: input.donorName } },
       zakatType: input.zakatType,
       amount: input.amount,
       goldPriceSnapshot: input.zakatType === "maal" ? input.goldPriceSnapshot ?? 0 : null,

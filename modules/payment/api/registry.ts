@@ -14,7 +14,7 @@ export function registerConfirmationHandler(
 export async function notifySourceModule(trx: PaymentTransaction) {
   const handler = handlers[trx.moduleSource];
   if (!handler) {
-    console.warn(`Tidak ada handler terdaftar untuk moduleSource: ${trx.moduleSource}`);
+    // Modules deriving totals from transactions need no callback.
     return;
   }
   await handler(trx);

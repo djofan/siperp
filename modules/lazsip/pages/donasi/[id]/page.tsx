@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCampaignById, listCampaigns } from "@/modules/lazsip/api/campaigns";
+import { getCampaignById, listCampaigns, listCampaignDonorsPublic } from "@/modules/lazsip/api/campaigns";
 import { listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
@@ -22,6 +22,7 @@ export default async function LazsipDonasiDetailPage({
 
   const percent = campaign.targetAmount ? (campaign.currentAmount / campaign.targetAmount) * 100 : 0;
   const allCampaigns = await listCampaigns();
+  const donors = await listCampaignDonorsPublic(id);
   const otherCampaigns = allCampaigns.filter((c) => c.id !== id && c.status === "active").slice(0, 3);
 
   return (
@@ -47,6 +48,19 @@ export default async function LazsipDonasiDetailPage({
           <div className="mt-8 flex flex-col gap-5">
             <p className="whitespace-pre-line text-base leading-[1.7] text-lazsip-primary-900/80">{campaign.description}</p>
           </div>
+          <section className="mt-10 rounded-2xl border border-lazsip-primary-100 bg-white p-6" aria-labelledby="campaign-donors">
+            <h2 id="campaign-donors" className="text-xl font-bold text-lazsip-primary-900">Donatur</h2>
+            {donors.length ? (
+              <ul className="mt-4 divide-y divide-lazsip-primary-100">
+                {donors.map((donor) => (
+                  <li key={donor.id} className="flex items-start justify-between gap-4 py-3 text-sm text-lazsip-primary-800">
+                    <span className="min-w-0 break-words">{donor.name}</span>
+                    <span className="shrink-0 font-semibold tabular-nums">{formatRupiah(donor.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : <p className="mt-3 text-sm text-lazsip-primary-800/70">Belum ada donasi yang terkonfirmasi.</p>}
+          </section>
         </article>
 
         <div className="lg:pt-6">
