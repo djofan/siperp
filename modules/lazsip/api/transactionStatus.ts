@@ -17,6 +17,18 @@ export interface TransactionStatusResult {
  * sensitif — siapa pun yang tahu kode ini memang pemilik transaksinya (analog resi belanja).
  */
 export async function getTransactionStatus(code: string): Promise<TransactionStatusResult | null> {
+  const payment = await prisma.paymentTransaction.findFirst({
+    where: { id: code, moduleSource: "lazsip", sourceType: "campaign" },
+    select: { id: true, sourceId: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true },
+  });
+  if (payment) {
+    const campaign = await prisma.lazsipCampaign.findUnique({ where: { id: payment.sourceId }, select: { title: true } });
+    return {
+      found: true, code: payment.id, type: "donasi", label: campaign?.title ?? "Donasi",
+      amount: payment.amount, adminFee: payment.adminFee, paymentMethod: payment.paymentMethod,
+      status: payment.status, createdAt: payment.createdAt,
+    };
+  }
   const donation = await prisma.lazsipDonation.findUnique({
     where: { id: code },
     include: { campaign: { select: { title: true } } },

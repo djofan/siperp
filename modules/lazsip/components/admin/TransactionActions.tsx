@@ -5,14 +5,20 @@ import { useRouter } from "next/navigation";
 
 export function TransactionActions({
   id,
-  type,
+  source,
 }: {
   id: string;
-  type: "donasi" | "zakat";
+  source: "legacy-donation" | "payment" | "zakat";
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [actioning, setActioning] = useState<"paid" | "failed" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const endpoint = source === "payment"
+    ? `/api/payment/simulate-payment/${id}`
+    : source === "legacy-donation"
+      ? `/api/lazsip/donations/${id}/simulate-payment`
+      : `/api/lazsip/zakat/${id}/simulate-payment`;
 
   function simulate(status: "paid" | "failed") {
     if (
@@ -23,23 +29,31 @@ export function TransactionActions({
       return;
     }
     setActioning(status);
+    setError(null);
     startTransition(async () => {
-      const endpoint =
-        type === "donasi"
-          ? `/api/lazsip/donations/${id}/simulate-payment`
-          : `/api/lazsip/zakat/${id}/simulate-payment`;
-      await fetch(endpoint, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      setActioning(null);
-      router.refresh();
+      try {
+        const response = await fetch(endpoint, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status }),
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          setError(body?.error ?? "Gagal memperbarui transaksi.");
+          return;
+        }
+        router.refresh();
+      } catch {
+        setError("Koneksi gagal. Silakan coba lagi.");
+      } finally {
+        setActioning(null);
+      }
     });
   }
 
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex flex-wrap justify-end gap-2">
+      {error && <p role="alert" className="w-full text-xs text-danger">{error}</p>}
       <button
         type="button"
         onClick={() => simulate("paid")}

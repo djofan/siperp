@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
 
 const QUICK_NOMINAL = [50_000, 100_000, 250_000, 500_000, 1_000_000];
 
@@ -13,6 +15,7 @@ interface FeeRef {
 }
 
 export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeRefs: FeeRef[] }) {
+  const router = useRouter();
   const [nominal, setNominal] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(feeRefs[0]?.method ?? "");
   const [coversFee, setCoversFee] = useState(true);
@@ -21,8 +24,6 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
   const [kontak, setKontak] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [transactionCode, setTransactionCode] = useState<string | null>(null);
 
   const nominalNumber = Number(nominal.replace(/[^0-9]/g, "")) || 0;
   const method = feeRefs.find((m) => m.method === paymentMethod) ?? null;
@@ -38,51 +39,52 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (nominalNumber <= 0 || !paymentMethod) return;
+    if (submitting) return;
+    if (nominalNumber <= 0 || !method) {
+      setError(!method ? "Metode pembayaran belum tersedia. Silakan hubungi pengelola." : "Masukkan nominal donasi terlebih dahulu.");
+      return;
+    }
+    if (!nama.trim() || !normalizeDonorPhone(kontak)) {
+      setError("Nama dan nomor WhatsApp yang valid wajib diisi, termasuk untuk donasi anonim.");
+      return;
+    }
     setError(null);
     setSubmitting(true);
 
-    const response = await fetch("/api/lazsip/donations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ campaignId, donorName: nama, amount: nominalNumber, coversFee, isAnonymous: anonim, paymentMethod }),
-    });
+    try {
+      const response = await fetch("/api/payment/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleSource: "lazsip",
+          sourceType: "campaign",
+          sourceId: campaignId,
+          fundType: "infak",
+          donorName: nama.trim(),
+          donorPhone: kontak,
+          isAnonymous: anonim,
+          amount: nominalNumber,
+          coversFee,
+          paymentMethod,
+        }),
+      });
 
-    setSubmitting(false);
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? "Gagal mengirim donasi.");
+        return;
+      }
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengirim donasi.");
-      return;
+      const data = await response.json();
+      if (typeof data.transactionId !== "string" || !data.transactionId) {
+        throw new Error("Respons checkout tidak valid.");
+      }
+      router.push(`/payment/checkout/${data.transactionId}`);
+    } catch {
+      setError("Gagal membuka pembayaran. Periksa koneksi lalu coba lagi.");
+    } finally {
+      setSubmitting(false);
     }
-
-    const data = await response.json();
-    setTransactionCode(data.id);
-    setSubmitted(true);
-  }
-
-  if (submitted) {
-    return (
-      <div
-        id="form"
-        className="scroll-mt-28 flex flex-col gap-3 rounded-3xl border border-lazsip-primary-100 bg-white p-6 sm:p-8"
-      >
-        <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900">Terima kasih!</h2>
-        <p className="text-sm leading-relaxed text-lazsip-primary-800/70">
-          Donasimu tercatat dan menunggu konfirmasi pembayaran. Lakukan pembayaran sesuai metode yang dipilih —
-          status akan diperbarui begitu tim LAZSIP mengonfirmasi.
-        </p>
-        {transactionCode && (
-          <div className="rounded-2xl bg-lazsip-primary-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50">Kode Transaksi</p>
-            <p className="mt-1 break-all font-mono text-sm font-semibold text-lazsip-primary-900">{transactionCode}</p>
-            <p className="mt-1.5 text-xs text-lazsip-primary-800/60">
-              Simpan kode ini untuk cek status pembayaran lewat menu &quot;Cek Status&quot; di beranda.
-            </p>
-          </div>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -126,7 +128,7 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
       <div className="flex flex-col gap-2.5">
         <label className="text-sm font-medium text-lazsip-primary-900">Metode pembayaran</label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {feeRefs.length === 0 && <p className="col-span-2 text-xs text-lazsip-primary-800/50">Belum ada metode pembayaran.</p>}
+          {feeRefs.length === 0 && <p role="status" className="sm:col-span-2 text-sm text-lazsip-primary-800/70">Metode pembayaran belum tersedia. Silakan hubungi pengelola untuk mengaktifkannya.</p>}
           {feeRefs.map((m) => (
             <button
               key={m.method}
@@ -161,25 +163,26 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor="donasi-nama" className="text-sm font-medium text-lazsip-primary-900">
-            Nama
-          </label>
+          <label htmlFor="donasi-nama" className="text-sm font-medium text-lazsip-primary-900">Nama</label>
           <input
             id="donasi-nama"
-            disabled={anonim}
-            value={anonim ? "Hamba Allah" : nama}
+            required
+            maxLength={191}
+            autoComplete="name"
+            value={nama}
             onChange={(e) => setNama(e.target.value)}
             placeholder="Nama Anda"
             className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 disabled:bg-lazsip-primary-50 disabled:text-lazsip-primary-800/50"
           />
         </div>
         <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor="donasi-kontak" className="text-sm font-medium text-lazsip-primary-900">
-            Nomor WhatsApp
-          </label>
+          <label htmlFor="donasi-kontak" className="text-sm font-medium text-lazsip-primary-900">Nomor WhatsApp</label>
           <input
             id="donasi-kontak"
-            inputMode="numeric"
+            required
+            type="tel"
+            autoComplete="tel"
+            maxLength={25}
             value={kontak}
             onChange={(e) => setKontak(e.target.value)}
             placeholder="08xxxxxxxxxx"
@@ -195,7 +198,7 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
           onChange={(e) => setAnonim(e.target.checked)}
           className="h-4 w-4 rounded border-lazsip-primary-300 text-lazsip-primary-700 focus:ring-lazsip-primary-400"
         />
-        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya (donasi sebagai Hamba Allah)</span>
+        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya di daftar donatur publik (Hamba Allah). Nama asli dan nomor WhatsApp tetap dicatat dan hanya dapat dilihat admin.</span>
       </label>
 
       <div className="flex flex-col gap-2 border-t border-lazsip-primary-100 pt-4 text-sm">
@@ -213,11 +216,11 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
       <button
         type="submit"
-        disabled={submitting || nominalNumber <= 0}
+        disabled={submitting || nominalNumber <= 0 || !method}
         className="inline-flex items-center justify-center rounded-full bg-lazsip-primary-900 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? "Memproses..." : `Donasi ${nominalNumber > 0 ? formatRupiah(total) : "Sekarang"}`}

@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { listCampaigns } from "@/modules/lazsip/api/campaigns";
+import { listDonationsForAdmin, listPaymentDonationsForAdmin } from "@/modules/lazsip/api/donations";
+import { listZakatPaymentsForAdmin } from "@/modules/lazsip/api/zakat";
 
 function startOfCurrentMonth() {
   const now = new Date();
@@ -15,7 +18,7 @@ export async function getThisMonthTotals() {
   const lastMonthSince = startOfLastMonth();
   const thisMonthEnd = since;
 
-  const [donationSum, zakatSum, lastMonthDonationSum, lastMonthZakatSum] = await Promise.all([
+  const [donationSum, zakatSum, lastMonthDonationSum, lastMonthZakatSum, paymentSum, lastMonthPaymentSum] = await Promise.all([
     prisma.lazsipDonation.aggregate({ where: { status: "paid", createdAt: { gte: since } }, _sum: { amount: true } }),
     prisma.lazsipZakatPayment.aggregate({ where: { status: "paid", createdAt: { gte: since } }, _sum: { amount: true } }),
     prisma.lazsipDonation.aggregate({
@@ -26,36 +29,34 @@ export async function getThisMonthTotals() {
       where: { status: "paid", createdAt: { gte: lastMonthSince, lt: thisMonthEnd } },
       _sum: { amount: true },
     }),
+    prisma.paymentTransaction.aggregate({
+      where: { moduleSource: "lazsip", sourceType: "campaign", status: "paid", createdAt: { gte: since } }, _sum: { amount: true },
+    }),
+    prisma.paymentTransaction.aggregate({
+      where: { moduleSource: "lazsip", sourceType: "campaign", status: "paid", createdAt: { gte: lastMonthSince, lt: thisMonthEnd } }, _sum: { amount: true },
+    }),
   ]);
 
   return {
-    donations: donationSum._sum.amount ?? 0,
+    donations: (donationSum._sum.amount ?? 0) + (paymentSum._sum.amount ?? 0),
     zakat: zakatSum._sum.amount ?? 0,
-    lastMonthDonations: lastMonthDonationSum._sum.amount ?? 0,
+    lastMonthDonations: (lastMonthDonationSum._sum.amount ?? 0) + (lastMonthPaymentSum._sum.amount ?? 0),
     lastMonthZakat: lastMonthZakatSum._sum.amount ?? 0,
   };
 }
 
 export async function getTopCampaigns(limit = 5) {
-  return prisma.lazsipCampaign.findMany({
-    where: { status: "active" },
-    orderBy: { currentAmount: "desc" },
-    take: limit,
-  });
+  const campaigns = await listCampaigns();
+  return campaigns.filter((c) => c.status === "active").sort((a, b) => b.currentAmount - a.currentAmount).slice(0, limit);
 }
 
 export async function getRecentTransactions(limit = 10) {
-  const [donations, zakatPayments] = await Promise.all([
-    prisma.lazsipDonation.findMany({
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      include: { campaign: { select: { title: true } } },
-    }),
-    prisma.lazsipZakatPayment.findMany({ take: limit, orderBy: { createdAt: "desc" } }),
+  const [donations, paymentDonations, zakatPayments] = await Promise.all([
+    listDonationsForAdmin(), listPaymentDonationsForAdmin(), listZakatPaymentsForAdmin(),
   ]);
 
   const merged = [
-    ...donations.map((d) => ({
+    ...[...donations, ...paymentDonations].map((d) => ({
       id: d.id,
       label: `Donasi — ${d.campaign.title}`,
       donorName: d.donorName,
@@ -81,25 +82,26 @@ export async function countNewApplicants() {
 }
 
 export async function getDashboardCounts() {
-  const [activeCampaigns, totalBeneficiaries, totalPartners, pendingDonations, pendingZakat, donorNames, muzakkiNames] =
+  const [activeCampaigns, totalBeneficiaries, totalPartners, pendingDonations, pendingZakat, pendingPayments, totalDonors] =
     await Promise.all([
       prisma.lazsipCampaign.count({ where: { status: "active" } }),
       prisma.lazsipBeneficiary.count(),
       prisma.lazsipPartner.count(),
       prisma.lazsipDonation.count({ where: { status: "pending" } }),
       prisma.lazsipZakatPayment.count({ where: { status: "pending" } }),
-      prisma.lazsipDonation.findMany({ where: { status: "paid" }, select: { donorName: true }, distinct: ["donorName"] }),
-      prisma.lazsipZakatPayment.findMany({ where: { status: "paid" }, select: { donorName: true }, distinct: ["donorName"] }),
+      prisma.paymentTransaction.count({ where: { moduleSource: "lazsip", status: "pending" } }),
+      prisma.paymentDonor.count({ where: { OR: [
+        { transactions: { some: { moduleSource: "lazsip" } } },
+        { donations: { some: {} } }, { zakatPayments: { some: {} } },
+      ] } }),
     ]);
-
-  const distinctDonors = new Set([...donorNames.map((d) => d.donorName), ...muzakkiNames.map((d) => d.donorName)]);
 
   return {
     activeCampaigns,
     totalBeneficiaries,
     totalPartners,
-    pendingTransactions: pendingDonations + pendingZakat,
-    totalDonors: distinctDonors.size,
+    pendingTransactions: pendingDonations + pendingZakat + pendingPayments,
+    totalDonors,
   };
 }
 
@@ -109,13 +111,17 @@ export async function getDailyInflow(days = 30) {
   since.setDate(since.getDate() - (days - 1));
   since.setHours(0, 0, 0, 0);
 
-  const [donations, zakatPayments] = await Promise.all([
+  const [donations, zakatPayments, payments] = await Promise.all([
     prisma.lazsipDonation.findMany({
       where: { status: "paid", createdAt: { gte: since } },
       select: { amount: true, createdAt: true },
     }),
     prisma.lazsipZakatPayment.findMany({
       where: { status: "paid", createdAt: { gte: since } },
+      select: { amount: true, createdAt: true },
+    }),
+    prisma.paymentTransaction.findMany({
+      where: { moduleSource: "lazsip", sourceType: "campaign", status: "paid", createdAt: { gte: since } },
       select: { amount: true, createdAt: true },
     }),
   ]);
@@ -127,7 +133,7 @@ export async function getDailyInflow(days = 30) {
     buckets.set(day.toISOString().slice(0, 10), 0);
   }
 
-  for (const row of [...donations, ...zakatPayments]) {
+  for (const row of [...donations, ...zakatPayments, ...payments]) {
     const key = row.createdAt.toISOString().slice(0, 10);
     buckets.set(key, (buckets.get(key) ?? 0) + row.amount);
   }

@@ -1,10 +1,3 @@
-import { registerConfirmationHandler } from "@/modules/payment/api/registry";
-import { prisma } from "@/lib/prisma";
-
-registerConfirmationHandler("lazsip", async (trx) => {
-  if (trx.sourceType !== "campaign") return;
-  await prisma.lazsipCampaign.update({
-    where: { id: trx.sourceId },
-    data: { currentAmount: { increment: trx.amount } },
-  });
-});
+// Campaign totals are derived from paid transactions when read. No increment
+// callback is needed, so retried confirmations can never inflate the balance.
+export {};

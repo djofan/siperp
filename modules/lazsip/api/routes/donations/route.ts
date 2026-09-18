@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCampaignById } from "@/modules/lazsip/api/campaigns";
 import { createDonation } from "@/modules/lazsip/api/donations";
+import { DonationValidationError } from "@/modules/lazsip/api/campaignCheckout";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -24,16 +25,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Metode pembayaran wajib dipilih." }, { status: 400 });
   }
 
-  const donorName = isAnonymous ? "Hamba Allah" : donorNameRaw || "Hamba Allah";
+  try {
+    const donation = await createDonation({
+      campaignId,
+      donorName: donorNameRaw,
+      donorPhone: typeof body?.donorPhone === "string" ? body.donorPhone : "",
+      amount,
+      coversFee,
+      isAnonymous,
+      paymentMethod,
+    });
 
-  const donation = await createDonation({
-    campaignId,
-    donorName,
-    amount,
-    coversFee,
-    isAnonymous,
-    paymentMethod,
-  });
-
-  return NextResponse.json({ ok: true, id: donation.id }, { status: 201 });
+    return NextResponse.json({ ok: true, id: donation.id }, { status: 201 });
+  } catch (error) {
+    if (error instanceof DonationValidationError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+    return NextResponse.json({ error: "Gagal membuat donasi." }, { status: 500 });
+  }
 }

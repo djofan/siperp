@@ -1,70 +1,56 @@
 import { prisma } from "@/lib/prisma";
 
-/**
- * "Donor" sengaja tidak disimpan sebagai tabel tersendiri (beda dari daftar entitas di
- * docs/prd-lazsip.md §5) — dihitung langsung dari transaksi `paid` supaya tidak ada risiko
- * total kontribusi drift dari sumber aslinya (Donation/ZakatPayment). Donatur di sini
- * diidentifikasi dari donorName, bukan akun terdaftar (donatur tidak login).
- */
 export interface DonorSummary {
+  id: string;
   name: string;
-  type: "infaq" | "zakat";
+  phone: string | null;
+  types: ("infaq" | "zakat")[];
   totalContribution: number;
   contributionCount: number;
   lastContributionAt: Date;
 }
 
+/** Admin only: one row per identity, including donors whose first payment is pending. */
 export async function listDonors(): Promise<DonorSummary[]> {
-  const [donations, zakatPayments] = await Promise.all([
-    prisma.lazsipDonation.groupBy({
-      by: ["donorName"],
-      where: { status: "paid" },
-      _sum: { amount: true },
-      _count: { _all: true },
-      _max: { createdAt: true },
-    }),
-    prisma.lazsipZakatPayment.groupBy({
-      by: ["donorName"],
-      where: { status: "paid" },
-      _sum: { amount: true },
-      _count: { _all: true },
-      _max: { createdAt: true },
-    }),
-  ]);
-
-  const infaqDonors: DonorSummary[] = donations.map((row) => ({
-    name: row.donorName,
-    type: "infaq",
-    totalContribution: row._sum.amount ?? 0,
-    contributionCount: row._count._all,
-    lastContributionAt: row._max.createdAt ?? new Date(0),
-  }));
-
-  const zakatDonors: DonorSummary[] = zakatPayments.map((row) => ({
-    name: row.donorName,
-    type: "zakat",
-    totalContribution: row._sum.amount ?? 0,
-    contributionCount: row._count._all,
-    lastContributionAt: row._max.createdAt ?? new Date(0),
-  }));
-
-  return [...infaqDonors, ...zakatDonors].sort(
-    (a, b) => b.totalContribution - a.totalContribution
-  );
+  const donors = await prisma.paymentDonor.findMany({
+    where: { OR: [
+      { transactions: { some: { moduleSource: "lazsip" } } },
+      { donations: { some: {} } },
+      { zakatPayments: { some: {} } },
+    ] },
+    include: {
+      transactions: { where: { moduleSource: "lazsip" }, select: { fundType: true, amount: true, status: true, createdAt: true } },
+      donations: { select: { amount: true, status: true, createdAt: true } },
+      zakatPayments: { select: { amount: true, status: true, createdAt: true } },
+    },
+  });
+  return donors.map((d) => {
+    const payments = [...d.transactions, ...d.donations, ...d.zakatPayments];
+    const types: DonorSummary["types"] = [];
+    if (d.donations.length || d.transactions.some((t) => t.fundType !== "zakat")) types.push("infaq");
+    if (d.zakatPayments.length || d.transactions.some((t) => t.fundType === "zakat")) types.push("zakat");
+    return {
+      id: d.id, name: d.name, phone: d.phone, types,
+      totalContribution: payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + p.amount, 0),
+      contributionCount: payments.length,
+      lastContributionAt: new Date(Math.max(...payments.map((p) => p.createdAt.getTime()))),
+    };
+  }).sort((a, b) => b.totalContribution - a.totalContribution);
 }
 
 export async function getTotalDonationsPaid() {
-  const result = await prisma.lazsipDonation.aggregate({
-    where: { status: "paid" },
-    _sum: { amount: true },
-  });
-  return result._sum.amount ?? 0;
+  const [legacy, payments] = await Promise.all([
+    prisma.lazsipDonation.aggregate({ where: { status: "paid" }, _sum: { amount: true } }),
+    prisma.paymentTransaction.aggregate({
+      where: { moduleSource: "lazsip", sourceType: "campaign", status: "paid" }, _sum: { amount: true },
+    }),
+  ]);
+  return (legacy._sum.amount ?? 0) + (payments._sum.amount ?? 0);
 }
 
 export async function getTotalZakatPaid() {
   const result = await prisma.lazsipZakatPayment.aggregate({
-    where: { status: "paid" },
-    _sum: { amount: true },
+    where: { status: "paid" }, _sum: { amount: true },
   });
   return result._sum.amount ?? 0;
 }

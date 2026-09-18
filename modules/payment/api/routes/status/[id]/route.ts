@@ -3,9 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const transaction = await getTransactionStatus(params.id);
+  const { id } = await params;
+  const transaction = await getTransactionStatus(id);
 
   if (!transaction) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
