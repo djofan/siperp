@@ -4,7 +4,8 @@ export const metadata = { title: "Admin Academy", robots: { index: false, follow
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const user = await requireAcademyAdmin();
   return <AdminShellChrome userName={user.name} groups={[
-    { heading: "Academy", items: [{ href: "/admin/academy", label: "Ringkasan" }, { href: "/admin/academy/program", label: "Program & materi" }, { href: "/admin/academy/kuis", label: "Kuis" }] },
+    { heading: "Academy", items: [{ href: "/admin/academy", label: "Ringkasan" }, { href: "/admin/academy/program", label: "Program & materi" }, { href: "/admin/academy/kuis", label: "Kuis" },
+      { href: "/admin/academy/peserta", label: "Peserta & progres" }, { href: "/admin/academy/sertifikat", label: "Kelulusan & sertifikat" }, { href: "/admin/academy/pengaturan", label: "Pengaturan" }] },
     { heading: "Navigasi", items: [{ href: "/admin", label: "Dashboard Core" }, { href: "/academy", label: "Lihat Academy" }] },
   ]}>{children}</AdminShellChrome>;
 }

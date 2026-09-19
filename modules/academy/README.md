@@ -8,10 +8,11 @@ Modul memakai datasource **MySQL** Core, Prisma Client bersama, dan sesi Core.
 
 - Schema dan registrasi seed tersedia.
 - Halaman publik dan peserta selesai dan telah di-merge ke main.
-- Migrasi MySQL dan seed sudah dijalankan oleh pengelola (konfirmasi pengguna).
-  Namun pemeriksaan database lokal dari `.env` menemukan registrasi Core
-  `Module.slug = "academy"` belum tersedia. Registrasi permanen perlu diperiksa
-  sebelum pemakaian; pengujian tidak menjalankan seed.
+- Migrasi MySQL sudah dijalankan oleh pengelola (konfirmasi pengguna).
+  Registrasi permanen Core `Module.slug = "academy"` sudah dibuat melalui
+  `seedAcademyModuleRegistration()` atas persetujuan pengelola. Hasil verifikasi:
+  nama Zakat Academy, modul aktif, maintenance nonaktif. Registrasi khusus ini
+  tidak menjalankan ulang seed akun atau memberikan ModuleAccess kepada user.
 - Tahap 2 admin: implementasi ringkasan, CRUD program/bab/materi, lampiran berbasis
   URL, publikasi, pencarian/paginasi program, dan urutan manual tersedia.
 - Verifikasi tahap 2: 12 tes unit, ESLint, TypeScript, dan build produksi lulus.
@@ -30,8 +31,17 @@ Modul memakai datasource **MySQL** Core, Prisma Client bersama, dan sesi Core.
   pengeditan/penghapusan soal; percobaan lama dan baru memakai versi kunci yang
   tepat. Respons peserta tidak membocorkan kunci sebelum selesai atau hasil
   milik peserta lain. Fixture dibersihkan setelah pengujian.
-- Tahap 4 (peserta/progres, completion record/sertifikat, pengaturan) belum
-  dikerjakan; menunggu review dan persetujuan tahap kuis.
+- Tahap 4 tersedia: daftar enrollment dengan pencarian/paginasi, detail progres
+  materi dan ringkasan kuis, catatan kelulusan, pengelolaan tautan sertifikat,
+  serta mode pemeliharaan. Siap direview pengelola.
+- Verifikasi akhir: 17 tes unit, 3 tes integrasi MySQL, dan 2 tes HTTP lulus.
+  ESLint, TypeScript, dan build produksi lulus. Enam belas halaman admin diuji.
+  Jumlah SQL pada service daftar tetap saat naik dari 1 ke 20 baris: 7 untuk
+  enrollment, 11 untuk completion record (di luar pemeriksaan sesi/akses).
+  Pengujian mencakup perubahan kurikulum, kelulusan usang, retake, tanggal
+  selesai, batas paginasi, peserta nonaktif, dan record tanpa enrollment.
+  Fixture dibersihkan; tes pengaturan memakai rollback agar tidak mengubah
+  maintenance asli. Review visual dan interaksi browser tetap perlu dilakukan.
 
 ## Rute
 
@@ -57,6 +67,9 @@ Modul memakai datasource **MySQL** Core, Prisma Client bersama, dan sesi Core.
 | `.../bab/[chapterId]/materi/baru`, `.../materi/[lessonId]` | Tambah/edit/hapus materi dan lampiran |
 | `/admin/academy/kuis` | Daftar, pencarian, paginasi kuis lintas program |
 | `.../bab/[chapterId]/kuis/baru`, `.../kuis/[quizId]` | Tambah/edit/hapus kuis, pertanyaan, opsi, urutan dan kunci jawaban |
+| `/admin/academy/peserta`, `.../peserta/[enrollmentId]` | Daftar enrollment, progres materi, ringkasan nilai kuis |
+| `/admin/academy/sertifikat`, `.../sertifikat/[recordId]` | Catatan kelulusan, hitung ulang status, kelola tautan sertifikat |
+| `/admin/academy/pengaturan` | Mode pemeliharaan dan status registrasi Core |
 
 File `app/(public)/academy` hanya jembatan ke `pages/`.
 File `app/admin/academy` hanya jembatan ke `admin/pages/`.
@@ -112,13 +125,34 @@ Mutasi memakai Server Actions di `api/actions.ts`; tidak ada backend terpisah.
 - URL sertifikat dari pengelola berada di `CompletionRecord.certificateUrl` per course.
   `legacyCertificateUrl` disimpan untuk penanganan data lama, bukan ditampilkan otomatis
   sebagai sertifikat semua program.
+- Daftar peserta menampilkan satu baris per enrollment, maksimal 20 per halaman.
+  Ringkasan dihitung dengan dua query agregat MySQL berparameter untuk enrollment
+  halaman tersebut, tanpa query per peserta. Detail materi/kuis juga dibatasi
+  20 item per halaman. Ringkasan kuis mengambil nilai terbaik dan jumlah percobaan
+  selesai dengan agregasi, tanpa membaca `answers`.
+- Completion record dibuat/diperbarui dari detail enrollment. Status dan tanggal
+  kelulusan selalu dihitung dari kurikulum/progres terbaru; tidak dapat diisi
+  manual. Kelulusan memerlukan program terpublikasi. Tanggal selesai memakai
+  tanggal progres materi terakhir dan kelulusan pertama masing-masing kuis,
+  sehingga retake berikutnya tidak memundurkan tanggal kelulusan.
+- Tautan sertifikat baru hanya dapat disimpan untuk peserta aktif, terdaftar,
+  dan lulus dengan tanggal selesai yang tersedia. Penyimpanan dilakukan dalam
+  transaksi serializable. Daftar catatan membedakan status tersimpan dan kondisi
+  saat ini, termasuk record lama tanpa enrollment. Tautan dapat dikosongkan,
+  dan record dapat dihapus tanpa menghapus progres/riwayat kuis.
+  Penghapusan record/tautan bukan pencabutan sertifikat otomatis: peserta yang
+  masih memenuhi syarat tetap dapat mencetak sertifikat melalui halaman peserta.
+- Pengaturan admin hanya mengubah key `maintenance_mode`, tidak menerima key
+  arbitrer atau mengubah registrasi/aktivasi modul Core. Maintenance memblokir
+  peserta, tetapi admin tetap dapat masuk; timer percobaan yang berjalan tidak
+  dihentikan. Tidak ada seed/migrasi yang dijalankan oleh halaman pengaturan.
 - Tidak ada checkout premium. Jika ditambahkan, transaksi wajib melalui modul
   payment dan callback `registerConfirmationHandler("academy", ...)` yang idempoten.
 
 ## Verifikasi
 
 ```sh
-npx tsx --test modules/academy/api/policy.test.ts modules/academy/api/admin-validation.test.ts modules/academy/api/admin-quiz-validation.test.ts
+npx tsx --test modules/academy/api/policy.test.ts modules/academy/api/admin-validation.test.ts modules/academy/api/admin-quiz-validation.test.ts modules/academy/api/admin-participant-validation.test.ts
 npx eslint modules/academy "app/(public)/academy" app/admin/academy
 npx next typegen
 npx tsc --noEmit --incremental false
@@ -129,7 +163,7 @@ non-production; fixture dibersihkan berdasarkan ID yang dibuat pengujian:
 
 ```powershell
 $env:ACADEMY_MYSQL_TEST="1"
-node --conditions=react-server --import tsx --test modules/academy/api/admin-curriculum.integration.test.ts modules/academy/api/admin-quizzes.integration.test.ts
+node --conditions=react-server --import tsx --test modules/academy/api/admin-curriculum.integration.test.ts modules/academy/api/admin-quizzes.integration.test.ts modules/academy/api/admin-participants.integration.test.ts
 Remove-Item Env:ACADEMY_MYSQL_TEST
 ```
 
@@ -165,3 +199,11 @@ Setelah MySQL aktif dan tersedianya konten uji melalui admin, periksa:
 12. Mulai kuis sebagai peserta, edit soal/kunci/durasi sebagai admin, lalu
     selesaikan percobaan lama. Soal dan nilainya harus mengikuti snapshot awal.
     Percobaan berikutnya memakai perubahan baru.
+13. Cari peserta/program, buka halaman kedua daftar dan detail, periksa bahwa
+    ringkasan hanya menghitung materi/kuis terpublikasi dan kuis berulang dihitung
+    satu kali untuk kelulusan. Data jawaban kuis tidak tampil di detail peserta.
+14. Hitung ulang catatan kelulusan dari detail peserta, simpan/hapus tautan
+    sertifikat, lalu tambahkan materi wajib baru. Status terkini harus berubah
+    dan tautan sertifikat tidak dapat diberikan sebelum syarat kembali terpenuhi.
+15. Pada waktu pemeliharaan yang disepakati, aktifkan maintenance dan periksa
+    peserta dialihkan ke halaman pemeliharaan sementara admin tetap dapat masuk.
