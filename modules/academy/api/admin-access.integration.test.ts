@@ -18,6 +18,7 @@ test("admin HTTP pages enforce current database access, including stale sessions
   const { createSessionToken, SESSION_COOKIE_NAME } = await import("@/lib/session");
   let userId: string | undefined;
   let courseId: string | undefined;
+  let participantProfileId: string | undefined;
   const moduleIds: string[] = [];
   const suffix = randomUUID();
   try {
@@ -70,9 +71,16 @@ test("admin HTTP pages enforce current database access, including stale sessions
       ] } } },
     } });
     const quizPath = chapterPath + "/kuis/" + quiz.id;
+    const profile = await prisma.zakatAcademyProfile.create({ data: { userId } });
+    participantProfileId = profile.id;
+    const enrollment = await prisma.zakatAcademyEnrollment.create({ data: { profileId: profile.id, courseId } });
+    const completion = await prisma.zakatAcademyCompletionRecord.create({ data: { profileId: profile.id, courseId } });
+    const participantPath = "/admin/academy/peserta/" + enrollment.id;
+    const certificatePath = "/admin/academy/sertifikat/" + completion.id;
     for (const path of ["/admin/academy", "/admin/academy/program", "/admin/academy/program/baru", coursePath,
       coursePath + "/bab/baru", chapterPath, chapterPath + "/materi/baru", lessonPath,
-      "/admin/academy/kuis", chapterPath + "/kuis/baru", quizPath]) {
+      "/admin/academy/kuis", chapterPath + "/kuis/baru", quizPath,
+      "/admin/academy/peserta", participantPath, "/admin/academy/sertifikat", certificatePath, "/admin/academy/pengaturan"]) {
       const response = await request(path);
       assert.equal(response.status, 200, path);
       assert.ok(response.body.includes("Program &amp; materi"), "Admin shell missing on " + path);
@@ -81,6 +89,7 @@ test("admin HTTP pages enforce current database access, including stale sessions
     await prisma.moduleAccess.update({ where: { id: access.id }, data: { role: "viewer" } });
     denied(await request(lessonPath), "/admin?error=forbidden");
     denied(await request(quizPath), "/admin?error=forbidden");
+    for (const path of [participantPath, certificatePath, "/admin/academy/pengaturan"]) denied(await request(path), "/admin?error=forbidden");
     await prisma.moduleAccess.update({ where: { id: access.id }, data: { role: "admin" } });
     await prisma.user.update({ where: { id: userId }, data: { isActive: false } });
     denied(await request(coursePath), "/admin/login");
@@ -88,7 +97,13 @@ test("admin HTTP pages enforce current database access, including stale sessions
     await prisma.moduleAccess.delete({ where: { id: access.id } });
     denied(await request(chapterPath), "/admin?error=forbidden");
     denied(await request(quizPath), "/admin?error=forbidden");
+    for (const path of [participantPath, certificatePath, "/admin/academy/pengaturan"]) denied(await request(path), "/admin?error=forbidden");
   } finally {
+    if (participantProfileId) {
+      await prisma.zakatAcademyCompletionRecord.deleteMany({ where: { profileId: participantProfileId } });
+      await prisma.zakatAcademyEnrollment.deleteMany({ where: { profileId: participantProfileId } });
+      await prisma.zakatAcademyProfile.delete({ where: { id: participantProfileId } });
+    }
     if (courseId) await prisma.zakatAcademyCourse.delete({ where: { id: courseId } });
     if (userId) await prisma.user.delete({ where: { id: userId } });
     if (moduleIds.length) await prisma.module.deleteMany({ where: { id: { in: moduleIds } } });

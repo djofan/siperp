@@ -12,6 +12,7 @@ import { requireAcademyAdmin } from "./admin-access";
 import * as curriculum from "./admin-curriculum";
 import { orderField } from "./admin-validation";
 import * as adminQuizzes from "./admin-quizzes";
+import * as participants from "./admin-participants";
 
 export type ActionState = { error: string };
 
@@ -207,4 +208,38 @@ export async function deleteAcademyQuiz(courseId: string, chapterId: string, qui
   catch (error) { return adminError(error); }
   refreshCurriculum();
   redirect(`/admin/academy/program/${courseId}/bab/${chapterId}`);
+}
+
+export async function syncAcademyCompletion(enrollmentId: string): Promise<ActionState> {
+  await requireAcademyAdmin();
+  let record: { id: string };
+  try { record = await participants.syncAdminCompletion(enrollmentId); }
+  catch (error) { return adminError(error); }
+  refreshCurriculum();
+  redirect("/admin/academy/sertifikat/" + record.id + "?tersimpan=1");
+}
+
+export async function saveAcademyCertificate(id: string, _state: ActionState, form: FormData): Promise<ActionState> {
+  await requireAcademyAdmin();
+  try { await participants.saveAdminCertificate(id, form); }
+  catch (error) { return adminError(error); }
+  refreshCurriculum();
+  redirect("/admin/academy/sertifikat/" + id + "?tersimpan=1");
+}
+
+export async function deleteAcademyCompletion(id: string, _state: ActionState, form: FormData): Promise<ActionState> {
+  await requireAcademyAdmin();
+  if (form.get("confirm") !== "on") return { error: "Centang konfirmasi penghapusan." };
+  try { await participants.deleteAdminCompletion(id); }
+  catch (error) { return adminError(error); }
+  refreshCurriculum();
+  redirect("/admin/academy/sertifikat");
+}
+
+export async function saveAcademyMaintenance(_state: ActionState, form: FormData): Promise<ActionState> {
+  await requireAcademyAdmin();
+  try { await participants.saveAdminMaintenance(form); }
+  catch (error) { return adminError(error); }
+  refreshCurriculum();
+  redirect("/admin/academy/pengaturan?tersimpan=1");
 }
