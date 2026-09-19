@@ -18,6 +18,8 @@ model User {
 
   moduleAccess ModuleAccess[]
 
+  academyProfile ZakatAcademyProfile?
+
   @@map("users")
 }
 

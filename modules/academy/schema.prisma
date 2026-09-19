@@ -1,0 +1,241 @@
+// Modul Academy memakai datasource MySQL dan generator milik Core.
+// Akun/password tetap di User Core; profil ini hanya menyimpan data academy.
+// Pembayaran premium kelak melalui modul payment, bukan tabel pembayaran sendiri.
+
+enum ZakatAcademyVideoProvider {
+  YOUTUBE
+  VIMEO
+  BUNNY
+}
+
+enum ZakatAcademyGender {
+  IKHWAN
+  AKHWAT
+}
+
+model ZakatAcademyProfile {
+  id                   String              @id @default(cuid())
+  userId               String              @unique @map("user_id")
+  nis                  String?             @unique
+  phone                String?             @unique
+  gender               ZakatAcademyGender?
+  image                String?             @db.Text
+  legacyCertificateUrl String?             @map("legacy_certificate_url") @db.Text
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  user              User                           @relation(fields: [userId], references: [id], onDelete: Restrict)
+  enrollments       ZakatAcademyEnrollment[]
+  lessonProgress    ZakatAcademyLessonProgress[]
+  quizAttempts      ZakatAcademyQuizAttempt[]
+  completionRecords ZakatAcademyCompletionRecord[]
+
+  @@map("zakat_academy_profiles")
+}
+
+model ZakatAcademyCourse {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  shortDescription String   @map("short_description") @db.Text
+  description      String?  @db.Text
+  thumbnailUrl     String?  @map("thumbnail_url") @db.Text
+  materialUrl      String?  @map("material_url") @db.Text
+  isPublished      Boolean  @default(false) @map("is_published")
+  order            Int      @default(0)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  chapters          ZakatAcademyChapter[]
+  enrollments       ZakatAcademyEnrollment[]
+  completionRecords ZakatAcademyCompletionRecord[]
+
+  @@index([isPublished, order])
+  @@map("zakat_academy_courses")
+}
+
+model ZakatAcademyChapter {
+  id          String   @id @default(cuid())
+  courseId    String   @map("course_id")
+  title       String
+  slug        String
+  description String?  @db.Text
+  order       Int      @default(0)
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  course  ZakatAcademyCourse   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons ZakatAcademyLesson[]
+  quizzes ZakatAcademyQuiz[]
+
+  @@unique([courseId, slug])
+  @@index([courseId, isPublished, order])
+  @@map("zakat_academy_chapters")
+}
+
+model ZakatAcademyLesson {
+  id               String                    @id @default(cuid())
+  chapterId        String                    @map("chapter_id")
+  title            String
+  slug             String                    @unique
+  shortDescription String?                   @map("short_description") @db.Text
+  contentSummary   String?                   @map("content_summary") @db.Text
+  thumbnailUrl     String?                   @map("thumbnail_url") @db.Text
+  videoProvider    ZakatAcademyVideoProvider  @map("video_provider")
+  videoUrl         String                    @map("video_url") @db.Text
+  order            Int                       @default(0)
+  isPublished      Boolean                   @default(false) @map("is_published")
+  createdAt        DateTime                  @default(now()) @map("created_at")
+  updatedAt        DateTime                  @updatedAt @map("updated_at")
+
+  chapter        ZakatAcademyChapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  attachments    ZakatAcademyLessonAttachment[]
+  lessonProgress ZakatAcademyLessonProgress[]
+
+  @@index([chapterId, isPublished, order])
+  @@map("zakat_academy_lessons")
+}
+
+model ZakatAcademyLessonAttachment {
+  id        String   @id @default(cuid())
+  lessonId  String   @map("lesson_id")
+  title     String
+  fileUrl   String   @map("file_url") @db.Text
+  fileType  String?  @map("file_type")
+  fileSize  Int?     @map("file_size")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  lesson ZakatAcademyLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@index([lessonId])
+  @@map("zakat_academy_lesson_attachments")
+}
+
+model ZakatAcademyEnrollment {
+  id        String   @id @default(cuid())
+  profileId String   @map("profile_id")
+  courseId  String   @map("course_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  profile ZakatAcademyProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  course  ZakatAcademyCourse  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([profileId, courseId])
+  @@index([courseId])
+  @@map("zakat_academy_enrollments")
+}
+
+model ZakatAcademyLessonProgress {
+  id          String    @id @default(cuid())
+  profileId   String    @map("profile_id")
+  lessonId    String    @map("lesson_id")
+  completed   Boolean   @default(false)
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  profile ZakatAcademyProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  lesson  ZakatAcademyLesson  @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+
+  @@unique([profileId, lessonId])
+  @@index([lessonId])
+  @@map("zakat_academy_lesson_progress")
+}
+
+model ZakatAcademyQuiz {
+  id               String    @id @default(cuid())
+  chapterId        String    @map("chapter_id")
+  title            String
+  description      String?   @db.Text
+  passingScore     Int       @default(70) @map("passing_score")
+  isPublished      Boolean   @default(false) @map("is_published")
+  isActive         Boolean   @default(false) @map("is_active")
+  quizDate         DateTime? @map("quiz_date")
+  timeLimitMinutes Int       @default(10) @map("time_limit_minutes")
+  allowRetake      Boolean   @default(false) @map("allow_retake")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  chapter   ZakatAcademyChapter        @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  questions ZakatAcademyQuizQuestion[]
+  attempts  ZakatAcademyQuizAttempt[]
+
+  @@index([chapterId])
+  @@index([isPublished, isActive, quizDate])
+  @@map("zakat_academy_quizzes")
+}
+
+model ZakatAcademyQuizQuestion {
+  id        String   @id @default(cuid())
+  quizId    String   @map("quiz_id")
+  question  String   @db.Text
+  order     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  quiz    ZakatAcademyQuiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options ZakatAcademyQuizOption[]
+
+  @@index([quizId, order])
+  @@map("zakat_academy_quiz_questions")
+}
+
+model ZakatAcademyQuizOption {
+  id         String  @id @default(cuid())
+  questionId String  @map("question_id")
+  label      String  @db.Text
+  isCorrect  Boolean @default(false) @map("is_correct")
+
+  question ZakatAcademyQuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@map("zakat_academy_quiz_options")
+}
+
+model ZakatAcademyQuizAttempt {
+  id            String    @id @default(cuid())
+  profileId     String    @map("profile_id")
+  quizId        String    @map("quiz_id")
+  attemptNumber Int       @default(1) @map("attempt_number")
+  score         Decimal?  @db.Decimal(5, 2)
+  passed        Boolean?
+  answers       Json      @default("{}")
+  startedAt     DateTime  @default(now()) @map("started_at")
+  submittedAt   DateTime? @map("submitted_at")
+  isCompleted   Boolean   @default(false) @map("is_completed")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  profile ZakatAcademyProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  quiz    ZakatAcademyQuiz    @relation(fields: [quizId], references: [id], onDelete: Restrict)
+
+  @@unique([profileId, quizId, attemptNumber], map: "zakat_academy_attempt_number_key")
+  @@index([quizId])
+  @@map("zakat_academy_quiz_attempts")
+}
+
+model ZakatAcademyCompletionRecord {
+  id             String    @id @default(cuid())
+  profileId      String    @map("profile_id")
+  courseId       String    @map("course_id")
+  isEligible     Boolean   @default(false) @map("is_eligible")
+  completedAt    DateTime? @map("completed_at")
+  certificateUrl String?   @map("certificate_url") @db.Text
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  profile ZakatAcademyProfile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  course  ZakatAcademyCourse  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([profileId, courseId])
+  @@index([courseId])
+  @@map("zakat_academy_completion_records")
+}
+
+model ZakatAcademySetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("zakat_academy_settings")
+}
