@@ -1,0 +1,12 @@
+{
+  "name": "academy",
+  "displayName": "Zakat Academy",
+  "description": "Platform belajar Islami berbasis video untuk LAZSIP.",
+  "version": "1.0.0",
+  "providers": {
+    "prismaSchema": "schema.prisma",
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
+}

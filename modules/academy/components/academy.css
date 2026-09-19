@@ -1,0 +1,18 @@
+@page academy-certificate {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
+@media print {
+  .academy-public {
+    min-height: 0;
+    background: white;
+  }
+
+  .academy-public .academy-certificate {
+    page: academy-certificate;
+    padding: 10mm;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
