@@ -100,14 +100,11 @@ export async function createTransaction(input: {
 }
 
 export async function getTransactionStatus(id: string) {
-  // Public response: no donor identity. Destination account IS included — the payer
-  // needs it to complete a manual transfer while no real gateway is wired (simulation
-  // mode); it is routing info, not personal data.
+  // Public response: tracking and status only; no donor identity or bank details.
   return prisma.paymentTransaction.findUnique({
     where: { id },
     select: {
       id: true, trackingCode: true, moduleSource: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true,
-      destinationAccount: { select: { bankName: true, accountNumber: true, accountName: true } },
     },
   });
 }

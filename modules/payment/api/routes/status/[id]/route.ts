@@ -12,5 +12,5 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  return NextResponse.json(transaction);
+  return NextResponse.json(transaction, { headers: { "Cache-Control": "no-store" } });
 }

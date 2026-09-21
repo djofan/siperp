@@ -1,0 +1,10 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isEntryKind, listEntries, money } from "@/modules/sarsip/api/data";
+const labels: Record<string,string> = { draft: "Draft", published: "Dipublikasikan", completed: "Selesai", archived: "Diarsipkan" };
+export default async function AdminEntries({ params }: { params: Promise<{ kind: string }> }) {
+  const { kind } = await params; if (!isEntryKind(kind)) notFound();
+  const entries = await listEntries(kind, true);
+  return <div><div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><h1 className="text-2xl font-bold capitalize text-foreground">Kelola {kind}</h1><p className="mt-2 text-sm text-foreground/60">Draft dan arsip hanya terlihat oleh admin.</p></div><Link href={`/admin/sarsip/${kind}/baru`} className="rounded-full bg-orange-600 px-5 py-3 text-sm font-bold text-white">+ Tambah {kind}</Link></div>{entries.length ? <div className="overflow-x-auto rounded-2xl border border-border bg-surface"><table className="w-full min-w-[560px] text-left text-sm text-foreground"><thead><tr className="border-b border-border text-foreground/60"><th className="p-4">Judul</th><th className="p-4">Status</th><th className="p-4">{kind === "campaign" ? "Dana terkumpul" : "Lokasi"}</th><th className="p-4">Aksi</th></tr></thead><tbody>{entries.map((e) => <tr key={e.id} className="border-b border-border last:border-0"><td className="p-4 font-medium">{e.title}</td><td className="p-4">{labels[e.status]}</td><td className="p-4">{kind === "campaign" ? `${money(e.currentAmount)} / ${money(e.targetAmount)}` : e.location || "—"}</td><td className="p-4"><Link href={`/admin/sarsip/${kind}/${e.id}`} className="font-semibold text-orange-600">Edit</Link>{["published","completed"].includes(e.status) && <Link href={`/sarsip/${kind}/${e.id}`} className="ml-4 text-foreground/60">Lihat ↗</Link>}</td></tr>)}</tbody></table></div> : <p className="rounded-2xl border border-dashed border-border p-8 text-sm text-foreground/60">Belum ada {kind}. Tambahkan konten pertama Anda.</p>}</div>;
+}
+
