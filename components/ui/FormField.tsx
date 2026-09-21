@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAtt
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
-  "h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft disabled:opacity-50";
+  "h-10 w-full rounded-lg bg-surface-muted px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent-soft disabled:opacity-50";
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (

@@ -2,6 +2,7 @@ import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { listPartners } from "@/modules/lazsip/api/partners";
 import { listDistinctVerifierAreas, countDistinctVerifiers } from "@/modules/lazsip/api/beneficiaries";
 import { formatNumber } from "@/modules/lazsip/components/format";
+import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
 import { StatCounter } from "@/modules/lazsip/components/ui/StatCounter";
 
@@ -16,9 +17,13 @@ const DEFAULT_MISI = [
   "Mengelola dana dengan transparan dan dapat dipertanggungjawabkan.",
 ];
 
+const DEFAULT_LEGALITAS =
+  "LAZSIP adalah Lembaga Amil Zakat Solidaritas Insan Peduli, bernaung di bawah Yayasan Solidaritas Insan Peduli.";
+
 export async function TentangSection() {
-  const [tentang, partners, wilayahCakupan, totalVerifikator] = await Promise.all([
+  const [tentang, legalitas, partners, wilayahCakupan, totalVerifikator] = await Promise.all([
     getSiteContent("tentang"),
+    getSiteContent("legalitas"),
     listPartners(),
     listDistinctVerifierAreas(),
     countDistinctVerifiers(),
@@ -34,6 +39,11 @@ export async function TentangSection() {
         .filter(Boolean)
     : DEFAULT_MISI;
 
+  const legalitasItems = (legalitas?.body || DEFAULT_LEGALITAS)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   return (
     <section id="tentang" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
       <SectionHeading
@@ -42,19 +52,20 @@ export async function TentangSection() {
         description={tentang?.body || "Konten tentang LAZSIP belum diisi lewat halaman admin Konten Umum."}
       />
 
-      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-10">
-        <div className="grid grid-rows-2 gap-5 lg:h-full">
+      <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
+        <div className="flex flex-col justify-between gap-5">
+          <StatCounter icon="calendar" value={`${lazsipSiteConfig.foundedYear}`} label="Berdiri sejak" className="border border-lazsip-primary-100" />
           <StatCounter
             icon="donors"
             value={formatNumber(totalVerifikator)}
             label="Verifikator lapangan terlatih"
-            className="flex h-full flex-col justify-center border border-lazsip-primary-100"
+            className="border border-lazsip-primary-100"
           />
           <StatCounter
             icon="beneficiaries"
             value={`${formatNumber(partners.length)}+`}
             label="Mitra kerja sama"
-            className="flex h-full flex-col justify-center border border-lazsip-primary-100"
+            className="border border-lazsip-primary-100"
           />
         </div>
 
@@ -80,6 +91,25 @@ export async function TentangSection() {
               {misiItems.map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-5">
+            <h3 className="flex items-center gap-2 text-base font-semibold text-lazsip-primary-900">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+              </svg>
+              Legalitas
+            </h3>
+            <ul className="mt-3 grid grid-cols-1 gap-2.5 text-sm text-lazsip-primary-800/75 sm:grid-cols-2 lg:grid-cols-1">
+              {legalitasItems.map((item) => (
+                <li key={item} className="flex items-start gap-2.5">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="mt-0.5 h-4 w-4 shrink-0 text-lazsip-primary-500">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                   {item}
                 </li>
               ))}

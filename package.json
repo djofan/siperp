@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --test tests/*.test.ts",
     "test:donation": "tsx --test tests/donation-flow.test.ts",
+    "test:zakat": "tsx --test tests/zakat-flow.test.ts",
+    "test:midtrans-signature": "tsx --test tests/midtrans-signature.test.ts",
+    "test:destination-accounts": "tsx --test tests/destination-accounts.test.ts",
     "test:sarsip": "tsx --test tests/sarsip-flow.test.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -25,6 +29,7 @@
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "resend": "^6.28.1",
     "server-only": "^0.0.1"
   },
   "devDependencies": {

@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       campaignId,
       donorName: donorNameRaw,
       donorPhone: typeof body?.donorPhone === "string" ? body.donorPhone : "",
+      donorEmail: typeof body?.donorEmail === "string" ? body.donorEmail : "",
       amount,
       coversFee,
       isAnonymous,

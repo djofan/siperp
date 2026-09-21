@@ -152,9 +152,11 @@ test("SARSIP content permissions, publishing, donations and payment isolation", 
     assert.ok(checkoutHtml.includes("/sarsip/campaign"));
     assert.ok(checkoutHtml.includes("Mode simulasi"));
     assert.equal(checkoutHtml.includes(name), false);
-    const second = await request("/api/payment/checkout", "POST", { ...payload, donorPhone: `0${phone.slice(2)}` });
+    // A distinct amount exercises a separate failed payment without triggering the double-submit guard.
+    const second = await request("/api/payment/checkout", "POST", { ...payload, amount: 20000, donorPhone: `0${phone.slice(2)}` });
     assert.equal(second.status, 201);
     const secondId = (await second.json()).transactionId as string;
+    assert.notEqual(secondId, firstId);
     assert.equal((await prisma.paymentTransaction.findUniqueOrThrow({ where: { id: secondId } })).donorId, donorId);
     const simulate = (id: string, status: string, token?: string) => request(`/api/payment/simulate-payment/${id}`, "PUT", { status }, token);
     assert.equal((await simulate(firstId, "paid")).status, 403);

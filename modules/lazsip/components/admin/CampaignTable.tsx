@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
@@ -8,7 +9,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface CampaignRow {
   id: string;
@@ -85,11 +86,11 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message={campaigns.length === 0 ? "Belum ada campaign. Klik tombol di atas untuk menambah." : "Tidak ada campaign yang cocok dengan filter."} />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Kode</th>
@@ -98,36 +99,40 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {filtered.map((campaign) => {
                   const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
                   return (
-                    <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40">
+                    <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
                       <td className="px-4 py-3.5">
                         {campaign.image ? (
                           // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
                           <img src={campaign.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
                         ) : (
-                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50" />
+                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
                         )}
                       </td>
-                      <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900">{campaign.title}</td>
-                      <td className="px-4 py-3.5 text-lazsip-primary-800/60">{campaign.uniqueCode}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="max-w-xs truncate px-4 py-3.5 font-medium">
+                        <Link href={`/admin/lazsip/donasi/${campaign.id}`} className="text-lazsip-primary-900 hover:underline dark:text-white">
+                          {campaign.title}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{campaign.uniqueCode}</td>
+                      <td className="min-w-[9rem] px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-24 overflow-hidden rounded-full bg-lazsip-primary-100">
+                          <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24">
                             <div className="h-full rounded-full bg-lazsip-primary-700" style={{ width: `${percentage}%` }} />
                           </div>
-                          <span className="text-xs text-lazsip-primary-800/50">{percentage}%</span>
+                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
                         </div>
-                        <p className="mt-1 text-[11px] text-lazsip-primary-800/40">
+                        <p className="mt-1 break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/30">
                           {formatRupiah(campaign.currentAmount)} / {formatRupiah(campaign.targetAmount)}
                         </p>
                       </td>
                       <td className="px-4 py-3.5">
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                            campaign.status === "active" ? "bg-lazsip-secondary-50 text-lazsip-secondary-700" : "bg-lazsip-primary-900/5 text-lazsip-primary-900/50"
+                            campaign.status === "active" ? "bg-lazsip-secondary-50 text-lazsip-secondary-700" : "bg-lazsip-primary-900/5 text-lazsip-primary-900/50 dark:text-white/50"
                           }`}
                         >
                           {campaign.status === "active" ? "Aktif" : "Selesai"}
@@ -135,7 +140,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                       </td>
                       <td className="px-4 py-3.5">
                         <RowActions
-                          onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}`)}
+                          onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}/edit`)}
                           onDelete={() => handleDelete(campaign.id, campaign.title)}
                           deleting={deletingId === campaign.id}
                         />
@@ -179,7 +184,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                 }
                 topRight={
                   <AdminOverlayActions
-                    onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}`)}
+                    onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}/edit`)}
                     onDelete={() => handleDelete(campaign.id, campaign.title)}
                     deleting={deletingId === campaign.id}
                   />

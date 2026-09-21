@@ -5,11 +5,14 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
 
-const NAV_ITEMS = [
+export const LAZSIP_NAV_ITEMS = [
   { href: "/admin/lazsip", label: "Dashboard" },
-  { href: "/admin/lazsip/donasi", label: "Donasi" },
-  { href: "/admin/lazsip/transaksi", label: "Transaksi" },
-  { href: "/admin/lazsip/donatur", label: "Donatur" },
+  { href: "/admin/lazsip/donasi", label: "Donasi / Campaign" },
+  { href: "/admin/lazsip/transaksi", label: "Transaksi Donasi" },
+  { href: "/admin/lazsip/zakat", label: "Transaksi Zakat" },
+  { href: "/admin/lazsip/donatur", label: "Semua Donatur" },
+  { href: "/admin/lazsip/donatur-infaq", label: "Donatur Infaq" },
+  { href: "/admin/lazsip/donatur-zakat", label: "Donatur Zakat" },
   { href: "/admin/lazsip/biaya-payment", label: "Biaya Payment" },
   { href: "/admin/lazsip/program", label: "Program Pemberdayaan" },
   { href: "/admin/lazsip/kegiatan", label: "Kegiatan" },
@@ -21,7 +24,7 @@ const NAV_ITEMS = [
 ];
 
 function getActiveHref(pathname: string): string | null {
-  const matches = NAV_ITEMS.map((item) => item.href).filter(
+  const matches = LAZSIP_NAV_ITEMS.map((item) => item.href).filter(
     (href) => pathname === href || pathname.startsWith(`${href}/`)
   );
   if (matches.length === 0) return null;
@@ -42,7 +45,7 @@ export function LazsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        {NAV_ITEMS.map((item) => {
+        {LAZSIP_NAV_ITEMS.map((item) => {
           const isActive = item.href === activeHref;
           return (
             <Link

@@ -9,29 +9,27 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramRow {
   id: string;
   title: string;
   description?: string;
   image: string | null;
-  category: string;
+  type: string;
   registrationOpen: boolean;
   isPinned?: boolean;
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  umum: "Umum",
-  pendidikan: "Divisi Pendidikan",
-  sarsip: "SARSIP",
+const TYPE_LABEL: Record<string, string> = {
+  berita: "Berita",
+  daftar: "Pendaftaran",
 };
 
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "Semua Kategori" },
-  { value: "umum", label: "Umum" },
-  { value: "pendidikan", label: "Divisi Pendidikan" },
-  { value: "sarsip", label: "SARSIP" },
+const TYPE_OPTIONS = [
+  { value: "all", label: "Semua Tipe" },
+  { value: "berita", label: "Berita" },
+  { value: "daftar", label: "Pendaftaran" },
 ];
 
 const REGISTRATION_OPTIONS = [
@@ -45,7 +43,7 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<AdminViewMode>("list");
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
 
   async function handleDelete(id: string, title: string) {
@@ -58,24 +56,24 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
 
   const resetFilters = () => {
     setSearch("");
-    setCategoryFilter("all");
+    setTypeFilter("all");
     setRegistrationFilter("all");
   };
 
   const filtered = useMemo(() => {
     let rows = programs.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
-    if (categoryFilter !== "all") rows = rows.filter((p) => p.category === categoryFilter);
+    if (typeFilter !== "all") rows = rows.filter((p) => p.type === typeFilter);
     if (registrationFilter !== "all") {
       rows = rows.filter((p) => (registrationFilter === "open" ? p.registrationOpen : !p.registrationOpen));
     }
     return rows;
-  }, [programs, search, categoryFilter, registrationFilter]);
+  }, [programs, search, typeFilter, registrationFilter]);
 
   return (
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul program..." />
-        <AdminFilterSelect value={categoryFilter} onChange={setCategoryFilter} options={CATEGORY_OPTIONS} ariaLabel="Filter kategori" />
+        <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter tipe" />
         <AdminFilterSelect value={registrationFilter} onChange={setRegistrationFilter} options={REGISTRATION_OPTIONS} ariaLabel="Filter pendaftaran" />
         <AdminFilterResetButton onClick={resetFilters} />
         <div className="ml-auto">
@@ -86,33 +84,37 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message={programs.length === 0 ? "Belum ada program. Klik tombol di atas untuk menambah." : "Tidak ada program yang cocok dengan filter."} />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
-                  <th className="px-4 py-3.5 font-semibold">Kategori</th>
+                  <th className="px-4 py-3.5 font-semibold">Tipe</th>
                   <th className="px-4 py-3.5 font-semibold">Pendaftaran</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {filtered.map((program) => (
-                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40">
+                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       {program.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
                         <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50" />
+                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
                       )}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900">{program.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{program.title}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{TYPE_LABEL[program.type] ?? program.type}</td>
                     <td className="px-4 py-3.5">
-                      <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
+                      {program.type === "daftar" ? (
+                        <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
+                      ) : (
+                        <span className="text-xs text-lazsip-primary-800/40 dark:text-white/40">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5">
                       <RowActions
@@ -138,11 +140,13 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
               meta={
                 <>
                   <AdminBadge tone="overlay" size="sm">
-                    {CATEGORY_LABEL[program.category] ?? program.category}
+                    {TYPE_LABEL[program.type] ?? program.type}
                   </AdminBadge>
-                  <AdminBadge tone={program.registrationOpen ? "secondary" : "danger"} size="sm">
-                    {program.registrationOpen ? "Terbuka" : "Ditutup"}
-                  </AdminBadge>
+                  {program.type === "daftar" && (
+                    <AdminBadge tone={program.registrationOpen ? "secondary" : "danger"} size="sm">
+                      {program.registrationOpen ? "Terbuka" : "Ditutup"}
+                    </AdminBadge>
+                  )}
                   {program.isPinned && (
                     <AdminBadge tone="primary" size="sm">
                       Pinned

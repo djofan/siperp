@@ -19,7 +19,7 @@ export function InflowChart({ data }: { data: { date: string; total: number }[] 
               className="w-full rounded-t-sm bg-lazsip-primary-200 transition-colors group-hover:bg-lazsip-primary-700 dark:bg-lazsip-primary-800 dark:group-hover:bg-lazsip-primary-500"
               style={{ height: `${Math.max(2, Math.round((d.total / max) * 100))}%` }}
             />
-            <div className="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-lazsip-primary-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-white dark:text-lazsip-primary-900">
+            <div className="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-lazsip-primary-900 px-2 py-1 text-[10px] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 dark:bg-white dark:text-lazsip-primary-900 dark:text-white">
               {formatShortDate(d.date)} · {formatRupiah(d.total)}
             </div>
           </div>

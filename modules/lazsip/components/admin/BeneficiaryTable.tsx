@@ -8,7 +8,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface BeneficiaryRow {
   id: string;
@@ -19,6 +19,7 @@ interface BeneficiaryRow {
   verifierName?: string;
   verifierArea?: string;
   createdAt?: Date;
+  isPinned?: boolean;
 }
 
 const AID_TYPE_LABEL: Record<string, string> = {
@@ -98,12 +99,13 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada data yang cocok dengan filter." />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Foto</th>
+                  <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Tipe Bantuan</th>
                   <th className="px-4 py-3.5 font-semibold">Verifikator</th>
@@ -111,24 +113,25 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {filtered.map((beneficiary) => (
-                  <tr key={beneficiary.id} className="transition-colors hover:bg-lazsip-primary-50/40">
+                  <tr key={beneficiary.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       {beneficiary.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
                         <img src={beneficiary.photo} alt="" className="h-10 w-10 rounded-full border border-lazsip-primary-100/80 object-cover" />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50" />
+                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
                       )}
                     </td>
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{beneficiary.name}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{beneficiary.isPinned ? "✓" : "-"}</td>
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{beneficiary.name}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">
                       {beneficiary.verifierName}
-                      {beneficiary.verifierArea && <span className="text-lazsip-primary-800/40"> · {beneficiary.verifierArea}</span>}
+                      {beneficiary.verifierArea && <span className="text-lazsip-primary-800/40 dark:text-white/30"> · {beneficiary.verifierArea}</span>}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">Rp{beneficiary.amountReceived.toLocaleString("id-ID")}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">Rp{beneficiary.amountReceived.toLocaleString("id-ID")}</td>
                     <td className="px-4 py-3.5">
                       <RowActions
                         onEdit={() => router.push(`/admin/lazsip/penyaluran-bantuan/${beneficiary.id}`)}
@@ -152,10 +155,15 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
               onClick={() => router.push(`/admin/lazsip/penyaluran-bantuan/${beneficiary.id}`)}
               meta={
                 <>
+                  {beneficiary.isPinned && (
+                    <AdminBadge tone="primary" size="sm">
+                      Pinned
+                    </AdminBadge>
+                  )}
                   <AdminBadge tone="overlay" size="sm">
                     {AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}
                   </AdminBadge>
-                  <AdminBadge tone="primary" size="sm">
+                  <AdminBadge tone="secondary" size="sm">
                     Rp{beneficiary.amountReceived.toLocaleString("id-ID")}
                   </AdminBadge>
                 </>

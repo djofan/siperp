@@ -105,6 +105,36 @@ export async function getDashboardCounts() {
   };
 }
 
+/** prd-lazsip.md §4.6: donatur baru (transaksi pertama bulan ini) vs donatur lama/repeat
+ * (pernah transaksi sebelum bulan ini juga) — dari donatur yang aktif bulan ini. */
+export async function getNewVsRepeatDonorsThisMonth() {
+  const since = startOfCurrentMonth();
+
+  const donors = await prisma.paymentDonor.findMany({
+    where: { OR: [
+      { transactions: { some: { moduleSource: "lazsip", createdAt: { gte: since } } } },
+      { donations: { some: { createdAt: { gte: since } } } },
+      { zakatPayments: { some: { createdAt: { gte: since } } } },
+    ] },
+    select: {
+      transactions: { where: { moduleSource: "lazsip" }, select: { createdAt: true } },
+      donations: { select: { createdAt: true } },
+      zakatPayments: { select: { createdAt: true } },
+    },
+  });
+
+  let newDonors = 0;
+  let repeatDonors = 0;
+  for (const donor of donors) {
+    const dates = [...donor.transactions, ...donor.donations, ...donor.zakatPayments].map((p) => p.createdAt.getTime());
+    const hadEarlierTransaction = dates.some((t) => t < since.getTime());
+    if (hadEarlierTransaction) repeatDonors++;
+    else newDonors++;
+  }
+
+  return { newDonors, repeatDonors };
+}
+
 /** Total dana masuk (paid) per hari, 30 hari terakhir — untuk grafik tren sederhana di dashboard. */
 export async function getDailyInflow(days = 30) {
   const since = new Date();

@@ -6,7 +6,8 @@
 model PaymentDonor {
   id        String   @id @default(cuid())
   name      String
-  phone     String?  @unique // null hanya untuk data lama/zakat tanpa nomor telepon
+  phone     String?  @unique // wajib diisi kalau email kosong — lihat validasi di checkout
+  email     String?  @unique // wajib diisi kalau phone kosong — minimal salah satu wajib
   createdAt DateTime @default(now()) @map("created_at")
 
   transactions PaymentTransaction[]
@@ -18,6 +19,7 @@ model PaymentDonor {
 
 model PaymentTransaction {
   id                    String   @id @default(cuid())
+  trackingCode          String   @unique @map("tracking_code") // mis. "LZS-7F3K2Q" — dipakai donatur cek status, bukan id internal
   moduleSource          String   @map("module_source")   // "lazsip" | "sarsip"
   sourceType            String   @map("source_type")     // "campaign" | "zakat"
   sourceId              String   @map("source_id")       // id record asal

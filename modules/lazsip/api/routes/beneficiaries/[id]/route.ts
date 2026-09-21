@@ -36,6 +36,13 @@ export async function PUT(
   const verifierName = typeof body?.verifierName === "string" ? body.verifierName.trim() : "";
   const verifierArea = typeof body?.verifierArea === "string" ? body.verifierArea.trim() : "";
   const maritalStatus = VALID_MARITAL_STATUSES.includes(body?.maritalStatus) ? body.maritalStatus : "";
+  const nik = typeof body?.nik === "string" && body.nik.trim() ? body.nik.trim() : undefined;
+  const occupation = typeof body?.occupation === "string" && body.occupation.trim() ? body.occupation.trim() : undefined;
+  const monthlyIncome = body?.monthlyIncome !== undefined && body?.monthlyIncome !== "" ? Number(body.monthlyIncome) : undefined;
+  const dependentsCount = body?.dependentsCount !== undefined && body?.dependentsCount !== "" ? Number(body.dependentsCount) : undefined;
+  const dependentsDetail =
+    typeof body?.dependentsDetail === "string" && body.dependentsDetail.trim() ? body.dependentsDetail.trim() : undefined;
+  const isPinned = Boolean(body?.isPinned);
 
   if (
     !name ||
@@ -50,7 +57,9 @@ export async function PUT(
     !Number.isFinite(amountReceived) ||
     !verifierName ||
     !verifierArea ||
-    !maritalStatus
+    !maritalStatus ||
+    (monthlyIncome !== undefined && !Number.isFinite(monthlyIncome)) ||
+    (dependentsCount !== undefined && !Number.isFinite(dependentsCount))
   ) {
     return NextResponse.json({ error: "Semua field wajib diisi dengan benar." }, { status: 400 });
   }
@@ -70,6 +79,12 @@ export async function PUT(
     verifierName,
     verifierArea,
     maritalStatus,
+    nik,
+    occupation,
+    monthlyIncome,
+    dependentsCount,
+    dependentsDetail,
+    isPinned,
   });
 
   return NextResponse.json({ ok: true });

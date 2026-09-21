@@ -21,10 +21,10 @@ export function Hero({
         aria-hidden
       />
 
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-4 pb-24 pt-36 sm:px-6 sm:pt-44 sm:pb-28 lg:grid-cols-[1fr_0.85fr] lg:gap-12 lg:py-40">
-        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-4 pb-24 pt-36 sm:px-6 sm:pt-44 sm:pb-28 lg:grid-cols-2 lg:items-stretch lg:gap-12 lg:py-40">
+        <div className="flex flex-col items-center justify-center text-center lg:items-start lg:text-left">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-secondary-200">
-            Lembaga Amil Zakat
+            Lembaga Amil Zakat Resmi
           </span>
 
           <h1 className="mt-6 max-w-xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-[4rem]">
@@ -55,8 +55,8 @@ export function Hero({
           </div>
         </div>
 
-        <div className="w-full max-w-sm justify-self-center lg:max-w-none lg:justify-self-end">
-          <div className="rounded-3xl bg-white p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.45)] sm:p-8">
+        <div className="flex w-full max-w-sm justify-self-center lg:max-w-md lg:justify-self-end">
+          <div className="flex w-full flex-col justify-center rounded-3xl bg-white p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.45)] sm:p-8">
             <HeroUtilityCard goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} />
           </div>
         </div>

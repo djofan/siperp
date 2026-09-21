@@ -8,6 +8,10 @@ export async function POST(request: Request) {
   const amount = Number(body?.amount);
   const goldPriceSnapshot = Number(body?.goldPriceSnapshot);
   const jiwaCount = Number(body?.jiwaCount);
+  // Checkbox "tanggung biaya admin" default TERCENTANG — hanya lepas kalau donatur eksplisit
+  // mengirim coversFee: false. Lihat CLAUDE.md §7 aturan #4 (berlaku juga untuk zakat).
+  const coversFee = body?.coversFee === false ? false : true;
+  const isAnonymous = Boolean(body?.isAnonymous);
   const paymentMethod = typeof body?.paymentMethod === "string" ? body.paymentMethod : "";
 
   if (!Number.isFinite(amount) || amount <= 0) {
@@ -17,10 +21,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Metode pembayaran wajib dipilih." }, { status: 400 });
   }
 
+  const donorName = isAnonymous ? "Hamba Allah" : donorNameRaw || "Hamba Allah";
+
   const payment = await createZakatPayment({
-    donorName: donorNameRaw || "Hamba Allah",
+    donorName,
     zakatType,
     amount,
+    coversFee,
+    isAnonymous,
     goldPriceSnapshot: Number.isFinite(goldPriceSnapshot) ? goldPriceSnapshot : undefined,
     jiwaCount: Number.isFinite(jiwaCount) ? jiwaCount : undefined,
     paymentMethod,

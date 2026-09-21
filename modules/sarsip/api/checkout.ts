@@ -39,7 +39,7 @@ export async function createSarsipCheckout(input: {
           where: { moduleSource: "sarsip", fundType: "donasi" }, select: { id: true },
         });
         if (!destination) throw new DonationValidationError("Rekening tujuan belum tersedia. Silakan hubungi pengelola.", 503);
-        const donor = await findOrCreateDonor(name, phone, tx);
+        const donor = await findOrCreateDonor(name, phone, null, tx);
         return createTransaction({
           moduleSource: "sarsip", sourceType: "campaign", sourceId: campaign.id,
           fundType: "donasi", donorId: donor.id, isAnonymous: input.isAnonymous,
