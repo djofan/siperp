@@ -66,6 +66,12 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     assert.equal(first.donor.phone, phone);
     assert.equal(first.adminFee, 2500, "fee must come from server reference, not submitted adminFee");
     assert.equal(first.isAnonymous, true);
+    const pendingCheckout = await fetch(`${baseUrl}/payment/checkout/${first.id}`);
+    assert.equal(pendingCheckout.status, 200);
+    const pendingHtml = await pendingCheckout.text();
+    assert.ok(pendingHtml.includes("Mode simulasi"));
+    assert.ok(pendingHtml.includes("Menunggu konfirmasi admin"));
+    assert.equal(pendingHtml.includes("Bayar Sekarang"), false);
     assert.equal("donorName" in first, false);
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 0, "ignore stale cached currentAmount");
     assert.deepEqual(await listCampaignDonorsPublic(campaignId), []);
@@ -92,12 +98,16 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     const retryResults = await Promise.all([simulate(first.id, "paid"), simulate(first.id, "paid")]);
     assert.ok(retryResults.every((r) => r.status === 200));
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 10000);
+    const paidCheckout = await fetch(`${baseUrl}/payment/checkout/${first.id}`);
+    assert.ok((await paidCheckout.text()).includes("Simulasi pembayaran berhasil"));
     assert.deepEqual(await listCampaignDonorsPublic(campaignId), [{ id: first.id, name: "Hamba Allah", amount: 10000 }]);
     assert.ok((await listPaymentDonationsForAdmin()).some((d) => d.id === first.id && d.donorName === name));
 
     await simulate(repeated.id, "failed");
     await simulate(repeated.id, "paid");
     assert.equal((await getTransactionStatus(repeated.id))?.status, "failed");
+    const failedCheckout = await fetch(`${baseUrl}/payment/checkout/${repeated.id}`);
+    assert.ok((await failedCheckout.text()).includes("Simulasi pembayaran gagal"));
     await simulate(simultaneous[0].id, "paid");
     const legacy = await prisma.lazsipDonation.create({ data: {
       campaignId, donorId: first.donorId, amount: 3000, isAnonymous: true, paymentMethod: method,
@@ -113,6 +123,7 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     assert.equal(JSON.stringify(publicDonors).includes(phone), false);
     const publicStatusResponse = await fetch(`${baseUrl}/api/payment/status/${first.id}`);
     assert.equal(publicStatusResponse.status, 200);
+    assert.equal(publicStatusResponse.headers.get("cache-control"), "no-store");
     const publicStatus = await publicStatusResponse.json();
     for (const key of ["donor", "donorId", "donorName", "donorPhone", "phone"]) assert.equal(key in publicStatus, false);
     const page = await fetch(`${baseUrl}/lazsip/donasi/${campaignId}`);
