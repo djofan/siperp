@@ -40,7 +40,8 @@ model LazsipProgram {
   description      String   @db.Text
   requirements     String?  @db.Text
   image            String?
-  category         String   @default("umum") // "umum" | "pendidikan" | "sarsip"
+  type             String   @default("berita") // "berita" | "daftar" — daftar = tombol arahkan ke link Google Form
+  formUrl          String?  @map("form_url") // link Google Form pendaftaran, dipakai kalau type == "daftar"
   isPinned         Boolean  @default(false) @map("is_pinned")
   registrationOpen Boolean  @default(true) @map("registration_open")
   createdAt        DateTime @default(now()) @map("created_at")
@@ -89,9 +90,25 @@ model LazsipCampaign {
   status        String   @default("active") // "active" | "completed"
   createdAt     DateTime @default(now()) @map("created_at")
 
-  donations LazsipDonation[]
+  donations   LazsipDonation[]
+  adjustments LazsipCampaignAdjustment[]
 
   @@map("lazsip_campaigns")
+}
+
+// Penyesuaian saldo manual oleh admin (mis. donasi tunai/offline yang gak lewat
+// LazsipDonation) — amount boleh positif (tambah) atau negatif (kurangi), selalu
+// dicatat sebagai riwayat, gak pernah langsung overwrite currentAmount diam-diam.
+model LazsipCampaignAdjustment {
+  id         String   @id @default(cuid())
+  campaignId String   @map("campaign_id")
+  amount     Int
+  note       String   @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  campaign LazsipCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("lazsip_campaign_adjustments")
 }
 
 // Settle ke SATU rekening donasi/infaq bersama, dibedakan lewat Campaign.uniqueCode saat rekonsiliasi.
@@ -121,6 +138,9 @@ model LazsipZakatPayment {
   donorId           String   @map("donor_id")
   zakatType         String   @default("maal") @map("zakat_type") // "maal" | "fitrah"
   amount            Int
+  adminFee          Int      @default(0) @map("admin_fee")
+  coversFee         Boolean  @default(true) @map("covers_fee")
+  isAnonymous       Boolean  @default(false) @map("is_anonymous")
   goldPriceSnapshot Int?     @map("gold_price_snapshot") // dipakai zakat maal saja
   jiwaCount         Int?     @map("jiwa_count") // dipakai zakat fitrah saja
   paymentMethod     String   @map("payment_method")
@@ -161,6 +181,12 @@ model LazsipBeneficiary {
   verifierName   String   @map("verifier_name")
   verifierArea   String   @map("verifier_area")
   maritalStatus  String   @map("marital_status") // SENSITIF — admin only ("menikah" | "janda-cerai" | "janda-meninggal" | "duda-cerai" | "duda-meninggal")
+  nik              String?  // SENSITIF — admin only, NIK KTP
+  occupation       String?  // SENSITIF — admin only, pekerjaan
+  monthlyIncome    Int?     @map("monthly_income") // SENSITIF — admin only, penghasilan per bulan (Rp)
+  dependentsCount  Int?     @map("dependents_count") // SENSITIF — admin only, jumlah tanggungan
+  dependentsDetail String?  @map("dependents_detail") @db.Text // SENSITIF — admin only, rincian tanggungan
+  isPinned       Boolean  @default(false) @map("is_pinned")
   createdAt      DateTime @default(now()) @map("created_at")
 
   @@map("lazsip_beneficiaries")

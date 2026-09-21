@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 export function PartnerForm({
   partnerId,
@@ -47,28 +47,28 @@ export function PartnerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={staticPanelClasses("flex max-w-xl flex-col gap-5 p-6")}>
+    <form onSubmit={handleSubmit} className={panelClasses("flex max-w-xl flex-col gap-5 p-6")}>
+      <ImageUploadField label="Logo Mitra" initialUrl={logo} onChange={(u) => setLogo(u ?? "")} required={!isEdit} />
+
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-lazsip-primary-900">
+        <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
           Nama Mitra<span className="ml-0.5 text-red-600">*</span>
         </label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+          className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
         />
       </div>
 
-      <ImageUploadField label="Logo Mitra" initialUrl={logo} onChange={(u) => setLogo(u ?? "")} required={!isEdit} />
-
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-lazsip-primary-900">Tautan Website</label>
+        <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Tautan Website</label>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://"
-          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+          className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
         />
       </div>
 

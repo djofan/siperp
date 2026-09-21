@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SipImageUploadField } from "@/modules/sip/components/admin/SipImageUploadField";
 import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButton";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface PenyaluranBantuanFormValues {
   title: string;
@@ -64,10 +64,14 @@ export function PenyaluranBantuanForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className={staticPanelClasses("p-6 sm:p-8")}>
+      <div className={panelClasses("p-6 sm:p-8")}>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <SipImageUploadField label="Gambar Dokumentasi" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+          </div>
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
               Judul<span className="ml-0.5 text-red-600">*</span>
             </label>
             <input
@@ -75,22 +79,22 @@ export function PenyaluranBantuanForm({
               onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="Judul penyaluran bantuan"
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">Lokasi</label>
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Lokasi</label>
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Mis. Cianjur, Jawa Barat"
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-sm font-medium text-sip-primary-900">
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
               Deskripsi<span className="ml-0.5 text-red-600">*</span>
             </label>
             <textarea
@@ -98,12 +102,12 @@ export function PenyaluranBantuanForm({
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl border border-sip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-2xl bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
               Tanggal<span className="ml-0.5 text-red-600">*</span>
             </label>
             <input
@@ -111,12 +115,8 @@ export function PenyaluranBantuanForm({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
-          </div>
-
-          <div className="sm:col-span-2">
-            <SipImageUploadField label="Gambar Dokumentasi" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
           </div>
         </div>
       </div>

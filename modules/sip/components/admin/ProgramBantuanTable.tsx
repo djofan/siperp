@@ -8,7 +8,7 @@ import { SipAdminFilterBar, SipAdminSearchInput, SipAdminFilterResetButton } fro
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
 import { SipOverlayCard, SipOverlayActions } from "@/modules/sip/components/admin/SipAdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramBantuanRow {
   id: string;
@@ -54,32 +54,32 @@ export function ProgramBantuanTable({ programs }: { programs: ProgramBantuanRow[
       {filtered.length === 0 ? (
         <SipAdminEmptyState message="Tidak ada program yang cocok dengan pencarian." />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr className="border-b border-sip-primary-100 bg-sip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-sip-primary-700/70">
+                <tr className="border-b border-sip-primary-100 dark:border-white/10 bg-sip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-sip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
+                  <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Slug</th>
-                  <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sip-primary-50">
+              <tbody className="divide-y divide-sip-primary-50 dark:divide-white/10">
                 {filtered.map((program) => (
-                  <tr key={program.id} className="transition-colors hover:bg-sip-primary-50/40">
+                  <tr key={program.id} className="transition-colors hover:bg-sip-primary-50/40 dark:hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       {program.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
                         <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-sip-primary-100/80 object-cover" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-sip-primary-50" />
+                        <div className="h-12 w-16 rounded-xl bg-sip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-sip-primary-900">{program.title}</td>
-                    <td className="px-4 py-3.5 text-sip-primary-800/50">{program.slug}</td>
-                    <td className="px-4 py-3.5 text-sip-primary-800/60">{program.isPinned ? "✓" : "-"}</td>
+                    <td className="px-4 py-3.5 text-sip-primary-800/60 dark:text-white/55">{program.isPinned ? "✓" : "-"}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-sip-primary-900 dark:text-white">{program.title}</td>
+                    <td className="px-4 py-3.5 text-sip-primary-800/50 dark:text-white/45">{program.slug}</td>
                     <td className="px-4 py-3.5">
                       <SipRowActions
                         onEdit={() => router.push(`/admin/sip/program-bantuan/${program.id}`)}

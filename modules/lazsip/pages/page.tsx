@@ -28,28 +28,10 @@ export default async function LazsipHomePage() {
       <KegiatanSection />
       <ProgramSection
         id="program"
-        category="umum"
         eyebrow="Program Pemberdayaan"
         title="Program Pemberdayaan Umat"
         description="Program pemberdayaan ekonomi dan sosial bagi masyarakat dampingan LAZSIP."
         seeAllHref="/lazsip/program"
-      />
-      <ProgramSection
-        id="divisi-pendidikan"
-        category="pendidikan"
-        eyebrow="Divisi Pendidikan"
-        title="Divisi Pendidikan LAZSIP"
-        description="Program beasiswa dan pembinaan pendidikan bagi anak yatim dan dhuafa."
-        seeAllHref="/lazsip/program?kategori=pendidikan"
-        tinted
-      />
-      <ProgramSection
-        id="sarsip"
-        category="sarsip"
-        eyebrow="SARSIP"
-        title="SARSIP — Siaga & Relawan LAZSIP"
-        description="Program tanggap bencana dan layanan darurat di bawah naungan LAZSIP."
-        seeAllHref="/lazsip/program?kategori=sarsip"
       />
       <TentangSection />
       <TransparansiSection />

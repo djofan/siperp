@@ -17,7 +17,7 @@ export function RowActions({
           onClick={onEdit}
           disabled={deleting}
           aria-label="Edit"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-lazsip-primary-700 transition-colors hover:bg-lazsip-primary-50 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-lazsip-primary-700 dark:text-lazsip-primary-300 transition-colors hover:bg-lazsip-primary-50 dark:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
             <path

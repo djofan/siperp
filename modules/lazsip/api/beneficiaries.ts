@@ -25,6 +25,12 @@ interface BeneficiaryInput {
   verifierName: string;
   verifierArea: string;
   maritalStatus: string;
+  nik?: string;
+  occupation?: string;
+  monthlyIncome?: number;
+  dependentsCount?: number;
+  dependentsDetail?: string;
+  isPinned: boolean;
 }
 
 export async function createBeneficiary(input: BeneficiaryInput) {
@@ -44,9 +50,12 @@ export async function deleteBeneficiary(id: string) {
 const PUBLIC_CARD_SELECT = {
   id: true,
   name: true,
+  age: true,
   amountReceived: true,
   aidType: true,
   photo: true,
+  isPinned: true,
+  verifierArea: true,
 } as const;
 
 const PUBLIC_DETAIL_SELECT = {

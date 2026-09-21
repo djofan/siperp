@@ -3,8 +3,9 @@ import { getPublishedNewsById, listPublishedNews } from "@/modules/lazsip/api/ne
 import { formatDate } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { Button } from "@/modules/lazsip/components/ui/Button";
-import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { NewsCard } from "@/modules/lazsip/components/NewsCard";
+import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 
 export default async function LazsipBeritaDetailPage({
   params,
@@ -24,7 +25,7 @@ export default async function LazsipBeritaDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <article className="mx-auto max-w-3xl">
-        <BackLink href="/lazsip/berita">Semua Berita</BackLink>
+        <BackLinkGroup homeHref="/lazsip#berita" listHref="/lazsip/berita" listLabel="Semua Berita" />
 
         <h1 className="mt-6 text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           {news.title}
@@ -55,11 +56,12 @@ export default async function LazsipBeritaDetailPage({
       {otherNews.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">
           <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900 sm:text-2xl">Berita Lainnya</h2>
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {otherNews.map((n) => (
-              <NewsCard key={n.id} id={n.id} title={n.title} content={n.content} image={n.image} createdAt={n.createdAt} />
-            ))}
-          </div>
+          <RelatedCardsRow
+            items={otherNews}
+            renderItem={(n) => (
+              <NewsCard id={n.id} title={n.title} content={n.content} image={n.image} createdAt={n.createdAt} />
+            )}
+          />
         </div>
       )}
     </div>

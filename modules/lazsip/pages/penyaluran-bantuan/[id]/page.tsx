@@ -3,8 +3,9 @@ import { getBeneficiaryPublicById, listBeneficiariesPublic } from "@/modules/laz
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { Button } from "@/modules/lazsip/components/ui/Button";
-import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { BeneficiaryCard } from "@/modules/lazsip/components/BeneficiaryCard";
+import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 
 const AID_TYPE_LABEL: Record<string, string> = {
   pendidikan: "Pendidikan",
@@ -31,7 +32,7 @@ export default async function LazsipBeneficiaryDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <article className="mx-auto max-w-3xl">
-        <BackLink href="/lazsip/penyaluran-bantuan">Semua Bantuan</BackLink>
+        <BackLinkGroup homeHref="/lazsip#penyaluran" listHref="/lazsip/penyaluran-bantuan" listLabel="Semua Bantuan" />
 
         <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
           {AID_TYPE_LABEL[item.aidType] ?? item.aidType}
@@ -98,11 +99,21 @@ export default async function LazsipBeneficiaryDetailPage({
       {others.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">
           <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900 sm:text-2xl">Penerima Bantuan Lainnya</h2>
-          <div className="mt-6 grid grid-cols-2 gap-5 sm:grid-cols-3">
-            {others.map((b) => (
-              <BeneficiaryCard key={b.id} id={b.id} name={b.name} amountReceived={b.amountReceived} aidType={b.aidType} photo={b.photo} />
-            ))}
-          </div>
+          <RelatedCardsRow
+            items={others}
+            itemClassName="w-[32vw] max-w-[160px] shrink-0 snap-start sm:w-[calc(25%-12px)] sm:max-w-none"
+            renderItem={(b) => (
+              <BeneficiaryCard
+                id={b.id}
+                name={b.name}
+                age={b.age}
+                amountReceived={b.amountReceived}
+                aidType={b.aidType}
+                photo={b.photo}
+                verifierArea={b.verifierArea}
+              />
+            )}
+          />
         </div>
       )}
     </div>

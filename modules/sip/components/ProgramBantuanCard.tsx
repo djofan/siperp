@@ -1,21 +1,33 @@
 import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
+import { PINNED_OVERLAY_STYLE } from "@/modules/sip/components/ui/pinnedOverlay";
 
-export function ProgramBantuanCard({
-  slug,
-  title,
-  description,
-  image,
-}: {
+interface ProgramBantuanCardProps {
   slug: string;
   title: string;
   description: string;
   image: string | null;
-}) {
+  featured?: boolean;
+}
+
+export function ProgramBantuanCard({ slug, title, description, image, featured = false }: ProgramBantuanCardProps) {
+  if (featured) {
+    return (
+      <Link href={`/sip/program-bantuan/${slug}`} className="group relative flex aspect-[4/3] w-full flex-col overflow-hidden rounded-2xl">
+        <ImagePlaceholder variant="program" src={image} alt={title} className="absolute inset-0 h-full w-full" />
+        <div className="pointer-events-none absolute inset-0" style={PINNED_OVERLAY_STYLE} />
+        <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
+          <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
+          <p className="line-clamp-2 text-xs text-white/75">{description}</p>
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={`/sip/program-bantuan/${slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-sip-primary-100 bg-white transition-colors duration-200 hover:border-sip-primary-300 hover:shadow-lg hover:shadow-sip-primary-900/5"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-lg hover:shadow-sip-primary-900/10"
     >
       <ImagePlaceholder variant="program" src={image} alt={title} className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-1.5 p-4">

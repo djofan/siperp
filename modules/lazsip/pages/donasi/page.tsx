@@ -21,7 +21,7 @@ export default async function LazsipDonasiPage() {
 
       <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((item) => (
-          <CampaignCard key={item.id} id={item.id} title={item.title} image={item.image} targetAmount={item.targetAmount} currentAmount={item.currentAmount} />
+          <CampaignCard key={item.id} id={item.id} title={item.title} description={item.description} image={item.image} targetAmount={item.targetAmount} currentAmount={item.currentAmount} donorCount={item.donorCount} />
         ))}
       </div>
 
