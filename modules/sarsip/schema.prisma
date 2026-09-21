@@ -1,0 +1,54 @@
+// Entries share an editorial workflow; only campaign entries accept donations.
+model SarsipBeneficiary {
+  id         String    @id @default(cuid())
+  name       String
+  phone      String?
+  location   String
+  assistance String
+  publicName String?   @map("public_name")
+  category   String    @default("Lainnya")
+  amount     Int       @default(0)
+  image      String?
+  isPublished Boolean  @default(false) @map("is_published")
+  receivedAt DateTime  @map("received_at")
+  notes      String?   @db.Text
+  archivedAt DateTime? @map("archived_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  @@index([archivedAt, createdAt])
+  @@map("sarsip_beneficiaries")
+}
+
+model SarsipEntry {
+  id           String   @id @default(cuid())
+  kind         String   // kegiatan | campaign | berita
+  title        String
+  description  String   @db.Text
+  location     String?
+  eventDate    DateTime? @map("event_date")
+  image        String?
+  targetAmount Int      @default(0) @map("target_amount")
+  status       String   @default("draft") // draft | published | completed
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@index([kind, status, createdAt])
+  @@map("sarsip_entries")
+}
+
+model SarsipProfile {
+  id          String @id @default("main")
+  headline    String
+  description String @db.Text
+  contact     String?
+  @@map("sarsip_profiles")
+}
+
+model SarsipPaymentMethod {
+  id            String @id @default(cuid())
+  method        String @unique
+  feeAmount     Int?   @map("fee_amount")
+  feePercentage Float? @map("fee_percentage")
+  @@map("sarsip_payment_methods")
+}

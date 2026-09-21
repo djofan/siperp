@@ -1,0 +1,6 @@
+ALTER TABLE `sarsip_beneficiaries`
+  ADD COLUMN `public_name` VARCHAR(191) NULL,
+  ADD COLUMN `category` VARCHAR(191) NOT NULL DEFAULT 'Lainnya',
+  ADD COLUMN `amount` INTEGER NOT NULL DEFAULT 0,
+  ADD COLUMN `image` VARCHAR(191) NULL,
+  ADD COLUMN `is_published` BOOLEAN NOT NULL DEFAULT false;

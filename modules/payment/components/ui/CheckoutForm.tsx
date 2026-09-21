@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const STATUS = {
-  pending: { title: "Menunggu konfirmasi admin", description: "Admin akan menandai transaksi ini lunas atau gagal melalui halaman Kelola Transaksi LAZSIP." },
+  pending: { title: "Menunggu konfirmasi admin", description: "Admin modul asal akan menandai transaksi ini lunas atau gagal melalui halaman Kelola Transaksi." },
   paid: { title: "Simulasi pembayaran berhasil", description: "Admin telah menandai transaksi ini lunas. Donasi sudah masuk ke total dana campaign." },
   failed: { title: "Simulasi pembayaran gagal", description: "Admin telah menandai transaksi ini gagal. Nominal transaksi ini tidak ditambahkan ke dana campaign." },
 };
 type PaymentStatus = keyof typeof STATUS;
 
-export function CheckoutForm({ transaction }: { transaction: { id: string; status: string } }) {
+export function CheckoutForm({ transaction }: { transaction: { id: string; status: string; moduleSource: string } }) {
   const [status, setStatus] = useState<PaymentStatus>(transaction.status in STATUS ? transaction.status as PaymentStatus : "pending");
   const [error, setError] = useState<string | null>(null);
 
@@ -68,7 +68,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; statu
         {status === "pending" && !error && <p className="mt-3 text-xs text-slate-500">Status diperiksa otomatis setiap 5 detik. Tidak perlu refresh halaman.</p>}
       </div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <Link href="/lazsip/donasi" className="inline-flex rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-900">
+      <Link href={transaction.moduleSource === "sarsip" ? "/sarsip/campaign" : "/lazsip/donasi"} className="inline-flex rounded-full bg-emerald-950 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-900">
         Kembali ke daftar campaign
       </Link>
     </div>
