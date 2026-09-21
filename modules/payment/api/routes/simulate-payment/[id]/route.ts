@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
 import { setStatusById } from "@/modules/payment/api/transaction";
 import { prisma } from "@/lib/prisma";
-import { revalidatePaymentViews } from "@/modules/lazsip/api/revalidatePaymentViews";
+import { revalidateSourcePaymentViews } from "@/modules/payment/api/revalidate";
 
 export async function PUT(
   request: Request,
@@ -25,6 +25,6 @@ export async function PUT(
   }
 
   await setStatusById(id, body.status);
-  if (trx.moduleSource === "lazsip") revalidatePaymentViews();
+  revalidateSourcePaymentViews(trx.moduleSource);
   return NextResponse.json({ ok: true });
 }

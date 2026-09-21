@@ -30,7 +30,7 @@ export default async function CheckoutPage({
           <div className="flex justify-between gap-4"><dt>Biaya admin</dt><dd>Rp{transaction.adminFee.toLocaleString("id-ID")}</dd></div>
           <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 font-bold text-slate-900"><dt>Total simulasi</dt><dd>Rp{(transaction.amount + transaction.adminFee).toLocaleString("id-ID")}</dd></div>
         </dl>
-        <CheckoutForm key={transaction.id} transaction={{ id: transaction.id, status: transaction.status }} />
+        <CheckoutForm key={transaction.id} transaction={{ id: transaction.id, status: transaction.status, moduleSource: transaction.moduleSource }} />
       </section>
     </main>
   );

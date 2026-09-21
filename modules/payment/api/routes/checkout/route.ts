@@ -1,13 +1,17 @@
 import { createCampaignCheckout, DonationValidationError } from "@/modules/lazsip/api/campaignCheckout";
+import { createSarsipCheckout } from "@/modules/sarsip/api/checkout";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  if (body?.moduleSource !== "lazsip" || body?.sourceType !== "campaign" || body?.fundType !== "infak") {
+  const supported = (body?.moduleSource === "lazsip" && body?.fundType === "infak") ||
+    (body?.moduleSource === "sarsip" && body?.fundType === "donasi");
+  if (!supported || body?.sourceType !== "campaign") {
     return NextResponse.json({ error: "Jenis checkout belum didukung." }, { status: 400 });
   }
   try {
-    const transaction = await createCampaignCheckout({
+    const checkout = body.moduleSource === "sarsip" ? createSarsipCheckout : createCampaignCheckout;
+    const transaction = await checkout({
       campaignId: typeof body.sourceId === "string" ? body.sourceId : "",
       donorName: typeof body.donorName === "string" ? body.donorName : "",
       donorPhone: typeof body.donorPhone === "string" ? body.donorPhone : "",

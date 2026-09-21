@@ -47,7 +47,7 @@ export async function getTransactionStatus(id: string) {
   return prisma.paymentTransaction.findUnique({
     where: { id },
     // Public response: no donor identity or destination details.
-    select: { id: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true },
+    select: { id: true, moduleSource: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true },
   });
 }
 

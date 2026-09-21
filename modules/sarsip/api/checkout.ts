@@ -8,7 +8,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
 export { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
 
-export async function createCampaignCheckout(input: {
+export async function createSarsipCheckout(input: {
   campaignId: string; donorName: string; donorPhone: string; amount: number;
   coversFee: boolean; isAnonymous: boolean; paymentMethod: string;
 }) {
@@ -25,24 +25,24 @@ export async function createCampaignCheckout(input: {
   for (let attempt = 0; ; attempt++) {
     try {
       return await prisma.$transaction(async (tx) => {
-        const campaign = await tx.lazsipCampaign.findUnique({ where: { id: input.campaignId } });
-        if (!campaign || campaign.status !== "active") {
+        const campaign = await tx.sarsipEntry.findUnique({ where: { id: input.campaignId } });
+        if (!campaign || (campaign.kind !== "campaign" || campaign.status !== "published")) {
           throw new DonationValidationError("Campaign tidak ditemukan atau sudah selesai.", 404);
         }
-        const method = await tx.lazsipPaymentFeeRef.findUnique({ where: { method: input.paymentMethod } });
+        const method = await tx.sarsipPaymentMethod.findUnique({ where: { method: input.paymentMethod } });
         if (!method) throw new DonationValidationError("Metode pembayaran tidak tersedia.");
         const adminFee = input.coversFee ? calculateFee(method, input.amount) : 0;
         if (!Number.isSafeInteger(adminFee) || adminFee < 0 || input.amount + adminFee > 2_147_483_647) {
           throw new DonationValidationError("Total pembayaran tidak valid.");
         }
         const destination = await tx.paymentDestinationAccount.findFirst({
-          where: { moduleSource: "lazsip", fundType: "infak" }, select: { id: true },
+          where: { moduleSource: "sarsip", fundType: "donasi" }, select: { id: true },
         });
         if (!destination) throw new DonationValidationError("Rekening tujuan belum tersedia. Silakan hubungi pengelola.", 503);
         const donor = await findOrCreateDonor(name, phone, tx);
         return createTransaction({
-          moduleSource: "lazsip", sourceType: "campaign", sourceId: campaign.id,
-          fundType: "infak", donorId: donor.id, isAnonymous: input.isAnonymous,
+          moduleSource: "sarsip", sourceType: "campaign", sourceId: campaign.id,
+          fundType: "donasi", donorId: donor.id, isAnonymous: input.isAnonymous,
           amount: input.amount, adminFee, paymentMethod: method.method,
         }, tx);
       });
@@ -53,3 +53,4 @@ export async function createCampaignCheckout(input: {
     }
   }
 }
+

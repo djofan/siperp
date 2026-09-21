@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" fill="none">
+  <defs>
+    <linearGradient id="sky" x2="0" y2="1080" gradientUnits="userSpaceOnUse"><stop stop-color="#102b35"/><stop offset="1" stop-color="#3d625d"/></linearGradient>
+    <radialGradient id="light"><stop stop-color="#e89455" stop-opacity=".35"/><stop offset="1" stop-color="#e89455" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="90" height="90" patternUnits="userSpaceOnUse"><path d="M90 0H0V90" stroke="#d1e7dd" stroke-opacity=".06"/></pattern>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h1920v1080H0z"/>
+  <ellipse cx="1490" cy="210" rx="600" ry="460" fill="url(#light)"/>
+  <g stroke="#c8dfd5" stroke-opacity=".13" stroke-width="2">
+    <path d="M-200 160C130-70 360 420 640 180S1130-30 1350 120s460 250 770 30"/>
+    <path d="M-200 190C130-40 360 450 640 210S1130 0 1350 150s460 250 770 30"/>
+    <path d="M-200 220C130-10 360 480 640 240S1130 30 1350 180s460 250 770 30"/>
+    <path d="M-200 250C130 20 360 510 640 270S1130 60 1350 210s460 250 770 30"/>
+    <circle cx="1640" cy="340" r="190"/><circle cx="1640" cy="340" r="225" stroke-dasharray="4 16"/>
+    <path d="M1640 70v540M1370 340h540"/>
+  </g>
+  <path d="m0 750 210-240 180 125 300-300 240 310 185-170 235 170 240-260 330 300v395H0Z" fill="#436561" opacity=".5"/>
+  <path d="m0 850 340-270 200 180 280-245 210 190 235-105 260 200 230-190 165 100v370H0Z" fill="#234942"/>
+  <path d="m0 970 300-170 330 130 300-160 400 150 340-160 250 170v150H0Z" fill="#14342f"/>
+  <path fill="url(#grid)" d="M0 0h1920v1080H0z"/>
+  <g stroke="#ed9554" stroke-width="3" opacity=".6"><path d="M155 360v24m-12-12h24M1780 700v24m-12-12h24"/></g>
+</svg>
