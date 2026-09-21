@@ -38,6 +38,7 @@ export default async function DashboardLayout({
         { href: "/admin/super", label: "Overview" },
         { href: "/admin/super/akun", label: "Kelola Akun" },
         { href: "/admin/super/modul", label: "Modul Terdaftar" },
+        { href: "/admin/super/rekening-payment", label: "Rekening Pembayaran" },
       ],
     });
   }

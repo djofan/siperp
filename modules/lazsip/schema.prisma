@@ -152,6 +152,22 @@ model LazsipZakatPayment {
   @@map("lazsip_zakat_payments")
 }
 
+// Metadata zakat spesifik per transaksi lewat modul Payment (zakatType, harga emas, jumlah
+// jiwa) — SENGAJA tidak menyimpan uang/donor/status, itu semua otoritas PaymentTransaction.
+// Kalau disimpan dobel di sini, listDonors() bakal hitung dobel kontribusi donatur karena
+// PaymentDonor.zakatPayments juga baca dari LazsipZakatPayment (tabel lama di atas).
+// LazsipZakatPayment lama tetap dipertahankan apa adanya, cuma buat data historis sebelum
+// modul Payment ada — bukan ditulis lagi oleh alur checkout baru.
+model LazsipZakatDetail {
+  id                String   @id @default(cuid())
+  zakatType         String   @map("zakat_type") // "maal" | "fitrah"
+  goldPriceSnapshot Int?     @map("gold_price_snapshot") // dipakai zakat maal saja
+  jiwaCount         Int?     @map("jiwa_count") // dipakai zakat fitrah saja
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("lazsip_zakat_details")
+}
+
 model LazsipPaymentFeeRef {
   id            String @id @default(cuid())
   method        String @unique

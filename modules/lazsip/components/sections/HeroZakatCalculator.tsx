@@ -121,7 +121,7 @@ export function HeroZakatCalculator({
             {!hasInput ? "Menunggu input" : isMaal ? (maal.isWajibZakat ? "Wajib Zakat" : "Belum Wajib") : "Siap Dibayar"}
           </span>
           <p className="mt-1 truncate text-lg font-extrabold text-white">{formatRupiah(zakatAmount)}</p>
-          <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-white/50">
+          <p className="mt-0.5 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-white/50">
             {isMaal
               ? !hasInput
                 ? `Nisab setara ${NISAB_GRAM} gram emas (${formatRupiah(nisabValue)}).`

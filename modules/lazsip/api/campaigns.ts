@@ -91,6 +91,7 @@ export async function listCampaignHistory(campaignId: string): Promise<CampaignH
     prisma.lazsipDonation.findMany({
       where: { campaignId, status: "paid" },
       orderBy: { createdAt: "desc" },
+      include: { donor: { select: { name: true } } },
     }),
     prisma.lazsipCampaignAdjustment.findMany({
       where: { campaignId },
@@ -102,7 +103,7 @@ export async function listCampaignHistory(campaignId: string): Promise<CampaignH
     ...donations.map((d) => ({
       id: d.id,
       kind: "donasi" as const,
-      label: d.isAnonymous ? "Donatur (anonim)" : d.donorName,
+      label: d.isAnonymous ? "Donatur (anonim)" : d.donor.name,
       amount: d.amount,
       createdAt: d.createdAt,
     })),

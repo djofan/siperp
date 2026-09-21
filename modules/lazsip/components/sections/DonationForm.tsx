@@ -4,7 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
-import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
+import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 
 const QUICK_NOMINAL = [50_000, 100_000, 250_000, 500_000, 1_000_000];
 
@@ -22,6 +22,7 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
   const [anonim, setAnonim] = useState(false);
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
+  const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,8 +45,22 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
       setError(!method ? "Metode pembayaran belum tersedia. Silakan hubungi pengelola." : "Masukkan nominal donasi terlebih dahulu.");
       return;
     }
-    if (!nama.trim() || !normalizeDonorPhone(kontak)) {
-      setError("Nama dan nomor WhatsApp yang valid wajib diisi, termasuk untuk donasi anonim.");
+    if (!nama.trim()) {
+      setError("Nama wajib diisi.");
+      return;
+    }
+    const phoneValid = kontak.trim() ? normalizeDonorPhone(kontak) : null;
+    const emailValid = email.trim() ? normalizeDonorEmail(email) : null;
+    if (kontak.trim() && !phoneValid) {
+      setError("Nomor WhatsApp tidak valid.");
+      return;
+    }
+    if (email.trim() && !emailValid) {
+      setError("Alamat email tidak valid.");
+      return;
+    }
+    if (!phoneValid && !emailValid) {
+      setError("Isi minimal salah satu: nomor WhatsApp atau email.");
       return;
     }
     setError(null);
@@ -62,6 +77,7 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
           fundType: "infak",
           donorName: nama.trim(),
           donorPhone: kontak,
+          donorEmail: email.trim(),
           isAnonymous: anonim,
           amount: nominalNumber,
           coversFee,
@@ -179,7 +195,6 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
           <label htmlFor="donasi-kontak" className="text-sm font-medium text-lazsip-primary-900">Nomor WhatsApp</label>
           <input
             id="donasi-kontak"
-            required
             type="tel"
             autoComplete="tel"
             maxLength={25}
@@ -191,6 +206,21 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
         </div>
       </div>
 
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="donasi-email" className="text-sm font-medium text-lazsip-primary-900">Email</label>
+        <input
+          id="donasi-email"
+          type="email"
+          autoComplete="email"
+          maxLength={191}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="nama@email.com"
+          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+        />
+        <p className="text-xs text-lazsip-primary-800/50">Isi minimal salah satu: WhatsApp atau email. Email dipakai kirim kode pelacakan &amp; bisa dipakai cek riwayat donasi kapan saja.</p>
+      </div>
+
       <label className="flex items-center gap-3">
         <input
           type="checkbox"
@@ -198,7 +228,7 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
           onChange={(e) => setAnonim(e.target.checked)}
           className="h-4 w-4 rounded border-lazsip-primary-300 text-lazsip-primary-700 focus:ring-lazsip-primary-400"
         />
-        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya di daftar donatur publik (Hamba Allah). Nama asli dan nomor WhatsApp tetap dicatat dan hanya dapat dilihat admin.</span>
+        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya di daftar donatur publik (Hamba Allah). Nama asli, nomor WhatsApp, dan email tetap dicatat dan hanya dapat dilihat admin.</span>
       </label>
 
       <div className="flex flex-col gap-2 border-t border-lazsip-primary-100 pt-4 text-sm">

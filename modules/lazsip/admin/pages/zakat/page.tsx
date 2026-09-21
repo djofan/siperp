@@ -1,12 +1,13 @@
 import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
 import { TransactionTable, type TransactionRow } from "@/modules/lazsip/components/admin/TransactionTable";
-import { listZakatPaymentsForAdmin } from "@/modules/lazsip/api/zakat";
+import { listZakatPaymentsForAdmin, listPaymentZakatForAdmin } from "@/modules/lazsip/api/zakat";
 
 export default async function TransaksiZakatPage() {
-  const zakatPayments = await listZakatPaymentsForAdmin();
+  const [legacyZakat, paymentZakat] = await Promise.all([listZakatPaymentsForAdmin(), listPaymentZakatForAdmin()]);
 
-  const rows: TransactionRow[] = zakatPayments
-    .map((z) => ({
+  const rows: TransactionRow[] = [
+    ...legacyZakat.map((z) => ({
+      source: "zakat" as const,
       id: z.id,
       type: "zakat" as const,
       label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
@@ -15,8 +16,19 @@ export default async function TransaksiZakatPage() {
       paymentMethod: z.paymentMethod,
       status: z.status,
       createdAt: z.createdAt,
-    }))
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    })),
+    ...paymentZakat.map((z) => ({
+      source: "payment" as const,
+      id: z.id,
+      type: "zakat" as const,
+      label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
+      donorName: z.donorName,
+      amount: z.amount,
+      paymentMethod: z.paymentMethod,
+      status: z.status,
+      createdAt: z.createdAt,
+    })),
+  ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   return (
     <div>

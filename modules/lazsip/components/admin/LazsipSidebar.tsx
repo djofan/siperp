@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
 
-const NAV_ITEMS = [
+export const LAZSIP_NAV_ITEMS = [
   { href: "/admin/lazsip", label: "Dashboard" },
   { href: "/admin/lazsip/donasi", label: "Donasi / Campaign" },
   { href: "/admin/lazsip/transaksi", label: "Transaksi Donasi" },
@@ -24,7 +24,7 @@ const NAV_ITEMS = [
 ];
 
 function getActiveHref(pathname: string): string | null {
-  const matches = NAV_ITEMS.map((item) => item.href).filter(
+  const matches = LAZSIP_NAV_ITEMS.map((item) => item.href).filter(
     (href) => pathname === href || pathname.startsWith(`${href}/`)
   );
   if (matches.length === 0) return null;
@@ -45,7 +45,7 @@ export function LazsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-4">
-        {NAV_ITEMS.map((item) => {
+        {LAZSIP_NAV_ITEMS.map((item) => {
           const isActive = item.href === activeHref;
           return (
             <Link

@@ -3,7 +3,7 @@ import { DonorTable } from "@/modules/lazsip/components/admin/DonorTable";
 import { listDonors } from "@/modules/lazsip/api/donors";
 
 export default async function DonaturZakatPage() {
-  const donors = (await listDonors()).filter((d) => d.type === "zakat");
+  const donors = (await listDonors()).filter((d) => d.types.includes("zakat"));
 
   return (
     <div>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession, hasModuleAccess } from "@/lib/auth";
 import { LazsipAdminShellChrome } from "@/modules/lazsip/components/admin/LazsipAdminShellChrome";
+import { getDashboardCounts } from "@/modules/lazsip/api/dashboard";
 
 export default async function LazsipAdminLayout({
   children,
@@ -15,5 +16,11 @@ export default async function LazsipAdminLayout({
     redirect("/admin?error=forbidden");
   }
 
-  return <LazsipAdminShellChrome userName={session.name}>{children}</LazsipAdminShellChrome>;
+  const { pendingTransactions } = await getDashboardCounts();
+
+  return (
+    <LazsipAdminShellChrome userName={session.name} pendingTransactionsCount={pendingTransactions}>
+      {children}
+    </LazsipAdminShellChrome>
+  );
 }

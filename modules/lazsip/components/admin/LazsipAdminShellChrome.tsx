@@ -8,9 +8,11 @@ import { cn } from "@/lib/utils";
 
 export function LazsipAdminShellChrome({
   userName,
+  pendingTransactionsCount,
   children,
 }: {
   userName: string;
+  pendingTransactionsCount?: number;
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -32,7 +34,13 @@ export function LazsipAdminShellChrome({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <LazsipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} theme={theme} onToggleTheme={toggleTheme} />
+        <LazsipTopbar
+          userName={userName}
+          onMenuClick={() => setMobileOpen(true)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          pendingTransactionsCount={pendingTransactionsCount}
+        />
         <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

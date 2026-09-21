@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 
 interface FeeRef {
   method: string;
@@ -19,6 +21,8 @@ export function ZakatPaymentForm({
   initialType?: string;
   initialAmount?: string;
 }) {
+  const router = useRouter();
+
   // Jenis zakat (maal/fitrah) ditentukan di kalkulator sebelum sampai sini, bukan dipilih
   // ulang di form ini — kalau datang langsung dari tombol Navbar/Footer, default "maal".
   const zakatType = initialType === "fitrah" ? "fitrah" : "maal";
@@ -29,10 +33,9 @@ export function ZakatPaymentForm({
   const [anonim, setAnonim] = useState(false);
   const [nama, setNama] = useState("");
   const [kontak, setKontak] = useState("");
+  const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
-  const [transactionCode, setTransactionCode] = useState<string | null>(null);
 
   const nominalNumber = Number(nominal.replace(/[^0-9]/g, "")) || 0;
   const method = feeRefs.find((m) => m.method === paymentMethod) ?? null;
@@ -48,65 +51,69 @@ export function ZakatPaymentForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
+
+    if (nominalNumber <= 0 || !method) {
+      setError(!method ? "Metode pembayaran belum tersedia. Silakan hubungi pengelola." : "Isi nominal zakat yang ingin dibayar terlebih dahulu.");
+      return;
+    }
+    if (!nama.trim()) {
+      setError("Nama wajib diisi.");
+      return;
+    }
+    const phoneValid = kontak.trim() ? normalizeDonorPhone(kontak) : null;
+    const emailValid = email.trim() ? normalizeDonorEmail(email) : null;
+    if (kontak.trim() && !phoneValid) {
+      setError("Nomor WhatsApp tidak valid.");
+      return;
+    }
+    if (email.trim() && !emailValid) {
+      setError("Alamat email tidak valid.");
+      return;
+    }
+    if (!phoneValid && !emailValid) {
+      setError("Isi minimal salah satu: nomor WhatsApp atau email.");
+      return;
+    }
+
     setError(null);
-
-    if (nominalNumber <= 0) {
-      setError("Isi nominal zakat yang ingin dibayar terlebih dahulu.");
-      return;
-    }
-    if (!paymentMethod) {
-      setError("Metode pembayaran wajib dipilih.");
-      return;
-    }
-
     setIsSubmitting(true);
-    const response = await fetch("/api/lazsip/zakat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        donorName: nama,
-        zakatType,
-        amount: nominalNumber,
-        coversFee,
-        isAnonymous: anonim,
-        paymentMethod,
-      }),
-    });
-    setIsSubmitting(false);
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengirim pembayaran zakat.");
-      return;
+    try {
+      const response = await fetch("/api/payment/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          moduleSource: "lazsip",
+          sourceType: "zakat",
+          fundType: "zakat",
+          zakatType,
+          donorName: nama.trim(),
+          donorPhone: kontak,
+          donorEmail: email.trim(),
+          isAnonymous: anonim,
+          amount: nominalNumber,
+          coversFee,
+          paymentMethod,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        setError(data?.error ?? "Gagal mengirim pembayaran zakat.");
+        return;
+      }
+
+      const data = await response.json();
+      if (typeof data.transactionId !== "string" || !data.transactionId) {
+        throw new Error("Respons checkout tidak valid.");
+      }
+      router.push(`/payment/checkout/${data.transactionId}`);
+    } catch {
+      setError("Gagal membuka pembayaran. Periksa koneksi lalu coba lagi.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const data = await response.json();
-    setTransactionCode(data.id);
-    setSubmitted(true);
-  }
-
-  if (submitted) {
-    return (
-      <div
-        id="form"
-        className="scroll-mt-28 flex flex-col gap-3 rounded-3xl border border-lazsip-primary-100 bg-white p-6 sm:p-8"
-      >
-        <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900">Terima kasih!</h2>
-        <p className="text-sm leading-relaxed text-lazsip-primary-800/70">
-          Pembayaran zakat tercatat dan menunggu konfirmasi. Zakat disalurkan lewat rekening khusus zakat, terpisah
-          dari donasi/infaq.
-        </p>
-        {transactionCode && (
-          <div className="rounded-2xl bg-lazsip-primary-50/60 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50">Kode Transaksi</p>
-            <p className="mt-1 break-all font-mono text-sm font-semibold text-lazsip-primary-900">{transactionCode}</p>
-            <p className="mt-1.5 text-xs text-lazsip-primary-800/60">
-              Simpan kode ini untuk cek status pembayaran lewat menu &quot;Cek Status&quot; di beranda.
-            </p>
-          </div>
-        )}
-      </div>
-    );
   }
 
   return (
@@ -144,7 +151,7 @@ export function ZakatPaymentForm({
       <div className="flex flex-col gap-2.5">
         <label className="text-sm font-medium text-lazsip-primary-900">Metode pembayaran</label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {feeRefs.length === 0 && <p className="col-span-2 text-xs text-lazsip-primary-800/50">Belum ada metode pembayaran.</p>}
+          {feeRefs.length === 0 && <p role="status" className="col-span-2 text-sm text-lazsip-primary-800/70">Metode pembayaran belum tersedia. Silakan hubungi pengelola untuk mengaktifkannya.</p>}
           {feeRefs.map((ref) => (
             <button
               key={ref.method}
@@ -186,8 +193,10 @@ export function ZakatPaymentForm({
           </label>
           <input
             id="zakat-nama"
-            disabled={anonim}
-            value={anonim ? "Hamba Allah" : nama}
+            required
+            maxLength={191}
+            autoComplete="name"
+            value={nama}
             onChange={(e) => setNama(e.target.value)}
             placeholder="Nama Anda"
             className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 disabled:bg-lazsip-primary-50 disabled:text-lazsip-primary-800/50"
@@ -199,13 +208,30 @@ export function ZakatPaymentForm({
           </label>
           <input
             id="zakat-kontak"
-            inputMode="numeric"
+            type="tel"
+            autoComplete="tel"
+            maxLength={25}
             value={kontak}
             onChange={(e) => setKontak(e.target.value)}
             placeholder="08xxxxxxxxxx"
             className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="zakat-email" className="text-sm font-medium text-lazsip-primary-900">Email</label>
+        <input
+          id="zakat-email"
+          type="email"
+          autoComplete="email"
+          maxLength={191}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="nama@email.com"
+          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+        />
+        <p className="text-xs text-lazsip-primary-800/50">Isi minimal salah satu: WhatsApp atau email. Email dipakai kirim kode pelacakan &amp; bisa dipakai cek riwayat zakat kapan saja.</p>
       </div>
 
       <label className="flex items-center gap-3">
@@ -215,7 +241,7 @@ export function ZakatPaymentForm({
           onChange={(e) => setAnonim(e.target.checked)}
           className="h-4 w-4 rounded border-lazsip-primary-300 text-lazsip-primary-700 focus:ring-lazsip-primary-400"
         />
-        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya (zakat sebagai Hamba Allah)</span>
+        <span className="text-sm text-lazsip-primary-800/80">Sembunyikan nama saya di daftar publik (Hamba Allah). Nama asli, nomor WhatsApp, dan email tetap dicatat dan hanya dapat dilihat admin.</span>
       </label>
 
       <div className="flex flex-col gap-2 border-t border-lazsip-primary-100 pt-4 text-sm">
@@ -233,11 +259,11 @@ export function ZakatPaymentForm({
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
       <button
         type="submit"
-        disabled={isSubmitting || nominalNumber <= 0}
+        disabled={isSubmitting || nominalNumber <= 0 || !method}
         className="inline-flex items-center justify-center rounded-full bg-lazsip-primary-900 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? "Memproses..." : `Bayar Zakat ${nominalNumber > 0 ? formatRupiah(total) : "Sekarang"}`}

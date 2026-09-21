@@ -1,6 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { notifySourceModule } from "@/modules/payment/api/registry";
+import { sendTrackingCodeEmail } from "@/modules/payment/api/email";
 import type { Prisma } from "@/generated/prisma/client";
+
+// Tanpa 0/O/1/I biar gak ketuker pas donatur baca/ketik ulang kodenya.
+const TRACKING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const TRACKING_PREFIX: Record<string, string> = { lazsip: "LZS", sarsip: "SRS" };
+
+function generateTrackingCode(moduleSource: string): string {
+  const prefix = TRACKING_PREFIX[moduleSource] ?? "TRX";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += TRACKING_CODE_ALPHABET[Math.floor(Math.random() * TRACKING_CODE_ALPHABET.length)];
+  }
+  return `${prefix}-${code}`;
+}
 
 async function resolveDestinationAccount(moduleSource: string, fundType: string, tx: Prisma.TransactionClient) {
   const account = await tx.paymentDestinationAccount.findFirst({
@@ -13,6 +27,8 @@ async function resolveDestinationAccount(moduleSource: string, fundType: string,
   }
   return account;
 }
+
+const DUPLICATE_WINDOW_MS = 5_000;
 
 export async function createTransaction(input: {
   moduleSource: string;
@@ -27,27 +43,72 @@ export async function createTransaction(input: {
 }, tx: Prisma.TransactionClient = prisma) {
   const destination = await resolveDestinationAccount(input.moduleSource, input.fundType, tx);
 
-  return tx.paymentTransaction.create({
-    data: {
-      moduleSource: input.moduleSource,
-      sourceType: input.sourceType,
-      sourceId: input.sourceId,
-      fundType: input.fundType,
+  // Guard against accidental double-submit (double click, client retry, flaky network):
+  // reuse a still-pending checkout from the same donor for the same amount/method made
+  // moments ago instead of creating a duplicate transaction. Source-specific fields
+  // (sourceId) are deliberately excluded — some sources (e.g. zakat) mint a fresh sourceId
+  // per attempt, so matching on it would defeat the guard.
+  const recent = await tx.paymentTransaction.findFirst({
+    where: {
       donorId: input.donorId,
-      isAnonymous: input.isAnonymous ?? false,
+      moduleSource: input.moduleSource,
+      fundType: input.fundType,
       amount: input.amount,
-      adminFee: input.adminFee ?? 0,
       paymentMethod: input.paymentMethod,
-      destinationAccountId: destination.id,
+      status: "pending",
+      createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
     },
+    orderBy: { createdAt: "desc" },
   });
+  if (recent) return recent;
+
+  let transaction;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      transaction = await tx.paymentTransaction.create({
+        data: {
+          trackingCode: generateTrackingCode(input.moduleSource),
+          moduleSource: input.moduleSource,
+          sourceType: input.sourceType,
+          sourceId: input.sourceId,
+          fundType: input.fundType,
+          donorId: input.donorId,
+          isAnonymous: input.isAnonymous ?? false,
+          amount: input.amount,
+          adminFee: input.adminFee ?? 0,
+          paymentMethod: input.paymentMethod,
+          destinationAccountId: destination.id,
+        },
+        include: { donor: { select: { email: true } } },
+      });
+      break;
+    } catch (error) {
+      // Extremely unlikely tracking-code collision — regenerate and retry a few times.
+      if (attempt < 4 && error && typeof error === "object" && "code" in error && error.code === "P2002") continue;
+      throw error;
+    }
+  }
+
+  // Kode pelacakan selalu tampil di layar (dipanggil di UI dari nilai balik fungsi ini),
+  // email cuma pengiriman tambahan — kalau gagal, jangan gagalkan seluruh checkout.
+  if (transaction.donor.email) {
+    void sendTrackingCodeEmail(transaction.donor.email, transaction.trackingCode, transaction.amount + transaction.adminFee)
+      .catch((error) => console.error("Gagal mengirim email kode pelacakan", error));
+  }
+
+  return transaction;
 }
 
 export async function getTransactionStatus(id: string) {
+  // Public response: no donor identity. Destination account IS included — the payer
+  // needs it to complete a manual transfer while no real gateway is wired (simulation
+  // mode); it is routing info, not personal data.
   return prisma.paymentTransaction.findUnique({
     where: { id },
-    // Public response: no donor identity or destination details.
-    select: { id: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true },
+    select: {
+      id: true, trackingCode: true, moduleSource: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true,
+      destinationAccount: { select: { bankName: true, accountNumber: true, accountName: true } },
+    },
   });
 }
 
@@ -86,6 +147,10 @@ async function finalizeTransaction(
 
 export async function markAsPaid(midtransOrderId: string) {
   return finalizeTransaction({ midtransOrderId }, "paid");
+}
+
+export async function markAsFailed(midtransOrderId: string) {
+  return finalizeTransaction({ midtransOrderId }, "failed");
 }
 
 export async function setStatusById(id: string, status: "paid" | "failed") {

@@ -45,9 +45,10 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
       } });
       createdDestination = destination.id;
     }
-    const input = { campaignId, donorName: name, donorPhone: phone, amount: 10000, coversFee: true, isAnonymous: true, paymentMethod: method };
+    const input = { campaignId, donorName: name, donorPhone: phone, donorEmail: `${tag}@example.com`, amount: 10000, coversFee: true, isAnonymous: true, paymentMethod: method };
     await assert.rejects(createCampaignCheckout({ ...input, donorName: " " }));
     await assert.rejects(createCampaignCheckout({ ...input, donorPhone: "invalid" }));
+    await assert.rejects(createCampaignCheckout({ ...input, donorEmail: "invalid" }));
     await assert.rejects(createCampaignCheckout({ ...input, amount: -1 }));
     await assert.rejects(createCampaignCheckout({ ...input, paymentMethod: "missing" }));
     assert.equal(await prisma.paymentDonor.count({ where: { phone } }), 0);
@@ -74,9 +75,10 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     const repeated = await createCampaignCheckout({ ...input, donorPhone: `0${phone.slice(2)}`, amount: 20000, coversFee: false });
     assert.equal(repeated.donorId, first.donorId);
     assert.equal(repeated.adminFee, 0);
+    const otherEmail = `${tag}-other@example.com`;
     const simultaneous = await Promise.all([
-      createCampaignCheckout({ ...input, donorName: visibleName, donorPhone: otherPhone, isAnonymous: false }),
-      createCampaignCheckout({ ...input, donorName: visibleName, donorPhone: `+${otherPhone}`, isAnonymous: false }),
+      createCampaignCheckout({ ...input, donorName: visibleName, donorPhone: otherPhone, donorEmail: otherEmail, isAnonymous: false }),
+      createCampaignCheckout({ ...input, donorName: visibleName, donorPhone: `+${otherPhone}`, donorEmail: otherEmail, isAnonymous: false }),
     ]);
     assert.equal(simultaneous[0].donorId, simultaneous[1].donorId);
     assert.equal(await prisma.paymentDonor.count({ where: { phone: { in: [phone, otherPhone] } } }), 2);

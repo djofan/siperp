@@ -65,6 +65,21 @@ export function HeroCekStatus() {
         </button>
       </form>
 
+      <ul className="mt-5 flex flex-col gap-2.5 border-t border-lazsip-primary-100 pt-4 text-xs leading-relaxed text-lazsip-primary-800/60">
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Kode transaksi (format LZS-XXXXXX) muncul di layar begitu Anda selesai donasi/bayar zakat.
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Kode yang sama juga dikirim ke email Anda kalau diisi saat transaksi.
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Bisa dicek kapan saja, tanpa perlu login.
+        </li>
+      </ul>
+
       {showModal && result && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-lazsip-primary-900/50" onClick={() => setShowModal(false)} aria-hidden />

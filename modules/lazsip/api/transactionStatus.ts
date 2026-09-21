@@ -13,18 +13,28 @@ export interface TransactionStatusResult {
 }
 
 /**
- * Cek status transaksi publik lewat kode (= id Donation/ZakatPayment). Ini bukan data
+ * Cek status transaksi publik lewat kode pelacakan (mis. "LZS-7F3K2Q"). Ini bukan data
  * sensitif — siapa pun yang tahu kode ini memang pemilik transaksinya (analog resi belanja).
+ * Fallback ke id mentah untuk transaksi lama (LazsipDonation/LazsipZakatPayment) yang dibuat
+ * sebelum kode pelacakan ada — kode lama yang sudah ditampilkan ke donatur tetap harus jalan.
  */
 export async function getTransactionStatus(code: string): Promise<TransactionStatusResult | null> {
   const payment = await prisma.paymentTransaction.findFirst({
-    where: { id: code, moduleSource: "lazsip", sourceType: "campaign" },
-    select: { id: true, sourceId: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true },
+    where: { trackingCode: code, moduleSource: "lazsip" },
+    select: { trackingCode: true, sourceType: true, sourceId: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true },
   });
-  if (payment) {
+  if (payment && payment.sourceType === "campaign") {
     const campaign = await prisma.lazsipCampaign.findUnique({ where: { id: payment.sourceId }, select: { title: true } });
     return {
-      found: true, code: payment.id, type: "donasi", label: campaign?.title ?? "Donasi",
+      found: true, code: payment.trackingCode, type: "donasi", label: campaign?.title ?? "Donasi",
+      amount: payment.amount, adminFee: payment.adminFee, paymentMethod: payment.paymentMethod,
+      status: payment.status, createdAt: payment.createdAt,
+    };
+  }
+  if (payment && payment.sourceType === "zakat") {
+    const detail = await prisma.lazsipZakatDetail.findUnique({ where: { id: payment.sourceId }, select: { zakatType: true } });
+    return {
+      found: true, code: payment.trackingCode, type: "zakat", label: detail?.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       amount: payment.amount, adminFee: payment.adminFee, paymentMethod: payment.paymentMethod,
       status: payment.status, createdAt: payment.createdAt,
     };
