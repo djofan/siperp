@@ -11,6 +11,7 @@ interface ModuleBadgeColor {
 
 const MODULE_BADGE_COLORS: Record<string, ModuleBadgeColor> = {
   lazsip: { bg: "bg-[#73AE43]/10", text: "text-[#4F7A2C]", dot: "bg-[#73AE43]" },
+  sip: { bg: "bg-[#74AF27]/10", text: "text-[#213504]", dot: "bg-[#74AF27]" },
   sarsip: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-amber-500" },
 };
 

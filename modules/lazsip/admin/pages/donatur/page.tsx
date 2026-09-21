@@ -8,8 +8,8 @@ export default async function DonaturPage() {
   return (
     <div>
       <AdminPageHeader
-        title="Kelola Donatur"
-        description="Rekap otomatis dari transaksi yang berhasil lunas — dihitung langsung dari data transaksi, bukan tabel terpisah, supaya selalu akurat."
+        title="Semua Donatur"
+        description="Gabungan donatur infaq/donasi dan muzakki zakat — dihitung otomatis dari transaksi yang berhasil lunas. Lihat menu Donatur Infaq / Donatur Zakat untuk rekap per segmen."
       />
       <DonorTable donors={donors} />
     </div>

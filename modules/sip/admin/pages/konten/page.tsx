@@ -1,6 +1,7 @@
 import { SipAdminPageHeader } from "@/modules/sip/components/admin/SipAdminPageHeader";
 import { SipSiteContentSectionForm } from "@/modules/sip/components/admin/SipSiteContentSectionForm";
 import { getSiteContent } from "@/modules/sip/api/siteContent";
+import { SIP_SITE_CONTENT_DEFAULTS } from "@/modules/sip/api/siteContentDefaults";
 
 export default async function SipKontenUmumPage() {
   const [hero, berita, program, penyaluranBantuan, tentang, jangkauanBantuan, kontak] = await Promise.all([
@@ -17,19 +18,20 @@ export default async function SipKontenUmumPage() {
     <div>
       <SipAdminPageHeader
         title="Konten Umum"
-        description="Semua teks judul & deskripsi section yang tampil di landing page SIP."
+        description="Semua teks judul & deskripsi section yang tampil di landing page SIP — editable tanpa deploy ulang. Field di bawah sudah terisi teks yang sekarang tampil di landing page."
       />
       <div className="flex flex-col gap-6">
         <SipSiteContentSectionForm
           sectionKey="hero"
           title="Hero (Beranda)"
           fields={[
+            { key: "backgroundImage", label: "Foto Background Hero", image: true },
             { key: "title", label: "Judul" },
             { key: "subtitle", label: "Subjudul", multiline: true },
             { key: "whatsappUrl", label: "Link WhatsApp Pengajuan Bantuan (wa.me/...)" },
             { key: "infaqUrl", label: "Link Infaq Sekarang (campaign LAZSIP)" },
           ]}
-          initialValue={hero ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.hero, ...(hero ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="berita"
@@ -39,7 +41,7 @@ export default async function SipKontenUmumPage() {
             { key: "title", label: "Judul Section" },
             { key: "description", label: "Deskripsi", multiline: true },
           ]}
-          initialValue={berita ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.berita, ...(berita ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="program"
@@ -49,7 +51,7 @@ export default async function SipKontenUmumPage() {
             { key: "title", label: "Judul Section" },
             { key: "description", label: "Deskripsi", multiline: true },
           ]}
-          initialValue={program ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.program, ...(program ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="penyaluranBantuan"
@@ -59,7 +61,7 @@ export default async function SipKontenUmumPage() {
             { key: "title", label: "Judul Section" },
             { key: "description", label: "Deskripsi", multiline: true },
           ]}
-          initialValue={penyaluranBantuan ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.penyaluranBantuan, ...(penyaluranBantuan ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="tentang"
@@ -70,7 +72,7 @@ export default async function SipKontenUmumPage() {
             { key: "misi", label: "Misi (satu poin per baris)", multiline: true },
             { key: "legalitas", label: "Legalitas (akta, izin LAZ, dll — satu poin per baris)", multiline: true },
           ]}
-          initialValue={tentang ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.tentang, ...(tentang ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="jangkauanBantuan"
@@ -81,7 +83,7 @@ export default async function SipKontenUmumPage() {
             { key: "provinsiCount", label: "Jumlah Provinsi" },
             { key: "kotaList", label: "Daftar Kota (satu per baris)", multiline: true },
           ]}
-          initialValue={jangkauanBantuan ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.jangkauanBantuan, ...(jangkauanBantuan ?? {}) }}
         />
         <SipSiteContentSectionForm
           sectionKey="kontak"
@@ -94,7 +96,7 @@ export default async function SipKontenUmumPage() {
             { key: "facebook", label: "URL Facebook" },
             { key: "youtube", label: "URL YouTube" },
           ]}
-          initialValue={kontak ?? {}}
+          initialValue={{ ...SIP_SITE_CONTENT_DEFAULTS.kontak, ...(kontak ?? {}) }}
         />
       </div>
     </div>

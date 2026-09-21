@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface NewsFormValues {
   title: string;
@@ -66,9 +66,11 @@ export function NewsForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className={staticPanelClasses("flex flex-col gap-5 p-6")}>
+        <div className={panelClasses("flex flex-col gap-5 p-6")}>
+          <ImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-lazsip-primary-900">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Judul<span className="ml-0.5 text-red-600">*</span>
             </label>
             <input
@@ -76,12 +78,12 @@ export function NewsForm({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Judul berita"
               required
-              className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-lazsip-primary-900">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Isi Berita<span className="ml-0.5 text-red-600">*</span>
             </label>
             <textarea
@@ -90,24 +92,22 @@ export function NewsForm({
               rows={10}
               required
               placeholder="Tulis isi berita di sini..."
-              className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-2xl bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
             />
           </div>
-
-          <ImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className={staticPanelClasses("flex flex-col gap-4 p-6")}>
-            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4">
-              <span className="text-sm font-medium text-lazsip-primary-900">
+          <div className={panelClasses("flex flex-col gap-4 p-6")}>
+            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 dark:bg-white/5 p-4">
+              <span className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
                 Status: {status === "published" ? "Published" : "Draft"}
               </span>
               <Toggle checked={status === "published"} onChange={(v) => setStatus(v ? "published" : "draft")} label="Status publish" />
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4">
-              <span className="text-sm font-medium text-lazsip-primary-900">Pin di beranda</span>
+            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 dark:bg-white/5 p-4">
+              <span className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Pin di beranda</span>
               <Toggle checked={isPinned} onChange={setIsPinned} label="Pin" />
             </div>
           </div>

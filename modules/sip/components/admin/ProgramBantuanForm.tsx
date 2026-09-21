@@ -6,7 +6,7 @@ import { SipImageUploadField } from "@/modules/sip/components/admin/SipImageUplo
 import { SipToggle } from "@/modules/sip/components/admin/SipToggle";
 import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButton";
 import { slugify } from "@/modules/sip/api/slugify";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramBantuanFormValues {
   title: string;
@@ -74,39 +74,48 @@ export function ProgramBantuanForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className={staticPanelClasses("p-6 sm:p-8")}>
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">
-              Judul<span className="ml-0.5 text-red-600">*</span>
-            </label>
-            <input
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-              required
-              placeholder="mis. Bantuan Kesehatan"
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
-            />
+      <div className={panelClasses("p-6 sm:p-8")}>
+        <div className="flex flex-col gap-5">
+          <SipImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+
+          <div className="flex items-center justify-between rounded-2xl bg-sip-primary-50/60 dark:bg-white/5 px-4 py-3.5">
+            <span className="text-sm font-medium text-sip-primary-900 dark:text-white">Pin di halaman Program</span>
+            <SipToggle checked={isPinned} onChange={setIsPinned} label="Pin" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
+                Judul<span className="ml-0.5 text-red-600">*</span>
+              </label>
+              <input
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+                required
+                placeholder="mis. Bantuan Kesehatan"
+                className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
+                Slug (URL)<span className="ml-0.5 text-red-600">*</span>
+              </label>
+              <input
+                value={slug}
+                onChange={(e) => {
+                  setSlugTouched(true);
+                  setSlug(e.target.value);
+                }}
+                required
+                placeholder="bantuan-kesehatan"
+                className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">
-              Slug (URL)<span className="ml-0.5 text-red-600">*</span>
-            </label>
-            <input
-              value={slug}
-              onChange={(e) => {
-                setSlugTouched(true);
-                setSlug(e.target.value);
-              }}
-              required
-              placeholder="bantuan-kesehatan"
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-sm font-medium text-sip-primary-900">
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
               Deskripsi<span className="ml-0.5 text-red-600">*</span>
             </label>
             <textarea
@@ -114,32 +123,21 @@ export function ProgramBantuanForm({
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl border border-sip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-2xl bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
           </div>
 
-          <div className="sm:col-span-2">
-            <SipImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
-          </div>
-        </div>
-
-        <div className="mt-6 grid grid-cols-1 gap-4 border-t border-sip-primary-100 pt-6 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900">Link Campaign LAZSIP (opsional)</label>
+          <div className="flex flex-col gap-1.5 border-t border-sip-primary-100 dark:border-white/10 pt-5">
+            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Link Campaign LAZSIP (opsional)</label>
             <input
               value={campaignUrl}
               onChange={(e) => setCampaignUrl(e.target.value)}
               placeholder="/lazsip/donasi/xxxxx"
-              className="rounded-full border border-sip-primary-200 bg-white px-4 py-2.5 text-sm text-sip-primary-900 outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
             />
-            <p className="text-xs text-sip-primary-800/50">
+            <p className="text-xs text-sip-primary-800/50 dark:text-white/45">
               Tombol &quot;Infaq untuk program ini&quot; akan mengarah ke link ini. Kosongkan kalau belum ada campaign terkait.
             </p>
-          </div>
-
-          <div className="flex items-center justify-between self-start rounded-2xl bg-sip-primary-50/60 px-4 py-3.5">
-            <span className="text-sm font-medium text-sip-primary-900">Pin di halaman Program</span>
-            <SipToggle checked={isPinned} onChange={setIsPinned} label="Pin" />
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ApplicantStatusSelect } from "@/modules/lazsip/components/admin/ApplicantStatusSelect";
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ApplicantRow {
   id: string;
@@ -61,23 +61,23 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada pendaftar yang cocok dengan filter." />
       ) : (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Kontak</th>
                   <th className="px-4 py-3.5 font-semibold">Program</th>
                   <th className="px-4 py-3.5 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {filtered.map((applicant) => (
-                  <tr key={applicant.id} className="transition-colors hover:bg-lazsip-primary-50/40">
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{applicant.name}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{applicant.contact}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{applicant.program.title}</td>
+                  <tr key={applicant.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{applicant.name}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{applicant.contact}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{applicant.program.title}</td>
                     <td className="px-4 py-3.5">
                       <ApplicantStatusSelect applicantId={applicant.id} initialStatus={applicant.status} />
                     </td>

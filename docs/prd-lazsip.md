@@ -61,7 +61,7 @@ LAZSIP (LAZ Solidaritas Insan Peduli) adalah divisi zakat & donasi di bawah SIP.
 - Filter berbentuk tab/chip per tipe bantuan: Pendidikan, Kesehatan, Kebutuhan Pokok, Lainnya. Tanpa filter dipilih → semua tipe tampil campur/acak.
 - **Kartu publik** menampilkan: nama, jumlah bantuan diterima.
 - **Halaman detail publik** menampilkan: nama, usia, masalah yang dihadapi, jenis kelamin, foto, cara mengetahui LAZSIP, kebutuhan, nama verifikator, wilayah cakupan verifikator.
-- **Tetap admin-only** (tidak pernah tampil ke publik): alamat, tanggal lahir, status pernikahan.
+- **Tetap admin-only** (tidak pernah tampil ke publik): alamat, tanggal lahir, status pernikahan, NIK, pekerjaan, penghasilan per bulan, jumlah tanggungan, rincian tanggungan.
 
 ### 3.9 Transparansi
 - Counter publik: total dana terkumpul, dibuat semenarik mungkin secara visual.
@@ -81,7 +81,7 @@ LAZSIP (LAZ Solidaritas Insan Peduli) adalah divisi zakat & donasi di bawah SIP.
 - **Campaign Donasi** — judul, deskripsi, target nominal, gambar, kode unik campaign, status pin, status aktif/selesai.
 - **Program Pemberdayaan** — judul, deskripsi, syarat, gambar, kategori (umum/pendidikan/SARSIP), status pin, toggle buka/tutup pendaftaran.
 - **Kegiatan** — judul, deskripsi, gambar, tanggal, status pin.
-- **Penerima Manfaat (Penyaluran Bantuan)** — nama, alamat, masalah yang dihadapi, tanggal lahir, usia, jenis kelamin, cara mengetahui LAZSIP, foto, kebutuhan, tipe bantuan (kebutuhan pokok/pendidikan/kesehatan/lainnya), jumlah bantuan diterima, nama verifikator, wilayah cakupan verifikator, status pernikahan (menikah/janda-cerai/janda-meninggal/duda-cerai/duda-meninggal).
+- **Penerima Manfaat (Penyaluran Bantuan)** — nama, alamat, masalah yang dihadapi, tanggal lahir, usia, jenis kelamin, cara mengetahui LAZSIP, foto, kebutuhan, tipe bantuan (kebutuhan pokok/pendidikan/kesehatan/lainnya), jumlah bantuan diterima, nama verifikator, wilayah cakupan verifikator, status pernikahan (menikah/janda-cerai/janda-meninggal/duda-cerai/duda-meninggal), NIK, pekerjaan, penghasilan per bulan, jumlah tanggungan, rincian tanggungan.
 - **Mitra** — logo, nama, tautan.
 - **Konten Umum** — hero, tentang, legalitas (editable tanpa perlu deploy ulang).
 - **Referensi Biaya Payment** — tabel biaya admin per metode pembayaran, dipakai saat menghitung total tagihan donatur.
@@ -118,7 +118,8 @@ Activity        id, title, description, image, date, is_pinned
 Beneficiary     id, name, address, problem_faced, birth_date, age,
                 gender, referral_source, photo, needs, aid_type,
                 amount_received, verifier_name, verifier_area,
-                marital_status
+                marital_status, nik, occupation, monthly_income,
+                dependents_count, dependents_detail
 Partner         id, name, logo, url
 SiteContent     id, section_key, content_json
 PaymentFeeRef   id, method, fee_amount / fee_percentage

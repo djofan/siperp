@@ -35,6 +35,12 @@ export default async function EditBeneficiaryPage({
           verifierName: beneficiary.verifierName,
           verifierArea: beneficiary.verifierArea,
           maritalStatus: beneficiary.maritalStatus,
+          nik: beneficiary.nik ?? "",
+          occupation: beneficiary.occupation ?? "",
+          monthlyIncome: beneficiary.monthlyIncome !== null ? String(beneficiary.monthlyIncome) : "",
+          dependentsCount: beneficiary.dependentsCount !== null ? String(beneficiary.dependentsCount) : "",
+          dependentsDetail: beneficiary.dependentsDetail ?? "",
+          isPinned: beneficiary.isPinned,
         }}
       />
     </div>

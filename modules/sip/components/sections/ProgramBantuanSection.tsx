@@ -1,6 +1,6 @@
 import { listProgramBantuan } from "@/modules/sip/api/programBantuan";
 import { SectionHeading } from "@/modules/sip/components/ui/SectionHeading";
-import { SectionEmptyState } from "@/modules/sip/components/ui/SectionEmptyState";
+import { PinnedGridSection } from "@/modules/sip/components/ui/PinnedGridSection";
 import { ProgramBantuanCard } from "@/modules/sip/components/ProgramBantuanCard";
 
 interface ProgramSectionContent {
@@ -10,7 +10,11 @@ interface ProgramSectionContent {
 }
 
 export async function ProgramBantuanSection({ content }: { content: ProgramSectionContent }) {
-  const programs = await listProgramBantuan();
+  const items = await listProgramBantuan();
+  const pinned = items.filter((p) => p.isPinned);
+  // Item yang disematkan tetap ikut muncul di grid biasa di bawah, bukan cuma
+  // di baris pin paling atas — biar gak "hilang" dari daftar utama.
+  const rest = items;
 
   return (
     <section id="program" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">
@@ -23,21 +27,22 @@ export async function ProgramBantuanSection({ content }: { content: ProgramSecti
         }
       />
 
-      {programs.length === 0 ? (
-        <SectionEmptyState message="Belum ada program bantuan yang ditambahkan." />
-      ) : (
-        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {programs.map((program) => (
-            <ProgramBantuanCard
-              key={program.id}
-              slug={program.slug}
-              title={program.title}
-              description={program.description}
-              image={program.image}
-            />
-          ))}
-        </div>
-      )}
+      <div className="mt-10">
+        <PinnedGridSection
+          pinnedItems={pinned}
+          gridItems={rest}
+          maxPinnedItems={6}
+          maxGridItems={12}
+          renderItem={(program) => (
+            <ProgramBantuanCard slug={program.slug} title={program.title} description={program.description} image={program.image} />
+          )}
+          renderPinnedItem={(program) => (
+            <ProgramBantuanCard slug={program.slug} title={program.title} description={program.description} image={program.image} featured />
+          )}
+          seeAllHref="/sip/program-bantuan"
+          emptyLabel="Belum ada program bantuan yang ditambahkan."
+        />
+      </div>
     </section>
   );
 }

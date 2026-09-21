@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getGoldPricePerGram } from "@/modules/lazsip/api/goldPrice";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getPaymentFeeRef, calculateFee } from "@/modules/lazsip/api/paymentFees";
 
 const NISAB_GRAM = 85;
 const ZAKAT_RATE = 0.025;
@@ -39,17 +40,25 @@ interface CreateZakatPaymentInput {
   donorName: string;
   zakatType: "maal" | "fitrah";
   amount: number;
+  coversFee: boolean;
+  isAnonymous: boolean;
   goldPriceSnapshot?: number;
   jiwaCount?: number;
   paymentMethod: string;
 }
 
 export async function createZakatPayment(input: CreateZakatPaymentInput) {
+  const feeRef = await getPaymentFeeRef(input.paymentMethod);
+  const adminFee = input.coversFee ? calculateFee(feeRef, input.amount) : 0;
+
   return prisma.lazsipZakatPayment.create({
     data: {
       donorName: input.donorName,
       zakatType: input.zakatType,
       amount: input.amount,
+      adminFee,
+      coversFee: input.coversFee,
+      isAnonymous: input.isAnonymous,
       goldPriceSnapshot: input.zakatType === "maal" ? input.goldPriceSnapshot ?? 0 : null,
       jiwaCount: input.zakatType === "fitrah" ? input.jiwaCount ?? null : null,
       paymentMethod: input.paymentMethod,

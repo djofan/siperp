@@ -65,33 +65,35 @@
   --color-lazsip-secondary-900: #313f32;
 
   /*
-   * Palet PUBLIK + ADMIN modul SIP (portal induk) — diekstrak dari CSS asli
-   * insanpeduli.org (Elementor), bukan tebakan. Diprefix "sip-" supaya tidak
-   * tabrakan dengan token modul lain (lazsip, dst) di file global yang sama.
-   * Sengaja beda shade dari token lazsip meski satu keluarga hijau — SIP tetap
-   * punya identitas visual sendiri sebagai portal induk, bukan re-skin LAZSIP.
+   * Palet PUBLIK + ADMIN modul SIP (portal induk) — di-sample LANGSUNG dari
+   * pixel logo resmi Yayasan Solidaritas Insan Peduli (cropped-Logo_SIP_1.png
+   * di insanpeduli.org), bukan tebakan/CSS Elementor lagi. Hijau utama
+   * #74af27 dan hijau gelap #213504 adalah warna paling dominan di logo asli.
+   * Diprefix "sip-" supaya tidak tabrakan dengan token modul lain (lazsip,
+   * dst). Sengaja beda shade dari token lazsip meski satu keluarga hijau —
+   * SIP tetap punya identitas visual sendiri sebagai portal induk.
    */
-  --color-sip-primary-50: #f1f6f3;
-  --color-sip-primary-100: #dfeae4;
-  --color-sip-primary-200: #bfd6cb;
-  --color-sip-primary-300: #9cbfae;
-  --color-sip-primary-400: #779b87;
-  --color-sip-primary-500: #5a8272;
-  --color-sip-primary-600: #4a6b5c;
-  --color-sip-primary-700: #3d574c;
-  --color-sip-primary-800: #33493f;
-  --color-sip-primary-900: #2c4039;
+  --color-sip-primary-50: #f2f7ea;
+  --color-sip-primary-100: #e1eed0;
+  --color-sip-primary-200: #c3dda3;
+  --color-sip-primary-300: #a1c874;
+  --color-sip-primary-400: #8cbb56;
+  --color-sip-primary-500: #74af27;
+  --color-sip-primary-600: #5f9420;
+  --color-sip-primary-700: #4a771b;
+  --color-sip-primary-800: #355916;
+  --color-sip-primary-900: #213504;
 
-  --color-sip-secondary-50: #eef6f1;
-  --color-sip-secondary-100: #dcecE2;
-  --color-sip-secondary-200: #bddcc9;
-  --color-sip-secondary-300: #94c7a8;
-  --color-sip-secondary-400: #6bb187;
-  --color-sip-secondary-500: #479e6a;
-  --color-sip-secondary-600: #3f7350;
-  --color-sip-secondary-700: #366143;
-  --color-sip-secondary-800: #2c5039;
-  --color-sip-secondary-900: #223f2f;
+  --color-sip-secondary-50: #f4f7ef;
+  --color-sip-secondary-100: #e6eede;
+  --color-sip-secondary-200: #cddcba;
+  --color-sip-secondary-300: #adc78e;
+  --color-sip-secondary-400: #8fb066;
+  --color-sip-secondary-500: #729645;
+  --color-sip-secondary-600: #5b7a35;
+  --color-sip-secondary-700: #48602a;
+  --color-sip-secondary-800: #3a4d22;
+  --color-sip-secondary-900: #2f3f1c;
 
   --color-sip-accent: #ffa301;
   --color-sip-accent-hover: #e69200;
@@ -110,6 +112,12 @@
  * shell-nya masing-masing (LazsipAdminShellChrome, SipAdminShellChrome, dst).
  */
 .dark {
+  /* Bikin kontrol form native (date picker, dst) ikut gelap — ini yang
+     dirender langsung oleh browser, bukan lewat CSS biasa, jadi token warna
+     di atas saja tidak cukup. Khusus popup <select> SENGAJA dikecualikan dan
+     dipaksa terang terus, lihat aturan `select`/`select option` di bawah. */
+  color-scheme: dark;
+
   --background: #0b0d0c;
   --foreground: #e7e9ea;
 
@@ -128,6 +136,49 @@
 
   --color-danger: #f87171;
   --color-danger-soft: rgba(248, 113, 113, 0.14);
+}
+
+/*
+ * Popup dropdown native <select> SENGAJA disamakan terang terus (teks hitam,
+ * bg putih) di tema gelap MAUPUN terang — daripada ikut color-scheme gelap
+ * yang perilakunya gak konsisten antar-versi Chrome (background popup kadang
+ * gak ikut gelap padahal teksnya udah putih lewat dark:text-white, jadi
+ * putih-di-atas-putih dan baru kebaca pas di-hover). Target <option> langsung
+ * (bukan cuma <select>) supaya warnanya gak ke-inherit dari teks select yang
+ * memang sengaja putih waktu dark mode — closed box select tetap ikut tema
+ * gelap seperti biasa, cuma popup listnya yang dipaksa terang.
+ */
+select {
+  color-scheme: light;
+}
+
+select option {
+  background-color: #ffffff !important;
+  color: #171717 !important;
+}
+
+/*
+ * Normalisasi ikon panah <select> di SELURUH modul (Core/LAZSIP/SIP) lewat
+ * satu aturan global, bukan per-komponen — biar konsisten dan gak ada yang
+ * kelewat. Panah bawaan browser dimatikan (appearance: none) lalu diganti SVG
+ * sendiri dengan jarak yang pas dari border (bukan mepet), warnanya otomatis
+ * ikut tema gelap/terang lewat override `.dark select` di bawah.
+ * !important dipakai sengaja di sini: ini normalisasi kontrol native di level
+ * framework, bukan style yang boleh di-override diam-diam oleh className
+ * per-komponen (mis. px-4/px-5 yang sudah dipasang di banyak file berbeda).
+ */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  background-size: 0.8rem !important;
+  padding-right: 2.75rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2333363b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+.dark select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e7e9ea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
 }
 
 @theme inline {
@@ -228,6 +279,14 @@ body {
   display: none;
 }
 .lazsip-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.sip-scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.sip-scrollbar-hide {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

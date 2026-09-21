@@ -4,14 +4,14 @@ export type AdminViewMode = "list" | "grid";
 
 export function ViewToggle({ view, onChange }: { view: AdminViewMode; onChange: (view: AdminViewMode) => void }) {
   return (
-    <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-lazsip-primary-100 bg-white p-1">
+    <div className="inline-flex shrink-0 items-center gap-1 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 p-1">
       <button
         type="button"
         onClick={() => onChange("list")}
         aria-label="Tampilan list"
         aria-pressed={view === "list"}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-          view === "list" ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-700/50 hover:bg-lazsip-primary-50"
+          view === "list" ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-700/50 dark:text-white/40 hover:bg-lazsip-primary-50 dark:hover:bg-white/10"
         }`}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
@@ -24,7 +24,7 @@ export function ViewToggle({ view, onChange }: { view: AdminViewMode; onChange: 
         aria-label="Tampilan grid"
         aria-pressed={view === "grid"}
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-          view === "grid" ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-700/50 hover:bg-lazsip-primary-50"
+          view === "grid" ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-700/50 dark:text-white/40 hover:bg-lazsip-primary-50 dark:hover:bg-white/10"
         }`}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">

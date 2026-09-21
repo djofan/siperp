@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { BeneficiaryCard } from "@/modules/lazsip/components/BeneficiaryCard";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
-import { Button } from "@/modules/lazsip/components/ui/Button";
+import { PinnedGridSection } from "@/modules/lazsip/components/ui/PinnedGridSection";
 
 const AID_TYPE_LABEL: Record<string, string> = {
   pendidikan: "Pendidikan",
@@ -22,9 +22,12 @@ const FILTER_OPTIONS: { value: FilterValue; label: string }[] = [
 interface BeneficiaryItem {
   id: string;
   name: string;
+  age: number;
   amountReceived: number;
   aidType: string;
   photo: string | null;
+  verifierArea: string;
+  isPinned: boolean;
 }
 
 export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] }) {
@@ -34,6 +37,11 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
     () => (filter === "semua" ? items : items.filter((b) => b.aidType === filter)),
     [items, filter]
   );
+
+  const pinned = filtered.filter((b) => b.isPinned);
+  // Item yang disematkan tetap ikut muncul di grid biasa di bawah, bukan cuma
+  // di baris pin paling atas — biar gak "hilang" dari daftar utama.
+  const rest = filtered;
 
   return (
     <section id="penyaluran" className="bg-lazsip-primary-50/60">
@@ -61,20 +69,40 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
           ))}
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
-          {filtered.map((item) => (
-            <BeneficiaryCard key={item.id} id={item.id} name={item.name} amountReceived={item.amountReceived} aidType={item.aidType} photo={item.photo} />
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <p className="mt-8 text-sm text-lazsip-primary-800/60">Belum ada data penerima manfaat untuk kategori ini.</p>
-        )}
-
-        <div className="mt-10 flex justify-center">
-          <Button href="/lazsip/penyaluran-bantuan" variant="secondary" icon="arrow">
-            Lihat Semua Bantuan
-          </Button>
+        <div className="mt-8">
+          <PinnedGridSection
+            pinnedItems={pinned}
+            gridItems={rest}
+            maxPinnedItems={4}
+            renderItem={(item) => (
+              <BeneficiaryCard
+                id={item.id}
+                name={item.name}
+                age={item.age}
+                amountReceived={item.amountReceived}
+                aidType={item.aidType}
+                photo={item.photo}
+                verifierArea={item.verifierArea}
+              />
+            )}
+            renderPinnedItem={(item) => (
+              <BeneficiaryCard
+                id={item.id}
+                name={item.name}
+                age={item.age}
+                amountReceived={item.amountReceived}
+                aidType={item.aidType}
+                photo={item.photo}
+                verifierArea={item.verifierArea}
+                featured
+              />
+            )}
+            seeAllHref="/lazsip/penyaluran-bantuan"
+            seeAllLabel="Lihat Semua Bantuan"
+            emptyLabel="Belum ada data penerima manfaat untuk kategori ini."
+            pinnedItemClassName="w-[42vw] max-w-[170px] shrink-0 snap-start sm:w-[calc(33.333%-16px)] sm:max-w-none lg:w-[calc(25%-18px)]"
+            gridColsClassName="grid-cols-3 sm:grid-cols-4 lg:grid-cols-6"
+          />
         </div>
       </div>
     </section>

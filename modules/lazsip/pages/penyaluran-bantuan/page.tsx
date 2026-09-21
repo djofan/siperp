@@ -40,9 +40,18 @@ export default async function LazsipPenyaluranBantuanPage({
         />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-6">
         {beneficiaries.map((item) => (
-          <BeneficiaryCard key={item.id} id={item.id} name={item.name} amountReceived={item.amountReceived} aidType={item.aidType} photo={item.photo} />
+          <BeneficiaryCard
+            key={item.id}
+            id={item.id}
+            name={item.name}
+            age={item.age}
+            amountReceived={item.amountReceived}
+            aidType={item.aidType}
+            photo={item.photo}
+            verifierArea={item.verifierArea}
+          />
         ))}
       </div>
 

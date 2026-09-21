@@ -44,11 +44,7 @@ export function HeroZakatCalculator({
   const hasInput = isMaal ? maal.hartaAmount > 0 : fitrah.jiwaCount > 0;
 
   const payHref =
-    zakatAmount > 0
-      ? isMaal
-        ? `/lazsip/zakat?type=maal&harta=${maal.hartaAmount}`
-        : `/lazsip/zakat?type=fitrah&jiwa=${fitrah.jiwaCount}`
-      : "#kalkulator-zakat";
+    zakatAmount > 0 ? `/lazsip/zakat?type=${type}&amount=${zakatAmount}` : "#kalkulator-zakat";
 
   return (
     <div>

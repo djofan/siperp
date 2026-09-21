@@ -1,11 +1,10 @@
-import { listProgramsByCategory } from "@/modules/lazsip/api/programs";
+import { listPrograms } from "@/modules/lazsip/api/programs";
 import { ProgramCard } from "@/modules/lazsip/components/ProgramCard";
 import { PinnedGridSection } from "@/modules/lazsip/components/ui/PinnedGridSection";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
 
 export async function ProgramSection({
   id,
-  category,
   eyebrow,
   title,
   description,
@@ -13,16 +12,17 @@ export async function ProgramSection({
   tinted = false,
 }: {
   id: string;
-  category: string;
   eyebrow: string;
   title: string;
   description: string;
   seeAllHref: string;
   tinted?: boolean;
 }) {
-  const items = await listProgramsByCategory(category);
+  const items = await listPrograms();
   const pinned = items.filter((p) => p.isPinned);
-  const rest = items.filter((p) => !p.isPinned);
+  // Item yang disematkan tetap ikut muncul di grid biasa di bawah, bukan cuma
+  // di baris pin paling atas — biar gak "hilang" dari daftar utama.
+  const rest = items;
 
   if (items.length === 0) return null;
 
@@ -40,6 +40,7 @@ export async function ProgramSection({
                 title={item.title}
                 description={item.description}
                 image={item.image}
+                type={item.type}
                 registrationOpen={item.registrationOpen}
               />
             )}
@@ -49,6 +50,7 @@ export async function ProgramSection({
                 title={item.title}
                 description={item.description}
                 image={item.image}
+                type={item.type}
                 registrationOpen={item.registrationOpen}
                 featured
               />

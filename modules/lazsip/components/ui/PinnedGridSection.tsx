@@ -23,6 +23,8 @@ export function PinnedGridSection<T>({
   seeAllHref,
   seeAllLabel = "Lihat semua",
   emptyLabel = "Belum ada data untuk ditampilkan.",
+  pinnedItemClassName = "w-[75vw] max-w-[260px] shrink-0 snap-start sm:w-[calc(50%-12px)] sm:max-w-none lg:w-[calc(33.333%-16px)]",
+  gridColsClassName = "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
 }: {
   pinnedItems: T[];
   gridItems: T[];
@@ -33,6 +35,8 @@ export function PinnedGridSection<T>({
   seeAllHref: string;
   seeAllLabel?: string;
   emptyLabel?: string;
+  pinnedItemClassName?: string;
+  gridColsClassName?: string;
 }) {
   const visiblePinnedItems = pinnedItems.slice(0, maxPinnedItems);
   const visibleGridItems = gridItems.slice(0, maxGridItems);
@@ -46,7 +50,7 @@ export function PinnedGridSection<T>({
       {visiblePinnedItems.length > 0 && (
         <div className="lazsip-scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pt-2">
           {visiblePinnedItems.map((item, i) => (
-            <div key={i} className="relative w-[80vw] max-w-[320px] shrink-0 snap-start sm:max-w-[380px] lg:max-w-[420px]">
+            <div key={i} className={`relative ${pinnedItemClassName}`}>
               <PinBadge />
               {(renderPinnedItem ?? renderItem)(item)}
             </div>
@@ -55,7 +59,7 @@ export function PinnedGridSection<T>({
       )}
 
       {visibleGridItems.length > 0 && (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
+        <div className={`grid gap-4 sm:gap-5 ${gridColsClassName}`}>
           {visibleGridItems.map((item, i) => (
             <div key={i}>{renderItem(item)}</div>
           ))}

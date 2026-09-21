@@ -64,12 +64,16 @@ export function Footer({
             <p className="mt-1 text-sm text-white/60">Mari salurkan kepedulian bersama {sipSiteConfig.fullName}.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/sip/kontak"
-              className="inline-flex items-center justify-center rounded-full bg-sip-accent px-6 py-3 text-sm font-semibold text-sip-ink transition-colors hover:bg-sip-accent-hover"
-            >
-              Pengajuan Bantuan
-            </Link>
+            {whatsappHref && (
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center rounded-full bg-sip-accent px-6 py-3 text-sm font-semibold text-sip-ink transition-colors hover:bg-sip-accent-hover"
+              >
+                Pengajuan Bantuan
+              </a>
+            )}
             <Link
               href="/sip#program"
               className="inline-flex items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
@@ -130,11 +134,6 @@ export function Footer({
                 </a>
               </li>
             )}
-            <li>
-              <Link href="/sip/kontak" className="font-semibold text-white transition-colors hover:text-sip-secondary-200">
-                Info Kontak Lengkap →
-              </Link>
-            </li>
           </ul>
         </div>
 
@@ -156,7 +155,7 @@ export function Footer({
               </li>
             )}
             <li>
-              <Link href="/sip/tentang" className="font-semibold text-white transition-colors hover:text-sip-secondary-200">
+              <Link href="/sip#tentang" className="font-semibold text-white transition-colors hover:text-sip-secondary-200">
                 Info Legalitas Lengkap →
               </Link>
             </li>

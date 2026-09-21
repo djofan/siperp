@@ -8,7 +8,7 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 const VARIANT_STYLES: Record<NonNullable<Props["variant"]>, string> = {
   primary: "bg-lazsip-primary-900 text-white hover:bg-lazsip-primary-800",
   danger: "bg-red-600 text-white hover:bg-red-700",
-  outline: "border border-lazsip-primary-200 text-lazsip-primary-800 hover:border-lazsip-primary-400",
+  outline: "border border-lazsip-primary-200 dark:border-white/15 text-lazsip-primary-800 dark:text-white/70 hover:border-lazsip-primary-400",
 };
 
 function Spinner() {

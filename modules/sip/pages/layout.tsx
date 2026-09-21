@@ -3,6 +3,11 @@ import { Footer } from "@/modules/sip/components/Footer";
 import { FloatingWhatsApp } from "@/modules/sip/components/FloatingWhatsApp";
 import { getSiteContent } from "@/modules/sip/api/siteContent";
 
+// Semua halaman publik SIP baca konten dari DB (Konten Umum, berita, program, dll) — harus
+// selalu render dinamis, bukan di-prerender statis saat build, supaya perubahan lewat admin
+// panel langsung tampil tanpa redeploy.
+export const dynamic = "force-dynamic";
+
 export default async function SipPublicLayout({
   children,
 }: {

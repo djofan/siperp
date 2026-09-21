@@ -7,9 +7,12 @@ import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
 
 const NAV_ITEMS = [
   { href: "/admin/lazsip", label: "Dashboard" },
-  { href: "/admin/lazsip/donasi", label: "Donasi" },
-  { href: "/admin/lazsip/transaksi", label: "Transaksi" },
-  { href: "/admin/lazsip/donatur", label: "Donatur" },
+  { href: "/admin/lazsip/donasi", label: "Donasi / Campaign" },
+  { href: "/admin/lazsip/transaksi", label: "Transaksi Donasi" },
+  { href: "/admin/lazsip/zakat", label: "Transaksi Zakat" },
+  { href: "/admin/lazsip/donatur", label: "Semua Donatur" },
+  { href: "/admin/lazsip/donatur-infaq", label: "Donatur Infaq" },
+  { href: "/admin/lazsip/donatur-zakat", label: "Donatur Zakat" },
   { href: "/admin/lazsip/biaya-payment", label: "Biaya Payment" },
   { href: "/admin/lazsip/program", label: "Program Pemberdayaan" },
   { href: "/admin/lazsip/kegiatan", label: "Kegiatan" },

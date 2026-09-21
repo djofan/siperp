@@ -24,7 +24,7 @@ export function Hero({
       <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 px-4 pb-24 pt-36 sm:px-6 sm:pt-44 sm:pb-28 lg:grid-cols-[1fr_0.85fr] lg:gap-12 lg:py-40">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-secondary-200">
-            Lembaga Amil Zakat
+            Lembaga Amil Zakat Resmi
           </span>
 
           <h1 className="mt-6 max-w-xl text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-6xl lg:text-[4rem]">

@@ -30,6 +30,7 @@ export function ActivityCard({ id, title, description, image, date, featured = f
         </div>
         <div className="relative z-10 mt-auto flex flex-col gap-1 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
+          <p className="line-clamp-1 text-xs text-white/75">{description}</p>
         </div>
       </Link>
     );

@@ -30,7 +30,7 @@ export function AdminSearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-10 w-full rounded-full border border-lazsip-primary-100 bg-white pl-9 pr-4 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+        className="h-10 w-full rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 pl-9 pr-4 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
       />
     </div>
   );
@@ -52,7 +52,7 @@ export function AdminFilterSelect({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 shrink-0 rounded-full border border-lazsip-primary-100 bg-white px-4 text-sm font-medium text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+      className="h-10 shrink-0 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm font-medium text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
@@ -78,7 +78,7 @@ export function AdminDateInput({
       aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-10 shrink-0 rounded-full border border-lazsip-primary-100 bg-white px-4 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+      className="h-10 shrink-0 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
     />
   );
 }
@@ -88,7 +88,7 @@ export function AdminFilterResetButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="h-10 shrink-0 rounded-full border border-lazsip-primary-100 bg-white px-4 text-sm font-medium text-lazsip-primary-700/70 transition-colors hover:bg-lazsip-primary-50"
+      className="h-10 shrink-0 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm font-medium text-lazsip-primary-700/70 dark:text-white/55 transition-colors hover:bg-lazsip-primary-50 dark:hover:bg-white/10"
     >
       Reset Filter
     </button>

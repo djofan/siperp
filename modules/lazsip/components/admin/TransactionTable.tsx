@@ -5,7 +5,7 @@ import { TransactionActions } from "@/modules/lazsip/components/admin/Transactio
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 export interface TransactionRow {
   id: string;
@@ -47,7 +47,7 @@ function toCsv(rows: TransactionRow[]) {
   return [header.join(","), ...lines].join("\n");
 }
 
-export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
+export function TransactionTable({ rows, showTypeFilter = true }: { rows: TransactionRow[]; showTypeFilter?: boolean }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -100,7 +100,9 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari donatur/campaign..." />
-        <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter jenis" />
+        {showTypeFilter && (
+          <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter jenis" />
+        )}
         <AdminFilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} ariaLabel="Filter status" />
         <AdminFilterSelect value={methodFilter} onChange={setMethodFilter} options={methodOptions} ariaLabel="Filter metode pembayaran" />
         <AdminDateInput value={dateFrom} onChange={setDateFrom} ariaLabel="Dari tanggal" />
@@ -118,16 +120,16 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
         </button>
       </AdminFilterBar>
 
-      <p className="mb-2 text-xs text-lazsip-primary-800/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
+      <p className="mb-2 text-xs text-lazsip-primary-800/50 dark:text-white/45">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
 
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada transaksi yang cocok dengan filter." />
       ) : (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Jenis</th>
                   <th className="px-4 py-3.5 font-semibold">Donatur</th>
                   <th className="px-4 py-3.5 font-semibold">Nominal</th>
@@ -137,14 +139,14 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
                 {filtered.map((row) => (
-                  <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40">
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{row.label}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{row.donorName}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{formatRupiah(row.amount)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{row.paymentMethod}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/50">{formatDateTime(row.createdAt)}</td>
+                  <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{row.label}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{row.donorName}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{formatRupiah(row.amount)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{row.paymentMethod}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/45">{formatDateTime(row.createdAt)}</td>
                     <td className="px-4 py-3.5">
                       <AdminBadge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</AdminBadge>
                     </td>
