@@ -2,10 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
 import { FormField, Input } from "@/components/ui/FormField";
-import { staticPanelClasses } from "@/components/ui/panel";
-import { lazsipColors } from "@/modules/lazsip/components/theme";
+import { panelClasses } from "@/components/ui/panel";
 import type { SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 
 interface FieldDef {
@@ -51,8 +49,8 @@ export function SiteContentSectionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={staticPanelClasses("flex max-w-xl flex-col gap-4 p-5")}>
-      <h2 className="text-sm font-semibold" style={{ color: lazsipColors.ink }}>
+    <form onSubmit={handleSubmit} className={panelClasses("flex max-w-xl flex-col gap-4 p-5")}>
+      <h2 className="text-sm font-semibold text-lazsip-primary-900 dark:text-white">
         {title}
       </h2>
       {fields.map((field) => (
@@ -61,7 +59,7 @@ export function SiteContentSectionForm({
             <textarea
               id={`${sectionKey}-${field.key}`}
               rows={4}
-              className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground outline-none focus:border-[#F79633] focus:ring-2 focus:ring-[#F79633]/20"
+              className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft"
               value={values[field.key]}
               onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
             />
@@ -75,9 +73,13 @@ export function SiteContentSectionForm({
         </FormField>
       ))}
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={isSubmitting} style={{ backgroundColor: lazsipColors.primary }}>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="inline-flex items-center justify-center rounded-full bg-lazsip-primary-900 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
+        >
           {isSubmitting ? "Menyimpan..." : "Simpan"}
-        </Button>
+        </button>
         {success && <span className="text-sm text-success">Tersimpan.</span>}
       </div>
     </form>

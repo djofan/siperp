@@ -20,7 +20,7 @@ export function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-lazsip-primary-900" : "bg-lazsip-primary-100"
+        checked ? "bg-lazsip-primary-900 dark:bg-lazsip-primary-500" : "bg-lazsip-primary-100 dark:bg-white/20"
       }`}
     >
       <span

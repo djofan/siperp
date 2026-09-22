@@ -1,22 +1,143 @@
 import Link from "next/link";
-import { listEntries, listAdminTransactions, money } from "@/modules/sarsip/api/data";
-export default async function Dashboard() {
-  const [entries, transactions] = await Promise.all([listEntries(undefined, true), listAdminTransactions()]);
-  const total = transactions.filter((t) => t.status === "paid").reduce((sum, t) => sum + t.amount, 0);
-  return <div className="space-y-8"><div><p className="text-xs font-bold uppercase tracking-widest text-orange-600">SARSIP / Admin</p><h1 className="mt-2 text-3xl font-bold text-foreground">Pos koordinasi digital</h1><p className="mt-3 text-sm text-foreground/60">Kelola informasi tim dan dukungan masyarakat untuk kegiatan SAR.</p></div>
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
-      ["Kegiatan", entries.filter((e) => e.kind === "kegiatan" && e.status !== "archived").length],
-      ["Campaign terbuka", entries.filter((e) => e.kind === "campaign" && e.status === "published").length],
-      ["Donasi terkonfirmasi", money(total)],
-      ["Menunggu konfirmasi", transactions.filter((t) => t.status === "pending").length],
-    ].map(([label, value]) => <div key={label} className="rounded-2xl border border-border bg-surface p-5"><p className="text-sm text-foreground/60">{label}</p><p className="mt-3 text-2xl font-bold text-foreground">{value}</p></div>)}</div>
-    <section className="rounded-2xl border border-border bg-surface p-6"><h2 className="text-lg font-bold text-foreground">Mulai mengelola SARSIP</h2><div className="mt-5 grid gap-4 md:grid-cols-3">{[
-      ["kegiatan", "Catat aksi di lapangan", "Dokumentasikan bantuan bencana, pencarian, dan kegiatan tim."],
-      ["berita", "Tulis berita terbaru", "Bagikan kabar dan informasi terbaru dari tim SARSIP."],
+import {
+  getThisMonthTotals,
+  getTopCampaigns,
+  getRecentTransactions,
+  getDashboardCounts,
+  getDailyInflow,
+} from "@/modules/sarsip/api/dashboard";
+import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
+import { DashboardStatCard } from "@/modules/lazsip/components/admin/DashboardStatCard";
+import { InflowChart } from "@/modules/lazsip/components/admin/InflowChart";
+import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { panelClasses } from "@/components/ui/panel";
 
-      ["campaign", "Buka dukungan donasi", "Tentukan kebutuhan dana dan ajak masyarakat berpartisipasi."],
-    ].map(([kind,title,description]) => <Link key={kind} href={`/admin/sarsip/${kind}/baru`} className="rounded-xl border border-border p-5 hover:border-orange-500"><h3 className="font-semibold text-foreground">{title} ↗</h3><p className="mt-2 text-sm leading-relaxed text-foreground/60">{description}</p></Link>)}</div></section>
-    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"><strong>Simulasi pembayaran.</strong> Donasi baru berstatus menunggu. Buka <Link href="/admin/sarsip/transaksi" className="underline">Transaksi donasi</Link> untuk menandai lunas atau gagal. Tidak ada transfer uang nyata.</div>
-  </div>;
+const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
+const formatDateTime = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
+
+const STATUS_LABEL: Record<string, string> = { pending: "Menunggu", paid: "Lunas", failed: "Gagal" };
+const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger" };
+
+function percentChange(current: number, previous: number) {
+  if (previous === 0) return current > 0 ? 100 : 0;
+  return Math.round(((current - previous) / previous) * 100);
 }
 
+export default async function SarsipDashboardPage() {
+  const [totals, topCampaigns, recentTransactions, counts, dailyInflow] = await Promise.all([
+    getThisMonthTotals(),
+    getTopCampaigns(5),
+    getRecentTransactions(10),
+    getDashboardCounts(),
+    getDailyInflow(30),
+  ]);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <AdminPageHeader title="Dashboard" description="Ringkasan aktivitas SARSIP — kegiatan SAR, campaign donasi, dan dukungan masyarakat." />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <DashboardStatCard
+          icon="fund"
+          label="Donasi Bulan Ini"
+          value={formatRupiah(totals.donations)}
+          trend={{ value: percentChange(totals.donations, totals.lastMonthDonations), label: "vs bulan lalu" }}
+        />
+        <DashboardStatCard icon="campaign" label="Campaign Terbuka" value={String(counts.openCampaigns)} />
+        <DashboardStatCard icon="donors" label="Total Donatur" value={String(counts.totalDonors)} hint="Akumulasi transaksi lunas" />
+        <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(counts.pendingTransactions)} hint="Perlu ditinjau di Kelola Transaksi" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <DashboardStatCard icon="applicant" label="Kegiatan Aktif" value={String(counts.activeActivities)} />
+        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(counts.totalBeneficiaries)} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className={panelClasses("p-6")}>
+          <h2 className="mb-1 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Dana Masuk 30 Hari Terakhir</h2>
+          <p className="mb-4 text-xs text-lazsip-primary-800/50 dark:text-white/45">
+            Total donasi berstatus lunas per hari.
+          </p>
+          <InflowChart data={dailyInflow} />
+        </div>
+
+        <div className={panelClasses("p-6")}>
+          <h2 className="mb-4 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Campaign Terlaris</h2>
+          {topCampaigns.length === 0 ? (
+            <p className="text-sm text-lazsip-primary-800/50 dark:text-white/45">Belum ada campaign aktif.</p>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {topCampaigns.map((campaign, i) => {
+                const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
+                return (
+                  <Link
+                    key={campaign.id}
+                    href={`/admin/sarsip/campaign/${campaign.id}`}
+                    className="block rounded-xl transition-colors hover:bg-lazsip-primary-50/50 dark:hover:bg-white/5"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2 truncate font-medium text-lazsip-primary-900 dark:text-white">
+                        <span className="text-xs font-bold text-lazsip-primary-400">#{i + 1}</span>
+                        {campaign.title}
+                      </span>
+                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
+                      <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-lazsip-primary-800/45 dark:text-white/35">
+                      {formatRupiah(campaign.currentAmount)}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className={panelClasses("p-6")}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-lazsip-primary-900 dark:text-white">Transaksi Terbaru</h2>
+          <Link
+            href="/admin/sarsip/transaksi"
+            className="text-xs font-semibold text-lazsip-primary-700 hover:underline dark:text-lazsip-primary-300"
+          >
+            Lihat Semua →
+          </Link>
+        </div>
+        {recentTransactions.length === 0 ? (
+          <p className="text-sm text-lazsip-primary-800/50 dark:text-white/45">Belum ada transaksi.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-140 text-left text-sm">
+              <thead>
+                <tr className="border-b border-lazsip-primary-100 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/60 dark:border-white/10 dark:text-white/45">
+                  <th className="py-2.5 font-semibold">Transaksi</th>
+                  <th className="py-2.5 font-semibold">Donatur</th>
+                  <th className="py-2.5 font-semibold">Nominal</th>
+                  <th className="py-2.5 font-semibold">Waktu</th>
+                  <th className="py-2.5 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+                {recentTransactions.map((tx) => (
+                  <tr key={tx.id}>
+                    <td className="py-2.5 font-medium text-lazsip-primary-900 dark:text-white">{tx.label}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/60 dark:text-white/55">{tx.donorName}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/60 dark:text-white/55">{formatRupiah(tx.amount)}</td>
+                    <td className="py-2.5 text-lazsip-primary-800/45 dark:text-white/35">{formatDateTime(tx.createdAt)}</td>
+                    <td className="py-2.5">
+                      <AdminBadge tone={STATUS_TONE[tx.status]}>{STATUS_LABEL[tx.status]}</AdminBadge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

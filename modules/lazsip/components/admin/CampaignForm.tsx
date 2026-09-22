@@ -5,7 +5,7 @@ import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface CampaignFormValues {
   title: string;
@@ -70,9 +70,9 @@ export function CampaignForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className={staticPanelClasses("flex flex-col gap-5 p-6")}>
+        <div className={panelClasses("flex flex-col gap-5 p-6")}>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-lazsip-primary-900">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Judul Campaign<span className="ml-0.5 text-red-600">*</span>
             </label>
             <input
@@ -80,12 +80,12 @@ export function CampaignForm({
               onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="Judul campaign donasi"
-              className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/35 dark:focus:ring-lazsip-primary-500"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-lazsip-primary-900">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Deskripsi<span className="ml-0.5 text-red-600">*</span>
             </label>
             <textarea
@@ -93,7 +93,7 @@ export function CampaignForm({
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
             />
           </div>
 
@@ -101,9 +101,9 @@ export function CampaignForm({
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className={staticPanelClasses("flex flex-col gap-4 p-6")}>
+          <div className={panelClasses("flex flex-col gap-4 p-6")}>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-lazsip-primary-900">
+              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
                 Target Nominal (Rp)<span className="ml-0.5 text-red-600">*</span>
               </label>
               <input
@@ -112,37 +112,37 @@ export function CampaignForm({
                 required
                 value={targetAmount}
                 onChange={(e) => setTargetAmount(e.target.value)}
-                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-lazsip-primary-900">
+              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
                 Kode Unik<span className="ml-0.5 text-red-600">*</span>
               </label>
               <input
                 required
                 value={uniqueCode}
                 onChange={(e) => setUniqueCode(e.target.value.toUpperCase())}
-                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
               />
-              <p className="text-xs text-lazsip-primary-800/50">Dipakai rekonsiliasi — semua campaign settle ke satu rekening bersama.</p>
+              <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Dipakai rekonsiliasi — semua campaign settle ke satu rekening bersama.</p>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-lazsip-primary-900">Status</label>
+              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Status</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-[#16191a] dark:text-white dark:focus:ring-lazsip-primary-500"
               >
-                <option value="active">Aktif</option>
-                <option value="completed">Selesai</option>
+                <option value="active" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Aktif</option>
+                <option value="completed" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Selesai</option>
               </select>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4">
-              <span className="text-sm font-medium text-lazsip-primary-900">Pin di halaman Donasi</span>
+            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4 dark:bg-white/5">
+              <span className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Pin di halaman Donasi</span>
               <Toggle checked={isPinned} onChange={setIsPinned} label="Pin" />
             </div>
           </div>

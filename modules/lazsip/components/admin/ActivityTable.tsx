@@ -8,7 +8,7 @@ import { AdminFilterBar, AdminSearchInput, AdminDateInput, AdminFilterSelect, Ad
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ActivityRow {
   id: string;
@@ -75,11 +75,11 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message={activities.length === 0 ? "Belum ada kegiatan. Klik tombol di atas untuk menambah." : "Tidak ada kegiatan yang cocok dengan filter."} />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Tanggal</th>
@@ -87,20 +87,20 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((activity) => (
-                  <tr key={activity.id} className="transition-colors hover:bg-lazsip-primary-50/40">
+                  <tr key={activity.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {activity.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={activity.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
+                        <img src={activity.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50" />
+                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900">{activity.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{formatDate(activity.date)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{activity.isPinned ? "✓" : "-"}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{activity.title}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatDate(activity.date)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{activity.isPinned ? "✓" : "-"}</td>
                     <td className="px-4 py-3.5">
                       <RowActions
                         onEdit={() => router.push(`/admin/lazsip/kegiatan/${activity.id}`)}

@@ -9,7 +9,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramRow {
   id: string;
@@ -86,11 +86,11 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message={programs.length === 0 ? "Belum ada program. Klik tombol di atas untuk menambah." : "Tidak ada program yang cocok dengan filter."} />
       ) : view === "list" ? (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-170 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Kategori</th>
@@ -98,19 +98,19 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((program) => (
-                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40">
+                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {program.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
+                        <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50" />
+                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900">{program.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{program.title}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
                     <td className="px-4 py-3.5">
                       <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
                     </td>

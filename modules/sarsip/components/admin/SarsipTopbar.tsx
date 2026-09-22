@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { Theme } from "@/lib/useTheme";
 
-export function LazsipTopbar({
+export function SarsipTopbar({
   userName,
   onMenuClick,
   theme,

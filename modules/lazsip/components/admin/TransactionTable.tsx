@@ -5,7 +5,7 @@ import { TransactionActions } from "@/modules/lazsip/components/admin/Transactio
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 export interface TransactionRow {
   id: string;
@@ -110,7 +110,7 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
         <button
           type="button"
           onClick={handleExport}
-          className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+          className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
@@ -119,16 +119,16 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
         </button>
       </AdminFilterBar>
 
-      <p className="mb-2 text-xs text-lazsip-primary-800/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
+      <p className="mb-2 text-xs text-lazsip-primary-800/50 dark:text-white/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
 
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada transaksi yang cocok dengan filter." />
       ) : (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-190 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Jenis</th>
                   <th className="px-4 py-3.5 font-semibold">Donatur</th>
                   <th className="px-4 py-3.5 font-semibold">Nominal</th>
@@ -138,14 +138,14 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((row) => (
-                  <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40">
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{row.label}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{row.donorName}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{formatRupiah(row.amount)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{row.paymentMethod}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/50">{formatDateTime(row.createdAt)}</td>
+                  <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{row.label}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{row.donorName}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatRupiah(row.amount)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{row.paymentMethod}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/45">{formatDateTime(row.createdAt)}</td>
                     <td className="px-4 py-3.5">
                       <AdminBadge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</AdminBadge>
                     </td>

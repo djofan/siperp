@@ -5,7 +5,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import type { DonorSummary } from "@/modules/lazsip/api/donors";
-import { staticPanelClasses } from "@/components/ui/panel";
+import { panelClasses } from "@/components/ui/panel";
 
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDate = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium" }).format(date);
@@ -59,11 +59,11 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada donatur yang cocok dengan filter." />
       ) : (
-        <div className={staticPanelClasses("overflow-hidden")}>
+        <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Nomor WhatsApp</th>
                   <th className="px-4 py-3.5 font-semibold">Segmen</th>
@@ -72,19 +72,21 @@ export function DonorTable({ donors }: { donors: DonorSummary[] }) {
                   <th className="px-4 py-3.5 font-semibold">Transaksi Terakhir</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((donor) => (
-                  <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40">
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{donor.name}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
+                  <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{donor.name}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
                     <td className="px-4 py-3.5">
-                      {donor.types.map((type) => <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
-                        {type === "zakat" ? "Muzakki" : "Donatur"}
-                      </AdminBadge>)}
+                      {donor.types.map((type) => (
+                        <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
+                          {type === "zakat" ? "Muzakki" : "Donatur"}
+                        </AdminBadge>
+                      ))}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{donor.contributionCount}x</td>
-                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900">{formatRupiah(donor.totalContribution)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60">{formatDate(donor.lastContributionAt)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.contributionCount}x</td>
+                    <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{formatRupiah(donor.totalContribution)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatDate(donor.lastContributionAt)}</td>
                   </tr>
                 ))}
               </tbody>

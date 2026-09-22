@@ -9,12 +9,12 @@ export default async function MitraListPage() {
   return (
     <div>
       <AdminPageHeader
-        title="Mitra"
-        description="Logo & tautan mitra pendukung LAZSIP."
+        title="Mitra Kerja Sama"
+        description="Logo mitra yang tampil di running text marquee halaman publik."
         action={
           <Link
             href="/admin/lazsip/mitra/baru"
-            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
           >
             + Tambah Mitra
           </Link>

@@ -57,21 +57,21 @@ export function ImageUploadField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-lazsip-primary-900">
+      <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
         {label}
         {required && <span className="ml-0.5 text-red-600">*</span>}
       </label>
       <div className="flex items-center gap-4">
         <div
-          className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed bg-lazsip-primary-50/60 ${
-            required && !preview ? "border-red-300" : "border-lazsip-primary-200"
+          className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed bg-lazsip-primary-50/60 dark:bg-white/5 ${
+            required && !preview ? "border-red-300 dark:border-red-500/50" : "border-lazsip-primary-200 dark:border-white/10"
           }`}
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element -- preview lokal/hasil upload, bukan asset Next dioptimasi
             <img src={preview} alt="Preview" className="h-full w-full object-cover" />
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-lazsip-primary-300">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-lazsip-primary-300 dark:text-white/30">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -81,7 +81,7 @@ export function ImageUploadField({
           )}
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="inline-flex w-fit cursor-pointer items-center rounded-full border border-lazsip-primary-200 px-4 py-2 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400">
+          <label className="inline-flex w-fit cursor-pointer items-center rounded-full border border-lazsip-primary-200 px-4 py-2 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400 dark:border-white/15 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/5">
             {uploading ? "Mengunggah..." : "Pilih File"}
             <input
               type="file"
@@ -91,7 +91,7 @@ export function ImageUploadField({
               onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
             />
           </label>
-          <p className="text-xs text-lazsip-primary-800/50">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
+          <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       </div>
