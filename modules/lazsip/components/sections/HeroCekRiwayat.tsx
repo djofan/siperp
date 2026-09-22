@@ -57,6 +57,21 @@ export function HeroCekRiwayat() {
           {message}
         </p>
       )}
+
+      <ul className="mt-5 flex flex-col gap-2.5 border-t border-lazsip-primary-100 pt-4 text-xs leading-relaxed text-lazsip-primary-800/60">
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Riwayat lengkap (donasi, zakat, status) dikirim otomatis ke email yang Anda masukkan.
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Demi privasi, riwayat tidak ditampilkan langsung di layar ini.
+        </li>
+        <li className="flex items-start gap-2">
+          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
+          Gunakan email yang sama persis dengan yang dipakai saat transaksi.
+        </li>
+      </ul>
     </>
   );
 }
