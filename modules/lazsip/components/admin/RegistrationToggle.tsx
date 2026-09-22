@@ -30,7 +30,7 @@ export function RegistrationToggle({
   return (
     <div className="flex items-center gap-2">
       <Toggle checked={open} onChange={handleChange} disabled={isPending} label="Buka/tutup pendaftaran" />
-      <span className={`text-xs font-medium ${open ? "text-lazsip-secondary-700" : "text-amber-700"}`}>
+      <span className={`text-xs font-medium ${open ? "text-lazsip-secondary-700 dark:text-lazsip-secondary-300" : "text-amber-700 dark:text-amber-400"}`}>
         {open ? "Dibuka" : "Ditutup"}
       </span>
     </div>

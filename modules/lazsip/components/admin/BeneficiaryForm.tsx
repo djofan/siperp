@@ -40,13 +40,13 @@ function hitungUmur(tanggalLahir: string): number | null {
 }
 
 const inputClass =
-  "rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400";
+  "rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500";
 const adminInputClass =
-  "rounded-full border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-300";
+  "rounded-full border border-rose-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-rose-300 dark:border-rose-500/30 dark:bg-white/5 dark:text-white dark:[color-scheme:dark] dark:focus:ring-rose-400/40";
 const textareaClass =
-  "rounded-2xl bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400";
+  "rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500";
 const adminTextareaClass =
-  "rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-rose-300";
+  "rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-rose-300 dark:border-rose-500/30 dark:bg-white/5 dark:text-white dark:focus:ring-rose-400/40";
 
 export function BeneficiaryForm({
   beneficiaryId,
@@ -84,8 +84,8 @@ export function BeneficiaryForm({
 
   const age = useMemo(() => hitungUmur(values.birthDate), [values.birthDate]);
 
-  function set<K extends keyof BeneficiaryFormValues>(key: K, value: BeneficiaryFormValues[K]) {
-    setValues((prev) => ({ ...prev, [key]: value }));
+  function set(field: keyof BeneficiaryFormValues, val: string) {
+    setValues((prev) => ({ ...prev, [field]: val }));
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -93,7 +93,7 @@ export function BeneficiaryForm({
     setError(null);
 
     if (!isEdit && !values.photo) {
-      setError("Foto wajib diunggah.");
+      setError("Foto penerima manfaat wajib diunggah.");
       return;
     }
 
@@ -108,14 +108,26 @@ export function BeneficiaryForm({
       body: JSON.stringify({
         ...values,
         age: age ?? 0,
+        name: values.name,
+        address: values.address,
+        problemFaced: values.problemFaced,
+        birthDate: values.birthDate ? new Date(values.birthDate).toISOString() : null,
+        gender: values.gender,
+        referralSource: values.referralSource,
+        photo: values.photo,
+        needs: values.needs,
+        aidType: values.aidType,
         amountReceived: Number(values.amountReceived) || 0,
+        verifierName: values.verifierName,
+        verifierArea: values.verifierArea,
+        maritalStatus: values.maritalStatus,
         isPinned,
       }),
     });
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan data penerima manfaat.");
+      setError(data?.error ?? "Gagal menyimpan data.");
       setIsSubmitting(false);
       return;
     }
@@ -128,7 +140,7 @@ export function BeneficiaryForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className={panelClasses("p-6")}>
         <div className="mb-5 flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lazsip-secondary-50 text-lazsip-secondary-700">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lazsip-secondary-50 text-lazsip-secondary-700 dark:bg-lazsip-secondary-900/40 dark:text-lazsip-secondary-300">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
             </svg>
@@ -156,14 +168,14 @@ export function BeneficiaryForm({
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Jenis Kelamin</label>
             <select value={values.gender} onChange={(e) => set("gender", e.target.value)} className={inputClass}>
-              <option value="perempuan">Perempuan</option>
-              <option value="laki-laki">Laki-laki</option>
+              <option value="perempuan" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Perempuan</option>
+              <option value="laki-laki" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Laki-laki</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Usia (dihitung otomatis)</label>
-            <div className="rounded-full bg-lazsip-primary-50/60 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-800/70 dark:text-white/60">
+            <div className="rounded-full bg-lazsip-primary-50/60 px-4 py-2.5 text-sm text-lazsip-primary-800/70 dark:bg-white/5 dark:text-white/70">
               {age !== null ? `${age} tahun` : "Isi tanggal lahir di bagian khusus admin"}
             </div>
           </div>
@@ -186,10 +198,10 @@ export function BeneficiaryForm({
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Tipe Bantuan</label>
             <select value={values.aidType} onChange={(e) => set("aidType", e.target.value)} className={inputClass}>
-              <option value="pendidikan">Pendidikan</option>
-              <option value="kesehatan">Kesehatan</option>
-              <option value="kebutuhan_pokok">Kebutuhan Pokok</option>
-              <option value="lainnya">Lainnya</option>
+              <option value="pendidikan" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Pendidikan</option>
+              <option value="kesehatan" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Kesehatan</option>
+              <option value="kebutuhan_pokok" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Kebutuhan Pokok</option>
+              <option value="lainnya" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Lainnya</option>
             </select>
           </div>
 
@@ -215,14 +227,14 @@ export function BeneficiaryForm({
         </div>
       </div>
 
-      <div className="rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/40 p-6 dark:border-rose-500/30 dark:bg-rose-500/10">
+      <div className="rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/40 p-6 dark:border-rose-900/40 dark:bg-rose-950/20">
         <div className="mb-2 flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 10V7a6 6 0 1 1 12 0v3M5 10h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z" />
             </svg>
           </span>
-          <h3 className="text-base font-bold text-rose-900 dark:text-rose-300">Khusus Admin (Tidak Tampil ke Publik)</h3>
+          <h3 className="text-base font-bold text-rose-900 dark:text-rose-200">Khusus Admin (Tidak Tampil ke Publik)</h3>
         </div>
         <p className="mb-5 text-xs text-rose-700/80 dark:text-rose-300/70">
           🔒 Data pada bagian ini tidak akan pernah ditampilkan ke halaman publik manapun.
@@ -239,11 +251,11 @@ export function BeneficiaryForm({
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Status Pernikahan</label>
             <select value={values.maritalStatus} onChange={(e) => set("maritalStatus", e.target.value)} className={adminInputClass}>
-              <option value="menikah">Menikah</option>
-              <option value="janda-cerai">Janda (cerai)</option>
-              <option value="janda-meninggal">Janda (suami meninggal)</option>
-              <option value="duda-cerai">Duda (cerai)</option>
-              <option value="duda-meninggal">Duda (istri meninggal)</option>
+              <option value="menikah" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Menikah</option>
+              <option value="janda-cerai" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Janda (cerai)</option>
+              <option value="janda-meninggal" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Janda (suami meninggal)</option>
+              <option value="duda-cerai" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Duda (cerai)</option>
+              <option value="duda-meninggal" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Duda (istri meninggal)</option>
             </select>
           </div>
 

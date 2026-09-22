@@ -3,7 +3,7 @@
 export function LazsipMark({ size = 36, className = "" }: { size?: number; className?: string }) {
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-lazsip-primary-100 ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-lazsip-primary-100 dark:bg-white/10 dark:ring-white/15 ${className}`}
       style={{ width: size, height: size }}
     >
       <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">

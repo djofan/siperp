@@ -88,9 +88,9 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
       ) : view === "list" ? (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-190 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Kode</th>
@@ -99,17 +99,17 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((campaign) => {
                   const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
                   return (
-                    <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                    <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                       <td className="px-4 py-3.5">
                         {campaign.image ? (
                           // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                          <img src={campaign.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
+                          <img src={campaign.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                         ) : (
-                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
+                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10"/>
                         )}
                       </td>
                       <td className="max-w-xs truncate px-4 py-3.5 font-medium">
@@ -117,26 +117,22 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                           {campaign.title}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{campaign.uniqueCode}</td>
+                      <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{campaign.uniqueCode}</td>
                       <td className="min-w-[9rem] px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24">
-                            <div className="h-full rounded-full bg-lazsip-primary-700" style={{ width: `${percentage}%` }} />
+                          <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24 dark:bg-white/10">
+                            <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
                           </div>
-                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
+                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/50">{percentage}%</span>
                         </div>
-                        <p className="mt-1 break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/30">
+                        <p className="mt-1 break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
                           {formatRupiah(campaign.currentAmount)} / {formatRupiah(campaign.targetAmount)}
                         </p>
                       </td>
                       <td className="px-4 py-3.5">
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                            campaign.status === "active" ? "bg-lazsip-secondary-50 text-lazsip-secondary-700" : "bg-lazsip-primary-900/5 text-lazsip-primary-900/50 dark:text-white/50"
-                          }`}
-                        >
+                        <AdminBadge tone={campaign.status === "active" ? "secondary" : "neutral"}>
                           {campaign.status === "active" ? "Aktif" : "Selesai"}
-                        </span>
+                        </AdminBadge>
                       </td>
                       <td className="px-4 py-3.5">
                         <RowActions

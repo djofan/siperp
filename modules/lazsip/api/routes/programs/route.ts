@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
 import { createProgram } from "@/modules/lazsip/api/programs";
 
+const VALID_CATEGORIES = ["umum", "pendidikan", "sarsip"];
 const VALID_TYPES = ["berita", "daftar"];
 
 export async function POST(request: Request) {
@@ -13,9 +14,13 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === "string" ? body.title.trim() : "";
   const description = typeof body?.description === "string" ? body.description.trim() : "";
+  if (body?.category !== undefined && !VALID_CATEGORIES.includes(body.category)) {
+    return NextResponse.json({ error: "Kategori program tidak valid." }, { status: 400 });
+  }
+  const category = body?.category;
   const type = VALID_TYPES.includes(body?.type) ? body.type : "berita";
   const requirements =
-    type === "daftar" && typeof body?.requirements === "string" && body.requirements.trim()
+    typeof body?.requirements === "string" && body.requirements.trim()
       ? body.requirements.trim()
       : null;
   const image = typeof body?.image === "string" && body.image.trim() ? body.image.trim() : undefined;
@@ -31,7 +36,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Link pendaftaran wajib diisi untuk tipe pendaftaran." }, { status: 400 });
   }
 
-  const program = await createProgram({ title, description, requirements, image, type, formUrl, isPinned });
+  const program = await createProgram({ title, description, requirements, image, category, type, formUrl, isPinned });
 
   return NextResponse.json({ ok: true, id: program.id }, { status: 201 });
 }

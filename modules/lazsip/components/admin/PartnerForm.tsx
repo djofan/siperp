@@ -48,8 +48,6 @@ export function PartnerForm({
 
   return (
     <form onSubmit={handleSubmit} className={panelClasses("flex max-w-xl flex-col gap-5 p-6")}>
-      <ImageUploadField label="Logo Mitra" initialUrl={logo} onChange={(u) => setLogo(u ?? "")} required={!isEdit} />
-
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
           Nama Mitra<span className="ml-0.5 text-red-600">*</span>
@@ -58,9 +56,11 @@ export function PartnerForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
-          className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
         />
       </div>
+
+      <ImageUploadField label="Logo Mitra" initialUrl={logo} onChange={(u) => setLogo(u ?? "")} required={!isEdit} />
 
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Tautan Website</label>
@@ -68,7 +68,7 @@ export function PartnerForm({
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://"
-          className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+          className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/35 dark:focus:ring-lazsip-primary-500"
         />
       </div>
 

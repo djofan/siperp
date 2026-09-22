@@ -10,13 +10,13 @@ export default async function PenyaluranBantuanListPage() {
     <div>
       <AdminPageHeader
         title="Penyaluran Bantuan"
-        description="Alamat, tanggal lahir, dan status pernikahan cuma tampil di sini — tidak pernah ke halaman publik."
+        description="Data penerima manfaat LAZSIP. Informasi sensitif (alamat, tanggal lahir, status pernikahan) hanya tampil di admin."
         action={
           <Link
             href="/admin/lazsip/penyaluran-bantuan/baru"
-            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
           >
-            + Tambah Data
+            + Tambah Penerima Manfaat
           </Link>
         }
       />

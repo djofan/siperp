@@ -101,9 +101,9 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
       ) : view === "list" ? (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Foto</th>
                   <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
@@ -113,25 +113,25 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((beneficiary) => (
-                  <tr key={beneficiary.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={beneficiary.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {beneficiary.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={beneficiary.photo} alt="" className="h-10 w-10 rounded-full border border-lazsip-primary-100/80 object-cover" />
+                        <img src={beneficiary.photo} alt="" className="h-10 w-10 rounded-full border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
+                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{beneficiary.isPinned ? "✓" : "-"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{beneficiary.isPinned ? "✓" : "-"}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{beneficiary.name}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">
                       {beneficiary.verifierName}
-                      {beneficiary.verifierArea && <span className="text-lazsip-primary-800/40 dark:text-white/30"> · {beneficiary.verifierArea}</span>}
+                      {beneficiary.verifierArea && <span className="text-lazsip-primary-800/40 dark:text-white/40"> · {beneficiary.verifierArea}</span>}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">Rp{beneficiary.amountReceived.toLocaleString("id-ID")}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">Rp{beneficiary.amountReceived.toLocaleString("id-ID")}</td>
                     <td className="px-4 py-3.5">
                       <RowActions
                         onEdit={() => router.push(`/admin/lazsip/penyaluran-bantuan/${beneficiary.id}`)}

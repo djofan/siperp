@@ -12,6 +12,7 @@ interface ProgramFormValues {
   description: string;
   requirements: string;
   image: string;
+  category: string;
   type: string;
   formUrl: string;
   isPinned: boolean;
@@ -30,6 +31,7 @@ export function ProgramForm({
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [requirements, setRequirements] = useState(initialValues?.requirements ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
+  const [category, setCategory] = useState(initialValues?.category ?? "umum");
   const [type, setType] = useState(initialValues?.type ?? "berita");
   const [formUrl, setFormUrl] = useState(initialValues?.formUrl ?? "");
   const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
@@ -61,8 +63,9 @@ export function ProgramForm({
       body: JSON.stringify({
         title,
         description,
-        requirements: type === "daftar" ? requirements : "",
+        requirements,
         image,
+        category,
         type,
         formUrl,
         isPinned,
@@ -84,8 +87,6 @@ export function ProgramForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
         <div className={panelClasses("flex flex-col gap-5 p-6")}>
-          <ImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
-
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Judul<span className="ml-0.5 text-red-600">*</span>
@@ -95,7 +96,7 @@ export function ProgramForm({
               onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="Judul program"
-              className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/35 dark:focus:ring-lazsip-primary-500"
             />
           </div>
 
@@ -108,34 +109,47 @@ export function ProgramForm({
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+              className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
             />
           </div>
 
-          {type === "daftar" && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Syarat Pendaftaran</label>
-              <textarea
-                value={requirements}
-                onChange={(e) => setRequirements(e.target.value)}
-                rows={4}
-                className="rounded-2xl bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
-              />
-            </div>
-          )}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Syarat Pendaftaran</label>
+            <textarea
+              value={requirements}
+              onChange={(e) => setRequirements(e.target.value)}
+              rows={4}
+              className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
+            />
+          </div>
+
+          <ImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
         </div>
 
         <div className="flex flex-col gap-5">
           <div className={panelClasses("flex flex-col gap-4 p-6")}>
             <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Kategori</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-[#16191a] dark:text-white dark:focus:ring-lazsip-primary-500"
+              >
+                <option value="umum" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Umum</option>
+                <option value="pendidikan" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Divisi Pendidikan</option>
+                <option value="sarsip" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">SARSIP</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Tipe Program</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-[#16191a] dark:text-white dark:focus:ring-lazsip-primary-500"
               >
-                <option value="berita">Berita</option>
-                <option value="daftar">Pendaftaran</option>
+                <option value="berita" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Berita</option>
+                <option value="daftar" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Pendaftaran</option>
               </select>
             </div>
 
@@ -148,7 +162,7 @@ export function ProgramForm({
                   value={formUrl}
                   onChange={(e) => setFormUrl(e.target.value)}
                   placeholder="https://forms.gle/... atau https://wa.me/..."
-                  className="rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+                  className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
                 />
               </div>
             )}

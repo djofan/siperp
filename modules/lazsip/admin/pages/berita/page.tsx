@@ -10,13 +10,13 @@ export default async function BeritaListPage() {
     <div>
       <AdminPageHeader
         title="Berita"
-        description="Berita LAZSIP, pola pinned + grid di halaman publik."
+        description="Kelola berita, status publish/draft, dan pin di beranda."
         action={
           <Link
             href="/admin/lazsip/berita/baru"
-            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
           >
-            + Tambah Berita Baru
+            + Tambah Berita
           </Link>
         }
       />
