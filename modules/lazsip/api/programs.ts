@@ -6,9 +6,9 @@ export async function listPrograms() {
   });
 }
 
-export async function listProgramsByCategory(category: string) {
+export async function listProgramsByType(type: string) {
   return prisma.lazsipProgram.findMany({
-    where: { category },
+    where: { type },
     orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
   });
 }
@@ -20,9 +20,11 @@ export async function getProgramById(id: string) {
 interface ProgramInput {
   title: string;
   description: string;
-  requirements?: string;
+  requirements?: string | null;
   image?: string;
-  category: string;
+  category?: string;
+  type: string;
+  formUrl?: string | null;
   isPinned: boolean;
 }
 

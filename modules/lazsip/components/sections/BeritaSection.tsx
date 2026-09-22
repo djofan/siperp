@@ -6,7 +6,9 @@ import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
 export async function BeritaSection() {
   const items = await listPublishedNews();
   const pinned = items.filter((n) => n.isPinned);
-  const rest = items.filter((n) => !n.isPinned);
+  // Item yang disematkan tetap ikut muncul di grid biasa di bawah, bukan cuma
+  // di baris pin paling atas — biar gak "hilang" dari daftar utama.
+  const rest = items;
 
   return (
     <section id="berita" className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-20">

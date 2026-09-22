@@ -48,7 +48,7 @@ function toCsv(rows: TransactionRow[]) {
   return [header.join(","), ...lines].join("\n");
 }
 
-export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
+export function TransactionTable({ rows, showTypeFilter = true }: { rows: TransactionRow[]; showTypeFilter?: boolean }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -101,7 +101,9 @@ export function TransactionTable({ rows }: { rows: TransactionRow[] }) {
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari donatur/campaign..." />
-        <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter jenis" />
+        {showTypeFilter && (
+          <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter jenis" />
+        )}
         <AdminFilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} ariaLabel="Filter status" />
         <AdminFilterSelect value={methodFilter} onChange={setMethodFilter} options={methodOptions} ariaLabel="Filter metode pembayaran" />
         <AdminDateInput value={dateFrom} onChange={setDateFrom} ariaLabel="Dari tanggal" />

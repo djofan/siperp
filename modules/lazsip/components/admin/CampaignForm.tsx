@@ -63,7 +63,10 @@ export function CampaignForm({
       return;
     }
 
-    router.push("/admin/lazsip/donasi");
+    // Edit balik ke halaman Kelola Campaign (riwayat & saldo) campaign ini, bukan ke
+    // daftar — form edit cuma langkah sesaat di dalam alur kelola satu campaign.
+    // Tambah baru tetap balik ke daftar seperti form lain.
+    router.push(campaignId ? `/admin/lazsip/donasi/${campaignId}` : "/admin/lazsip/donasi");
     router.refresh();
   }
 

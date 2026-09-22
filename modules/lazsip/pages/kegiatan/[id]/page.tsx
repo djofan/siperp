@@ -3,8 +3,9 @@ import { getActivityById, listActivities } from "@/modules/lazsip/api/activities
 import { formatDate } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { Button } from "@/modules/lazsip/components/ui/Button";
-import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { ActivityCard } from "@/modules/lazsip/components/ActivityCard";
+import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 
 export default async function LazsipKegiatanDetailPage({
   params,
@@ -24,7 +25,7 @@ export default async function LazsipKegiatanDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <article className="mx-auto max-w-3xl">
-        <BackLink href="/lazsip/kegiatan">Semua Kegiatan</BackLink>
+        <BackLinkGroup homeHref="/lazsip#kegiatan" listHref="/lazsip/kegiatan" listLabel="Semua Kegiatan" />
 
         <h1 className="mt-6 text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           {activity.title}
@@ -55,11 +56,12 @@ export default async function LazsipKegiatanDetailPage({
       {otherActivities.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">
           <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900 sm:text-2xl">Kegiatan Lainnya</h2>
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {otherActivities.map((a) => (
-              <ActivityCard key={a.id} id={a.id} title={a.title} description={a.description} image={a.image} date={a.date} />
-            ))}
-          </div>
+          <RelatedCardsRow
+            items={otherActivities}
+            renderItem={(a) => (
+              <ActivityCard id={a.id} title={a.title} description={a.description} image={a.image} date={a.date} />
+            )}
+          />
         </div>
       )}
     </div>

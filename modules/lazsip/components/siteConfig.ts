@@ -1,6 +1,7 @@
 export const lazsipSiteConfig = {
   name: "LAZSIP",
   fullName: "Lembaga Amil Zakat Solidaritas Insan Peduli",
+  foundedYear: 2015,
   nav: [
     { label: "Tentang", href: "#tentang" },
     { label: "Kalkulator Zakat", href: "#kalkulator-zakat" },

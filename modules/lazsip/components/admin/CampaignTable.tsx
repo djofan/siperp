@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
@@ -108,19 +109,23 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                           // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
                           <img src={campaign.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                         ) : (
-                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10" />
+                          <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10"/>
                         )}
                       </td>
-                      <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{campaign.title}</td>
+                      <td className="max-w-xs truncate px-4 py-3.5 font-medium">
+                        <Link href={`/admin/lazsip/donasi/${campaign.id}`} className="text-lazsip-primary-900 hover:underline dark:text-white">
+                          {campaign.title}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{campaign.uniqueCode}</td>
-                      <td className="px-4 py-3.5">
+                      <td className="min-w-[9rem] px-4 py-3.5">
                         <div className="flex items-center gap-2">
-                          <div className="h-2 w-24 overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
+                          <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24 dark:bg-white/10">
                             <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
                           </div>
-                          <span className="text-xs text-lazsip-primary-800/50 dark:text-white/50">{percentage}%</span>
+                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/50">{percentage}%</span>
                         </div>
-                        <p className="mt-1 text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
+                        <p className="mt-1 break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
                           {formatRupiah(campaign.currentAmount)} / {formatRupiah(campaign.targetAmount)}
                         </p>
                       </td>
@@ -131,7 +136,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                       </td>
                       <td className="px-4 py-3.5">
                         <RowActions
-                          onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}`)}
+                          onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}/edit`)}
                           onDelete={() => handleDelete(campaign.id, campaign.title)}
                           deleting={deletingId === campaign.id}
                         />
@@ -175,7 +180,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                 }
                 topRight={
                   <AdminOverlayActions
-                    onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}`)}
+                    onEdit={() => router.push(`/admin/lazsip/donasi/${campaign.id}/edit`)}
                     onDelete={() => handleDelete(campaign.id, campaign.title)}
                     deleting={deletingId === campaign.id}
                   />

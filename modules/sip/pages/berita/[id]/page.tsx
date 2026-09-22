@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPublishedNewsById } from "@/modules/sip/api/news";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
+import { BackButton } from "@/modules/sip/components/ui/BackButton";
 import { formatDate } from "@/modules/sip/components/format";
 
 export default async function BeritaDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,7 +11,10 @@ export default async function BeritaDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
-      <ImagePlaceholder variant="blog" src={news.image} alt={news.title} className="aspect-[16/9] w-full rounded-3xl" />
+      <BackButton />
+      <div className="mt-4">
+        <ImagePlaceholder variant="blog" src={news.image} alt={news.title} className="aspect-[16/9] w-full rounded-3xl" />
+      </div>
 
       <p className="mt-6 flex items-center gap-1.5 text-xs font-medium text-sip-primary-800/55">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0">

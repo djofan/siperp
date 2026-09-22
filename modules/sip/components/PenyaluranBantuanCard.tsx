@@ -15,11 +15,11 @@ export function PenyaluranBantuanCard({
   date: Date;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-sip-primary-100 bg-white transition-colors duration-200 hover:border-sip-primary-300 hover:shadow-lg hover:shadow-sip-primary-900/5">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] transition-shadow duration-200 hover:shadow-lg hover:shadow-sip-primary-900/10">
       <div className="relative">
         <ImagePlaceholder variant="activity" src={image} alt={title} className="aspect-[4/3] w-full" />
         {location && (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-sip-primary-900/85 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+          <span className="absolute left-2.5 top-2.5 inline-flex items-center gap-1 rounded-full bg-sip-primary-900/85 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur-sm">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3 shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10zM12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
             </svg>
@@ -35,7 +35,7 @@ export function PenyaluranBantuanCard({
           {formatDate(date)}
         </span>
         <h3 className="line-clamp-2 text-sm font-bold text-sip-primary-900">{title}</h3>
-        <p className="line-clamp-3 text-xs text-sip-primary-800/65">{description}</p>
+        <p className="line-clamp-2 text-xs text-sip-primary-800/65">{description}</p>
       </div>
     </div>
   );

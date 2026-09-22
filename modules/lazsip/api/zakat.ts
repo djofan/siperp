@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { getGoldPricePerGram } from "@/modules/lazsip/api/goldPrice";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getPaymentFeeRef, calculateFee } from "@/modules/lazsip/api/paymentFees";
+import { listTransactionsBySource } from "@/modules/payment/api/transaction";
 
 const NISAB_GRAM = 85;
 const ZAKAT_RATE = 0.025;
@@ -42,17 +44,25 @@ interface CreateZakatPaymentInput {
   donorName: string;
   zakatType: "maal" | "fitrah";
   amount: number;
+  coversFee: boolean;
+  isAnonymous: boolean;
   goldPriceSnapshot?: number;
   jiwaCount?: number;
   paymentMethod: string;
 }
 
 export async function createZakatPayment(input: CreateZakatPaymentInput) {
+  const feeRef = await getPaymentFeeRef(input.paymentMethod);
+  const adminFee = input.coversFee ? calculateFee(feeRef, input.amount) : 0;
+
   return prisma.lazsipZakatPayment.create({
     data: {
       donor: { create: { name: input.donorName } },
       zakatType: input.zakatType,
       amount: input.amount,
+      adminFee,
+      coversFee: input.coversFee,
+      isAnonymous: input.isAnonymous,
       goldPriceSnapshot: input.zakatType === "maal" ? input.goldPriceSnapshot ?? 0 : null,
       jiwaCount: input.zakatType === "fitrah" ? input.jiwaCount ?? null : null,
       paymentMethod: input.paymentMethod,
@@ -67,4 +77,25 @@ export async function setZakatPaymentStatus(id: string, status: "paid" | "failed
     where: { id, status: "pending" },
     data: { status },
   });
+}
+
+/** Pembayaran zakat lewat modul Payment (checkout baru) — sumber kebenaran terpisah dari
+ * tabel lama LazsipZakatPayment di atas, yang cuma menyimpan riwayat sebelum modul Payment ada. */
+export async function listPaymentZakatForAdmin() {
+  const transactions = await listTransactionsBySource("lazsip");
+  const zakatTxns = transactions.filter((t) => t.sourceType === "zakat");
+  const detailIds = zakatTxns.map((t) => t.sourceId);
+  const details = await prisma.lazsipZakatDetail.findMany({ where: { id: { in: detailIds } } });
+  const detailById = new Map(details.map((d) => [d.id, d]));
+
+  return zakatTxns.map((t) => ({
+    id: t.id,
+    donorName: t.donor.name,
+    zakatType: detailById.get(t.sourceId)?.zakatType === "fitrah" ? "fitrah" : "maal",
+    amount: t.amount,
+    adminFee: t.adminFee,
+    paymentMethod: t.paymentMethod,
+    status: t.status,
+    createdAt: t.createdAt,
+  }));
 }

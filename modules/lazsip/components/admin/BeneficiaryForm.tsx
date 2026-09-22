@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
+import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { panelClasses } from "@/components/ui/panel";
 
 interface BeneficiaryFormValues {
@@ -20,6 +21,11 @@ interface BeneficiaryFormValues {
   verifierName: string;
   verifierArea: string;
   maritalStatus: string;
+  nik: string;
+  occupation: string;
+  monthlyIncome: string;
+  dependentsCount: string;
+  dependentsDetail: string;
 }
 
 function hitungUmur(tanggalLahir: string): number | null {
@@ -47,11 +53,12 @@ export function BeneficiaryForm({
   initialValues,
 }: {
   beneficiaryId?: string;
-  initialValues?: Partial<BeneficiaryFormValues>;
+  initialValues?: Partial<BeneficiaryFormValues> & { isPinned?: boolean };
 }) {
   const router = useRouter();
   const isEdit = !!beneficiaryId;
 
+  const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
   const [values, setValues] = useState<BeneficiaryFormValues>({
     name: initialValues?.name ?? "",
     address: initialValues?.address ?? "",
@@ -66,6 +73,11 @@ export function BeneficiaryForm({
     verifierName: initialValues?.verifierName ?? "",
     verifierArea: initialValues?.verifierArea ?? "",
     maritalStatus: initialValues?.maritalStatus ?? "menikah",
+    nik: initialValues?.nik ?? "",
+    occupation: initialValues?.occupation ?? "",
+    monthlyIncome: initialValues?.monthlyIncome ?? "",
+    dependentsCount: initialValues?.dependentsCount ?? "",
+    dependentsDetail: initialValues?.dependentsDetail ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,6 +106,8 @@ export function BeneficiaryForm({
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        ...values,
+        age: age ?? 0,
         name: values.name,
         address: values.address,
         problemFaced: values.problemFaced,
@@ -107,6 +121,7 @@ export function BeneficiaryForm({
         verifierName: values.verifierName,
         verifierArea: values.verifierArea,
         maritalStatus: values.maritalStatus,
+        isPinned,
       }),
     });
 
@@ -136,6 +151,11 @@ export function BeneficiaryForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <ImageUploadField label="Foto" initialUrl={values.photo} onChange={(url) => set("photo", url ?? "")} required={!isEdit} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 dark:bg-white/5 px-4 py-3.5 sm:col-span-2">
+            <span className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Pin di beranda</span>
+            <Toggle checked={isPinned} onChange={setIsPinned} label="Pin" />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -237,6 +257,54 @@ export function BeneficiaryForm({
               <option value="duda-cerai" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Duda (cerai)</option>
               <option value="duda-meninggal" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Duda (istri meninggal)</option>
             </select>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">NIK</label>
+            <input
+              inputMode="numeric"
+              maxLength={16}
+              value={values.nik}
+              onChange={(e) => set("nik", e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="16 digit NIK KTP"
+              className={adminInputClass}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Pekerjaan</label>
+            <input value={values.occupation} onChange={(e) => set("occupation", e.target.value)} className={adminInputClass} />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Penghasilan per Bulan (Rp)</label>
+            <input
+              inputMode="numeric"
+              value={values.monthlyIncome}
+              onChange={(e) => set("monthlyIncome", e.target.value.replace(/[^0-9]/g, ""))}
+              className={adminInputClass}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Jumlah Tanggungan</label>
+            <input
+              inputMode="numeric"
+              value={values.dependentsCount}
+              onChange={(e) => set("dependentsCount", e.target.value.replace(/[^0-9]/g, ""))}
+              className={adminInputClass}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5 sm:col-span-2">
+            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Rincian Tanggungan</label>
+            <textarea
+              rows={2}
+              value={values.dependentsDetail}
+              onChange={(e) => set("dependentsDetail", e.target.value)}
+              placeholder="mis. Istri (ibu rumah tangga), 2 anak (SD & SMP)"
+              className={adminTextareaClass}
+            />
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">

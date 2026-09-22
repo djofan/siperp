@@ -4,8 +4,9 @@ import { listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { ProgressBar } from "@/modules/lazsip/components/ui/ProgressBar";
-import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { CampaignCard } from "@/modules/lazsip/components/CampaignCard";
+import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 import { DonationForm } from "@/modules/lazsip/components/sections/DonationForm";
 
 export default async function LazsipDonasiDetailPage({
@@ -29,7 +30,7 @@ export default async function LazsipDonasiDetailPage({
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <article>
-          <BackLink href="/lazsip/donasi">Semua Donasi</BackLink>
+          <BackLinkGroup homeHref="/lazsip#donasi" listHref="/lazsip/donasi" listLabel="Semua Donasi" />
 
           <h1 className="mt-6 text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-4xl">
             {campaign.title}
@@ -77,11 +78,12 @@ export default async function LazsipDonasiDetailPage({
       {otherCampaigns.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">
           <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900 sm:text-2xl">Campaign Lainnya</h2>
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-            {otherCampaigns.map((c) => (
-              <CampaignCard key={c.id} id={c.id} title={c.title} image={c.image} targetAmount={c.targetAmount} currentAmount={c.currentAmount} />
-            ))}
-          </div>
+          <RelatedCardsRow
+            items={otherCampaigns}
+            renderItem={(c) => (
+              <CampaignCard id={c.id} title={c.title} description={c.description} image={c.image} targetAmount={c.targetAmount} currentAmount={c.currentAmount} donorCount={c.donorCount} />
+            )}
+          />
         </div>
       )}
     </div>

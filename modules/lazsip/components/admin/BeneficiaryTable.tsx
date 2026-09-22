@@ -19,6 +19,7 @@ interface BeneficiaryRow {
   verifierName?: string;
   verifierArea?: string;
   createdAt?: Date;
+  isPinned?: boolean;
 }
 
 const AID_TYPE_LABEL: Record<string, string> = {
@@ -104,6 +105,7 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Foto</th>
+                  <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Tipe Bantuan</th>
                   <th className="px-4 py-3.5 font-semibold">Verifikator</th>
@@ -122,6 +124,7 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
                         <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{beneficiary.isPinned ? "✓" : "-"}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{beneficiary.name}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">
@@ -152,10 +155,15 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
               onClick={() => router.push(`/admin/lazsip/penyaluran-bantuan/${beneficiary.id}`)}
               meta={
                 <>
+                  {beneficiary.isPinned && (
+                    <AdminBadge tone="primary" size="sm">
+                      Pinned
+                    </AdminBadge>
+                  )}
                   <AdminBadge tone="overlay" size="sm">
                     {AID_TYPE_LABEL[beneficiary.aidType] ?? beneficiary.aidType}
                   </AdminBadge>
-                  <AdminBadge tone="primary" size="sm">
+                  <AdminBadge tone="secondary" size="sm">
                     Rp{beneficiary.amountReceived.toLocaleString("id-ID")}
                   </AdminBadge>
                 </>

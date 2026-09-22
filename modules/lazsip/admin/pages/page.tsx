@@ -6,6 +6,7 @@ import {
   countNewApplicants,
   getDashboardCounts,
   getDailyInflow,
+  getNewVsRepeatDonorsThisMonth,
 } from "@/modules/lazsip/api/dashboard";
 import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
 import { DashboardStatCard } from "@/modules/lazsip/components/admin/DashboardStatCard";
@@ -25,13 +26,14 @@ function percentChange(current: number, previous: number) {
 }
 
 export default async function LazsipDashboardPage() {
-  const [totals, topCampaigns, recentTransactions, newApplicants, counts, dailyInflow] = await Promise.all([
+  const [totals, topCampaigns, recentTransactions, newApplicants, counts, dailyInflow, donorMix] = await Promise.all([
     getThisMonthTotals(),
     getTopCampaigns(5),
     getRecentTransactions(10),
     countNewApplicants(),
     getDashboardCounts(),
     getDailyInflow(30),
+    getNewVsRepeatDonorsThisMonth(),
   ]);
 
   return (
@@ -60,6 +62,21 @@ export default async function LazsipDashboardPage() {
         <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(counts.totalBeneficiaries)} />
         <DashboardStatCard icon="partners" label="Mitra Kerja Sama" value={String(counts.totalPartners)} />
         <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(counts.pendingTransactions)} hint="Perlu ditinjau di Kelola Transaksi" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <DashboardStatCard
+          icon="donors"
+          label="Donatur Baru Bulan Ini"
+          value={String(donorMix.newDonors)}
+          hint="Transaksi pertama kali bulan ini"
+        />
+        <DashboardStatCard
+          icon="donors"
+          label="Donatur Lama (Repeat) Bulan Ini"
+          value={String(donorMix.repeatDonors)}
+          hint="Sudah pernah transaksi sebelum bulan ini"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">

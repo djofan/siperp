@@ -13,6 +13,8 @@ interface ProgramFormValues {
   requirements: string;
   image: string;
   category: string;
+  type: string;
+  formUrl: string;
   isPinned: boolean;
 }
 
@@ -30,6 +32,8 @@ export function ProgramForm({
   const [requirements, setRequirements] = useState(initialValues?.requirements ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
   const [category, setCategory] = useState(initialValues?.category ?? "umum");
+  const [type, setType] = useState(initialValues?.type ?? "berita");
+  const [formUrl, setFormUrl] = useState(initialValues?.formUrl ?? "");
   const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,6 +47,11 @@ export function ProgramForm({
       return;
     }
 
+    if (type === "daftar" && !formUrl.trim()) {
+      setError("Link pendaftaran wajib diisi untuk tipe Pendaftaran.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const url = programId ? `/api/lazsip/programs/${programId}` : "/api/lazsip/programs";
@@ -51,7 +60,16 @@ export function ProgramForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, requirements, image, category, isPinned }),
+      body: JSON.stringify({
+        title,
+        description,
+        requirements,
+        image,
+        category,
+        type,
+        formUrl,
+        isPinned,
+      }),
     });
 
     if (!response.ok) {
@@ -123,7 +141,33 @@ export function ProgramForm({
               </select>
             </div>
 
-            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 p-4 dark:bg-white/5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Tipe Program</label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-[#16191a] dark:text-white dark:focus:ring-lazsip-primary-500"
+              >
+                <option value="berita" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Berita</option>
+                <option value="daftar" className="bg-white text-lazsip-primary-900 dark:bg-[#16191a] dark:text-white">Pendaftaran</option>
+              </select>
+            </div>
+
+            {type === "daftar" && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
+                  Link Pendaftaran<span className="ml-0.5 text-red-600">*</span>
+                </label>
+                <input
+                  value={formUrl}
+                  onChange={(e) => setFormUrl(e.target.value)}
+                  placeholder="https://forms.gle/... atau https://wa.me/..."
+                  className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 dark:bg-white/5 p-4">
               <span className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Pin di halaman Program</span>
               <Toggle checked={isPinned} onChange={setIsPinned} label="Pin" />
             </div>

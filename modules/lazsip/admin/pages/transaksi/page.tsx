@@ -49,10 +49,10 @@ export default async function TransaksiPage() {
   return (
     <div>
       <AdminPageHeader
-        title="Kelola Transaksi"
-        description="Selama payment gateway belum terpasang, status lunas/gagal ditandai manual di sini — tidak pernah otomatis dari halaman redirect donatur."
+        title="Transaksi Donasi"
+        description="Transaksi donasi/infaq campaign — settle ke rekening donasi. Selama payment gateway belum terpasang, status lunas/gagal ditandai manual di sini."
       />
-      <TransactionTable rows={rows} />
+      <TransactionTable rows={rows} showTypeFilter={false} />
     </div>
   );
 }

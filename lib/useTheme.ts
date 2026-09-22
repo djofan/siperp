@@ -12,12 +12,19 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
+    let timeoutId: number | undefined;
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "dark") setTheme("dark");
+      if (stored === "dark") {
+        timeoutId = window.setTimeout(() => setTheme("dark"), 0);
+      }
     } catch {
       // localStorage tidak tersedia (mode privat dsb) — tetap pakai default "light".
     }
+
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
   }, []);
 
   useEffect(() => {

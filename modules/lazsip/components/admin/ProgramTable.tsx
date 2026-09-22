@@ -17,6 +17,7 @@ interface ProgramRow {
   description?: string;
   image: string | null;
   category: string;
+  type: string;
   registrationOpen: boolean;
   isPinned?: boolean;
 }
@@ -34,6 +35,17 @@ const CATEGORY_OPTIONS = [
   { value: "sarsip", label: "SARSIP" },
 ];
 
+const TYPE_LABEL: Record<string, string> = {
+  berita: "Berita",
+  daftar: "Pendaftaran",
+};
+
+const TYPE_OPTIONS = [
+  { value: "all", label: "Semua Tipe" },
+  { value: "berita", label: "Berita" },
+  { value: "daftar", label: "Pendaftaran" },
+];
+
 const REGISTRATION_OPTIONS = [
   { value: "all", label: "Semua Status" },
   { value: "open", label: "Pendaftaran Terbuka" },
@@ -46,6 +58,7 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const [view, setView] = useState<AdminViewMode>("list");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
 
   async function handleDelete(id: string, title: string) {
@@ -59,23 +72,26 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const resetFilters = () => {
     setSearch("");
     setCategoryFilter("all");
+    setTypeFilter("all");
     setRegistrationFilter("all");
   };
 
   const filtered = useMemo(() => {
     let rows = programs.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
     if (categoryFilter !== "all") rows = rows.filter((p) => p.category === categoryFilter);
+    if (typeFilter !== "all") rows = rows.filter((p) => p.type === typeFilter);
     if (registrationFilter !== "all") {
       rows = rows.filter((p) => (registrationFilter === "open" ? p.registrationOpen : !p.registrationOpen));
     }
     return rows;
-  }, [programs, search, categoryFilter, registrationFilter]);
+  }, [programs, search, categoryFilter, typeFilter, registrationFilter]);
 
   return (
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul program..." />
         <AdminFilterSelect value={categoryFilter} onChange={setCategoryFilter} options={CATEGORY_OPTIONS} ariaLabel="Filter kategori" />
+        <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter tipe" />
         <AdminFilterSelect value={registrationFilter} onChange={setRegistrationFilter} options={REGISTRATION_OPTIONS} ariaLabel="Filter pendaftaran" />
         <AdminFilterResetButton onClick={resetFilters} />
         <div className="ml-auto">
@@ -94,6 +110,7 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Kategori</th>
+                  <th className="px-4 py-3.5 font-semibold">Tipe</th>
                   <th className="px-4 py-3.5 font-semibold">Pendaftaran</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
@@ -111,8 +128,13 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
                     </td>
                     <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{program.title}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{TYPE_LABEL[program.type] ?? program.type}</td>
                     <td className="px-4 py-3.5">
-                      <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
+                      {program.type === "daftar" ? (
+                        <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
+                      ) : (
+                        <span className="text-xs text-lazsip-primary-800/40 dark:text-white/40">—</span>
+                      )}
                     </td>
                     <td className="px-4 py-3.5">
                       <RowActions
@@ -140,9 +162,14 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
                   <AdminBadge tone="overlay" size="sm">
                     {CATEGORY_LABEL[program.category] ?? program.category}
                   </AdminBadge>
-                  <AdminBadge tone={program.registrationOpen ? "secondary" : "danger"} size="sm">
-                    {program.registrationOpen ? "Terbuka" : "Ditutup"}
+                  <AdminBadge tone="overlay" size="sm">
+                    {TYPE_LABEL[program.type] ?? program.type}
                   </AdminBadge>
+                  {program.type === "daftar" && (
+                    <AdminBadge tone={program.registrationOpen ? "secondary" : "danger"} size="sm">
+                      {program.registrationOpen ? "Terbuka" : "Ditutup"}
+                    </AdminBadge>
+                  )}
                   {program.isPinned && (
                     <AdminBadge tone="primary" size="sm">
                       Pinned

@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
 import { upsertSiteContent, type SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 
-const VALID_KEYS: SipSiteContentSectionKey[] = ["hero", "tentang", "jangkauanBantuan", "kontak"];
+const VALID_KEYS: SipSiteContentSectionKey[] = [
+  "hero",
+  "berita",
+  "program",
+  "penyaluranBantuan",
+  "tentang",
+  "jangkauanBantuan",
+  "kontak",
+];
 
 export async function PUT(request: Request, { params }: { params: Promise<{ key: string }> }) {
   const session = await getSession();

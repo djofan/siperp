@@ -27,6 +27,8 @@ export default async function EditProgramPage({
           requirements: program.requirements ?? "",
           image: program.image ?? "",
           category: program.category,
+          type: program.type,
+          formUrl: program.formUrl ?? "",
           isPinned: program.isPinned,
         }}
       />
