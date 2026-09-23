@@ -1,13 +1,12 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import "@/modules/lazsip/api/wiring";
-import "@/modules/sip/api/wiring";
-import "@/modules/payment/api/wiring";
 import { prisma } from "@/lib/prisma";
 import { seedLazsipModuleRegistration } from "@/modules/lazsip/api/seed";
 import { seedSipModuleRegistration } from "@/modules/sip/api/seed";
 import { seedPaymentModuleRegistration } from "@/modules/payment/api/seed";
 import { seedAcademyModuleRegistration } from "@/modules/academy/api/seed";
+import { seedSarsipModuleRegistration } from "@/modules/sarsip/api/seed";
 
 async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
@@ -39,6 +38,7 @@ async function main() {
   await seedPaymentModuleRegistration();  
 
   await seedAcademyModuleRegistration();
+  await seedSarsipModuleRegistration();
   console.log("Modul academy terdaftar.");
 }
 

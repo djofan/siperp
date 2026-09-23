@@ -64,14 +64,14 @@ export function ImageUploadField({
       <div className="flex items-center gap-4">
         <div
           className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed bg-lazsip-primary-50/60 dark:bg-white/5 ${
-            required && !preview ? "border-red-300" : "border-lazsip-primary-200 dark:border-white/15"
+            required && !preview ? "border-red-300 dark:border-red-500/50" : "border-lazsip-primary-200 dark:border-white/10"
           }`}
         >
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element -- preview lokal/hasil upload, bukan asset Next dioptimasi
             <img src={preview} alt="Preview" className="h-full w-full object-cover" />
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-lazsip-primary-300">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-lazsip-primary-300 dark:text-white/30">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -81,7 +81,7 @@ export function ImageUploadField({
           )}
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="inline-flex w-fit cursor-pointer items-center rounded-full border border-lazsip-primary-200 dark:border-white/15 px-4 py-2 text-sm font-semibold text-lazsip-primary-800 dark:text-white/70 transition-colors hover:border-lazsip-primary-400">
+          <label className="inline-flex w-fit cursor-pointer items-center rounded-full border border-lazsip-primary-200 px-4 py-2 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400 dark:border-white/15 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/5">
             {uploading ? "Mengunggah..." : "Pilih File"}
             <input
               type="file"

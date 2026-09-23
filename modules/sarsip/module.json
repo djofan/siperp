@@ -1,0 +1,13 @@
+{
+  "name": "sarsip",
+  "displayName": "SARSIP",
+  "description": "Tim SAR Solidaritas Insan Peduli — kegiatan kemanusiaan, berita, dan donasi.",
+  "version": "1.0.0",
+  "providers": {
+    "prismaSchema": "schema.prisma",
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
+}
+

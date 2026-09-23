@@ -1,7 +1,7 @@
 import { markAsPaid, markAsFailed } from "@/modules/payment/api/transaction";
 import { verifyMidtransSignature } from "@/modules/payment/api/midtransSignature";
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePaymentViews } from "@/modules/lazsip/api/revalidatePaymentViews";
+import { revalidateSourcePaymentViews } from "@/modules/payment/api/revalidate";
 
 const PAID_STATUSES = new Set(["capture", "settlement"]);
 const FAILED_STATUSES = new Set(["expire", "cancel", "deny", "failure"]);
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    if (transaction.moduleSource === "lazsip") revalidatePaymentViews();
+    revalidateSourcePaymentViews(transaction.moduleSource);
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Gagal memproses notifikasi webhook", { order_id: orderId, error });

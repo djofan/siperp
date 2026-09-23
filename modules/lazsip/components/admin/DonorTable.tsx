@@ -70,7 +70,7 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Nomor WhatsApp</th>
                   <th className="px-4 py-3.5 font-semibold">Email</th>
@@ -80,24 +80,26 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
                   <th className="px-4 py-3.5 font-semibold">Transaksi Terakhir</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((donor) => (
-                  <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">
                       <Link href={`/admin/lazsip/donatur/${donor.id}`} className="hover:underline">
                         {donor.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{donor.email ?? "Belum tercatat"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.email ?? "Belum tercatat"}</td>
                     <td className="px-4 py-3.5">
-                      {donor.types.map((type) => <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
-                        {type === "zakat" ? "Muzakki" : "Donatur"}
-                      </AdminBadge>)}
+                      {donor.types.map((type) => (
+                        <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
+                          {type === "zakat" ? "Muzakki" : "Donatur"}
+                        </AdminBadge>
+                      ))}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{donor.contributionCount}x</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.contributionCount}x</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{formatRupiah(donor.totalContribution)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{formatDate(donor.lastContributionAt)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatDate(donor.lastContributionAt)}</td>
                   </tr>
                 ))}
               </tbody>

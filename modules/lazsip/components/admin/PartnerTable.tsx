@@ -54,28 +54,28 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
       ) : view === "list" ? (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-sm">
+            <table className="w-full min-w-130 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Logo</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Website</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((partner) => (
-                  <tr key={partner.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={partner.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {partner.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={partner.logo} alt="" className="h-10 w-10 rounded-full border border-lazsip-primary-100/80 object-cover" />
+                        <img src={partner.logo} alt="" className="h-10 w-10 rounded-full border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
+                        <div className="h-10 w-10 rounded-full bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{partner.name}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{partner.url ?? "-"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{partner.url ?? "-"}</td>
                     <td className="px-4 py-3.5">
                       <RowActions
                         onEdit={() => router.push(`/admin/lazsip/mitra/${partner.id}`)}

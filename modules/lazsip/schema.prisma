@@ -40,6 +40,7 @@ model LazsipProgram {
   description      String   @db.Text
   requirements     String?  @db.Text
   image            String?
+  category         String   @default("umum") // "umum" | "pendidikan" | "sarsip"
   type             String   @default("berita") // "berita" | "daftar" — daftar = tombol arahkan ke link Google Form
   formUrl          String?  @map("form_url") // link Google Form pendaftaran, dipakai kalau type == "daftar"
   isPinned         Boolean  @default(false) @map("is_pinned")

@@ -5,9 +5,8 @@ import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
 import { Prisma } from "@/generated/prisma/client";
 
-export class DonationValidationError extends Error {
-  constructor(message: string, public status = 400) { super(message); }
-}
+import { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
+export { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
 
 export async function createCampaignCheckout(input: {
   campaignId: string; donorName: string; donorPhone: string; donorEmail: string; amount: number;

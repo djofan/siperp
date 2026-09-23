@@ -16,10 +16,24 @@ interface ProgramRow {
   title: string;
   description?: string;
   image: string | null;
+  category: string;
   type: string;
   registrationOpen: boolean;
   isPinned?: boolean;
 }
+
+const CATEGORY_LABEL: Record<string, string> = {
+  umum: "Umum",
+  pendidikan: "Divisi Pendidikan",
+  sarsip: "SARSIP",
+};
+
+const CATEGORY_OPTIONS = [
+  { value: "all", label: "Semua Kategori" },
+  { value: "umum", label: "Umum" },
+  { value: "pendidikan", label: "Divisi Pendidikan" },
+  { value: "sarsip", label: "SARSIP" },
+];
 
 const TYPE_LABEL: Record<string, string> = {
   berita: "Berita",
@@ -43,6 +57,7 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<AdminViewMode>("list");
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
 
@@ -56,23 +71,26 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
 
   const resetFilters = () => {
     setSearch("");
+    setCategoryFilter("all");
     setTypeFilter("all");
     setRegistrationFilter("all");
   };
 
   const filtered = useMemo(() => {
     let rows = programs.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
+    if (categoryFilter !== "all") rows = rows.filter((p) => p.category === categoryFilter);
     if (typeFilter !== "all") rows = rows.filter((p) => p.type === typeFilter);
     if (registrationFilter !== "all") {
       rows = rows.filter((p) => (registrationFilter === "open" ? p.registrationOpen : !p.registrationOpen));
     }
     return rows;
-  }, [programs, search, typeFilter, registrationFilter]);
+  }, [programs, search, categoryFilter, typeFilter, registrationFilter]);
 
   return (
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul program..." />
+        <AdminFilterSelect value={categoryFilter} onChange={setCategoryFilter} options={CATEGORY_OPTIONS} ariaLabel="Filter kategori" />
         <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter tipe" />
         <AdminFilterSelect value={registrationFilter} onChange={setRegistrationFilter} options={REGISTRATION_OPTIONS} ariaLabel="Filter pendaftaran" />
         <AdminFilterResetButton onClick={resetFilters} />
@@ -86,29 +104,31 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
       ) : view === "list" ? (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
+            <table className="w-full min-w-170 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
+                  <th className="px-4 py-3.5 font-semibold">Kategori</th>
                   <th className="px-4 py-3.5 font-semibold">Tipe</th>
                   <th className="px-4 py-3.5 font-semibold">Pendaftaran</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((program) => (
-                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {program.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
+                        <img src={program.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
+                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
                     <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{program.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{TYPE_LABEL[program.type] ?? program.type}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{TYPE_LABEL[program.type] ?? program.type}</td>
                     <td className="px-4 py-3.5">
                       {program.type === "daftar" ? (
                         <RegistrationToggle programId={program.id} initialOpen={program.registrationOpen} />
@@ -139,6 +159,9 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
               onClick={() => router.push(`/admin/lazsip/program/${program.id}`)}
               meta={
                 <>
+                  <AdminBadge tone="overlay" size="sm">
+                    {CATEGORY_LABEL[program.category] ?? program.category}
+                  </AdminBadge>
                   <AdminBadge tone="overlay" size="sm">
                     {TYPE_LABEL[program.type] ?? program.type}
                   </AdminBadge>

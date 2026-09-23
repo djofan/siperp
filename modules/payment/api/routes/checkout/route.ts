@@ -1,6 +1,7 @@
 import { createCampaignCheckout, DonationValidationError } from "@/modules/lazsip/api/campaignCheckout";
 import { createZakatCheckout, ZakatValidationError } from "@/modules/lazsip/api/zakatCheckout";
 import { isRateLimited, getClientKey } from "@/modules/payment/api/rateLimit";
+import { createSarsipCheckout } from "@/modules/sarsip/api/checkout";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
@@ -9,13 +10,17 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  if (body?.moduleSource !== "lazsip") {
+  if (body?.moduleSource !== "lazsip" && body?.moduleSource !== "sarsip") {
     return NextResponse.json({ error: "Jenis checkout belum didukung." }, { status: 400 });
   }
 
   try {
-    if (body.sourceType === "campaign" && body.fundType === "infak") {
-      const transaction = await createCampaignCheckout({
+    if (body.sourceType === "campaign" && (
+      (body.moduleSource === "lazsip" && body.fundType === "infak") ||
+      (body.moduleSource === "sarsip" && body.fundType === "donasi")
+    )) {
+      const checkout = body.moduleSource === "sarsip" ? createSarsipCheckout : createCampaignCheckout;
+      const transaction = await checkout({
         campaignId: typeof body.sourceId === "string" ? body.sourceId : "",
         donorName: typeof body.donorName === "string" ? body.donorName : "",
         donorPhone: typeof body.donorPhone === "string" ? body.donorPhone : "",
@@ -28,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ transactionId: transaction.id }, { status: 201 });
     }
 
-    if (body.sourceType === "zakat" && body.fundType === "zakat") {
+    if (body.moduleSource === "lazsip" && body.sourceType === "zakat" && body.fundType === "zakat") {
       const zakatType = body.zakatType === "fitrah" ? "fitrah" : "maal";
       const transaction = await createZakatCheckout({
         donorName: typeof body.donorName === "string" ? body.donorName : "",

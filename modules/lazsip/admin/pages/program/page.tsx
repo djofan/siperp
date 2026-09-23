@@ -10,11 +10,11 @@ export default async function ProgramListPage() {
     <div>
       <AdminPageHeader
         title="Program Pemberdayaan"
-        description="Pendaftaran bisa dibuka/tutup tanpa menghapus program dari listing publik."
+        description="Pola pinned + grid di halaman publik, plus toggle buka/tutup pendaftaran."
         action={
           <Link
             href="/admin/lazsip/program/baru"
-            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+            className="inline-flex items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
           >
             + Tambah Program
           </Link>

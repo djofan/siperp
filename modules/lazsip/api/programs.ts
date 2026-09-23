@@ -22,6 +22,7 @@ interface ProgramInput {
   description: string;
   requirements?: string | null;
   image?: string;
+  category?: string;
   type: string;
   formUrl?: string | null;
   isPinned: boolean;

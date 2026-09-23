@@ -77,9 +77,9 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
       ) : view === "list" ? (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
+            <table className="w-full min-w-160 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Tanggal</th>
@@ -87,20 +87,20 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {filtered.map((activity) => (
-                  <tr key={activity.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={activity.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5">
                       {activity.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={activity.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover" />
+                        <img src={activity.image} alt="" className="h-12 w-16 rounded-xl border border-lazsip-primary-100/80 object-cover dark:border-white/10" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10 dark:bg-white/10"/>
+                        <div className="h-12 w-16 rounded-xl bg-lazsip-primary-50 dark:bg-white/10" />
                       )}
                     </td>
                     <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{activity.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{formatDate(activity.date)}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{activity.isPinned ? "✓" : "-"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatDate(activity.date)}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{activity.isPinned ? "✓" : "-"}</td>
                     <td className="px-4 py-3.5">
                       <RowActions
                         onEdit={() => router.push(`/admin/lazsip/kegiatan/${activity.id}`)}

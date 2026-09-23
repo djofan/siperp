@@ -61,7 +61,7 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
         className={panelClasses("flex flex-wrap items-end gap-3 p-5")}
       >
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="fee-method" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/60">
+          <label htmlFor="fee-method" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/70">
             Metode Pembayaran
           </label>
           <input
@@ -70,11 +70,11 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
             placeholder="mis. QRIS, Transfer BCA"
             value={method}
             onChange={(e) => setMethod(e.target.value)}
-            className="h-10 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+            className="h-10 rounded-full border border-lazsip-primary-200 bg-white px-4 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/35 dark:focus:ring-lazsip-primary-500"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="fee-amount" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/60">
+          <label htmlFor="fee-amount" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/70">
             Biaya Tetap (Rp)
           </label>
           <input
@@ -83,11 +83,11 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
             min={0}
             value={feeAmount}
             onChange={(e) => setFeeAmount(e.target.value)}
-            className="h-10 w-36 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+            className="h-10 w-36 rounded-full border border-lazsip-primary-200 bg-white px-4 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="fee-percentage" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/60">
+          <label htmlFor="fee-percentage" className="text-xs font-medium text-lazsip-primary-800/70 dark:text-white/70">
             Biaya Persentase (%)
           </label>
           <input
@@ -97,13 +97,13 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
             step="0.1"
             value={feePercentage}
             onChange={(e) => setFeePercentage(e.target.value)}
-            className="h-10 w-36 rounded-full bg-lazsip-primary-50/70 dark:bg-white/5 px-4 text-sm text-lazsip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-lazsip-primary-400"
+            className="h-10 w-36 rounded-full border border-lazsip-primary-200 bg-white px-4 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
           />
         </div>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="inline-flex h-10 items-center justify-center rounded-full bg-lazsip-primary-900 px-6 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-10 items-center justify-center rounded-full bg-lazsip-primary-900 px-6 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
         >
           {isSubmitting ? "Menyimpan..." : "Simpan"}
         </button>
@@ -115,29 +115,29 @@ export function PaymentFeeManager({ fees }: { fees: FeeRow[] }) {
       ) : (
         <div className={panelClasses("overflow-hidden")}>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[520px] text-left text-sm">
+            <table className="w-full min-w-130 text-left text-sm">
               <thead>
-                <tr className="border-b border-lazsip-primary-100 dark:border-white/10 bg-lazsip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:text-white/55">
+                <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">Metode</th>
                   <th className="px-4 py-3.5 font-semibold">Biaya Tetap</th>
                   <th className="px-4 py-3.5 font-semibold">Biaya Persentase</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/10">
+              <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {fees.map((fee) => (
-                  <tr key={fee.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={fee.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{fee.method}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">
                       {fee.feeAmount ? `Rp${fee.feeAmount.toLocaleString("id-ID")}` : "-"}
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/55">{fee.feePercentage ? `${fee.feePercentage}%` : "-"}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{fee.feePercentage ? `${fee.feePercentage}%` : "-"}</td>
                     <td className="px-4 py-3.5 text-right">
                       <button
                         type="button"
                         onClick={() => handleDelete(fee.id, fee.method)}
                         disabled={deletingId === fee.id}
-                        className="text-sm font-medium text-red-600 transition-colors hover:opacity-80 disabled:opacity-50"
+                        className="text-sm font-medium text-red-600 transition-colors hover:opacity-80 disabled:opacity-50 dark:text-red-400"
                       >
                         {deletingId === fee.id ? "Menghapus..." : "Hapus"}
                       </button>
