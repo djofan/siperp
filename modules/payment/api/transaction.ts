@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { notifySourceModule } from "@/modules/payment/api/registry";
 import { sendTrackingCodeEmail } from "@/modules/payment/api/email";
 import type { Prisma } from "@/generated/prisma/client";
+import { paymentGateway, midtransConfig } from "@/modules/payment/api/midtrans";
+import { randomUUID } from "node:crypto";
 
 // Tanpa 0/O/1/I biar gak ketuker pas donatur baca/ketik ulang kodenya.
 const TRACKING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -42,17 +44,23 @@ export async function createTransaction(input: {
   paymentMethod: string;
 }, tx: Prisma.TransactionClient = prisma) {
   const destination = await resolveDestinationAccount(input.moduleSource, input.fundType, tx);
+  const gateway = paymentGateway();
+  const merchantId = gateway === "midtrans_sandbox" ? midtransConfig().merchantId : null;
 
   // Guard against accidental double-submit (double click, client retry, flaky network):
   // reuse a still-pending checkout from the same donor for the same amount/method made
-  // moments ago instead of creating a duplicate transaction. Source-specific fields
-  // (sourceId) are deliberately excluded — some sources (e.g. zakat) mint a fresh sourceId
-  // per attempt, so matching on it would defeat the guard.
+  // moments ago instead of creating a duplicate transaction. Campaign IDs must match;
+  // zakat mints a fresh source ID for every attempt.
   const recent = await tx.paymentTransaction.findFirst({
     where: {
       donorId: input.donorId,
       moduleSource: input.moduleSource,
       fundType: input.fundType,
+      sourceType: input.sourceType,
+      ...(input.sourceType === "campaign" ? { sourceId: input.sourceId } : {}),
+      adminFee: input.adminFee ?? 0,
+      gateway,
+      destinationAccountId: destination.id,
       amount: input.amount,
       paymentMethod: input.paymentMethod,
       status: "pending",
@@ -78,6 +86,9 @@ export async function createTransaction(input: {
           adminFee: input.adminFee ?? 0,
           paymentMethod: input.paymentMethod,
           destinationAccountId: destination.id,
+          gateway,
+          gatewayMerchantId: merchantId,
+          midtransOrderId: gateway === "midtrans_sandbox" ? `SIP-${randomUUID()}` : null,
         },
         include: { donor: { select: { email: true } } },
       });
@@ -105,6 +116,7 @@ export async function getTransactionStatus(id: string) {
     where: { id },
     select: {
       id: true, trackingCode: true, moduleSource: true, amount: true, adminFee: true, paymentMethod: true, status: true, createdAt: true, paidAt: true,
+      gateway: true,
     },
   });
 }
@@ -151,5 +163,7 @@ export async function markAsFailed(midtransOrderId: string) {
 }
 
 export async function setStatusById(id: string, status: "paid" | "failed") {
+  const transaction = await prisma.paymentTransaction.findUniqueOrThrow({ where: { id } });
+  if (transaction.gateway !== "simulation") throw new Error("Transaksi gateway hanya boleh dikonfirmasi melalui webhook.");
   return finalizeTransaction({ id }, status);
 }

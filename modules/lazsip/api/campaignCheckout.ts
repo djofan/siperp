@@ -1,3 +1,4 @@
+import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import { prisma } from "@/lib/prisma";
 import { createTransaction } from "@/modules/payment/api/transaction";
 import { findOrCreateDonor } from "@/modules/payment/api/donors";
@@ -40,7 +41,9 @@ export async function createCampaignCheckout(input: {
         if (!campaign || campaign.status !== "active") {
           throw new DonationValidationError("Campaign tidak ditemukan atau sudah selesai.", 404);
         }
-        const method = await tx.lazsipPaymentFeeRef.findUnique({ where: { method: input.paymentMethod } });
+        const method = paymentGateway() === "midtrans_sandbox"
+          ? (input.paymentMethod === sandboxMethod.method ? sandboxMethod : null)
+          : await tx.lazsipPaymentFeeRef.findUnique({ where: { method: input.paymentMethod } });
         if (!method) throw new DonationValidationError("Metode pembayaran tidak tersedia.");
         const adminFee = input.coversFee ? calculateFee(method, input.amount) : 0;
         if (!Number.isSafeInteger(adminFee) || adminFee < 0 || input.amount + adminFee > 2_147_483_647) {

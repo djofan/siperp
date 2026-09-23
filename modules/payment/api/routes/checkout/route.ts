@@ -3,6 +3,7 @@ import { createZakatCheckout, ZakatValidationError } from "@/modules/lazsip/api/
 import { isRateLimited, getClientKey } from "@/modules/payment/api/rateLimit";
 import { createSarsipCheckout } from "@/modules/sarsip/api/checkout";
 import { NextRequest, NextResponse } from "next/server";
+import { paymentGateway, midtransConfig } from "@/modules/payment/api/midtrans";
 
 export async function POST(req: NextRequest) {
   if (isRateLimited(getClientKey(req))) {
@@ -12,6 +13,12 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   if (body?.moduleSource !== "lazsip" && body?.moduleSource !== "sarsip") {
     return NextResponse.json({ error: "Jenis checkout belum didukung." }, { status: 400 });
+  }
+
+  try {
+    if (paymentGateway() === "midtrans_sandbox") midtransConfig();
+  } catch {
+    return NextResponse.json({ error: "Midtrans sandbox belum dikonfigurasi. Pengelola perlu melengkapi Sandbox Server Key dan Merchant ID." }, { status: 503 });
   }
 
   try {
