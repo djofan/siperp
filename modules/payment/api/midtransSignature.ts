@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 /**
  * Midtrans webhook notification signature: SHA512(order_id + status_code + gross_amount + ServerKey).
@@ -21,5 +21,6 @@ export function verifyMidtransSignature(payload: {
   const expected = createHash("sha512")
     .update(payload.order_id + payload.status_code + payload.gross_amount + serverKey)
     .digest("hex");
-  return expected === payload.signature_key;
+  if (!/^[a-f0-9]{128}$/i.test(payload.signature_key)) return false;
+  return timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(payload.signature_key, "hex"));
 }

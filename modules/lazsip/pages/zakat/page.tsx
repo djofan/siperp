@@ -1,4 +1,4 @@
-import { listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
+import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { ZakatPaymentForm } from "@/modules/lazsip/components/sections/ZakatPaymentForm";

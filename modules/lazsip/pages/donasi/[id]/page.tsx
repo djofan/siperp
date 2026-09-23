@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getCampaignById, listCampaigns, listCampaignDonorsPublic } from "@/modules/lazsip/api/campaigns";
-import { listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
+import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { ProgressBar } from "@/modules/lazsip/components/ui/ProgressBar";

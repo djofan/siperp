@@ -9,7 +9,7 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const trx = await prisma.paymentTransaction.findUnique({ where: { id }, select: { moduleSource: true } });
+  const trx = await prisma.paymentTransaction.findUnique({ where: { id }, select: { moduleSource: true, gateway: true } });
   if (!trx) {
     return NextResponse.json({ error: "Transaksi tidak ditemukan." }, { status: 404 });
   }
@@ -20,6 +20,7 @@ export async function PUT(
   }
 
   const body = await request.json().catch(() => null);
+  if (trx.gateway !== "simulation") return NextResponse.json({ error: "Pembayaran gateway harus diverifikasi melalui Midtrans." }, { status: 409 });
   if (body?.status !== "paid" && body?.status !== "failed") {
     return NextResponse.json({ error: "status wajib 'paid' atau 'failed'." }, { status: 400 });
   }

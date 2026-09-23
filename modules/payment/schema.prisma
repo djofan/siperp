@@ -32,6 +32,10 @@ model PaymentTransaction {
   destinationAccountId  String   @map("destination_account_id")
   status                String   @default("pending")     // pending | paid | failed
   midtransOrderId       String?  @unique @map("midtrans_order_id")
+  gateway               String   @default("simulation")
+  gatewayState          String   @default("not_started") @map("gateway_state")
+  gatewayMerchantId     String?  @map("gateway_merchant_id")
+  gatewayCheckoutUrl    String?  @db.Text @map("gateway_checkout_url")
   createdAt             DateTime @default(now()) @map("created_at")
   paidAt                DateTime? @map("paid_at")
 
