@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
 
 /**
  * Nama wajib, dan minimal salah satu dari phone/email wajib (divalidasi oleh pemanggil
@@ -24,6 +25,10 @@ export async function findOrCreateDonor(
       // email is refreshed only when a new one is actually supplied, so a checkout with
       // phone-only never wipes a previously saved email.
       if (email && email !== existingByPhone.email) {
+        const emailOwner = await tx.paymentDonor.findUnique({ where: { email }, select: { id: true } });
+        if (emailOwner && emailOwner.id !== existingByPhone.id) {
+          throw new DonationValidationError("Nomor WhatsApp dan email tidak cocok dengan satu data donatur. Periksa kembali, atau kosongkan email untuk melanjutkan dengan WhatsApp saja.", 409);
+        }
         return tx.paymentDonor.update({ where: { id: existingByPhone.id }, data: { email } });
       }
       return existingByPhone;

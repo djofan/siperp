@@ -118,14 +118,14 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                         </Link>
                       </td>
                       <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{campaign.uniqueCode}</td>
-                      <td className="min-w-[9rem] px-4 py-3.5">
+                      <td className="min-w-36 px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24 dark:bg-white/10">
                             <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
                           </div>
                           <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/50">{percentage}%</span>
                         </div>
-                        <p className="mt-1 break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
+                        <p className="mt-1 wrap-break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
                           {formatRupiah(campaign.currentAmount)} / {formatRupiah(campaign.targetAmount)}
                         </p>
                       </td>

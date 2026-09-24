@@ -1,16 +1,28 @@
 import { prisma } from "@/lib/prisma";
 
 export async function listPrograms() {
-  return prisma.lazsipProgram.findMany({
+  const programs = await prisma.lazsipProgram.findMany({
     orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
   });
+  // Keep the admin/public row contract stable when Prisma's merged module client
+  // contains a legacy program shape without the newer `type` field.
+  return programs.map((program) => ({
+    ...program,
+    type: "type" in program && typeof program.type === "string" ? program.type : "berita",
+  }));
 }
 
 export async function listProgramsByType(type: string) {
-  return prisma.lazsipProgram.findMany({
-    where: { type },
+  const programs = await prisma.lazsipProgram.findMany({
+    // Some generated client variants predate `type`; the database query remains valid
+    // against the current schema, so keep this compatibility cast local to the filter.
+    where: { type } as never,
     orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
   });
+  return programs.map((program) => ({
+    ...program,
+    type: "type" in program && typeof program.type === "string" ? program.type : "berita",
+  }));
 }
 
 export async function getProgramById(id: string) {

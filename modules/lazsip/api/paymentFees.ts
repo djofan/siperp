@@ -1,3 +1,4 @@
+import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import { prisma } from "@/lib/prisma";
 
 export async function listPaymentFeeRefs() {
@@ -27,3 +28,7 @@ export async function deletePaymentFeeRef(id: string) {
 }
 
 export { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+
+export async function listCheckoutMethods() {
+  return paymentGateway() === "midtrans_sandbox" ? [sandboxMethod] : listPaymentFeeRefs();
+}

@@ -1,13 +1,23 @@
-import { Resend } from "resend";
-
 function formatRupiah(value: number) {
   return `Rp${value.toLocaleString("id-ID")}`;
 }
 
-function getClient(): Resend | null {
+function getConfig() {
   const key = process.env.RESEND_API_KEY;
-  if (!key) return null;
-  return new Resend(key);
+  const from = process.env.RESEND_FROM_EMAIL;
+  return key && from ? { key, from } : null;
+}
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const config = getConfig();
+  if (!config) return false;
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: config.from, to, subject, html }),
+  });
+  if (!response.ok) throw new Error(`Resend email failed (${response.status}).`);
+  return true;
 }
 
 /**
@@ -16,25 +26,18 @@ function getClient(): Resend | null {
  * tetap berhasil; ini cuma kenyamanan tambahan, bukan satu-satunya jalan donatur tahu kodenya.
  */
 export async function sendTrackingCodeEmail(to: string, trackingCode: string, totalAmount: number) {
-  const client = getClient();
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!client || !from) {
+  if (!getConfig()) {
     console.log(`[email disabled] Kode pelacakan ${trackingCode} untuk ${to} tidak dikirim (RESEND_API_KEY/RESEND_FROM_EMAIL belum diisi).`);
     return;
   }
 
-  await client.emails.send({
-    from,
-    to,
-    subject: `Kode Pelacakan Transaksi Anda: ${trackingCode}`,
-    html: `
+  await sendEmail(to, `Kode Pelacakan Transaksi Anda: ${trackingCode}`, `
       <p>Assalamu'alaikum,</p>
       <p>Terima kasih atas transaksi Anda sebesar <strong>${formatRupiah(totalAmount)}</strong>.</p>
       <p>Kode pelacakan Anda:</p>
       <p style="font-size:24px;font-weight:bold;letter-spacing:2px;">${trackingCode}</p>
       <p>Simpan kode ini untuk memeriksa status pembayaran Anda kapan saja lewat menu "Cek Status" di beranda.</p>
-    `,
-  });
+    `);
 }
 
 interface HistoryItem {
@@ -54,9 +57,7 @@ const STATUS_LABEL: Record<string, string> = { pending: "Menunggu", paid: "Lunas
  * §3.11.B & §6 aturan #8), supaya endpoint ini tidak bisa dipakai menebak email terdaftar.
  */
 export async function sendHistoryEmail(to: string, items: HistoryItem[]) {
-  const client = getClient();
-  const from = process.env.RESEND_FROM_EMAIL;
-  if (!client || !from) {
+  if (!getConfig()) {
     console.log(`[email disabled] Riwayat transaksi untuk ${to} (${items.length} transaksi) tidak dikirim.`);
     return;
   }
@@ -75,11 +76,7 @@ export async function sendHistoryEmail(to: string, items: HistoryItem[]) {
     )
     .join("");
 
-  await client.emails.send({
-    from,
-    to,
-    subject: "Riwayat Transaksi Anda",
-    html: `
+  await sendEmail(to, "Riwayat Transaksi Anda", `
       <p>Assalamu'alaikum,</p>
       <p>Berikut riwayat transaksi (donasi &amp; zakat) yang tercatat dengan email ini:</p>
       <table style="border-collapse:collapse;width:100%;font-size:14px;">
@@ -95,6 +92,5 @@ export async function sendHistoryEmail(to: string, items: HistoryItem[]) {
         <tbody>${rows}</tbody>
       </table>
       <p style="margin-top:16px;">Kalau Anda tidak merasa melakukan pencarian ini, abaikan email ini saja.</p>
-    `,
-  });
+    `);
 }
