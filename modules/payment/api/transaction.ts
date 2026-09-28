@@ -110,6 +110,58 @@ export async function createTransaction(input: {
   return transaction;
 }
 
+/**
+ * Bikin transaksi yang LANGSUNG berstatus `paid`, tanpa lewat webhook/gateway — khusus
+ * dipakai alur admin yang mencatat dana yang SUDAH TERBUKTI diterima di luar sistem
+ * (mis. transfer manual ke rekening call center). Bukan celah buat nge-fake status paid
+ * dari sisi client (CLAUDE.md §7 aturan #1 tetap soal alur checkout publik) — ini
+ * tindakan admin terautentikasi yang mencatat fakta yang sudah terjadi, setara dengan
+ * endpoint simulasi admin yang sudah ada.
+ */
+export async function createPaidTransaction(input: {
+  moduleSource: string;
+  sourceType: string;
+  sourceId: string;
+  fundType: string;
+  donorId: string;
+  isAnonymous?: boolean;
+  amount: number;
+  paymentMethod: string;
+}) {
+  const destination = await resolveDestinationAccount(input.moduleSource, input.fundType, prisma);
+
+  let transaction;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      transaction = await prisma.paymentTransaction.create({
+        data: {
+          trackingCode: generateTrackingCode(input.moduleSource),
+          moduleSource: input.moduleSource,
+          sourceType: input.sourceType,
+          sourceId: input.sourceId,
+          fundType: input.fundType,
+          donorId: input.donorId,
+          isAnonymous: input.isAnonymous ?? false,
+          amount: input.amount,
+          adminFee: 0,
+          paymentMethod: input.paymentMethod,
+          destinationAccountId: destination.id,
+          gateway: "simulation",
+          status: "paid",
+          paidAt: new Date(),
+        },
+      });
+      break;
+    } catch (error) {
+      if (attempt < 4 && error && typeof error === "object" && "code" in error && error.code === "P2002") continue;
+      throw error;
+    }
+  }
+
+  await notifySourceModule(transaction);
+  return transaction;
+}
+
 export async function getTransactionStatus(id: string) {
   // Public response: tracking and status only; no donor identity or bank details.
   return prisma.paymentTransaction.findUnique({

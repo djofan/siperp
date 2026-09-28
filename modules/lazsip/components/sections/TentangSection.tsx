@@ -1,6 +1,6 @@
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
-import { listPartners } from "@/modules/lazsip/api/partners";
-import { listDistinctVerifierAreas, countDistinctVerifiers } from "@/modules/lazsip/api/beneficiaries";
+import { listDistinctVerifierAreas } from "@/modules/lazsip/api/beneficiaries";
+import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { formatNumber } from "@/modules/lazsip/components/format";
 import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
@@ -21,13 +21,17 @@ const DEFAULT_LEGALITAS =
   "LAZSIP adalah Lembaga Amil Zakat Solidaritas Insan Peduli, bernaung di bawah Yayasan Solidaritas Insan Peduli.";
 
 export async function TentangSection() {
-  const [tentang, legalitas, partners, wilayahCakupan, totalVerifikator] = await Promise.all([
+  const [tentang, legalitas, wilayahCakupan] = await Promise.all([
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
-    listPartners(),
     listDistinctVerifierAreas(),
-    countDistinctVerifiers(),
   ]);
+
+  // Jumlah verifikator & mitra diisi manual lewat admin Konten Umum, BUKAN dihitung otomatis
+  // dari tabel — angka agregat kayak gini butuh keputusan admin (mis. gelar/status resmi
+  // seorang verifikator), beda dari wilayah cakupan di bawah yang memang murni data lapangan.
+  const totalVerifikator = Number(tentang?.totalVerifikator ?? LAZSIP_SITE_CONTENT_DEFAULTS.tentang.totalVerifikator) || 0;
+  const totalMitra = Number(tentang?.totalMitra ?? LAZSIP_SITE_CONTENT_DEFAULTS.tentang.totalMitra) || 0;
 
   const wilayahShown = wilayahCakupan.slice(0, WILAYAH_DISPLAY_LIMIT);
   const wilayahSisa = wilayahCakupan.length - wilayahShown.length;
@@ -63,7 +67,7 @@ export async function TentangSection() {
           />
           <StatCounter
             icon="beneficiaries"
-            value={`${formatNumber(partners.length)}+`}
+            value={`${formatNumber(totalMitra)}+`}
             label="Mitra kerja sama"
             className="border border-lazsip-primary-100"
           />

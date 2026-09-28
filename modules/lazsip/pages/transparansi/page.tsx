@@ -1,16 +1,16 @@
-import { getTotalDonationsPaid, getTotalZakatPaid, listDonors } from "@/modules/lazsip/api/donors";
-import { countBeneficiaries } from "@/modules/lazsip/api/beneficiaries";
+import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { formatRupiah, formatNumber } from "@/modules/lazsip/components/format";
 import { StatCounter } from "@/modules/lazsip/components/ui/StatCounter";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
 
 export default async function LazsipTransparansiPage() {
-  const [totalDonations, totalZakat, donors, beneficiaryCount] = await Promise.all([
-    getTotalDonationsPaid(),
-    getTotalZakatPaid(),
-    listDonors(),
-    countBeneficiaries(),
-  ]);
+  const transparansi = await getSiteContent("transparansi");
+  const defaults = LAZSIP_SITE_CONTENT_DEFAULTS.transparansi;
+
+  const totalDana = Number(transparansi?.totalDana ?? defaults.totalDana) || 0;
+  const totalDonatur = Number(transparansi?.totalDonatur ?? defaults.totalDonatur) || 0;
+  const totalPenerima = Number(transparansi?.totalPenerima ?? defaults.totalPenerima) || 0;
 
   return (
     <div className="mx-auto max-w-4xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -27,9 +27,9 @@ export default async function LazsipTransparansiPage() {
       </p>
 
       <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <StatCounter icon="fund" value={formatRupiah(totalDonations + totalZakat)} label="Total dana terkumpul" className="border border-lazsip-primary-100" />
-        <StatCounter icon="donors" value={`${formatNumber(donors.length)}+`} label="Donatur & muzakki" className="border border-lazsip-primary-100" />
-        <StatCounter icon="beneficiaries" value={`${formatNumber(beneficiaryCount)}+`} label="Penerima manfaat terbantu" className="border border-lazsip-primary-100" />
+        <StatCounter icon="fund" value={formatRupiah(totalDana)} label="Total dana terkumpul" className="border border-lazsip-primary-100" />
+        <StatCounter icon="donors" value={`${formatNumber(totalDonatur)}+`} label="Donatur & muzakki" className="border border-lazsip-primary-100" />
+        <StatCounter icon="beneficiaries" value={`${formatNumber(totalPenerima)}+`} label="Penerima manfaat terbantu" className="border border-lazsip-primary-100" />
       </div>
     </div>
   );

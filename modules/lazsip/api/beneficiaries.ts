@@ -56,6 +56,7 @@ const PUBLIC_CARD_SELECT = {
   photo: true,
   isPinned: true,
   verifierArea: true,
+  verifierName: true,
 } as const;
 
 const PUBLIC_DETAIL_SELECT = {
@@ -73,9 +74,12 @@ const PUBLIC_DETAIL_SELECT = {
   verifierArea: true,
 } as const;
 
-export async function listBeneficiariesPublic(aidType?: string) {
+export async function listBeneficiariesPublic(aidType?: string, verifierName?: string) {
   return prisma.lazsipBeneficiary.findMany({
-    where: aidType ? { aidType } : undefined,
+    where: {
+      ...(aidType ? { aidType } : {}),
+      ...(verifierName ? { verifierName } : {}),
+    },
     orderBy: { createdAt: "desc" },
     select: PUBLIC_CARD_SELECT,
   });
@@ -97,10 +101,10 @@ export async function listDistinctVerifierAreas() {
   return rows.map((r) => r.verifierArea).sort();
 }
 
-export async function countDistinctVerifiers() {
+export async function listDistinctVerifierNames() {
   const rows = await prisma.lazsipBeneficiary.findMany({
     select: { verifierName: true },
     distinct: ["verifierName"],
   });
-  return rows.length;
+  return rows.map((r) => r.verifierName).sort();
 }

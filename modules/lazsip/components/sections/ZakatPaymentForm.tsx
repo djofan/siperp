@@ -120,7 +120,7 @@ export function ZakatPaymentForm({
     <form
       id="form"
       onSubmit={handleSubmit}
-      className="scroll-mt-28 flex flex-col gap-6 rounded-3xl border border-lazsip-primary-100 bg-white p-6 sm:p-8"
+      className="order-1 scroll-mt-28 flex flex-col gap-6 rounded-3xl border border-lazsip-primary-100 bg-white p-6 sm:p-8 lg:order-2"
     >
       <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900">Form Pembayaran Zakat</h2>
 

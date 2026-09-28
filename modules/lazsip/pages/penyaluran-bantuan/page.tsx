@@ -1,4 +1,4 @@
-import { listBeneficiariesPublic } from "@/modules/lazsip/api/beneficiaries";
+import { listBeneficiariesPublic, listDistinctVerifierNames } from "@/modules/lazsip/api/beneficiaries";
 import { BeneficiaryCard } from "@/modules/lazsip/components/BeneficiaryCard";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
 import { FilterChips } from "@/modules/lazsip/components/ui/FilterChips";
@@ -10,13 +10,24 @@ const AID_TYPE_LABEL: Record<string, string> = {
   lainnya: "Lainnya",
 };
 
+function buildHref(params: { tipe?: string; verifikator?: string }) {
+  const query = new URLSearchParams();
+  if (params.tipe) query.set("tipe", params.tipe);
+  if (params.verifikator) query.set("verifikator", params.verifikator);
+  const qs = query.toString();
+  return qs ? `/lazsip/penyaluran-bantuan?${qs}` : "/lazsip/penyaluran-bantuan";
+}
+
 export default async function LazsipPenyaluranBantuanPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipe?: string }>;
+  searchParams: Promise<{ tipe?: string; verifikator?: string }>;
 }) {
-  const { tipe } = await searchParams;
-  const beneficiaries = await listBeneficiariesPublic(tipe);
+  const { tipe, verifikator } = await searchParams;
+  const [beneficiaries, verifierNames] = await Promise.all([
+    listBeneficiariesPublic(tipe, verifikator),
+    listDistinctVerifierNames(),
+  ]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -32,15 +43,22 @@ export default async function LazsipPenyaluranBantuanPage({
         Sebagian penerima manfaat yang telah dibantu LAZSIP — data ditampilkan sesuai kebijakan privasi penerima.
       </p>
 
-      <div className="mt-8">
+      <div className="mt-8 flex flex-col gap-3">
         <FilterChips
-          options={[{ value: "", label: "Semua" }, ...Object.entries(AID_TYPE_LABEL).map(([value, label]) => ({ value, label }))]}
+          options={[{ value: "", label: "Semua Tipe" }, ...Object.entries(AID_TYPE_LABEL).map(([value, label]) => ({ value, label }))]}
           value={tipe ?? ""}
-          buildHref={(value) => (value ? `/lazsip/penyaluran-bantuan?tipe=${value}` : "/lazsip/penyaluran-bantuan")}
+          buildHref={(value) => buildHref({ tipe: value, verifikator })}
         />
+        {verifierNames.length > 0 && (
+          <FilterChips
+            options={[{ value: "", label: "Semua Verifikator" }, ...verifierNames.map((name) => ({ value: name, label: name }))]}
+            value={verifikator ?? ""}
+            buildHref={(value) => buildHref({ tipe, verifikator: value })}
+          />
+        )}
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-6">
+      <div className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
         {beneficiaries.map((item) => (
           <BeneficiaryCard
             key={item.id}

@@ -4,12 +4,13 @@ import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 
 export default async function KontenUmumPage() {
-  const [hero, tentang, legalitas, kontak, zakatFitrah] = await Promise.all([
+  const [hero, tentang, legalitas, kontak, zakatFitrah, transparansi] = await Promise.all([
     getSiteContent("hero"),
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
     getSiteContent("kontak"),
     getSiteContent("zakatFitrah"),
+    getSiteContent("transparansi"),
   ]);
 
   return (
@@ -35,6 +36,8 @@ export default async function KontenUmumPage() {
             { key: "body", label: "Isi", multiline: true },
             { key: "visi", label: "Visi", multiline: true },
             { key: "misi", label: "Misi (satu poin per baris)", multiline: true },
+            { key: "totalVerifikator", label: "Jumlah Verifikator Lapangan Terlatih (angka saja)" },
+            { key: "totalMitra", label: "Jumlah Mitra Kerja Sama (angka saja)" },
           ]}
           initialValue={{ ...LAZSIP_SITE_CONTENT_DEFAULTS.tentang, ...(tentang ?? {}) }}
         />
@@ -67,6 +70,16 @@ export default async function KontenUmumPage() {
             },
           ]}
           initialValue={{ ...LAZSIP_SITE_CONTENT_DEFAULTS.zakatFitrah, ...(zakatFitrah ?? {}) }}
+        />
+        <SiteContentSectionForm
+          sectionKey="transparansi"
+          title="Transparansi (Beranda)"
+          fields={[
+            { key: "totalDana", label: "Total Dana Terkumpul (Rp, angka saja)" },
+            { key: "totalDonatur", label: "Jumlah Donatur & Muzakki (angka saja)" },
+            { key: "totalPenerima", label: "Jumlah Penerima Manfaat Terbantu (angka saja)" },
+          ]}
+          initialValue={{ ...LAZSIP_SITE_CONTENT_DEFAULTS.transparansi, ...(transparansi ?? {}) }}
         />
       </div>
     </div>

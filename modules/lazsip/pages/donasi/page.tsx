@@ -3,7 +3,9 @@ import { CampaignCard } from "@/modules/lazsip/components/CampaignCard";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
 
 export default async function LazsipDonasiPage() {
-  const campaigns = (await listCampaigns()).filter((c) => c.status === "active");
+  // Campaign yang tombol donasinya dimatikan admin tetap ditampilkan (cuma tombolnya
+  // yang jadi badge "Selesai") — lihat catatan yang sama di DonasiSection.tsx.
+  const campaigns = await listCampaigns();
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -21,7 +23,7 @@ export default async function LazsipDonasiPage() {
 
       <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {campaigns.map((item) => (
-          <CampaignCard key={item.id} id={item.id} title={item.title} description={item.description} image={item.image} targetAmount={item.targetAmount} currentAmount={item.currentAmount} donorCount={item.donorCount} />
+          <CampaignCard key={item.id} id={item.id} title={item.title} description={item.description} image={item.image} targetAmount={item.targetAmount} currentAmount={item.currentAmount} donorCount={item.donorCount} status={item.status} />
         ))}
       </div>
 

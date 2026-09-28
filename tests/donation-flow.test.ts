@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { prisma } from "@/lib/prisma";
 import { createCampaignCheckout } from "@/modules/lazsip/api/campaignCheckout";
-import { getCampaignById, listCampaigns, listCampaignDonorsPublic } from "@/modules/lazsip/api/campaigns";
+import { getCampaignById, listCampaigns, listCampaignHistory } from "@/modules/lazsip/api/campaigns";
 import { listDonors } from "@/modules/lazsip/api/donors";
 import { listPaymentDonationsForAdmin, setDonationStatus } from "@/modules/lazsip/api/donations";
 import { getTransactionStatus } from "@/modules/payment/api/transaction";
@@ -75,7 +75,7 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     assert.equal(pendingHtml.includes("Bayar Sekarang"), false);
     assert.equal("donorName" in first, false);
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 0, "ignore stale cached currentAmount");
-    assert.deepEqual(await listCampaignDonorsPublic(campaignId), []);
+    assert.deepEqual(await listCampaignHistory(campaignId), []);
     assert.ok((await listDonors()).some((d) => d.id === first.donorId && d.phone === phone && d.totalContribution === 0));
 
     const repeated = await createCampaignCheckout({ ...input, donorPhone: `0${phone.slice(2)}`, amount: 20000, coversFee: false });
@@ -102,7 +102,12 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 10000);
     const paidCheckout = await fetch(`${baseUrl}/payment/checkout/${first.id}`);
     assert.ok((await paidCheckout.text()).includes("Simulasi pembayaran berhasil"));
-    assert.deepEqual(await listCampaignDonorsPublic(campaignId), [{ id: first.id, name: "Hamba Allah", amount: 10000 }]);
+    const historyAfterFirst = await listCampaignHistory(campaignId);
+    assert.equal(historyAfterFirst.length, 1);
+    assert.equal(historyAfterFirst[0].id, first.id);
+    assert.equal(historyAfterFirst[0].kind, "donasi");
+    assert.equal(historyAfterFirst[0].label, "Hamba Allah");
+    assert.equal(historyAfterFirst[0].amount, 10000);
     assert.ok((await listPaymentDonationsForAdmin()).some((d) => d.id === first.id && d.donorName === name));
 
     await simulate(repeated.id, "failed");
@@ -118,11 +123,11 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     await setDonationStatus(legacy.id, "paid");
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 23000);
     assert.equal((await listCampaigns()).find((c) => c.id === campaignId)?.currentAmount, 23000);
-    const publicDonors = await listCampaignDonorsPublic(campaignId);
-    assert.equal(publicDonors.length, 3);
-    assert.ok(publicDonors.some((d) => d.name === visibleName));
-    assert.equal(JSON.stringify(publicDonors).includes(name), false);
-    assert.equal(JSON.stringify(publicDonors).includes(phone), false);
+    const publicHistory = await listCampaignHistory(campaignId);
+    assert.equal(publicHistory.length, 3);
+    assert.ok(publicHistory.some((d) => d.label === visibleName));
+    assert.equal(JSON.stringify(publicHistory).includes(name), false);
+    assert.equal(JSON.stringify(publicHistory).includes(phone), false);
     const publicStatusResponse = await fetch(`${baseUrl}/api/payment/status/${first.id}`);
     assert.equal(publicStatusResponse.status, 200);
     assert.equal(publicStatusResponse.headers.get("cache-control"), "no-store");

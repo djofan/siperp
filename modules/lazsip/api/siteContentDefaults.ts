@@ -17,6 +17,8 @@ export const LAZSIP_SITE_CONTENT_DEFAULTS: Record<SiteContentSectionKey, Record<
       "Menyalurkan bantuan tepat sasaran kepada mustahik yang berhak menerima.",
       "Mengelola dana dengan transparan dan dapat dipertanggungjawabkan.",
     ].join("\n"),
+    totalVerifikator: "4",
+    totalMitra: "4",
   },
   legalitas: {
     body: "LAZSIP adalah Lembaga Amil Zakat Solidaritas Insan Peduli, bernaung di bawah Yayasan Solidaritas Insan Peduli.",
@@ -31,5 +33,10 @@ export const LAZSIP_SITE_CONTENT_DEFAULTS: Record<SiteContentSectionKey, Record<
   },
   zakatFitrah: {
     pricePerJiwa: "45000",
+  },
+  transparansi: {
+    totalDana: "4149133647",
+    totalDonatur: "4",
+    totalPenerima: "9",
   },
 };

@@ -7,6 +7,7 @@ import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admi
 import { AdminFilterBar, AdminSearchInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 interface PartnerRow {
@@ -35,6 +36,8 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
     [partners, search]
   );
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   if (partners.length === 0) {
     return <AdminEmptyState message="Belum ada mitra. Klik tombol di atas untuk menambah." />;
   }
@@ -57,6 +60,7 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
             <table className="w-full min-w-130 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Logo</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Website</th>
@@ -64,8 +68,9 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((partner) => (
+                {paginated.map((partner, index) => (
                   <tr key={partner.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5">
                       {partner.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
@@ -88,10 +93,19 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       ) : (
+        <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((partner) => (
+          {paginated.map((partner) => (
             <AdminOverlayCard
               key={partner.id}
               image={partner.logo}
@@ -106,6 +120,17 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
               }
             />
           ))}
+        </div>
+        <div className={panelClasses("")}>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
+        </div>
         </div>
       )}
     </div>

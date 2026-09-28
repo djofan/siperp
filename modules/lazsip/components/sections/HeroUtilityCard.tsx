@@ -39,7 +39,7 @@ export function HeroUtilityCard({
   );
 
   return (
-    <div className="flex min-h-[26rem] flex-col justify-between">
+    <div className="flex min-h-[26rem] flex-col">
       <div>
         <div className="grid grid-cols-3 gap-1.5">
           {TOOLS.map((t) => (

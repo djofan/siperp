@@ -8,6 +8,7 @@ import { AdminFilterBar, AdminSearchInput, AdminDateInput, AdminFilterSelect, Ad
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 interface ActivityRow {
@@ -59,6 +60,8 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
     return rows;
   }, [activities, search, pinnedFilter, dateFrom, dateTo]);
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   return (
     <div>
       <AdminFilterBar>
@@ -80,6 +83,7 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
             <table className="w-full min-w-160 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Tanggal</th>
@@ -88,8 +92,9 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((activity) => (
+                {paginated.map((activity, index) => (
                   <tr key={activity.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5">
                       {activity.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
@@ -113,10 +118,19 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       ) : (
+        <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((activity) => (
+          {paginated.map((activity) => (
             <AdminOverlayCard
               key={activity.id}
               image={activity.image}
@@ -143,6 +157,17 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
               }
             />
           ))}
+        </div>
+        <div className={panelClasses("")}>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
+        </div>
         </div>
       )}
     </div>

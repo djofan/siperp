@@ -16,9 +16,12 @@ export async function POST(
   const amount = Number(body?.amount);
   const note = typeof body?.note === "string" ? body.note.trim() : "";
 
-  if (!Number.isFinite(amount) || amount === 0 || !note) {
+  if (!Number.isFinite(amount) || amount >= 0 || !note) {
     return NextResponse.json(
-      { error: "Nominal (tidak boleh 0) dan catatan wajib diisi." },
+      {
+        error:
+          "Nominal harus lebih dari 0 dan catatan wajib diisi. Endpoint ini khusus mencatat dana keluar/terpakai — untuk infak masuk offline, pakai fitur Tambah Donatur.",
+      },
       { status: 400 }
     );
   }

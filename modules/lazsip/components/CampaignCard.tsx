@@ -12,12 +12,14 @@ interface CampaignCardProps {
   targetAmount: number;
   currentAmount: number;
   donorCount?: number;
+  status?: string;
   featured?: boolean;
 }
 
-export function CampaignCard({ id, title, description, image, targetAmount, currentAmount, donorCount = 0, featured = false }: CampaignCardProps) {
+export function CampaignCard({ id, title, description, image, targetAmount, currentAmount, donorCount = 0, status = "active", featured = false }: CampaignCardProps) {
   const percent = targetAmount ? (currentAmount / targetAmount) * 100 : 0;
   const detailHref = `/lazsip/donasi/${id}`;
+  const isOpen = status === "active";
 
   if (featured) {
     return (
@@ -34,12 +36,18 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
               <p className="break-words text-sm font-bold">{formatRupiah(currentAmount)}</p>
               <p className="break-words text-xs text-white/70">Terkumpul dari {formatRupiah(targetAmount)}</p>
             </div>
-            <Link
-              href={`${detailHref}#form`}
-              className="relative z-10 shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-lazsip-primary-900 transition-colors hover:bg-lazsip-primary-50"
-            >
-              Donasi
-            </Link>
+            {isOpen ? (
+              <Link
+                href={`${detailHref}#form`}
+                className="relative z-10 shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-lazsip-primary-900 transition-colors hover:bg-lazsip-primary-50"
+              >
+                Donasi
+              </Link>
+            ) : (
+              <span className="relative z-10 shrink-0 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white/70 backdrop-blur-sm">
+                Selesai
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -68,12 +76,18 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
               </svg>
               <span className="truncate">{formatNumber(donorCount)} donatur</span>
             </span>
-            <Link
-              href={`${detailHref}#form`}
-              className="relative z-10 shrink-0 rounded-full bg-lazsip-primary-900 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
-            >
-              Donasi
-            </Link>
+            {isOpen ? (
+              <Link
+                href={`${detailHref}#form`}
+                className="relative z-10 shrink-0 rounded-full bg-lazsip-primary-900 px-3.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+              >
+                Donasi
+              </Link>
+            ) : (
+              <span className="relative z-10 shrink-0 rounded-full bg-lazsip-primary-900/10 px-3.5 py-1.5 text-xs font-semibold text-lazsip-primary-900/40">
+                Selesai
+              </span>
+            )}
           </div>
         </div>
       </div>
