@@ -29,15 +29,10 @@ export default async function LazsipZakatPage({
         <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           Tunaikan Zakat Anda
         </h1>
-        <p className="max-w-xl text-base leading-relaxed text-lazsip-secondary-700 sm:text-lg">
-          Sudah tahu nominal zakat Anda? Langsung isi form di bawah. Belum tahu? Pakai kalkulator zakat di beranda
-          untuk menghitungnya lebih dulu. Dana zakat Anda disalurkan lewat rekening khusus zakat, terpisah dari
-          donasi/infaq.
-        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-        <div className="flex flex-col gap-5">
+        <div className="order-2 flex flex-col gap-5 lg:order-1">
           <div className="rounded-3xl border border-lazsip-primary-100 bg-white p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-lazsip-primary-900">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">

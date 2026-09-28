@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import type { DonorSummary } from "@/modules/lazsip/api/donors";
 import { panelClasses } from "@/components/ui/panel";
 
@@ -48,6 +49,8 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
     return rows;
   }, [donors, search, segment, sort, showSegmentFilter]);
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   if (donors.length === 0) {
     return <AdminEmptyState message="Belum ada data donatur." />;
   }
@@ -71,6 +74,7 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
             <table className="w-full min-w-190 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Nomor WhatsApp</th>
                   <th className="px-4 py-3.5 font-semibold">Email</th>
@@ -81,8 +85,9 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((donor) => (
+                {paginated.map((donor, index) => (
                   <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">
                       <Link href={`/admin/lazsip/donatur/${donor.id}`} className="hover:underline">
                         {donor.name}
@@ -105,6 +110,14 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       )}
     </div>

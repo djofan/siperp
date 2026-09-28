@@ -9,6 +9,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramRow {
@@ -16,24 +17,10 @@ interface ProgramRow {
   title: string;
   description?: string;
   image: string | null;
-  category: string;
   type: string;
   registrationOpen: boolean;
   isPinned?: boolean;
 }
-
-const CATEGORY_LABEL: Record<string, string> = {
-  umum: "Umum",
-  pendidikan: "Divisi Pendidikan",
-  sarsip: "SARSIP",
-};
-
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "Semua Kategori" },
-  { value: "umum", label: "Umum" },
-  { value: "pendidikan", label: "Divisi Pendidikan" },
-  { value: "sarsip", label: "SARSIP" },
-];
 
 const TYPE_LABEL: Record<string, string> = {
   berita: "Berita",
@@ -57,7 +44,6 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<AdminViewMode>("list");
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [registrationFilter, setRegistrationFilter] = useState("all");
 
@@ -71,26 +57,25 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
 
   const resetFilters = () => {
     setSearch("");
-    setCategoryFilter("all");
     setTypeFilter("all");
     setRegistrationFilter("all");
   };
 
   const filtered = useMemo(() => {
     let rows = programs.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
-    if (categoryFilter !== "all") rows = rows.filter((p) => p.category === categoryFilter);
     if (typeFilter !== "all") rows = rows.filter((p) => p.type === typeFilter);
     if (registrationFilter !== "all") {
       rows = rows.filter((p) => (registrationFilter === "open" ? p.registrationOpen : !p.registrationOpen));
     }
     return rows;
-  }, [programs, search, categoryFilter, typeFilter, registrationFilter]);
+  }, [programs, search, typeFilter, registrationFilter]);
+
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
 
   return (
     <div>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul program..." />
-        <AdminFilterSelect value={categoryFilter} onChange={setCategoryFilter} options={CATEGORY_OPTIONS} ariaLabel="Filter kategori" />
         <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter tipe" />
         <AdminFilterSelect value={registrationFilter} onChange={setRegistrationFilter} options={REGISTRATION_OPTIONS} ariaLabel="Filter pendaftaran" />
         <AdminFilterResetButton onClick={resetFilters} />
@@ -107,17 +92,18 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
             <table className="w-full min-w-170 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
-                  <th className="px-4 py-3.5 font-semibold">Kategori</th>
                   <th className="px-4 py-3.5 font-semibold">Tipe</th>
                   <th className="px-4 py-3.5 font-semibold">Pendaftaran</th>
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((program) => (
+                {paginated.map((program, index) => (
                   <tr key={program.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5">
                       {program.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
@@ -127,7 +113,6 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
                       )}
                     </td>
                     <td className="max-w-xs truncate px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{program.title}</td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{CATEGORY_LABEL[program.category] ?? program.category}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{TYPE_LABEL[program.type] ?? program.type}</td>
                     <td className="px-4 py-3.5">
                       {program.type === "daftar" ? (
@@ -148,10 +133,19 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       ) : (
+        <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((program) => (
+          {paginated.map((program) => (
             <AdminOverlayCard
               key={program.id}
               image={program.image}
@@ -159,9 +153,6 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
               onClick={() => router.push(`/admin/lazsip/program/${program.id}`)}
               meta={
                 <>
-                  <AdminBadge tone="overlay" size="sm">
-                    {CATEGORY_LABEL[program.category] ?? program.category}
-                  </AdminBadge>
                   <AdminBadge tone="overlay" size="sm">
                     {TYPE_LABEL[program.type] ?? program.type}
                   </AdminBadge>
@@ -186,6 +177,17 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
               }
             />
           ))}
+        </div>
+        <div className={panelClasses("")}>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
+        </div>
         </div>
       )}
     </div>

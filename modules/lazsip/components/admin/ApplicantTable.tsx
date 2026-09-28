@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { ApplicantStatusSelect } from "@/modules/lazsip/components/admin/ApplicantStatusSelect";
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 interface ApplicantRow {
@@ -45,6 +46,8 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
     return rows;
   }, [applicants, search, statusFilter, programFilter]);
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   if (applicants.length === 0) {
     return <AdminEmptyState message="Belum ada pendaftar." />;
   }
@@ -66,6 +69,7 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
             <table className="w-full min-w-160 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Nama</th>
                   <th className="px-4 py-3.5 font-semibold">Kontak</th>
                   <th className="px-4 py-3.5 font-semibold">Program</th>
@@ -73,8 +77,9 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((applicant) => (
+                {paginated.map((applicant, index) => (
                   <tr key={applicant.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{applicant.name}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{applicant.contact}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{applicant.program.title}</td>
@@ -86,6 +91,14 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       )}
     </div>

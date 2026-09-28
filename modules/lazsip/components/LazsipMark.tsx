@@ -1,23 +1,22 @@
-// Placeholder mark (belum ada aset logo resmi) — bentuk daun sederhana dengan warna
-// brand LAZSIP, dibungkus lingkaran putih supaya konsisten dengan referensi tampilan.
+import Image from "next/image";
+
+// Ikon daun dari logo resmi LAZSIP (public/lazsip-mark.png, di-crop dari
+// LOGO LAZ TERBARU.png), dibungkus lingkaran putih supaya konsisten dengan
+// referensi tampilan admin/publik yang sudah ada.
 export function LazsipMark({ size = 36, className = "" }: { size?: number; className?: string }) {
   return (
     <span
       className={`flex shrink-0 items-center justify-center rounded-full bg-white p-1.5 shadow-sm ring-1 ring-lazsip-primary-100 dark:bg-white/10 dark:ring-white/15 ${className}`}
       style={{ width: size, height: size }}
     >
-      <svg viewBox="0 0 24 24" fill="none" className="h-full w-full">
-        <path
-          d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"
-          fill="var(--color-lazsip-secondary-500)"
-        />
-        <path
-          d="M12 21c0-6 2-10 5-13"
-          stroke="var(--color-lazsip-primary-900)"
-          strokeWidth={1.4}
-          strokeLinecap="round"
-        />
-      </svg>
+      <Image
+        src="/lazsip-mark.png"
+        alt="Logo LAZSIP"
+        width={463}
+        height={449}
+        className="h-full w-full object-contain"
+        priority
+      />
     </span>
   );
 }

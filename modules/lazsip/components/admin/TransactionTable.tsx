@@ -5,6 +5,7 @@ import { TransactionActions } from "@/modules/lazsip/components/admin/Transactio
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 export interface TransactionRow {
@@ -82,6 +83,8 @@ export function TransactionTable({ rows, showTypeFilter = true }: { rows: Transa
     return result;
   }, [rows, search, typeFilter, statusFilter, methodFilter, dateFrom, dateTo]);
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   function handleExport() {
     const csv = toCsv(filtered);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -131,6 +134,7 @@ export function TransactionTable({ rows, showTypeFilter = true }: { rows: Transa
             <table className="w-full min-w-190 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Jenis</th>
                   <th className="px-4 py-3.5 font-semibold">Donatur</th>
                   <th className="px-4 py-3.5 font-semibold">Nominal</th>
@@ -141,8 +145,9 @@ export function TransactionTable({ rows, showTypeFilter = true }: { rows: Transa
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((row) => (
+                {paginated.map((row, index) => (
                   <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{row.label}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{row.donorName}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatRupiah(row.amount)}</td>
@@ -159,6 +164,14 @@ export function TransactionTable({ rows, showTypeFilter = true }: { rows: Transa
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       )}
     </div>

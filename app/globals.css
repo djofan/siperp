@@ -34,35 +34,39 @@
   --color-danger-soft: #fdeeee;
 
   /*
-   * Palet PUBLIK + ADMIN modul LAZSIP — di-porting dari referensi tampilan
-   * repo lazsiplp (lihat CLAUDE.md §10). Diprefix "lazsip-" (bukan "primary"/
+   * Palet PUBLIK + ADMIN modul LAZSIP — di-sample LANGSUNG dari pixel logo
+   * resmi (LOGO LAZ TERBARU.png), bukan lagi tebakan referensi lazsiplp.
+   * Hijau #73ae43 (daun + teks "SIP") dan oranye #f79633 (teks "LAZ") adalah
+   * warna paling dominan di logo asli. Diprefix "lazsip-" (bukan "primary"/
    * "secondary" polos) supaya tidak tabrakan kalau modul lain (SARSIP dkk)
    * nanti juga butuh token warna sendiri di file global yang sama.
    */
   --color-lazsip-cream: #f5f1e8;
   --color-lazsip-ink: #313832;
+  --color-lazsip-accent: #f79633;
+  --color-lazsip-accent-hover: #e17609;
 
-  --color-lazsip-primary-50: #eef3ef;
-  --color-lazsip-primary-100: #dce7de;
-  --color-lazsip-primary-200: #b9cfbe;
-  --color-lazsip-primary-300: #93b49b;
-  --color-lazsip-primary-400: #6f9779;
-  --color-lazsip-primary-500: #4f7959;
-  --color-lazsip-primary-600: #3b5f45;
-  --color-lazsip-primary-700: #2b4934;
-  --color-lazsip-primary-800: #1b3a2b;
-  --color-lazsip-primary-900: #16301f;
+  --color-lazsip-primary-50: #f4f9f1;
+  --color-lazsip-primary-100: #e6f0dd;
+  --color-lazsip-primary-200: #cae1b7;
+  --color-lazsip-primary-300: #aad08b;
+  --color-lazsip-primary-400: #8ec065;
+  --color-lazsip-primary-500: #73ae43;
+  --color-lazsip-primary-600: #5d9331;
+  --color-lazsip-primary-700: #497923;
+  --color-lazsip-primary-800: #365b18;
+  --color-lazsip-primary-900: #20380d;
 
-  --color-lazsip-secondary-50: #f3f6f3;
-  --color-lazsip-secondary-100: #e3ebe3;
-  --color-lazsip-secondary-200: #c9d9cb;
-  --color-lazsip-secondary-300: #acc5af;
-  --color-lazsip-secondary-400: #92b396;
-  --color-lazsip-secondary-500: #7a9b7e;
-  --color-lazsip-secondary-600: #628264;
-  --color-lazsip-secondary-700: #4f6a51;
-  --color-lazsip-secondary-800: #3e5340;
-  --color-lazsip-secondary-900: #313f32;
+  --color-lazsip-secondary-50: #f6f9f4;
+  --color-lazsip-secondary-100: #ebf1e4;
+  --color-lazsip-secondary-200: #d4e1c7;
+  --color-lazsip-secondary-300: #b8cda2;
+  --color-lazsip-secondary-400: #9bb97e;
+  --color-lazsip-secondary-500: #7da555;
+  --color-lazsip-secondary-600: #668943;
+  --color-lazsip-secondary-700: #526f34;
+  --color-lazsip-secondary-800: #3e5627;
+  --color-lazsip-secondary-900: #2b3d1a;
 
   /*
    * Palet PUBLIK + ADMIN modul SIP (portal induk) — di-sample LANGSUNG dari
@@ -199,6 +203,8 @@ select {
 
   --color-lazsip-cream: var(--color-lazsip-cream);
   --color-lazsip-ink: var(--color-lazsip-ink);
+  --color-lazsip-accent: var(--color-lazsip-accent);
+  --color-lazsip-accent-hover: var(--color-lazsip-accent-hover);
   --color-lazsip-primary-50: var(--color-lazsip-primary-50);
   --color-lazsip-primary-100: var(--color-lazsip-primary-100);
   --color-lazsip-primary-200: var(--color-lazsip-primary-200);

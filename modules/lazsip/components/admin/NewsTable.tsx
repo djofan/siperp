@@ -9,6 +9,7 @@ import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetBu
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
+import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
 
 interface NewsRow {
@@ -85,6 +86,8 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
     return rows;
   }, [news, search, statusFilter, pinnedFilter, sort]);
 
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+
   return (
     <div>
       <AdminFilterBar>
@@ -106,6 +109,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
             <table className="w-full min-w-180 text-left text-sm">
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
+                  <th className="px-4 py-3.5 font-semibold">No.</th>
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Status</th>
@@ -114,8 +118,9 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
-                {filtered.map((item) => (
+                {paginated.map((item, index) => (
                   <tr key={item.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
                     <td className="px-4 py-3.5">
                       {item.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
@@ -154,10 +159,19 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
               </tbody>
             </table>
           </div>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
         </div>
       ) : (
+        <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {filtered.map((item) => (
+          {paginated.map((item) => (
             <AdminOverlayCard
               key={item.id}
               image={item.image}
@@ -184,6 +198,17 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
               }
             />
           ))}
+        </div>
+        <div className={panelClasses("")}>
+          <AdminPaginationBar
+            enabled={enabled}
+            onToggleEnabled={setEnabled}
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+            totalCount={filtered.length}
+          />
+        </div>
         </div>
       )}
     </div>

@@ -27,15 +27,27 @@ interface BeneficiaryItem {
   aidType: string;
   photo: string | null;
   verifierArea: string;
+  verifierName: string;
   isPinned: boolean;
 }
 
+const SEMUA_VERIFIKATOR = "semua";
+
 export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] }) {
   const [filter, setFilter] = useState<FilterValue>("semua");
+  const [verifierFilter, setVerifierFilter] = useState(SEMUA_VERIFIKATOR);
+
+  const verifierOptions = useMemo(
+    () => Array.from(new Set(items.map((b) => b.verifierName))).sort(),
+    [items]
+  );
 
   const filtered = useMemo(
-    () => (filter === "semua" ? items : items.filter((b) => b.aidType === filter)),
-    [items, filter]
+    () =>
+      items
+        .filter((b) => filter === "semua" || b.aidType === filter)
+        .filter((b) => verifierFilter === SEMUA_VERIFIKATOR || b.verifierName === verifierFilter),
+    [items, filter, verifierFilter]
   );
 
   const pinned = filtered.filter((b) => b.isPinned);
@@ -69,6 +81,36 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
           ))}
         </div>
 
+        {verifierOptions.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setVerifierFilter(SEMUA_VERIFIKATOR)}
+              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                verifierFilter === SEMUA_VERIFIKATOR
+                  ? "border-lazsip-primary-900 bg-lazsip-primary-900 text-white"
+                  : "border-lazsip-primary-200 bg-white text-lazsip-primary-800 hover:border-lazsip-primary-400"
+              }`}
+            >
+              Semua Verifikator
+            </button>
+            {verifierOptions.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setVerifierFilter(name)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                  verifierFilter === name
+                    ? "border-lazsip-primary-900 bg-lazsip-primary-900 text-white"
+                    : "border-lazsip-primary-200 bg-white text-lazsip-primary-800 hover:border-lazsip-primary-400"
+                }`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="mt-8">
           <PinnedGridSection
             pinnedItems={pinned}
@@ -101,7 +143,7 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
             seeAllLabel="Lihat Semua Bantuan"
             emptyLabel="Belum ada data penerima manfaat untuk kategori ini."
             pinnedItemClassName="w-[42vw] max-w-[170px] shrink-0 snap-start sm:w-[calc(33.333%-16px)] sm:max-w-none lg:w-[calc(25%-18px)]"
-            gridColsClassName="grid-cols-3 sm:grid-cols-4 lg:grid-cols-6"
+            gridColsClassName="grid-cols-3 sm:grid-cols-4 lg:grid-cols-5"
           />
         </div>
       </div>
