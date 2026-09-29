@@ -28,7 +28,7 @@ export function SarsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const activeHref = getActiveHref(pathname);
 
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col bg-white dark:bg-transparent">
+    <div className="flex h-full w-64 shrink-0 flex-col bg-white dark:bg-[#0b0e0c]">
       <div className="flex h-20 shrink-0 items-center gap-2.5 border-b border-lazsip-primary-100 px-6 dark:border-white/10">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lazsip-primary-900 text-xs font-bold text-white dark:bg-lazsip-primary-500">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5">

@@ -49,7 +49,7 @@ interface HistoryItem {
   createdAt: Date;
 }
 
-const STATUS_LABEL: Record<string, string> = { pending: "Menunggu", paid: "Lunas", failed: "Gagal" };
+const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Success", failed: "Failed" };
 
 /**
  * Dipanggil HANYA setelah dipastikan ada riwayat untuk email ini — pemanggil tetap

@@ -5,11 +5,15 @@ import test from "node:test";
 import { prisma } from "@/lib/prisma";
 import { createZakatCheckout } from "@/modules/lazsip/api/zakatCheckout";
 import { getTransactionStatus } from "@/modules/lazsip/api/transactionStatus";
+import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 
 test("donor identity: name required, phone-OR-email required (not both) — prd-lazsip.md §3.3/§3.4/§6", async () => {
   assert.notEqual(process.env.NODE_ENV, "production", "Integration fixtures are development-only");
   const tag = randomUUID();
-  const method = `Test ${tag}`;
+  // Modul pembayaran sekarang bisa jalan dalam 2 mode (env PAYMENT_GATEWAY) — simulation
+  // (bebas nama metode custom) atau midtrans_sandbox (paymentMethod wajib "Midtrans Sandbox").
+  const gateway = paymentGateway();
+  const method = gateway === "midtrans_sandbox" ? sandboxMethod.method : `Test ${tag}`;
   const suffix = String(Date.now()).slice(-9);
   const phoneOnlyPhone = `62816${suffix}`;
   const emailOnlyEmail = `${tag}-emailonly@example.com`;
@@ -18,7 +22,7 @@ test("donor identity: name required, phone-OR-email required (not both) — prd-
   const zakatDetailIdsToClean: string[] = [];
 
   try {
-    await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 0 } });
+    if (gateway !== "midtrans_sandbox") await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 0 } });
     if (!(await prisma.paymentDestinationAccount.findFirst({ where: { moduleSource: "lazsip", fundType: "zakat" } }))) {
       await prisma.paymentDestinationAccount.create({
         data: { moduleSource: "lazsip", fundType: "zakat", bankName: "TEST", accountName: tag, accountNumber: "0000" },

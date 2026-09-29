@@ -86,7 +86,7 @@ model LazsipCampaign {
   targetAmount  Int      @map("target_amount")
   currentAmount Int      @default(0) @map("current_amount")
   image         String?
-  uniqueCode    String   @unique @map("unique_code")
+  uniqueCode    String   @unique @map("unique_code") // 2 digit angka — ditempel otomatis di nominal donasi saat checkout, lihat modules/lazsip/api/uniqueCode.ts
   isPinned      Boolean  @default(false) @map("is_pinned")
   status        String   @default("active") // "active" | "completed"
   createdAt     DateTime @default(now()) @map("created_at")

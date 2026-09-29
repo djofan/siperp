@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { applyUniqueCode } from "@/modules/lazsip/api/uniqueCode";
 import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 
 const QUICK_NOMINAL = [50_000, 100_000, 250_000, 500_000, 1_000_000];
@@ -14,7 +15,7 @@ interface FeeRef {
   feePercentage: number | null;
 }
 
-export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeRefs: FeeRef[] }) {
+export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: string; uniqueCode: string; feeRefs: FeeRef[] }) {
   const router = useRouter();
   const [nominal, setNominal] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(feeRefs[0]?.method ?? "");
@@ -29,10 +30,15 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
   const nominalNumber = Number(nominal.replace(/[^0-9]/g, "")) || 0;
   const method = feeRefs.find((m) => m.method === paymentMethod) ?? null;
 
+  // Nominal yang beneran ditagih ke donatur sudah termasuk kode unik campaign (dibulatkan ke
+  // atas dulu kalau perlu) — lihat modules/lazsip/api/uniqueCode.ts. Ditampilkan di sini biar
+  // donatur gak kaget total di halaman pembayaran beda dari yang diketik.
+  const codedAmount = nominalNumber > 0 ? applyUniqueCode(nominalNumber, uniqueCode) : 0;
+
   const { fee, total } = useMemo(() => {
-    const feeAmount = calculateFee(method, nominalNumber);
-    return { fee: feeAmount, total: nominalNumber + (coversFee ? feeAmount : 0) };
-  }, [nominalNumber, method, coversFee]);
+    const feeAmount = calculateFee(method, codedAmount);
+    return { fee: feeAmount, total: codedAmount + (coversFee ? feeAmount : 0) };
+  }, [codedAmount, method, coversFee]);
 
   function handleNominalChange(e: React.ChangeEvent<HTMLInputElement>) {
     setNominal(e.target.value.replace(/[^0-9]/g, ""));
@@ -233,8 +239,8 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
 
       <div className="flex flex-col gap-2 border-t border-lazsip-primary-100 pt-4 text-sm">
         <div className="flex items-center justify-between text-lazsip-primary-800/70">
-          <span>Nominal donasi</span>
-          <span className="font-medium text-lazsip-primary-900">{formatRupiah(nominalNumber)}</span>
+          <span>Nominal donasi + kode unik</span>
+          <span className="font-medium text-lazsip-primary-900">{formatRupiah(codedAmount)}</span>
         </div>
         <div className="flex items-center justify-between text-lazsip-primary-800/70">
           <span>Biaya admin</span>
@@ -244,6 +250,11 @@ export function DonationForm({ campaignId, feeRefs }: { campaignId: string; feeR
           <span>Total pembayaran</span>
           <span>{formatRupiah(total)}</span>
         </div>
+        {nominalNumber > 0 && (
+          <p className="text-xs leading-relaxed text-lazsip-primary-800/50">
+            Nominal otomatis ditambah kode unik campaign (belakangnya jadi {uniqueCode}) supaya donasi Anda mudah dikenali saat verifikasi.
+          </p>
+        )}
       </div>
 
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LazsipSidebar } from "@/modules/lazsip/components/admin/LazsipSidebar";
 import { LazsipTopbar } from "@/modules/lazsip/components/admin/LazsipTopbar";
 import { useTheme } from "@/lib/useTheme";
 import { cn } from "@/lib/utils";
+
+const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
 export function LazsipAdminShellChrome({
   userName,
@@ -16,7 +18,22 @@ export function LazsipAdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileVisible, setMobileVisible] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // Sidebar mobile di-mount dulu dalam keadaan tergeser keluar layar, baru di-flip ke
+  // posisi kelihatan di frame berikutnya — sama seperti pola modal Cek Status — supaya
+  // transisinya beneran ke-trigger, bukan langsung muncul instan.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const raf = requestAnimationFrame(() => setMobileVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, [mobileOpen]);
+
+  function closeMobileSidebar() {
+    setMobileVisible(false);
+    setTimeout(() => setMobileOpen(false), MOBILE_SIDEBAR_TRANSITION_MS);
+  }
 
   return (
     <div className={cn("flex h-screen overflow-hidden bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
@@ -26,9 +43,15 @@ export function LazsipAdminShellChrome({
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-lazsip-primary-900/40" onClick={() => setMobileOpen(false)} aria-hidden />
-          <div className="absolute inset-y-0 left-0 shadow-xl">
-            <LazsipSidebar onNavigate={() => setMobileOpen(false)} />
+          <div
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${mobileVisible ? "opacity-100" : "opacity-0"}`}
+            onClick={closeMobileSidebar}
+            aria-hidden
+          />
+          <div
+            className={`absolute inset-y-0 left-0 shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
+          >
+            <LazsipSidebar onNavigate={closeMobileSidebar} />
           </div>
         </div>
       )}

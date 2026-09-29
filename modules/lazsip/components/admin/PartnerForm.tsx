@@ -47,7 +47,7 @@ export function PartnerForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className={panelClasses("flex max-w-xl flex-col gap-5 p-6")}>
+    <form onSubmit={handleSubmit} className={panelClasses("flex max-w-xl flex-col gap-4 p-5")}>
       <div className="flex flex-col gap-1.5">
         <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
           Nama Mitra<span className="ml-0.5 text-red-600">*</span>

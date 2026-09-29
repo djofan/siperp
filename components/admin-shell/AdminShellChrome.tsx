@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sidebar, type NavGroup } from "@/components/admin-shell/Sidebar";
 import { Topbar } from "@/components/admin-shell/Topbar";
 import { useTheme } from "@/lib/useTheme";
 import { cn } from "@/lib/utils";
+
+const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
 export function AdminShellChrome({
   groups,
@@ -16,7 +18,19 @@ export function AdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileVisible, setMobileVisible] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const raf = requestAnimationFrame(() => setMobileVisible(true));
+    return () => cancelAnimationFrame(raf);
+  }, [mobileOpen]);
+
+  function closeMobileSidebar() {
+    setMobileVisible(false);
+    setTimeout(() => setMobileOpen(false), MOBILE_SIDEBAR_TRANSITION_MS);
+  }
 
   return (
     <div className={cn("flex h-screen overflow-hidden bg-surface-muted", theme === "dark" && "dark")}>
@@ -26,9 +40,15 @@ export function AdminShellChrome({
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-foreground/40" onClick={() => setMobileOpen(false)} aria-hidden />
-          <div className="absolute inset-y-0 left-0 shadow-xl">
-            <Sidebar groups={groups} onNavigate={() => setMobileOpen(false)} />
+          <div
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${mobileVisible ? "opacity-100" : "opacity-0"}`}
+            onClick={closeMobileSidebar}
+            aria-hidden
+          />
+          <div
+            className={`absolute inset-y-0 left-0 shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
+          >
+            <Sidebar groups={groups} onNavigate={closeMobileSidebar} />
           </div>
         </div>
       )}

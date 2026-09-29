@@ -174,11 +174,17 @@ export async function getTransactionStatus(id: string) {
 }
 
 export async function listTransactionsBySource(moduleSource: string) {
-  return prisma.paymentTransaction.findMany({
+  const query = () => prisma.paymentTransaction.findMany({
     where: { moduleSource },
     include: { donor: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
   });
+  const transactions = await query();
+  // Import dinamis: syncMidtrans.ts sendiri import markAsPaid/markAsFailed dari file ini,
+  // import statis di sini bikin siklus. Fungsi ini nyinkron status pending ke Midtrans dulu
+  // sebelum daftar transaksi ditampilkan ke admin — lihat syncPendingTransactions().
+  const { syncPendingTransactions } = await import("./syncMidtrans");
+  return (await syncPendingTransactions(transactions)) ? query() : transactions;
 }
 
 /**

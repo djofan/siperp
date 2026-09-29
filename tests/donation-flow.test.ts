@@ -4,10 +4,12 @@ import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { prisma } from "@/lib/prisma";
 import { createCampaignCheckout } from "@/modules/lazsip/api/campaignCheckout";
+import { applyUniqueCode } from "@/modules/lazsip/api/uniqueCode";
 import { getCampaignById, listCampaigns, listCampaignHistory } from "@/modules/lazsip/api/campaigns";
 import { listDonors } from "@/modules/lazsip/api/donors";
 import { listPaymentDonationsForAdmin, setDonationStatus } from "@/modules/lazsip/api/donations";
-import { getTransactionStatus } from "@/modules/payment/api/transaction";
+import { getTransactionStatus, markAsPaid, markAsFailed } from "@/modules/payment/api/transaction";
+import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
@@ -26,8 +28,17 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
   assert.match(baseUrl, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/, "Only test a local development server");
   const tag = randomUUID();
   const campaignId = `test-${tag}`;
-  const method = `Test ${tag}`;
+  // Modul pembayaran sekarang bisa jalan dalam 2 mode (env PAYMENT_GATEWAY) — simulation
+  // (admin klik manual) atau midtrans_sandbox (harus lewat Midtrans beneran, admin gak
+  // boleh nge-override). Test ini harus tetap valid dua-duanya, bukan cuma asumsi simulation.
+  const gateway = paymentGateway();
+  const method = gateway === "midtrans_sandbox" ? sandboxMethod.method : `Test ${tag}`;
+  const expectedAdminFee = gateway === "midtrans_sandbox" ? 0 : 2500;
   const suffix = String(Date.now()).slice(-9);
+  // Rentang 90-99 sengaja dijauhkan dari kode 2-digit campaign asli (01-08) supaya fixture ini
+  // gak pernah tabrakan dengan uniqueCode campaign nyata di database (kolom itu @unique).
+  const testUniqueCode = String(90 + (Date.now() % 10)).padStart(2, "0");
+  const donationAmount = applyUniqueCode(10000, testUniqueCode);
   const phone = `62813${suffix}`;
   const otherPhone = `62814${suffix}`;
   const name = `Private donor ${tag}`;
@@ -36,9 +47,9 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
   try {
     await prisma.lazsipCampaign.create({ data: {
       id: campaignId, title: `Test campaign ${tag}`, description: "Integration fixture",
-      uniqueCode: tag, targetAmount: 1_000_000, currentAmount: 999_999,
+      uniqueCode: testUniqueCode, targetAmount: 1_000_000, currentAmount: 999_999,
     } });
-    await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 2500 } });
+    if (gateway !== "midtrans_sandbox") await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 2500 } });
     if (!await prisma.paymentDestinationAccount.findFirst({ where: { moduleSource: "lazsip", fundType: "infak" } })) {
       const destination = await prisma.paymentDestinationAccount.create({ data: {
         moduleSource: "lazsip", fundType: "infak", bankName: "TEST", accountName: tag, accountNumber: "0000",
@@ -65,13 +76,18 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     const first = await prisma.paymentTransaction.findUniqueOrThrow({ where: { id: transactionId }, include: { donor: true } });
     assert.equal(first.donor.name, name);
     assert.equal(first.donor.phone, phone);
-    assert.equal(first.adminFee, 2500, "fee must come from server reference, not submitted adminFee");
+    assert.equal(first.adminFee, expectedAdminFee, "fee must come from server reference, not submitted adminFee");
     assert.equal(first.isAnonymous, true);
     const pendingCheckout = await fetch(`${baseUrl}/payment/checkout/${first.id}`);
     assert.equal(pendingCheckout.status, 200);
     const pendingHtml = await pendingCheckout.text();
-    assert.ok(pendingHtml.includes("Mode simulasi"));
-    assert.ok(pendingHtml.includes("Menunggu konfirmasi admin"));
+    if (gateway === "midtrans_sandbox") {
+      assert.ok(pendingHtml.includes("Midtrans sandbox"));
+      assert.ok(pendingHtml.includes("Menunggu pembayaran test"));
+    } else {
+      assert.ok(pendingHtml.includes("Mode simulasi"));
+      assert.ok(pendingHtml.includes("Menunggu konfirmasi admin"));
+    }
     assert.equal(pendingHtml.includes("Bayar Sekarang"), false);
     assert.equal("donorName" in first, false);
     assert.equal((await getCampaignById(campaignId))?.currentAmount, 0, "ignore stale cached currentAmount");
@@ -95,34 +111,52 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
       body: JSON.stringify({ status }),
     });
     assert.equal((await simulate(first.id, "paid", false)).status, 403);
-    assert.equal((await simulate(first.id, "invalid")).status, 400);
-    assert.equal((await simulate(first.id, "paid")).status, 200);
-    const retryResults = await Promise.all([simulate(first.id, "paid"), simulate(first.id, "paid")]);
-    assert.ok(retryResults.every((r) => r.status === 200));
-    assert.equal((await getCampaignById(campaignId))?.currentAmount, 10000);
+    if (gateway === "simulation") {
+      assert.equal((await simulate(first.id, "invalid")).status, 400);
+      assert.equal((await simulate(first.id, "paid")).status, 200);
+      const retryResults = await Promise.all([simulate(first.id, "paid"), simulate(first.id, "paid")]);
+      assert.ok(retryResults.every((r) => r.status === 200));
+    } else {
+      // Transaksi gateway asli TIDAK BOLEH ditandai lunas lewat tombol admin — cuma lewat
+      // webhook/cek status Midtrans (CLAUDE.md §7 aturan #1).
+      assert.equal((await simulate(first.id, "invalid")).status, 409);
+      assert.equal((await simulate(first.id, "paid")).status, 409);
+      // Berperan sebagai webhook Midtrans yang sudah terverifikasi, tanpa beneran manggil
+      // API Midtrans di dalam test ini.
+      await markAsPaid(first.midtransOrderId!);
+    }
+    assert.equal((await getCampaignById(campaignId))?.currentAmount, donationAmount);
     const paidCheckout = await fetch(`${baseUrl}/payment/checkout/${first.id}`);
-    assert.ok((await paidCheckout.text()).includes("Simulasi pembayaran berhasil"));
+    const paidHtml = await paidCheckout.text();
+    assert.ok(paidHtml.includes(gateway === "midtrans_sandbox" ? "Pembayaran test berhasil" : "Simulasi pembayaran berhasil"));
     const historyAfterFirst = await listCampaignHistory(campaignId);
     assert.equal(historyAfterFirst.length, 1);
     assert.equal(historyAfterFirst[0].id, first.id);
     assert.equal(historyAfterFirst[0].kind, "donasi");
     assert.equal(historyAfterFirst[0].label, "Hamba Allah");
-    assert.equal(historyAfterFirst[0].amount, 10000);
+    assert.equal(historyAfterFirst[0].amount, donationAmount);
     assert.ok((await listPaymentDonationsForAdmin()).some((d) => d.id === first.id && d.donorName === name));
 
-    await simulate(repeated.id, "failed");
-    await simulate(repeated.id, "paid");
+    if (gateway === "simulation") {
+      await simulate(repeated.id, "failed");
+      await simulate(repeated.id, "paid");
+    } else {
+      await markAsFailed(repeated.midtransOrderId!);
+    }
     assert.equal((await getTransactionStatus(repeated.id))?.status, "failed");
     const failedCheckout = await fetch(`${baseUrl}/payment/checkout/${repeated.id}`);
-    assert.ok((await failedCheckout.text()).includes("Simulasi pembayaran gagal"));
-    await simulate(simultaneous[0].id, "paid");
+    const failedHtml = await failedCheckout.text();
+    assert.ok(failedHtml.includes(gateway === "midtrans_sandbox" ? "Sesi pembayaran berakhir" : "Simulasi pembayaran gagal"));
+    if (gateway === "simulation") await simulate(simultaneous[0].id, "paid");
+    else await markAsPaid(simultaneous[0].midtransOrderId!);
     const legacy = await prisma.lazsipDonation.create({ data: {
       campaignId, donorId: first.donorId, amount: 3000, isAnonymous: true, paymentMethod: method,
     } });
     await setDonationStatus(legacy.id, "paid");
     await setDonationStatus(legacy.id, "paid");
-    assert.equal((await getCampaignById(campaignId))?.currentAmount, 23000);
-    assert.equal((await listCampaigns()).find((c) => c.id === campaignId)?.currentAmount, 23000);
+    const finalCurrentAmount = donationAmount * 2 + 3000;
+    assert.equal((await getCampaignById(campaignId))?.currentAmount, finalCurrentAmount);
+    assert.equal((await listCampaigns()).find((c) => c.id === campaignId)?.currentAmount, finalCurrentAmount);
     const publicHistory = await listCampaignHistory(campaignId);
     assert.equal(publicHistory.length, 3);
     assert.ok(publicHistory.some((d) => d.label === visibleName));
@@ -144,12 +178,12 @@ test("donor identity, privacy, admin simulation and campaign totals", async () =
     const html = await page.text();
     assert.ok(html.includes(visibleName));
     assert.ok(html.includes("Hamba Allah"));
-    assert.ok(html.includes("23.000"));
+    assert.ok(html.includes(finalCurrentAmount.toLocaleString("id-ID")));
     assert.equal(html.includes(name), false, "private name must not leak even through RSC payload");
     assert.equal(html.includes(phone), false);
     const donor = (await listDonors()).find((d) => d.id === first.donorId)!;
     assert.equal(donor.contributionCount, 3);
-    assert.equal(donor.totalContribution, 13000);
+    assert.equal(donor.totalContribution, donationAmount + 3000);
     const adminPage = await fetch(`${baseUrl}/admin/lazsip/donatur`, { headers: { Cookie: `${SESSION_COOKIE_NAME}=${token}` } });
     assert.equal(adminPage.status, 200);
     const adminHtml = await adminPage.text();

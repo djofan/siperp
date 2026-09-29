@@ -71,9 +71,9 @@ export function CampaignForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
-        <div className={panelClasses("flex flex-col gap-5 p-6")}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_0.6fr]">
+        <div className={panelClasses("flex flex-col gap-4 p-5")}>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
               Judul Campaign<span className="ml-0.5 text-red-600">*</span>
@@ -104,7 +104,7 @@ export function CampaignForm({
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className={panelClasses("flex flex-col gap-4 p-6")}>
+          <div className={panelClasses("flex flex-col gap-3.5 p-5")}>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
                 Target Nominal (Rp)<span className="ml-0.5 text-red-600">*</span>
@@ -125,11 +125,16 @@ export function CampaignForm({
               </label>
               <input
                 required
+                inputMode="numeric"
+                maxLength={2}
+                placeholder="mis. 07"
                 value={uniqueCode}
-                onChange={(e) => setUniqueCode(e.target.value.toUpperCase())}
+                onChange={(e) => setUniqueCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
                 className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
               />
-              <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Dipakai rekonsiliasi — semua campaign settle ke satu rekening bersama.</p>
+              <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">
+                2 digit angka, unik antar campaign. Otomatis ditempel di digit belakang nominal donasi supaya mudah dikenali saat rekonsiliasi transfer di rekening bersama.
+              </p>
             </div>
 
             <div className="flex flex-col gap-1.5">

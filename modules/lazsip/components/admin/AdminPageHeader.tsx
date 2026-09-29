@@ -8,7 +8,7 @@ export function AdminPageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
       <div>
         <h2 className="text-xl font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">{title}</h2>
         {description && (

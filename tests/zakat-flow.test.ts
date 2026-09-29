@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { createZakatCheckout } from "@/modules/lazsip/api/zakatCheckout";
 import { listPaymentZakatForAdmin } from "@/modules/lazsip/api/zakat";
 import { getTotalZakatPaid, listDonors } from "@/modules/lazsip/api/donors";
-import { getTransactionStatus } from "@/modules/payment/api/transaction";
+import { getTransactionStatus, markAsPaid } from "@/modules/payment/api/transaction";
+import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import { createSessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 test("zakat checkout, admin simulation, and totals never double-count against donors.ts", async () => {
@@ -14,7 +15,12 @@ test("zakat checkout, admin simulation, and totals never double-count against do
   const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
   assert.match(baseUrl, /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/, "Only test a local development server");
   const tag = randomUUID();
-  const method = `Test ${tag}`;
+  // Modul pembayaran sekarang bisa jalan dalam 2 mode (env PAYMENT_GATEWAY) — simulation
+  // (admin klik manual) atau midtrans_sandbox (harus lewat Midtrans beneran, admin gak
+  // boleh nge-override). Test ini harus tetap valid dua-duanya, bukan cuma asumsi simulation.
+  const gateway = paymentGateway();
+  const method = gateway === "midtrans_sandbox" ? sandboxMethod.method : `Test ${tag}`;
+  const expectedAdminFee = gateway === "midtrans_sandbox" ? 0 : 1500;
   const suffix = String(Date.now()).slice(-9);
   const phone = `62815${suffix}`;
   const name = `Zakat donor ${tag}`;
@@ -22,7 +28,10 @@ test("zakat checkout, admin simulation, and totals never double-count against do
   let zakatDetailId: string | undefined;
 
   try {
-    await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 1500 } });
+    // Dev database ini bisa aja udah punya pembayaran zakat lain (data riil/test dari sesi
+    // lain) — jangan asumsikan totalnya mulai dari nol, bandingkan selisihnya aja.
+    const baselineZakatPaid = await getTotalZakatPaid();
+    if (gateway !== "midtrans_sandbox") await prisma.lazsipPaymentFeeRef.create({ data: { method, feeAmount: 1500 } });
     if (!await prisma.paymentDestinationAccount.findFirst({ where: { moduleSource: "lazsip", fundType: "zakat" } })) {
       const destination = await prisma.paymentDestinationAccount.create({ data: {
         moduleSource: "lazsip", fundType: "zakat", bankName: "TEST", accountName: tag, accountNumber: "0000",
@@ -57,7 +66,7 @@ test("zakat checkout, admin simulation, and totals never double-count against do
     assert.equal(first.fundType, "zakat");
     assert.equal(first.donor.name, name);
     assert.equal(first.donor.phone, phone);
-    assert.equal(first.adminFee, 1500, "fee must come from server reference, not client input");
+    assert.equal(first.adminFee, expectedAdminFee, "fee must come from server reference, not client input");
 
     // Same donor immediately retries the exact same checkout (double click) — must be
     // deduped into the same transaction, not create a second one.
@@ -80,12 +89,21 @@ test("zakat checkout, admin simulation, and totals never double-count against do
       body: JSON.stringify({ status }),
     });
     assert.equal((await simulate(first.id, "paid", false)).status, 403);
-    assert.equal((await simulate(first.id, "paid")).status, 200);
-    const retryResults = await Promise.all([simulate(first.id, "paid"), simulate(first.id, "paid")]);
-    assert.ok(retryResults.every((r) => r.status === 200), "already-final status must stay idempotent, not error");
+    if (gateway === "simulation") {
+      assert.equal((await simulate(first.id, "paid")).status, 200);
+      const retryResults = await Promise.all([simulate(first.id, "paid"), simulate(first.id, "paid")]);
+      assert.ok(retryResults.every((r) => r.status === 200), "already-final status must stay idempotent, not error");
+    } else {
+      // Transaksi gateway asli TIDAK BOLEH ditandai lunas lewat tombol admin — cuma lewat
+      // webhook/cek status Midtrans (CLAUDE.md §7 aturan #1).
+      assert.equal((await simulate(first.id, "paid")).status, 409);
+      // Berperan sebagai webhook Midtrans yang sudah terverifikasi, tanpa beneran manggil
+      // API Midtrans di dalam test ini.
+      await markAsPaid(first.midtransOrderId!);
+    }
 
     assert.equal((await getTransactionStatus(first.id))?.status, "paid");
-    assert.equal(await getTotalZakatPaid(), 50_000);
+    assert.equal(await getTotalZakatPaid(), baselineZakatPaid + 50_000);
 
     const donor = (await listDonors()).find((d) => d.phone === phone);
     assert.ok(donor);

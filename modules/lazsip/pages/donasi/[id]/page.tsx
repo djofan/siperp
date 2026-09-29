@@ -37,6 +37,7 @@ export default async function LazsipDonasiDetailPage({
       <CampaignDetailColumns
         history={history}
         campaignId={campaign.id}
+        uniqueCode={campaign.uniqueCode}
         feeRefs={feeRefs}
         isActive={campaign.status === "active"}
         articleTop={

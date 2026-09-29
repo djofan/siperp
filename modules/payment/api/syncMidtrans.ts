@@ -14,3 +14,22 @@ export async function syncMidtrans(orderId: string) {
   if (status === "failed") await markAsFailed(orderId);
   if (status) revalidateSourcePaymentViews(transaction.moduleSource);
 }
+
+/**
+ * Dipanggil dari halaman admin (dashboard, tabel transaksi, detail donatur) supaya status
+ * gateway asli gak "nyangkut" di Pending sampai ada yang gak sengaja mancing sync lewat
+ * Cek Status publik/checkout duluan — sebelumnya itu satu-satunya jalan status ke-refresh.
+ * Best-effort: satu transaksi gagal di-cek ke Midtrans (network/timeout) gak boleh gagalkan
+ * transaksi lain atau gagalkan halaman admin yang lagi dimuat.
+ */
+export async function syncPendingTransactions(
+  transactions: { status: string; gateway: string; midtransOrderId: string | null }[]
+): Promise<boolean> {
+  const pending = transactions.filter(
+    (t): t is typeof t & { midtransOrderId: string } =>
+      t.status === "pending" && t.gateway === "midtrans_sandbox" && !!t.midtransOrderId
+  );
+  if (pending.length === 0) return false;
+  await Promise.allSettled(pending.map((t) => syncMidtrans(t.midtransOrderId)));
+  return true;
+}
