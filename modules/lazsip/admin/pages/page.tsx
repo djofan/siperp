@@ -1,16 +1,15 @@
 import Link from "next/link";
 import {
-  getThisMonthTotals,
   getTopCampaigns,
   getRecentTransactions,
   countNewApplicants,
   getDashboardCounts,
-  getDailyInflow,
   getNewVsRepeatDonorsThisMonth,
 } from "@/modules/lazsip/api/dashboard";
 import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
 import { DashboardStatCard } from "@/modules/lazsip/components/admin/DashboardStatCard";
-import { InflowChart } from "@/modules/lazsip/components/admin/InflowChart";
+import { DashboardCharts } from "@/modules/payment/components/admin/DashboardCharts";
+import { getDashboardCharts } from "@/modules/payment/api/dashboardCharts";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { panelClasses } from "@/components/ui/panel";
 
@@ -26,15 +25,16 @@ function percentChange(current: number, previous: number) {
 }
 
 export default async function LazsipDashboardPage() {
-  const [totals, topCampaigns, recentTransactions, newApplicants, counts, dailyInflow, donorMix] = await Promise.all([
-    getThisMonthTotals(),
+  const [analytics, topCampaigns, recentTransactions, newApplicants, counts, donorMix] = await Promise.all([
+    getDashboardCharts("lazsip"),
     getTopCampaigns(5),
     getRecentTransactions(10),
     countNewApplicants(),
     getDashboardCounts(),
-    getDailyInflow(30),
     getNewVsRepeatDonorsThisMonth(),
   ]);
+
+  const totals = analytics.totals;
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,14 +79,8 @@ export default async function LazsipDashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <div className={panelClasses("p-6")}>
-          <h2 className="mb-1 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Dana Masuk 30 Hari Terakhir</h2>
-          <p className="mb-4 text-xs text-lazsip-primary-800/50 dark:text-white/45">
-            Total donasi + zakat berstatus lunas per hari.
-          </p>
-          <InflowChart data={dailyInflow} />
-        </div>
+      <DashboardCharts periods={analytics.periods} moduleSource="lazsip" />
+      <div className="grid grid-cols-1 gap-4">
 
         <div className={panelClasses("p-6")}>
           <h2 className="mb-4 text-sm font-semibold text-lazsip-primary-900 dark:text-white">Campaign Terlaris</h2>
