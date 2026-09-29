@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 import { sendHistoryEmail } from "@/modules/payment/api/email";
+import { syncPendingTransactions } from "@/modules/payment/api/syncMidtrans";
 
 export interface HistoryItem {
   trackingCode: string;
@@ -14,13 +15,17 @@ export interface HistoryItem {
 /** Riwayat lengkap (semua status) donasi + zakat milik satu donor — dipakai Cek Riwayat
  * publik (§3.11.B) dan halaman detail donatur admin (§4.3). */
 export async function getDonorTransactionHistory(donorId: string): Promise<HistoryItem[]> {
-  const [newTransactions, campaigns, zakatDetails, legacyDonations, legacyZakat] = await Promise.all([
-    prisma.paymentTransaction.findMany({ where: { donorId, moduleSource: "lazsip" } }),
+  const queryTransactions = () => prisma.paymentTransaction.findMany({ where: { donorId, moduleSource: "lazsip" } });
+  const [initialTransactions, campaigns, zakatDetails, legacyDonations, legacyZakat] = await Promise.all([
+    queryTransactions(),
     prisma.lazsipCampaign.findMany({ select: { id: true, title: true } }),
     prisma.lazsipZakatDetail.findMany({ select: { id: true, zakatType: true } }),
     prisma.lazsipDonation.findMany({ where: { donorId }, include: { campaign: { select: { title: true } } } }),
     prisma.lazsipZakatPayment.findMany({ where: { donorId } }),
   ]);
+  // Sinkron status pending gateway ke Midtrans dulu — halaman detail donatur admin gak boleh
+  // nunjukin "Pending" basi kalau donatur ini sebenarnya sudah bayar.
+  const newTransactions = (await syncPendingTransactions(initialTransactions)) ? await queryTransactions() : initialTransactions;
 
   const campaignTitleById = new Map(campaigns.map((c) => [c.id, c.title]));
   const zakatTypeById = new Map(zakatDetails.map((d) => [d.id, d.zakatType]));

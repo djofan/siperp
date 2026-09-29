@@ -49,7 +49,7 @@ export function LazsipTopbar({
     .toUpperCase();
 
   return (
-    <header className="flex h-20 shrink-0 items-center gap-3 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] sm:px-6 lg:px-8 dark:border-b dark:border-white/10 dark:bg-transparent">
+    <header className="flex h-20 shrink-0 items-center gap-3 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] sm:px-6 lg:px-8 dark:border-b dark:border-white/10 dark:bg-[#0b0e0c]">
       {onMenuClick && (
         <button
           type="button"
@@ -81,6 +81,16 @@ export function LazsipTopbar({
       </form>
 
       <div className="ml-auto flex min-w-0 items-center gap-3">
+        <Link
+          href="/admin"
+          aria-label="Pilihan Modul"
+          title="Pilihan Modul"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lazsip-primary-800/70 transition-colors hover:bg-lazsip-primary-50 dark:text-white/60 dark:hover:bg-white/10"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+          </svg>
+        </Link>
         <Link
           href="/admin/lazsip/transaksi"
           aria-label="Transaksi menunggu verifikasi"

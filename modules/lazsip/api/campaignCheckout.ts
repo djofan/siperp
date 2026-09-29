@@ -4,6 +4,7 @@ import { createTransaction } from "@/modules/payment/api/transaction";
 import { findOrCreateDonor } from "@/modules/payment/api/donors";
 import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { applyUniqueCode } from "@/modules/lazsip/api/uniqueCode";
 import { Prisma } from "@/generated/prisma/client";
 
 import { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
@@ -45,8 +46,12 @@ export async function createCampaignCheckout(input: {
           ? (input.paymentMethod === sandboxMethod.method ? sandboxMethod : null)
           : await tx.lazsipPaymentFeeRef.findUnique({ where: { method: input.paymentMethod } });
         if (!method) throw new DonationValidationError("Metode pembayaran tidak tersedia.");
-        const adminFee = input.coversFee ? calculateFee(method, input.amount) : 0;
-        if (!Number.isSafeInteger(adminFee) || adminFee < 0 || input.amount + adminFee > 2_147_483_647) {
+        // Nominal dibulatkan ke atas lalu ditempeli kode unik campaign (lihat uniqueCode.ts)
+        // SEBELUM biaya admin dihitung — supaya biaya admin ikut dihitung dari nominal final
+        // yang benar-benar akan ditransfer, bukan dari angka mentah ketikan donatur.
+        const codedAmount = applyUniqueCode(input.amount, campaign.uniqueCode);
+        const adminFee = input.coversFee ? calculateFee(method, codedAmount) : 0;
+        if (!Number.isSafeInteger(adminFee) || adminFee < 0 || codedAmount + adminFee > 2_147_483_647) {
           throw new DonationValidationError("Total pembayaran tidak valid.");
         }
         const destination = await tx.paymentDestinationAccount.findFirst({
@@ -57,7 +62,7 @@ export async function createCampaignCheckout(input: {
         return createTransaction({
           moduleSource: "lazsip", sourceType: "campaign", sourceId: campaign.id,
           fundType: "infak", donorId: donor.id, isAnonymous: input.isAnonymous,
-          amount: input.amount, adminFee, paymentMethod: method.method,
+          amount: codedAmount, adminFee, paymentMethod: method.method,
         }, tx);
       });
     } catch (error) {

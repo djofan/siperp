@@ -31,7 +31,7 @@ export function SarsipTopbar({
     .toUpperCase();
 
   return (
-    <header className="flex h-20 shrink-0 items-center gap-3 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] sm:px-6 lg:px-8 dark:border-b dark:border-white/10 dark:bg-transparent">
+    <header className="flex h-20 shrink-0 items-center gap-3 bg-white px-4 shadow-[0_1px_3px_rgba(0,0,0,0.05)] sm:px-6 lg:px-8 dark:border-b dark:border-white/10 dark:bg-[#0b0e0c]">
       {onMenuClick && (
         <button
           type="button"

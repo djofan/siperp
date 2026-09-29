@@ -27,7 +27,7 @@ export function SipSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const activeHref = getActiveHref(pathname);
 
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col bg-white dark:bg-transparent">
+    <div className="flex h-full w-64 shrink-0 flex-col bg-white dark:bg-[#0b0e0c]">
       <div className="flex h-20 shrink-0 items-center gap-2.5 border-b border-sip-primary-100 px-6 dark:border-white/10">
         <SipMark />
         <span className="text-base font-extrabold tracking-tight text-sip-primary-900 dark:text-white">SIP Admin</span>

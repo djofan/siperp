@@ -21,10 +21,6 @@ export default async function CheckoutPage({
         <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-900">{isMidtrans ? "Midtrans sandbox" : "Mode simulasi"}</span>
         <h1 className="mt-5 text-2xl font-bold tracking-tight text-slate-900">Konfirmasi Pembayaran</h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{isMidtrans ? "Uji pembayaran melalui Midtrans. Gunakan simulasi pada mode test; jangan transfer uang nyata." : "Ini simulasi donasi. Tidak ada uang yang ditagihkan atau dipindahkan. Anda tidak perlu melakukan transfer."}</p>
-        <div className="mt-6 rounded-xl bg-slate-50 p-4">
-          <p className="text-xs text-slate-500">Kode transaksi — simpan untuk cek status</p>
-          <p className="mt-1 break-all font-mono text-sm text-slate-800">{transaction.id}</p>
-        </div>
         <dl className="mt-6 space-y-3 text-sm text-slate-600">
           <div className="flex justify-between gap-4"><dt>Metode pembayaran</dt><dd className="text-right">{isMidtrans ? "Dipilih di Midtrans" : transaction.paymentMethod}</dd></div>
           <div className="flex justify-between gap-4"><dt>Nominal donasi</dt><dd>Rp{transaction.amount.toLocaleString("id-ID")}</dd></div>

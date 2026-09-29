@@ -27,12 +27,14 @@ export function CampaignDetailColumns({
   articleTop,
   history,
   campaignId,
+  uniqueCode,
   feeRefs,
   isActive,
 }: {
   articleTop: ReactNode;
   history: CampaignHistoryEntry[];
   campaignId: string;
+  uniqueCode: string;
   feeRefs: FeeRef[];
   isActive: boolean;
 }) {
@@ -123,7 +125,7 @@ export function CampaignDetailColumns({
 
       <div ref={formColumnRef} className="order-1 lg:order-2">
         {isActive ? (
-          <DonationForm campaignId={campaignId} feeRefs={feeRefs} />
+          <DonationForm campaignId={campaignId} uniqueCode={uniqueCode} feeRefs={feeRefs} />
         ) : (
           <p className="rounded-3xl border border-lazsip-primary-100 bg-white p-6 text-sm font-medium text-lazsip-primary-800/60">
             Campaign ini sudah selesai. Terima kasih atas dukungannya!

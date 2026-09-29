@@ -15,7 +15,7 @@ import { panelClasses } from "@/components/ui/panel";
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDateTime = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
 
-const STATUS_LABEL: Record<string, string> = { pending: "Menunggu", paid: "Lunas", failed: "Gagal" };
+const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Success", failed: "Failed" };
 const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger" };
 
 function percentChange(current: number, previous: number) {

@@ -137,8 +137,8 @@ export function BeneficiaryForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <div className={panelClasses("p-6")}>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+      <div className={panelClasses("p-5")}>
         <div className="mb-5 flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lazsip-secondary-50 text-lazsip-secondary-700 dark:bg-lazsip-secondary-900/40 dark:text-lazsip-secondary-300">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
@@ -227,7 +227,7 @@ export function BeneficiaryForm({
         </div>
       </div>
 
-      <div className="rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/40 p-6 dark:border-rose-900/40 dark:bg-rose-950/20">
+      <div className="rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/40 p-5 dark:border-rose-900/40 dark:bg-rose-950/20">
         <div className="mb-2 flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-rose-600 dark:bg-rose-900/50 dark:text-rose-300">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">

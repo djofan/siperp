@@ -13,6 +13,8 @@ interface StatusResult {
   paymentMethod?: string;
   status?: string;
   createdAt?: string;
+  checkoutId?: string;
+  gateway?: string;
 }
 
 interface StatusMeta {
@@ -27,14 +29,14 @@ interface StatusMeta {
 
 const STATUS_META: Record<string, StatusMeta> = {
   paid: {
-    label: "Pembayaran Berhasil",
+    label: "Success",
     amountLabel: "Total Dibayarkan",
     headerBg: "bg-lazsip-secondary-50",
     iconBg: "bg-lazsip-secondary-100",
     iconColor: "text-lazsip-secondary-600",
   },
   pending: {
-    label: "Menunggu Pembayaran",
+    label: "Pending",
     amountLabel: "Total Tagihan",
     headerBg: "bg-amber-50",
     iconBg: "bg-amber-100",
@@ -43,7 +45,7 @@ const STATUS_META: Record<string, StatusMeta> = {
     noteClass: "bg-amber-50 text-amber-800",
   },
   failed: {
-    label: "Pembayaran Gagal",
+    label: "Failed",
     amountLabel: "Nominal Transaksi",
     headerBg: "bg-red-50",
     iconBg: "bg-red-100",
@@ -188,7 +190,7 @@ export function HeroCekStatus() {
             isModalVisible ? "opacity-100" : "opacity-0"
           }`}
         >
-          <div className="absolute inset-0 bg-lazsip-primary-900/50" onClick={closeModal} aria-hidden />
+          <div className="absolute inset-0 bg-black/60" onClick={closeModal} aria-hidden />
           <div
             className={`relative w-full max-w-sm overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all duration-200 ${
               isModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"
@@ -267,6 +269,15 @@ export function HeroCekStatus() {
 
                   {meta.note && (
                     <div className={`mt-5 rounded-xl p-3 text-xs leading-relaxed ${meta.noteClass}`}>{meta.note}</div>
+                  )}
+
+                  {result.status === "pending" && result.checkoutId && (
+                    <a
+                      href={`/payment/checkout/${result.checkoutId}`}
+                      className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
+                    >
+                      Lanjutkan Pembayaran (Lihat Kode VA/QRIS)
+                    </a>
                   )}
 
                   <button
