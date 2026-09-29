@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/*.test.ts",
+    "email:retry": "tsx scripts/retry-payment-receipts.ts",
     "test:donation": "tsx --test tests/donation-flow.test.ts",
     "test:zakat": "tsx --test tests/zakat-flow.test.ts",
     "test:midtrans-signature": "tsx --test tests/midtrans-signature.test.ts",

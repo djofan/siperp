@@ -1,0 +1,22 @@
+CREATE TABLE `payment_receipts` (
+ `id` VARCHAR(191) NOT NULL,
+ `transaction_id` VARCHAR(191) NOT NULL,
+ `recipient` VARCHAR(191) NOT NULL,
+ `subject` VARCHAR(191) NOT NULL,
+ `html` TEXT NOT NULL,
+ `text` TEXT NOT NULL,
+ `sender` VARCHAR(191) NULL,
+ `status` VARCHAR(191) NOT NULL DEFAULT 'pending',
+ `attempts` INTEGER NOT NULL DEFAULT 0,
+ `first_attempt_at` DATETIME(3) NULL,
+ `locked_until` DATETIME(3) NULL,
+ `next_attempt_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ `sent_at` DATETIME(3) NULL,
+ `provider_id` VARCHAR(191) NULL,
+ `last_error` VARCHAR(191) NULL,
+ `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ PRIMARY KEY (`id`),
+ UNIQUE INDEX `payment_receipts_transaction_id_key` (`transaction_id`),
+ INDEX `payment_receipts_status_next_attempt_at_idx` (`status`, `next_attempt_at`),
+ CONSTRAINT `payment_receipts_transaction_id_fkey` FOREIGN KEY (`transaction_id`) REFERENCES `payment_transactions` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

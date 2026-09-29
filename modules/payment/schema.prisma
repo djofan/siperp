@@ -41,9 +41,32 @@ model PaymentTransaction {
 
   destinationAccount PaymentDestinationAccount @relation(fields: [destinationAccountId], references: [id])
   donor PaymentDonor @relation(fields: [donorId], references: [id])
+  receipt PaymentReceipt?
 
   @@index([moduleSource, sourceType, sourceId, status], map: "payment_campaign_status_idx")
   @@map("payment_transactions")
+}
+
+model PaymentReceipt {
+  id String @id @default(cuid())
+  transactionId String @unique @map("transaction_id")
+  recipient String
+  subject String
+  html String @db.Text
+  text String @db.Text
+  sender String?
+  status String @default("pending")
+  attempts Int @default(0)
+  firstAttemptAt DateTime? @map("first_attempt_at")
+  lockedUntil DateTime? @map("locked_until")
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at")
+  sentAt DateTime? @map("sent_at")
+  providerId String? @map("provider_id")
+  lastError String? @map("last_error")
+  createdAt DateTime @default(now()) @map("created_at")
+  transaction PaymentTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  @@index([status, nextAttemptAt])
+  @@map("payment_receipts")
 }
 
 model PaymentDestinationAccount {

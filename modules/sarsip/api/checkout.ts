@@ -2,7 +2,7 @@ import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import { prisma } from "@/lib/prisma";
 import { createTransaction } from "@/modules/payment/api/transaction";
 import { findOrCreateDonor } from "@/modules/payment/api/donors";
-import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
+import { normalizeDonorPhone, normalizeDonorEmail } from "@/modules/payment/api/donorIdentity";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
 import { Prisma } from "@/generated/prisma/client";
 
@@ -10,11 +10,14 @@ import { DonationValidationError } from "@/modules/payment/api/checkoutValidatio
 export { DonationValidationError } from "@/modules/payment/api/checkoutValidation";
 
 export async function createSarsipCheckout(input: {
-  campaignId: string; donorName: string; donorPhone: string; amount: number;
+  campaignId: string; donorName: string; donorPhone: string; donorEmail?: string; amount: number;
   coversFee: boolean; isAnonymous: boolean; paymentMethod: string;
 }) {
   const name = input.donorName.trim();
   const phone = normalizeDonorPhone(input.donorPhone);
+  const emailRaw = input.donorEmail?.trim() ?? "";
+  const email = emailRaw ? normalizeDonorEmail(emailRaw) : null;
+  if (emailRaw && !email) throw new DonationValidationError("Alamat email tidak valid.");
   if (!name || name.length > 191) throw new DonationValidationError("Nama wajib diisi, maksimal 191 karakter.");
   if (!phone) throw new DonationValidationError("Masukkan nomor WhatsApp yang valid, misalnya 081234567890.");
   if (!Number.isSafeInteger(input.amount) || input.amount <= 0 || input.amount > 2_147_483_647) {
@@ -42,7 +45,7 @@ export async function createSarsipCheckout(input: {
           where: { moduleSource: "sarsip", fundType: "donasi" }, select: { id: true },
         });
         if (!destination) throw new DonationValidationError("Rekening tujuan belum tersedia. Silakan hubungi pengelola.", 503);
-        const donor = await findOrCreateDonor(name, phone, null, tx);
+        const donor = await findOrCreateDonor(name, phone, email, tx);
         return createTransaction({
           moduleSource: "sarsip", sourceType: "campaign", sourceId: campaign.id,
           fundType: "donasi", donorId: donor.id, isAnonymous: input.isAnonymous,

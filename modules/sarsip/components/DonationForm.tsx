@@ -11,6 +11,7 @@ export function DonationForm({ campaignId, methods }: { campaignId: string; meth
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [method, setMethod] = useState(methods[0]?.method ?? "");
   const [coversFee, setCoversFee] = useState(true);
@@ -30,7 +31,7 @@ export function DonationForm({ campaignId, methods }: { campaignId: string; meth
       const response = await fetch("/api/payment/checkout", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ moduleSource: "sarsip", sourceType: "campaign", sourceId: campaignId, fundType: "donasi",
-          donorName: name, donorPhone: phone, amount: nominal, paymentMethod: method, isAnonymous: anonymous, coversFee }),
+          donorName: name, donorPhone: phone, donorEmail: email, amount: nominal, paymentMethod: method, isAnonymous: anonymous, coversFee }),
       });
       const data = await response.json();
       if (!response.ok || typeof data.transactionId !== "string") throw new Error(data.error ?? "Gagal membuat transaksi.");
@@ -44,6 +45,7 @@ export function DonationForm({ campaignId, methods }: { campaignId: string; meth
     <label className="block space-y-2 text-sm font-medium"><span>Nominal donasi (Rp)</span><input required type="number" min="1" max="2147483647" step="1" inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass}/></label>
     <label className="block space-y-2 text-sm font-medium"><span>Nama lengkap</span><input required autoComplete="name" maxLength={191} value={name} onChange={(e) => setName(e.target.value)} className={inputClass}/></label>
     <label className="block space-y-2 text-sm font-medium"><span>Nomor WhatsApp</span><input required type="tel" autoComplete="tel" placeholder="081234567890" maxLength={25} value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass}/></label>
+    <label className="block space-y-2 text-sm font-medium"><span>Email (opsional)</span><input type="email" autoComplete="email" maxLength={191} value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass}/><span className="block text-xs text-slate-500">Untuk menerima kode pelacakan dan konfirmasi pembayaran. Tidak ditampilkan di halaman publik.</span></label>
     <label className="flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="mt-1 accent-orange-600"/><span>Tampilkan sebagai Hamba Allah. Nama asli dan nomor WhatsApp tetap dicatat untuk admin.</span></label>
     <label className="block space-y-2 text-sm font-medium"><span>Metode pembayaran</span><select required value={method} onChange={(e) => setMethod(e.target.value)} className={inputClass}>{methods.map((m) => <option key={m.method}>{m.method}</option>)}</select></label>
     {!methods.length && <p role="status" className="text-sm text-orange-800">Metode pembayaran belum tersedia. Hubungi pengelola SARSIP.</p>}
@@ -54,4 +56,3 @@ export function DonationForm({ campaignId, methods }: { campaignId: string; meth
     <p className="text-xs leading-relaxed text-slate-500">Pembayaran diproses melalui modul Payment SIP. Nomor WhatsApp tidak ditampilkan di halaman publik.</p>
   </form>;
 }
-

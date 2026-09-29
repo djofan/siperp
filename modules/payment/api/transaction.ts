@@ -4,6 +4,7 @@ import { sendTrackingCodeEmail } from "@/modules/payment/api/email";
 import type { Prisma } from "@/generated/prisma/client";
 import { paymentGateway, midtransConfig } from "@/modules/payment/api/midtrans";
 import { randomUUID } from "node:crypto";
+import { queueReceipt, tryDeliverReceipt } from "@/modules/payment/api/receipts";
 
 // Tanpa 0/O/1/I biar gak ketuker pas donatur baca/ketik ulang kodenya.
 const TRACKING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -133,7 +134,8 @@ export async function createPaidTransaction(input: {
   let transaction;
   for (let attempt = 0; ; attempt++) {
     try {
-      transaction = await prisma.paymentTransaction.create({
+      transaction = await prisma.$transaction(async (tx) => {
+        const paid = await tx.paymentTransaction.create({
         data: {
           trackingCode: generateTrackingCode(input.moduleSource),
           moduleSource: input.moduleSource,
@@ -146,10 +148,13 @@ export async function createPaidTransaction(input: {
           adminFee: 0,
           paymentMethod: input.paymentMethod,
           destinationAccountId: destination.id,
-          gateway: "simulation",
+          gateway: "manual",
           status: "paid",
           paidAt: new Date(),
         },
+        });
+        await queueReceipt(tx, paid);
+        return paid;
       });
       break;
     } catch (error) {
@@ -159,6 +164,7 @@ export async function createPaidTransaction(input: {
   }
 
   await notifySourceModule(transaction);
+  await tryDeliverReceipt(transaction.id);
   return transaction;
 }
 
@@ -195,14 +201,17 @@ async function finalizeTransaction(
       where: { ...where, status: "pending" },
       data: { status, paidAt: status === "paid" ? new Date() : null },
     });
+    const transaction = await tx.paymentTransaction.findUniqueOrThrow({ where });
+    if (changed.count === 1 && transaction.status === "paid") await queueReceipt(tx, transaction);
     return {
-      transaction: await tx.paymentTransaction.findUniqueOrThrow({ where }),
+      transaction,
       changed: changed.count === 1,
     };
   });
   if (result.changed && result.transaction.status === "paid") {
     await notifySourceModule(result.transaction);
   }
+  if (result.transaction.status === "paid") await tryDeliverReceipt(result.transaction.id);
   return result.transaction;
 }
 
