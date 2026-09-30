@@ -31,7 +31,7 @@ export function SarsipAdminShellChrome({
   }
 
   return (
-    <div className={cn("flex h-screen overflow-hidden bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
+    <div className={cn("flex h-dvh overflow-hidden text-foreground bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
       <div className="hidden shrink-0 shadow-[1px_0_3px_rgba(0,0,0,0.05)] lg:block dark:border-r dark:border-white/10">
         <SarsipSidebar />
       </div>

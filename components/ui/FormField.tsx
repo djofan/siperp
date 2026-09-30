@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAtt
 import { cn } from "@/lib/utils";
 
 const fieldClasses =
-  "h-10 w-full rounded-lg bg-surface-muted px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent-soft disabled:opacity-50";
+  "h-11 min-w-0 w-full rounded-lg bg-surface-muted px-3 text-base text-foreground outline-none focus:ring-2 focus:ring-accent-soft disabled:opacity-50 sm:text-sm";
 
 export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
   return (
@@ -31,10 +31,10 @@ interface FormFieldProps {
 
 export function FormField({ label, htmlFor, error, hint, children }: FormFieldProps) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-      {hint && !error && <p className="text-xs text-foreground/50">{hint}</p>}
+      {hint && !error && <p className="text-xs text-foreground/70">{hint}</p>}
       {error && <p className="text-xs text-danger">{error}</p>}
     </div>
   );

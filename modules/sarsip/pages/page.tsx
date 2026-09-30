@@ -6,7 +6,7 @@ import { BeneficiariesSection } from "@/modules/sarsip/components/BeneficiariesS
 export default async function SarsipHome() {
   const [profile, entries] = await Promise.all([getProfile(), listEntries()]);
   return <>
-    <section className="relative overflow-hidden bg-slate-950 text-white">
+    <section className="relative -mt-4 overflow-hidden bg-slate-950 pt-24 text-white">
       <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.3fr_1fr]">
         <div><p className="text-xs font-bold uppercase tracking-[.25em] text-orange-400">Solidaritas dalam aksi</p><h1 className="mt-6 max-w-2xl text-4xl font-black leading-[1.1] tracking-tight sm:text-6xl">{profile.headline}</h1><p className="mt-6 max-w-lg text-base leading-relaxed text-slate-300">Setiap dukungan berarti bagi upaya pencarian, pertolongan, dan pemulihan. Kenali tim kami dan ambil bagian dalam misi kemanusiaan.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/sarsip/campaign" className="rounded-full bg-orange-500 px-6 py-3 text-sm font-bold text-slate-950 hover:bg-orange-400">Dukung campaign ↗</Link><Link href="/sarsip/kegiatan" className="rounded-full border border-white/25 px-6 py-3 text-sm font-semibold hover:bg-white/10">Lihat kegiatan tim</Link></div></div>
         <div className="relative mx-auto flex aspect-square w-full max-w-sm items-center justify-center rounded-full border border-white/10 bg-[radial-gradient(circle_at_center,#194438_0%,#0f172a_65%)]" aria-hidden="true"><div className="absolute inset-8 rounded-full border border-dashed border-orange-400/40"/><div className="absolute inset-16 rounded-full border border-white/15"/><div className="relative text-center"><p className="text-xs font-bold tracking-[.3em] text-orange-400">SEARCH & RESCUE</p><p className="my-4 text-6xl font-black tracking-tighter">SAR<span className="text-orange-500">SIP</span></p><p className="text-[10px] tracking-[.25em] text-slate-400">KEPEDULIAN · KESIAPSIAGAAN</p></div><span className="absolute right-9 top-14 h-4 w-4 rounded-full bg-orange-500 ring-8 ring-orange-500/10"/></div>
@@ -22,4 +22,3 @@ export default async function SarsipHome() {
     <Transparency/>
   </>;
 }
-

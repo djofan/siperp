@@ -77,7 +77,9 @@ export function Navbar() {
 
         <button
           type="button"
-          aria-label="Buka menu"
+          aria-label={open ? "Tutup menu" : "Buka menu"}
+          aria-expanded={open}
+          aria-controls="sip-mobile-menu"
           onClick={() => setOpen((v) => !v)}
           className="flex h-10 w-10 items-center justify-center text-sip-primary-900 transition-colors lg:hidden"
         >
@@ -92,7 +94,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="border-t border-sip-primary-900/8 bg-sip-cream px-4 py-5 shadow-lg sm:px-6 lg:hidden">
+        <div id="sip-mobile-menu" className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-sip-primary-900/8 bg-sip-cream px-4 py-5 shadow-lg sm:px-6 lg:hidden">
           <div className="mx-auto flex max-w-6xl flex-col gap-4">
             {sipSiteConfig.nav.map((item) => (
               <Link

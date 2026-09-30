@@ -65,7 +65,9 @@ export function Navbar() {
 
         <button
           type="button"
-          aria-label="Buka menu"
+          aria-label={open ? "Tutup menu" : "Buka menu"}
+          aria-expanded={open}
+          aria-controls="lazsip-mobile-menu"
           onClick={() => setOpen((v) => !v)}
           className="flex h-10 w-10 items-center justify-center rounded-full text-lazsip-primary-900 transition-colors lg:hidden"
         >
@@ -80,7 +82,7 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div className="mx-auto mt-2 max-w-6xl rounded-3xl border border-lazsip-primary-100 bg-white px-5 py-5 shadow-lg lg:hidden">
+        <div id="lazsip-mobile-menu" className="mx-auto mt-2 max-h-[calc(100dvh-6rem)] max-w-6xl overflow-y-auto rounded-3xl border border-lazsip-primary-100 bg-white px-5 py-5 shadow-lg lg:hidden">
           <div className="flex flex-col gap-4">
             {lazsipSiteConfig.nav.map((item) => (
               <a
