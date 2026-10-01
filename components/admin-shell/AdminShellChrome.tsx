@@ -33,7 +33,7 @@ export function AdminShellChrome({
   }
 
   return (
-    <div className={cn("flex h-screen overflow-hidden bg-surface-muted", theme === "dark" && "dark")}>
+    <div className={cn("flex h-dvh overflow-hidden text-foreground bg-surface-muted", theme === "dark" && "dark")}>
       <div className="hidden shrink-0 lg:block">
         <Sidebar groups={groups} />
       </div>

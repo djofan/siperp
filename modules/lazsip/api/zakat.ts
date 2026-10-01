@@ -14,6 +14,7 @@ const DEFAULT_FITRAH_PRICE_PER_JIWA = 45_000;
 
 export async function calculateZakat(hartaAmount: number) {
   const goldPricePerGram = await getGoldPricePerGram();
+  if (!goldPricePerGram) throw new Error("Harga emas belum tersedia.");
   const nisabValue = goldPricePerGram * NISAB_GRAM;
   const isWajibZakat = hartaAmount >= nisabValue;
   const zakatAmount = isWajibZakat ? Math.round(hartaAmount * ZAKAT_RATE) : 0;

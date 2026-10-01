@@ -1,52 +1,51 @@
-/**
- * Harga emas per gram (24k) untuk Kalkulator Zakat Maal, dari goldapi.io — di-cache
- * in-memory 1 jam supaya tidak boros quota API (harga emas tidak perlu real-time
- * sampai ke detik, kalkulator zakat cukup akurat dengan update per jam).
- *
- * Kalau GOLDAPI_KEY belum di-set, atau goldapi.io lagi down/quota habis: fallback ke
- * harga terakhir yang berhasil diambil (meski cache-nya sudah kedaluwarsa), atau kalau
- * belum pernah berhasil sama sekali, pakai nilai stub — supaya kalkulator zakat TIDAK
- * PERNAH error ke pengguna publik hanya karena API pihak ketiga bermasalah.
- */
-const STUB_PRICE_PER_GRAM = 1_200_000; // IDR, dipakai kalau goldapi.io belum pernah berhasil sama sekali
-const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 jam
-const GOLDAPI_URL = "https://www.goldapi.io/api/XAU/IDR";
+export interface GoldQuote {
+  value: number;
+  updatedAt: string;
+  exchangeUpdatedAt: string;
+  stale: boolean;
+}
+const GRAMS_PER_TROY_OUNCE = 31.1034768;
+let quote: GoldQuote | null = null;
+let retryAt = 0;
+let pending: Promise<GoldQuote | null> | null = null;
+let fx: { rate: number; updatedAt: string; fetchedAt: number } | null = null;
 
-let lastKnownGoodPrice: { value: number; fetchedAt: number } | null = null;
-
-async function fetchGoldPriceFromApi(apiKey: string): Promise<number | null> {
-  try {
-    const response = await fetch(GOLDAPI_URL, {
-      headers: { "x-access-token": apiKey, "Content-Type": "application/json" },
-      // goldapi.io update harganya per menit — timeout pendek supaya tidak menahan
-      // request kalkulator zakat kalau providernya lambat merespons.
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!response.ok) return null;
-
-    const data = await response.json();
-    const pricePerGram24k = Number(data?.price_gram_24k);
-    return Number.isFinite(pricePerGram24k) && pricePerGram24k > 0 ? Math.round(pricePerGram24k) : null;
-  } catch {
-    return null;
-  }
+export function convertGoldPrice(usdPerOunce: number, idrPerUsd: number) {
+  if (!Number.isFinite(usdPerOunce) || !Number.isFinite(idrPerUsd) || usdPerOunce <= 0 || idrPerUsd <= 0) throw new Error("Invalid gold price");
+  return Math.round(usdPerOunce * idrPerUsd / GRAMS_PER_TROY_OUNCE);
 }
 
-export async function getGoldPricePerGram(): Promise<number> {
-  if (lastKnownGoodPrice && Date.now() - lastKnownGoodPrice.fetchedAt < CACHE_DURATION_MS) {
-    return lastKnownGoodPrice.value;
-  }
+async function readJson(url: string) {
+  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(7000) });
+  if (!response.ok) throw new Error("Price source unavailable");
+  return response.json();
+}
 
-  const apiKey = process.env.GOLDAPI_KEY;
-  if (apiKey) {
-    const fresh = await fetchGoldPriceFromApi(apiKey);
-    if (fresh !== null) {
-      lastKnownGoodPrice = { value: fresh, fetchedAt: Date.now() };
-      return fresh;
+export async function getGoldQuote(): Promise<GoldQuote | null> {
+  if (Date.now() < retryAt) return quote;
+  if (pending) return pending;
+  pending = (async () => {
+    try {
+      const gold = await readJson("https://api.gold-api.com/price/XAU");
+      if (!fx || Date.now() - fx.fetchedAt > 3600000) {
+        const rates = await readJson("https://open.er-api.com/v6/latest/USD");
+        if (rates.result !== "success" || rates.base_code !== "USD" || !Number.isFinite(rates.rates?.IDR)) throw new Error("Invalid exchange rate");
+        fx = { rate: rates.rates.IDR, updatedAt: new Date(rates.time_last_update_unix * 1000).toISOString(), fetchedAt: Date.now() };
+      }
+      const updatedAt = new Date(gold.updatedAt).toISOString();
+      if (gold.symbol !== "XAU" || gold.currency !== "USD" || Date.now() - Date.parse(updatedAt) > 4 * 86400000 || Date.now() - Date.parse(fx.updatedAt) > 4 * 86400000) throw new Error("Outdated source");
+      quote = { value: convertGoldPrice(gold.price, fx.rate), updatedAt, exchangeUpdatedAt: fx.updatedAt, stale: false };
+      retryAt = Date.now() + 60000;
+    } catch {
+      quote = quote && Date.now() - Date.parse(quote.updatedAt) < 4 * 86400000 ? { ...quote, stale: true } : null;
+      retryAt = Date.now() + 60000;
     }
-  }
+    return quote;
+  })();
+  try { return await pending; } finally { pending = null; }
+}
 
-  // API gagal/tidak ada key — pakai harga terakhir yang pernah berhasil (biar sedikit basi
-  // daripada langsung lompat ke stub), atau stub kalau belum pernah berhasil sama sekali.
-  return lastKnownGoodPrice?.value ?? STUB_PRICE_PER_GRAM;
+// Zero signals unavailable to the hero, which disables the maal calculation.
+export async function getGoldPricePerGram(): Promise<number> {
+  return (await getGoldQuote())?.value ?? 0;
 }

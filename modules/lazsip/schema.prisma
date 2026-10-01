@@ -208,3 +208,14 @@ model LazsipBeneficiary {
 
   @@map("lazsip_beneficiaries")
 }
+model LazsipHistoryOtp {
+  emailKey String @id @map("email_key")
+  challengeId String? @map("challenge_id")
+  codeHash String? @map("code_hash")
+  expiresAt DateTime? @map("expires_at")
+  attempts Int @default(0)
+  sendCount Int @default(0) @map("send_count")
+  sentAt DateTime? @map("sent_at")
+  windowStart DateTime? @map("window_start")
+  @@map("lazsip_history_otp")
+}

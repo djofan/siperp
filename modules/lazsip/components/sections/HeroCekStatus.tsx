@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { formatRupiah, formatDateTime } from "@/modules/lazsip/components/format";
 
 interface StatusResult {
@@ -110,6 +111,33 @@ export function HeroCekStatus() {
     setTimeout(() => setShowModal(false), MODAL_TRANSITION_MS);
   }
 
+  useEffect(() => {
+    if (!showModal) return;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    const dialog = document.querySelector('[aria-label="Status transaksi"]');
+    const buttons = dialog?.querySelectorAll<HTMLElement>("button, a[href]");
+    buttons?.[0]?.focus();
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsModalVisible(false);
+        setShowModal(false);
+      }
+      if (event.key === "Tab" && buttons?.length) {
+        const first = buttons[0], last = buttons[buttons.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+      previousFocus?.focus();
+    };
+  }, [showModal]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = kode.trim();
@@ -143,7 +171,7 @@ export function HeroCekStatus() {
 
   return (
     <>
-      <p className="text-sm leading-relaxed text-lazsip-primary-800/60">
+      <p className="text-sm leading-relaxed text-lazsip-primary-800/80">
         Sudah bayar? Masukkan kode transaksi yang tampil setelah donasi/zakat untuk cek status terkini.
       </p>
 
@@ -169,7 +197,7 @@ export function HeroCekStatus() {
         </button>
       </form>
 
-      <ul className="mt-5 flex flex-col gap-2.5 border-t border-lazsip-primary-100 pt-4 text-xs leading-relaxed text-lazsip-primary-800/60">
+      <ul className="mt-5 flex flex-col gap-2.5 border-t border-lazsip-primary-100 pt-4 text-xs leading-relaxed text-lazsip-primary-800/80">
         <li className="flex items-start gap-2">
           <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-lazsip-primary-400" />
           Kode transaksi (format LZS-XXXXXX) muncul di layar begitu Anda selesai donasi/bayar zakat.
@@ -184,7 +212,7 @@ export function HeroCekStatus() {
         </li>
       </ul>
 
-      {showModal && result && (
+      {showModal && result && createPortal(
         <div
           className={`fixed inset-0 z-[70] flex items-center justify-center p-4 transition-opacity duration-200 ${
             isModalVisible ? "opacity-100" : "opacity-0"
@@ -192,7 +220,10 @@ export function HeroCekStatus() {
         >
           <div className="absolute inset-0 bg-black/60" onClick={closeModal} aria-hidden />
           <div
-            className={`relative w-full max-w-sm overflow-hidden rounded-3xl bg-white text-left shadow-xl transition-all duration-200 ${
+            role="dialog"
+            aria-modal="true"
+            aria-label="Status transaksi"
+            className={`relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl bg-white text-left shadow-xl transition-all duration-200 ${
               isModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"
             }`}
           >
@@ -200,7 +231,7 @@ export function HeroCekStatus() {
               type="button"
               onClick={closeModal}
               aria-label="Tutup"
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-lazsip-primary-800/60 transition-colors hover:bg-white hover:text-lazsip-primary-900"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-lazsip-primary-800/80 transition-colors hover:bg-white hover:text-lazsip-primary-900"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
@@ -238,7 +269,7 @@ export function HeroCekStatus() {
 
                 <div className="p-6">
                   <div className="rounded-2xl bg-lazsip-primary-50/60 p-4 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50">{meta.amountLabel}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/75">{meta.amountLabel}</p>
                     <p className="mt-1 text-2xl font-extrabold text-lazsip-primary-900">{formatRupiah(result.amount ?? 0)}</p>
                   </div>
 
@@ -246,21 +277,21 @@ export function HeroCekStatus() {
 
                   <dl className="flex flex-col gap-3 text-sm">
                     <div className="flex items-center justify-between gap-3">
-                      <dt className="text-lazsip-primary-800/60">{result.type === "donasi" ? "Campaign" : "Jenis"}</dt>
+                      <dt className="text-lazsip-primary-800/80">{result.type === "donasi" ? "Campaign" : "Jenis"}</dt>
                       <dd className="text-right font-semibold text-lazsip-primary-900">{result.label}</dd>
                     </div>
                     {!!result.adminFee && (
                       <div className="flex items-center justify-between">
-                        <dt className="text-lazsip-primary-800/60">Biaya Admin</dt>
+                        <dt className="text-lazsip-primary-800/80">Biaya Admin</dt>
                         <dd className="font-semibold text-lazsip-primary-900">{formatRupiah(result.adminFee)}</dd>
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <dt className="text-lazsip-primary-800/60">Metode Pembayaran</dt>
+                      <dt className="text-lazsip-primary-800/80">Metode Pembayaran</dt>
                       <dd className="font-semibold text-lazsip-primary-900">{result.paymentMethod}</dd>
                     </div>
                     <div className="flex items-center justify-between border-t border-lazsip-primary-100 pt-2.5">
-                      <dt className="text-lazsip-primary-800/60">Tanggal &amp; Waktu</dt>
+                      <dt className="text-lazsip-primary-800/80">Tanggal &amp; Waktu</dt>
                       <dd className="text-right font-semibold text-lazsip-primary-900">
                         {result.createdAt ? formatDateTime(new Date(result.createdAt)) : "-"}
                       </dd>
@@ -297,7 +328,7 @@ export function HeroCekStatus() {
                   </svg>
                 </span>
                 <p className="mt-3 text-sm font-bold text-lazsip-primary-900">Kode Tidak Ditemukan</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-lazsip-primary-800/60">
+                <p className="mt-1.5 text-sm leading-relaxed text-lazsip-primary-800/80">
                   Periksa kembali kode transaksi Anda, atau hubungi CS kami kalau masih bermasalah.
                 </p>
                 <button
@@ -310,7 +341,7 @@ export function HeroCekStatus() {
               </div>
             )}
           </div>
-        </div>
+        </div>, document.body
       )}
     </>
   );
