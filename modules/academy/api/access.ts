@@ -10,13 +10,13 @@ export const getAcademyUser = cache(async () => {
   if (!session) return null;
   const user = await prisma.user.findFirst({
     where: { id: session.userId, isActive: true },
-    select: { id: true, name: true, isSuperadmin: true },
+    select: { id: true, name: true, isSuperadmin: true, moduleAccess: { where: { module: { slug: "academy" } }, select: { role: true } } },
   });
   if (!user) return null;
   const academyProfile = await getAcademyAvailability()
-    ? await prisma.zakatAcademyProfile.findUnique({ where: { userId: user.id }, select: { id: true, nis: true } })
+    ? await prisma.zakatAcademyProfile.findUnique({ where: { userId: user.id }, select: { id: true, nis: true, mustChangePassword: true } })
     : null;
-  return { ...user, academyProfile };
+  return { ...user, academyProfile, isTeacher: user.moduleAccess.some(access => access.role === "teacher") };
 });
 
 export const getAcademyAvailability = cache(async () => {
@@ -40,7 +40,20 @@ export async function requireAcademyUser() {
 }
 
 export async function requireAcademyProfile() {
-  const user = await requireAcademyUser();
+  const user = await requireAcademyParticipant();
   if (!user.academyProfile) redirect("/academy/program");
+  if (user.academyProfile.mustChangePassword) redirect("/academy/akun");
   return { ...user, profileId: user.academyProfile.id };
+}
+
+export async function requireAcademyParticipant() {
+  const user = await requireAcademyUser();
+  if (user.isTeacher || user.isSuperadmin) redirect("/academy/pengajar");
+  return user;
+}
+
+export async function requireAcademyTeacher() {
+  const user = await requireAcademyUser();
+  if (!user.isSuperadmin && !user.isTeacher) redirect("/academy/belajar");
+  return user;
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 export const linkButton = "inline-flex min-h-11 items-center justify-center rounded-xl bg-lazsip-primary-800 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-lazsip-primary-600";
@@ -7,8 +6,8 @@ export const inputClass = "mt-2 w-full rounded-xl border border-lazsip-primary-2
 export function PageHeading({ eyebrow, title, children }: { eyebrow?: string; title: string; children?: ReactNode }) {
   return <header className="mb-8">
     {eyebrow && <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-lazsip-primary-600">{eyebrow}</p>}
-    <h1 className="text-3xl font-bold tracking-tight text-lazsip-primary-900 sm:text-4xl">{title}</h1>
-    {children && <div className="mt-4 max-w-2xl leading-7 text-lazsip-ink/75">{children}</div>}
+    <h1 className="text-xl font-bold tracking-tight text-gray-900 md:text-2xl">{title}</h1>
+    {children && <div className="mt-1 max-w-2xl text-sm text-gray-500">{children}</div>}
   </header>;
 }
 
@@ -17,11 +16,7 @@ export function EmptyState({ children }: { children: ReactNode }) {
 }
 
 export function LearnerNav() {
-  return <nav aria-label="Menu belajar" className="mb-8 flex flex-wrap gap-2 border-b border-lazsip-primary-100 pb-5 print:hidden">
-    {[["belajar", "Dashboard"], ["program", "Program"], ["progres", "Progres"], ["kuis", "Kuis"], ["peringkat", "Peringkat"], ["sertifikat", "Sertifikat"]].map(([path, label]) =>
-      <Link key={path} href={`/academy/${path}`} className="rounded-full border border-lazsip-primary-100 bg-white px-4 py-2 text-sm font-medium hover:bg-lazsip-primary-100">{label}</Link>,
-    )}
-  </nav>;
+  return null;
 }
 
 export function ProgressBar({ value }: { value: number }) {

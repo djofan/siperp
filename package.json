@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:setup:erp": "node scripts/setup-core-erp.mjs",
+    "erp:backup": "node scripts/erp-backup.mjs create",
+    "erp:backup:verify": "node scripts/erp-backup.mjs verify",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -16,6 +19,8 @@
     "test:sarsip": "tsx --test tests/sarsip-flow.test.ts",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:setup:academy": "node scripts/setup-academy.mjs",
+    "db:setup:insan-academy": "node scripts/setup-insan-academy.mjs",
     "db:seed": "prisma db seed",
     "db:seed:payment-simulation": "tsx prisma/seed-payment-simulation.ts",
     "db:seed:sarsip": "tsx prisma/seed-sarsip.ts",

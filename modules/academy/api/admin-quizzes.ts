@@ -17,7 +17,7 @@ async function serialized<T>(work: (tx: Prisma.TransactionClient) => Promise<T>)
 }
 
 const questionSelect = {
-  id: true, question: true, order: true,
+  id: true, question: true, order: true, type: true, weight: true, explanation: true,
   options: { orderBy: { id: "asc" }, select: { id: true, label: true, isCorrect: true } },
 } satisfies Prisma.ZakatAcademyQuizQuestionSelect;
 
@@ -41,7 +41,7 @@ export async function getAdminQuiz(courseId: string, chapterId: string, quizId: 
     where: { id: quizId, chapterId, chapter: { courseId } },
     select: {
       id: true, title: true, description: true, passingScore: true, timeLimitMinutes: true,
-      isPublished: true, isActive: true, allowRetake: true, quizDate: true,
+      isPublished: true, isActive: true, allowRetake: true, quizDate: true, closesAt: true, kind: true, releaseDay: true,
       chapter: { select: { title: true } }, _count: { select: { attempts: true } },
       questions: { orderBy: [{ order: "asc" }, { id: "asc" }], select: questionSelect },
     },
@@ -58,11 +58,13 @@ async function scopedQuiz(tx: Prisma.TransactionClient, courseId: string, chapte
 
 async function requireReady(tx: Prisma.TransactionClient, quizId: string) {
   const questions = await tx.zakatAcademyQuizQuestion.findMany({ where: { quizId }, select: {
+    type: true,
     options: { select: { isCorrect: true } },
   } });
   if (!questions.length || questions.some(question => question.options.length < 2 || question.options.length > 10
-    || question.options.filter(option => option.isCorrect).length !== 1)) {
-    throw new AcademyError("Kuis perlu minimal satu pertanyaan dengan 2–10 opsi dan tepat satu jawaban benar sebelum dipublikasikan.");
+    || (question.type === "MULTIPLE" ? !question.options.some(option => option.isCorrect) || question.options.every(option => option.isCorrect) : question.options.filter(option => option.isCorrect).length !== 1)
+    || question.type === "TRUE_FALSE" && question.options.length !== 2)) {
+    throw new AcademyError("Periksa jenis soal, opsi dan kunci jawaban sebelum publikasi.");
   }
 }
 
