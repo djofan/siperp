@@ -53,16 +53,20 @@ export function chapterInput(form: FormData) {
 
 export function lessonInput(form: FormData) {
   const videoProvider = textField(form, "videoProvider", "Provider video");
-  if (videoProvider !== "YOUTUBE" && videoProvider !== "VIMEO" && videoProvider !== "BUNNY") {
+  if (videoProvider !== "AUDIO" && videoProvider !== "YOUTUBE" && videoProvider !== "VIMEO" && videoProvider !== "BUNNY") {
     throw new AcademyError("Provider video tidak didukung.");
   }
-  const validatedProvider: "YOUTUBE" | "VIMEO" | "BUNNY" = videoProvider;
-  const videoUrl = textField(form, "videoUrl", "URL video", 2048);
-  if (!videoEmbedUrl(videoProvider, videoUrl)) throw new AcademyError("URL video tidak cocok dengan provider yang dipilih.");
+  const validatedProvider: "AUDIO" | "YOUTUBE" | "VIMEO" | "BUNNY" = videoProvider;
+    const contentSummary = textField(form, "contentSummary", "Teks materi", 30_000, false) || null;
+    const videoUrl = textField(form, "videoUrl", "URL materi", 2048, videoProvider !== "AUDIO");
+    if (form.get("isPublished") === "on" && !videoUrl && !contentSummary) throw new AcademyError("Isi teks atau audio sebelum publikasi.");
+  if (videoUrl && !(videoProvider === "AUDIO" ? safeResourceUrl(videoUrl) : videoEmbedUrl(videoProvider, videoUrl))) throw new AcademyError("URL materi tidak cocok dengan jenis yang dipilih.");
+  const releaseDay = form.has("releaseDay") ? orderField(form, "releaseDay", "Hari rilis") : 1;
+  if (releaseDay < 1 || releaseDay > 30) throw new AcademyError("Hari rilis harus 1–30.");
   return {
-    ...commonContent(form), videoProvider: validatedProvider, videoUrl,
+    ...commonContent(form), videoProvider: validatedProvider, videoUrl, releaseDay,
     shortDescription: textField(form, "shortDescription", "Deskripsi singkat", 2000, false) || null,
-    contentSummary: textField(form, "contentSummary", "Ringkasan materi", 30_000, false) || null,
+      contentSummary,
     thumbnailUrl: urlField(form, "thumbnailUrl", "Thumbnail"),
   };
 }

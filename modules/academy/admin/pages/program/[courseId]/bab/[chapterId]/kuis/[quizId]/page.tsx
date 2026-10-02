@@ -19,6 +19,8 @@ export default async function Page({ params, searchParams }: {
     <QuizForm action={saveAcademyQuiz.bind(null, courseId, chapterId, quizId)} initial={{
       title: quiz.title, description: quiz.description ?? "", passingScore: quiz.passingScore, timeLimitMinutes: quiz.timeLimitMinutes,
       quizDate: quizDateInput(quiz.quizDate), isPublished: quiz.isPublished, isActive: quiz.isActive, allowRetake: quiz.allowRetake,
+      kind: quiz.kind, closesAt: quizDateInput(quiz.closesAt),
+      releaseDay: quiz.releaseDay,
     }} />
     <section id="pertanyaan" className="mt-8 space-y-4"><h2 className="text-xl font-bold text-foreground">Pertanyaan & opsi</h2>
       <p className="text-sm leading-6 text-foreground/60">Perubahan atau penghapusan pertanyaan tidak mengubah soal dan penilaian percobaan yang sudah dimulai. Pertanyaan terakhir pada kuis terpublikasi tidak dapat dihapus; jadikan draft dahulu.</p>

@@ -1,0 +1,16 @@
+import { prisma } from "@/lib/prisma";
+import { requireAcademyAdmin } from "../../../api/admin-access";
+import { saveCourseSchedule, setParticipantGroup } from "../../../api/intake-actions";
+import { quizDateInput } from "../../../api/admin-quiz-validation";
+import { ActionForm } from "../../../components/ActionForm";
+import { ImportParticipantsForm } from "../../../components/admin/ImportParticipantsForm";
+import { AdminHeading } from "../../../components/admin/AdminUi";
+export default async function IntakePage() {
+  await requireAcademyAdmin();
+  const courses = await prisma.zakatAcademyCourse.findMany({ orderBy: { order: "asc" }, include: { enrollments: { orderBy: { createdAt: "asc" }, take: 200, include: { profile: { select: { phone: true, user: { select: { name: true, email: true } } } } } } } });
+  return <><AdminHeading title="Pendaftaran & grup belajar" description="Pendaftaran lewat web ditutup otomatis saat 200 peserta terdaftar. Ekspor kontak, lalu tambahkan peserta ke grup WhatsApp secara manual." />{courses.map(course => <section key={course.id} className="mb-8 rounded-2xl border border-gray-100 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><h2 className="text-lg font-semibold">{course.title}</h2><p className="mt-1 text-sm text-gray-500">{course.enrollments.length}/{course.quota} peserta · {course.durationDays} hari · {course.enrollments.filter(item => item.groupJoinedAt).length} sudah masuk grup</p></div><a href={`/api/academy/contacts?courseId=${course.id}`} className="rounded-xl border px-4 py-2 text-sm">Unduh kontak (.vcf)</a></div>
+    <details className="my-5"><summary className="cursor-pointer font-semibold text-green-700">Tanggal mulai pembelajaran</summary><ActionForm className="mt-4 max-w-md" action={saveCourseSchedule.bind(null, course.id)} label="Simpan tanggal mulai"><label className="block text-sm">Mulai (WIB)<input name="startsAt" type="datetime-local" defaultValue={quizDateInput(course.startsAt)} className="mt-2 w-full rounded-xl border p-3" /></label><p className="text-xs text-gray-500">Program resmi dimulai setelah kuota terpenuhi. Audio mengikuti hari rilis 1–30. Program simulasi dapat dimulai tanpa menunggu kuota.</p></ActionForm></details>
+    <details className="mb-5"><summary className="cursor-pointer font-semibold text-green-700">Impor / input peserta melalui CSV</summary><ImportParticipantsForm courseId={course.id} /></details>
+    <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-gray-500"><th className="p-3">Peserta</th><th className="p-3">WhatsApp</th><th className="p-3">Grup belajar</th></tr></thead><tbody>{course.enrollments.map(item => <tr key={item.id} className="border-b border-gray-100"><td className="p-3">{item.profile.user.name}<p className="text-xs text-gray-500">{item.profile.user.email}</p></td><td className="p-3">{item.profile.phone ?? "Belum diisi"}</td><td className="p-3"><ActionForm action={setParticipantGroup.bind(null, item.id, !item.groupJoinedAt)} label={item.groupJoinedAt ? "Batalkan tanda masuk grup" : "Tandai sudah masuk grup"} /></td></tr>)}</tbody></table></div>
+  </section>)}</>;
+}

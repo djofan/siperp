@@ -8,7 +8,7 @@ export default async function CoursesPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const search = typeof params.q === "string" ? params.q.slice(0, 100).trim() : "";
   const courses = await listPublicCourses(search);
-  return <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6"><PageHeading eyebrow="Program belajar" title="Temukan langkah belajarmu.">Pilih program dan pelajari materinya sesuai urutan.</PageHeading>
+  return <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6"><PageHeading title="Program Belajar">Pilih program untuk mulai perjalanan belajar zakat Anda.</PageHeading>
     <form className="mb-8 flex items-end gap-3" action="/academy/program"><label className="flex-1 text-sm">Cari program<input name="q" maxLength={100} defaultValue={search} className={inputClass} placeholder="Nama program" /></label><button className={linkButton}>Cari</button></form>
     {courses.length ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{courses.map((course) => <CourseCard key={course.id} course={course} />)}</div> : <EmptyState>{search ? "Tidak ada program yang sesuai pencarian." : "Program belajar segera hadir."}</EmptyState>}
   </div>;

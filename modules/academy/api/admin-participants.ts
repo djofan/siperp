@@ -2,7 +2,7 @@ import "server-only";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AcademyError } from "./errors";
-import { isCourseComplete } from "./policy";
+import { isCourseComplete, weightedGrade } from "./policy";
 import { adminPage, certificateInput } from "./admin-participant-validation";
 
 // Internal services: pages and Server Actions must call requireAcademyAdmin first.
@@ -25,7 +25,7 @@ async function progressFor(enrollments: Enrollment[], db: Prisma.TransactionClie
   const ids = enrollments.map(item => item.id);
   const profileIds = [...new Set(enrollments.map(item => item.profileId))];
   const courseIds = [...new Set(enrollments.map(item => item.courseId))];
-  const [lessons, quizzes] = await Promise.all([
+  const [lessons, quizzes, gradeQuizzes, gradeAttempts, weightRows] = await Promise.all([
     db.$queryRaw<LessonStats[]>(Prisma.sql`
       SELECT e.id, COUNT(l.id) AS total,
         COUNT(CASE WHEN p.completed = TRUE THEN 1 END) AS completed,
@@ -55,7 +55,12 @@ async function progressFor(enrollments: Enrollment[], db: Prisma.TransactionClie
       WHERE e.id IN (${Prisma.join(ids)})
       GROUP BY e.id
     `),
+    db.zakatAcademyQuiz.findMany({ where: { isPublished: true, chapter: { isPublished: true, courseId: { in: courseIds } } }, select: { id: true, kind: true, chapter: { select: { courseId: true } } } }),
+    db.zakatAcademyQuizAttempt.findMany({ where: { profileId: { in: profileIds }, isCompleted: true, quiz: { chapter: { courseId: { in: courseIds } } } }, select: { profileId: true, quizId: true, score: true } }),
+    db.zakatAcademySetting.findMany({ where: { key: { in: ["daily_weight", "weekly_weight", "final_weight"] } }, select: { key: true, value: true } }),
   ]);
+  const weightMap = new Map(weightRows.map(row => [row.key, row.value]));
+  const weights = { DAILY: Number(weightMap.get("daily_weight") ?? 20), WEEKLY: Number(weightMap.get("weekly_weight") ?? 30), FINAL: Number(weightMap.get("final_weight") ?? 50) };
   const lessonMap = new Map(lessons.map(item => [item.id, item]));
   const quizMap = new Map(quizzes.map(item => [item.id, item]));
   return enrollments.map(enrollment => {
@@ -66,7 +71,8 @@ async function progressFor(enrollments: Enrollment[], db: Prisma.TransactionClie
     const totalQuizzes = Number(quiz?.total ?? 0);
     const passedQuizzes = Number(quiz?.passed ?? 0);
     const dates = [lesson?.finishedAt, quiz?.finishedAt].filter((date): date is Date => !!date);
-    const isEligible = enrollment.course.isPublished && isCourseComplete(totalLessons, completedLessons, totalQuizzes, passedQuizzes);
+    const grading = weightedGrade(gradeQuizzes.filter(quiz => quiz.chapter.courseId === enrollment.courseId), gradeAttempts.filter(attempt => attempt.profileId === enrollment.profileId).map(attempt => ({ quizId: attempt.quizId, score: Number(attempt.score ?? 0) })), weights);
+    const isEligible = enrollment.course.isPublished && isCourseComplete(totalLessons, completedLessons, totalQuizzes, passedQuizzes) && grading.complete && grading.score >= 70;
     const completedAt = isEligible && dates.length ? new Date(Math.max(...dates.map(date => date.getTime()))) : null;
     return { ...enrollment, totalLessons, completedLessons, totalQuizzes, passedQuizzes,
       percent: totalLessons ? Math.round(completedLessons / totalLessons * 100) : 0,
