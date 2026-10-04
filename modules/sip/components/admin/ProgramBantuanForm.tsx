@@ -78,28 +78,28 @@ export function ProgramBantuanForm({
         <div className="flex flex-col gap-5">
           <SipImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
 
-          <div className="flex items-center justify-between rounded-2xl bg-sip-primary-50/60 dark:bg-white/5 px-4 py-3.5">
-            <span className="text-sm font-medium text-sip-primary-900 dark:text-white">Pin di halaman Program</span>
+          <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3.5">
+            <span className="text-sm font-medium text-white">Pin di halaman Program</span>
             <SipToggle checked={isPinned} onChange={setIsPinned} label="Pin" />
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-                Judul<span className="ml-0.5 text-red-600">*</span>
+              <label className="text-sm font-medium text-white">
+                Judul<span className="ml-0.5 text-red-400">*</span>
               </label>
               <input
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 required
                 placeholder="mis. Bantuan Kesehatan"
-                className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+                className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-                Slug (URL)<span className="ml-0.5 text-red-600">*</span>
+              <label className="text-sm font-medium text-white">
+                Slug (URL)<span className="ml-0.5 text-red-400">*</span>
               </label>
               <input
                 value={slug}
@@ -109,33 +109,33 @@ export function ProgramBantuanForm({
                 }}
                 required
                 placeholder="bantuan-kesehatan"
-                className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+                className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Deskripsi<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Deskripsi<span className="ml-0.5 text-red-400">*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-2xl bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
 
-          <div className="flex flex-col gap-1.5 border-t border-sip-primary-100 dark:border-white/10 pt-5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Link Campaign LAZSIP (opsional)</label>
+          <div className="flex flex-col gap-1.5 pt-2">
+            <label className="text-sm font-medium text-white">Link Campaign LAZSIP (opsional)</label>
             <input
               value={campaignUrl}
               onChange={(e) => setCampaignUrl(e.target.value)}
               placeholder="/lazsip/donasi/xxxxx"
-              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
-            <p className="text-xs text-sip-primary-800/50 dark:text-white/45">
+            <p className="text-xs text-white/45">
               Tombol &quot;Infaq untuk program ini&quot; akan mengarah ke link ini. Kosongkan kalau belum ada campaign terkait.
             </p>
           </div>
@@ -143,7 +143,7 @@ export function ProgramBantuanForm({
       </div>
 
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
         <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Program"}
         </SipLoadingButton>

@@ -1,18 +1,5 @@
 import { Button } from "@/modules/lazsip/components/ui/Button";
 
-function PinBadge() {
-  return (
-    <span
-      title="Disematkan admin"
-      className="absolute -left-2 -top-2 z-10 flex h-7 w-7 rotate-[-20deg] items-center justify-center rounded-full bg-lazsip-secondary-500 text-white shadow-md shadow-lazsip-secondary-900/30"
-    >
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
-        <path d="M14.5 2.5a1 1 0 0 1 1 1v5.6l3.6 3.6a1 1 0 0 1-.7 1.7H13v6.1a1 1 0 0 1-2 0V14.4H5.6a1 1 0 0 1-.7-1.7l3.6-3.6V3.5a1 1 0 0 1 1-1z" />
-      </svg>
-    </span>
-  );
-}
-
 export function PinnedGridSection<T>({
   pinnedItems,
   gridItems,
@@ -50,8 +37,8 @@ export function PinnedGridSection<T>({
       {visiblePinnedItems.length > 0 && (
         <div className="lazsip-scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto px-4 pt-2">
           {visiblePinnedItems.map((item, i) => (
-            <div key={i} className={`relative ${pinnedItemClassName}`}>
-              <PinBadge />
+            // Penanda pin dirender oleh varian `featured` tiap kartu (PinnedMark), bukan di sini.
+            <div key={i} className={pinnedItemClassName}>
               {(renderPinnedItem ?? renderItem)(item)}
             </div>
           ))}

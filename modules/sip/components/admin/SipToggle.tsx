@@ -19,13 +19,13 @@ export function SipToggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        checked ? "bg-sip-primary-900" : "bg-sip-primary-100"
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sip-lime/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black disabled:cursor-not-allowed disabled:opacity-50 ${
+        checked ? "bg-sip-lime" : "bg-white/15 hover:bg-white/20"
       }`}
     >
       <span
-        className={`inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow transition-transform ${
-          checked ? "translate-x-5.5" : "translate-x-1"
+        className={`inline-block h-4.5 w-4.5 transform rounded-full shadow transition-transform duration-200 ${
+          checked ? "translate-x-5.5 bg-sip-ink" : "translate-x-1 bg-white/80"
         }`}
       />
     </button>

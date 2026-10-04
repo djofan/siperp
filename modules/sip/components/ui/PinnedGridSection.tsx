@@ -1,15 +1,17 @@
 import { Button } from "@/modules/sip/components/ui/Button";
 import { CarouselRow } from "@/modules/sip/components/ui/CarouselRow";
+import { SectionEmptyState } from "@/modules/sip/components/ui/SectionEmptyState";
 
 function PinBadge() {
   return (
     <span
       title="Disematkan admin"
-      className="absolute -left-2 -top-2 z-10 flex h-7 w-7 rotate-[-20deg] items-center justify-center rounded-full bg-sip-secondary-500 text-white shadow-md shadow-sip-secondary-900/30"
+      className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-sip-primary-900 backdrop-blur-sm"
     >
-      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3.5 w-3.5">
+      <svg viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 text-sip-primary-500">
         <path d="M14.5 2.5a1 1 0 0 1 1 1v5.6l3.6 3.6a1 1 0 0 1-.7 1.7H13v6.1a1 1 0 0 1-2 0V14.4H5.6a1 1 0 0 1-.7-1.7l3.6-3.6V3.5a1 1 0 0 1 1-1z" />
       </svg>
+      Pilihan
     </span>
   );
 }
@@ -21,7 +23,7 @@ export function PinnedGridSection<T>({
   renderPinnedItem,
   maxPinnedItems = 5,
   maxGridItems = 12,
-  gridClassName = "grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4",
+  gridClassName = "grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-4",
   gridAsCarousel = false,
   gridItemClassName = "w-[45vw] max-w-[220px] shrink-0 snap-start sm:max-w-[240px] lg:w-[calc(16.666%-14px)] lg:max-w-none",
   seeAllHref,
@@ -51,7 +53,7 @@ export function PinnedGridSection<T>({
   const visibleGridItems = gridItems.slice(0, maxGridItems);
 
   if (pinnedItems.length === 0 && gridItems.length === 0) {
-    return <p className="text-sm text-sip-primary-800/60">{emptyLabel}</p>;
+    return <SectionEmptyState message={emptyLabel} />;
   }
 
   return (
@@ -59,7 +61,7 @@ export function PinnedGridSection<T>({
       {visiblePinnedItems.length > 0 && (
         <CarouselRow
           items={visiblePinnedItems}
-          itemClassName="relative w-[75vw] max-w-[260px] shrink-0 snap-start sm:w-[calc(50%-10px)] sm:max-w-none lg:w-[calc(33.333%-14px)]"
+          itemClassName="relative w-[80vw] max-w-[340px] shrink-0 snap-start sm:w-[calc(50%-12px)] sm:max-w-none lg:w-[calc(33.333%-16px)]"
           renderItem={(item) => (
             <>
               <PinBadge />
@@ -80,7 +82,7 @@ export function PinnedGridSection<T>({
           </div>
         ))}
 
-      <Button href={seeAllHref} variant="secondary" icon="arrow" className="self-center">
+      <Button href={seeAllHref} variant="soft" icon="arrow" className="self-center">
         {seeAllLabel}
       </Button>
     </div>

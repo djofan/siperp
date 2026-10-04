@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 /*
- * Toggle tema gelap/terang manual (bukan prefers-color-scheme) — class `.dark`
- * dipasang oleh useTheme() pada wrapper shell admin (Core/LAZSIP/SIP), BUKAN
- * pada <html>, supaya halaman publik (donor-facing) tidak pernah ikut gelap.
+ * Semua shell admin (Core/LAZSIP/SARSIP/SIP) sekarang permanen gelap — tidak ada
+ * lagi toggle terang/gelap. Class `.dark` dipasang hardcode langsung di root tiap
+ * *AdminShellChrome, BUKAN pada <html>, supaya halaman publik (donor-facing) dan
+ * modul Academy (dikerjakan tim lain, tetap pakai tema asalnya) tidak ikut gelap.
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -101,19 +102,26 @@
 
   --color-sip-accent: #ffa301;
   --color-sip-accent-hover: #e69200;
+  /* Aksen lime terang khusus landing page publik SIP (referensi desain agency/service-site) —
+   * dipisah dari sip-accent (oranye) yang masih dipakai CTA WhatsApp di halaman lain, supaya
+   * gak ikut berubah warna tanpa diminta. */
+  --color-sip-lime: #b7e63e;
+  --color-sip-lime-hover: #a1d02c;
   --color-sip-cream: #f7f5f0;
   --color-sip-ink: #191616;
 }
 
 /*
- * Token tema gelap Core — hanya aktif di dalam wrapper ber-class `.dark` (lihat
- * useTheme() + AdminShellChrome). Karena ini cuma me-redefine CSS custom
+ * Token tema gelap Core — permanen aktif lewat class `.dark` hardcode di root
+ * AdminShellChrome (bukan toggle lagi). Karena ini cuma me-redefine CSS custom
  * property yang sama, semua kelas Tailwind Core yang sudah dipakai
  * (text-foreground, bg-surface, dst) otomatis ikut berubah.
+ * Surface sengaja dikasih undertone hijau gelap (bukan abu/hitam netral) biar
+ * senada dengan gradasi hijau di latar shell (lihat AdminGradientBackground).
  * Token lazsip- dan sip- SENGAJA tidak di-override di sini — dipakai juga
  * sebagai warna solid (mis. bg-lazsip-primary-900 di item sidebar aktif),
- * jadi tema gelap LAZSIP/SIP diatur langsung lewat class `dark:` di komponen
- * shell-nya masing-masing (LazsipAdminShellChrome, SipAdminShellChrome, dst).
+ * jadi tema gelap LAZSIP/SARSIP/SIP diatur langsung lewat warna hardcode di
+ * komponen shell-nya masing-masing (LazsipAdminShellChrome, SipAdminShellChrome, dst).
  */
 .dark {
   /* Bikin kontrol form native (date picker, dst) ikut gelap — ini yang
@@ -122,14 +130,15 @@
      dipaksa terang terus, lihat aturan `select`/`select option` di bawah. */
   color-scheme: dark;
 
-  --background: #0b0d0c;
+  --background: #0a0d09;
   --foreground: #e7e9ea;
 
   /* Solid (bukan rgba tembus pandang) — wrapper shell butuh kanvas gelap
-     opaque yang jadi dasar, bukan overlay transparan di atas body putih. */
-  --color-surface: #16191a;
-  --color-surface-muted: #0f1211;
-  --color-border: #272b29;
+     opaque yang jadi dasar, bukan overlay transparan di atas body putih.
+     Undertone hijau (bukan abu netral) biar senada gradasi di belakangnya. */
+  --color-surface: #141a12;
+  --color-surface-muted: #0e130c;
+  --color-border: #263122;
 
   --color-accent: #86c257;
   --color-accent-hover: #9ad06d;
@@ -249,9 +258,12 @@ select {
   --color-sip-secondary-900: var(--color-sip-secondary-900);
   --color-sip-accent: var(--color-sip-accent);
   --color-sip-accent-hover: var(--color-sip-accent-hover);
+  --color-sip-lime: var(--color-sip-lime);
+  --color-sip-lime-hover: var(--color-sip-lime-hover);
   --color-sip-cream: var(--color-sip-cream);
   --color-sip-ink: var(--color-sip-ink);
   --font-sip-sans: var(--font-sip-sans);
+  --font-sip-display: var(--font-sip-display);
 }
 
 body {
@@ -352,5 +364,39 @@ body {
 }
 
 .sip-public section[id] {
-  scroll-margin-top: 104px;
+  scroll-margin-top: 88px;
+}
+
+/*
+ * Latar section landing SIP: dasar putih, section selang-seling dapat tint hijau logo
+ * (sip-primary-50) yang memudar masuk & keluar — tidak ada batas keras/garis antar section.
+ */
+.sip-band-tint {
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--color-sip-primary-50) 70%, #ffffff) 22%,
+    color-mix(in srgb, var(--color-sip-primary-50) 70%, #ffffff) 78%,
+    #ffffff 100%
+  );
+}
+
+/* Animasi muncul saat scroll — lihat ScrollReveal.tsx. Hanya aktif setelah JS siap. */
+.sip-reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sip-reveal-ready [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sip-reveal-ready [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }

@@ -39,9 +39,12 @@ export default async function SuperadminOverviewPage({ searchParams }: { searchP
         {recentActivity.length === 0 ? (
           <EmptyState className="py-12">Belum ada aktivitas.</EmptyState>
         ) : (
-          <ul className={panelClasses("divide-y divide-border")}>
+          <ul className={panelClasses("flex flex-col gap-1 p-2")}>
             {recentActivity.map((entry) => (
-              <li key={entry.id} className="flex items-center justify-between gap-4 px-5 py-3.5 text-sm">
+              <li
+                key={entry.id}
+                className="flex items-center justify-between gap-4 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-foreground/5"
+              >
                 <span className="text-foreground">{entry.message}</span>
                 <span className="shrink-0 text-xs text-foreground/40">
                   {formatRelativeTime(entry.createdAt)}

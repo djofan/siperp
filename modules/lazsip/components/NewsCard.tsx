@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { PINNED_OVERLAY_STYLE } from "@/modules/lazsip/components/ui/pinnedOverlay";
+import { PinnedMark } from "@/modules/lazsip/components/ui/PinnedMark";
 import { formatDate } from "@/modules/lazsip/components/format";
 
 interface NewsCardProps {
@@ -21,6 +22,9 @@ export function NewsCard({ id, title, content, image, createdAt, featured = fals
       >
         <ImagePlaceholder variant="news" src={image} alt={title} className="absolute inset-0 h-full w-full" />
         <div className="pointer-events-none absolute inset-0" style={PINNED_OVERLAY_STYLE} />
+        <div className="pointer-events-none relative z-10 flex items-center gap-2 p-3.5">
+          <PinnedMark />
+        </div>
         <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
           <span className="flex items-center gap-1.5 text-xs font-medium text-white/75">

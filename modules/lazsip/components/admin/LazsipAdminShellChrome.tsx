@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { LazsipSidebar } from "@/modules/lazsip/components/admin/LazsipSidebar";
 import { LazsipTopbar } from "@/modules/lazsip/components/admin/LazsipTopbar";
-import { useTheme } from "@/lib/useTheme";
-import { cn } from "@/lib/utils";
+import { AdminGradientBackground } from "@/components/admin-shell/AdminGradientBackground";
 
 const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
@@ -19,7 +18,6 @@ export function LazsipAdminShellChrome({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   // Sidebar mobile di-mount dulu dalam keadaan tergeser keluar layar, baru di-flip ke
   // posisi kelihatan di frame berikutnya — sama seperti pola modal Cek Status — supaya
@@ -36,9 +34,10 @@ export function LazsipAdminShellChrome({
   }
 
   return (
-    <div className={cn("flex h-dvh overflow-hidden text-foreground bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
-      <div className="hidden shrink-0 shadow-[1px_0_3px_rgba(0,0,0,0.05)] lg:block dark:border-r dark:border-white/10">
-        <LazsipSidebar />
+    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
+      <AdminGradientBackground glow="115,174,67" />
+      <div className="relative z-10 hidden shrink-0 lg:block">
+        <LazsipSidebar userName={userName} />
       </div>
 
       {mobileOpen && (
@@ -49,21 +48,15 @@ export function LazsipAdminShellChrome({
             aria-hidden
           />
           <div
-            className={`absolute inset-y-0 left-0 shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
+            className={`absolute inset-y-0 left-0 bg-[#0a0d08] shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
           >
-            <LazsipSidebar onNavigate={closeMobileSidebar} />
+            <LazsipSidebar userName={userName} onNavigate={closeMobileSidebar} />
           </div>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <LazsipTopbar
-          userName={userName}
-          onMenuClick={() => setMobileOpen(true)}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-          pendingTransactionsCount={pendingTransactionsCount}
-        />
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+        <LazsipTopbar onMenuClick={() => setMobileOpen(true)} pendingTransactionsCount={pendingTransactionsCount} />
         <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

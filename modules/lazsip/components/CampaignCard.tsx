@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { ProgressBar } from "@/modules/lazsip/components/ui/ProgressBar";
 import { PINNED_OVERLAY_STYLE } from "@/modules/lazsip/components/ui/pinnedOverlay";
+import { PinnedMark } from "@/modules/lazsip/components/ui/PinnedMark";
 import { formatRupiah, formatNumber } from "@/modules/lazsip/components/format";
 
 interface CampaignCardProps {
@@ -27,6 +28,9 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
         <Link href={detailHref} aria-label={title} className="absolute inset-0 z-0" />
         <ImagePlaceholder variant="campaign" src={image} alt={title} className="absolute inset-0 h-full w-full" />
         <div className="pointer-events-none absolute inset-0" style={PINNED_OVERLAY_STYLE} />
+        <div className="pointer-events-none relative z-10 flex items-center gap-2 p-3.5">
+          <PinnedMark />
+        </div>
         <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
           {description && <p className="line-clamp-1 text-xs text-white/75">{description}</p>}

@@ -1,15 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { sipSiteConfig } from "@/modules/sip/components/siteConfig";
+import { filterNavByHidden, sipSiteConfig } from "@/modules/sip/components/siteConfig";
 import { Button } from "@/modules/sip/components/ui/Button";
 import { SipMark } from "@/modules/sip/components/SipMark";
 
-export function Navbar() {
+export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
+  const nav = filterNavByHidden(sipSiteConfig.nav, hiddenAnchors);
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+
+  // Navbar transparan di paling atas, baru dapat latar putih + bayangan halus setelah
+  // halaman di-scroll — supaya hero terasa lega.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   // Tombol "Pengajuan Bantuan" langsung ke WhatsApp — dulu ngarah ke section
   // Kontak di landing page, tapi section itu dihapus karena info kontak udah
@@ -42,20 +53,24 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-sip-primary-900/8 bg-sip-cream/90 backdrop-blur-md">
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300 ${
+        scrolled || open ? "bg-white/80 backdrop-blur-xl" : "bg-transparent"
+      }`}
+    >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <Link href="/sip" onClick={handleLogoClick} className="flex items-center gap-2.5">
           <SipMark />
-          <span className="text-lg font-extrabold tracking-tight text-sip-primary-900">{sipSiteConfig.name}</span>
+          <span className="text-base font-bold leading-tight tracking-tight text-sip-primary-900 sm:text-lg">{sipSiteConfig.fullName}</span>
         </Link>
 
         <div className="hidden items-center gap-8 lg:flex">
-          {sipSiteConfig.nav.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={(e) => handleNavClick(e, item.href)}
-              className="border-b-2 border-transparent py-1 text-sm font-medium text-sip-primary-800/75 transition-colors hover:border-sip-primary-500 hover:text-sip-primary-900"
+              className="text-sm font-medium text-sip-primary-900/60 transition-colors hover:text-sip-primary-900"
             >
               {item.label}
             </Link>
@@ -65,7 +80,7 @@ export function Navbar() {
         <div className="hidden lg:block">
           <Button
             href={bantuanHref}
-            variant="accent"
+            variant="primary"
             className="px-5 py-2.5"
             target={waNumber ? "_blank" : undefined}
             rel={waNumber ? "noopener noreferrer" : undefined}
@@ -81,7 +96,7 @@ export function Navbar() {
           aria-expanded={open}
           aria-controls="sip-mobile-menu"
           onClick={() => setOpen((v) => !v)}
-          className="flex h-10 w-10 items-center justify-center text-sip-primary-900 transition-colors lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-full text-sip-primary-900 transition-colors hover:bg-sip-primary-50 lg:hidden"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
             {open ? (
@@ -94,21 +109,22 @@ export function Navbar() {
       </nav>
 
       {open && (
-        <div id="sip-mobile-menu" className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-sip-primary-900/8 bg-sip-cream px-4 py-5 shadow-lg sm:px-6 lg:hidden">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4">
-            {sipSiteConfig.nav.map((item) => (
+        <div id="sip-mobile-menu" className="max-h-[calc(100dvh-5rem)] overflow-y-auto px-4 pb-6 pt-2 sm:px-6 lg:hidden">
+          <div className="mx-auto flex max-w-6xl flex-col gap-1">
+            {nav.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
-                className="text-sm font-medium text-sip-primary-800/80"
+                className="rounded-xl px-3 py-2.5 text-sm font-medium text-sip-primary-900/75 transition-colors hover:bg-sip-primary-50"
               >
                 {item.label}
               </Link>
             ))}
             <Button
               href={bantuanHref}
-              variant="accent"
+              variant="primary"
+              className="mt-3"
               target={waNumber ? "_blank" : undefined}
               rel={waNumber ? "noopener noreferrer" : undefined}
               onClick={(e) => handleNavClick(e, bantuanHref)}

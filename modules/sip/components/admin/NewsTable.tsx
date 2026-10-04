@@ -1,5 +1,6 @@
 "use client";
 
+import { useSipConfirm } from "@/modules/sip/components/admin/SipConfirmDialog";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SipToggle } from "@/modules/sip/components/admin/SipToggle";
@@ -33,6 +34,7 @@ const STATUS_OPTIONS = [
 
 export function NewsTable({ news }: { news: NewsRow[] }) {
   const router = useRouter();
+  const [confirm, confirmDialog] = useSipConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [view, setView] = useState<SipAdminViewMode>("list");
@@ -55,7 +57,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
   }
 
   async function handleDelete(id: string, title: string) {
-    if (!window.confirm(`Hapus berita "${title}"?`)) return;
+    if (!(await confirm({ title: "Hapus berita?", message: `"${title}" akan dihapus permanen dan tidak bisa dikembalikan.` }))) return;
     setDeletingId(id);
     await fetch(`/api/sip/news/${id}`, { method: "DELETE" });
     setDeletingId(null);
@@ -75,6 +77,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
 
   return (
     <div>
+      {confirmDialog}
       <SipAdminFilterBar>
         <SipAdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul berita..." />
         <SipAdminFilterSelect value={statusFilter} onChange={setStatusFilter} options={STATUS_OPTIONS} ariaLabel="Filter status" />
@@ -91,7 +94,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[680px] text-left text-sm">
               <thead>
-                <tr className="border-b border-sip-primary-100 dark:border-white/10 bg-sip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-sip-primary-700/70 dark:text-white/55">
+                <tr className="bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wider text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Pinned</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
@@ -99,28 +102,28 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sip-primary-50 dark:divide-white/10">
+              <tbody>
                 {filtered.map((item) => (
-                  <tr key={item.id} className="transition-colors hover:bg-sip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={item.id} className="transition-colors hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       {item.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={item.image} alt="" className="h-12 w-16 rounded-xl border border-sip-primary-100/80 object-cover" />
+                        <img src={item.image} alt="" className="h-12 w-16 rounded-xl object-cover" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-sip-primary-50 dark:bg-white/10" />
+                        <div className="h-12 w-16 rounded-xl bg-white/10" />
                       )}
                     </td>
                     <td className="px-4 py-3.5">
                       <SipToggle checked={item.isPinned} onChange={(v) => saveChange(item, { isPinned: v })} label="Pinned" disabled={pendingIds.has(item.id)} />
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-sip-primary-900 dark:text-white">{item.title}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-white">{item.title}</td>
                     <td className="px-4 py-3.5">
                       <button
                         type="button"
                         onClick={() => saveChange(item, { status: item.status === "published" ? "draft" : "published" })}
                         disabled={pendingIds.has(item.id)}
                         className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                          item.status === "published" ? "bg-sip-secondary-50 text-sip-secondary-700" : "bg-sip-primary-900/5 text-sip-primary-900/50 dark:text-white/50"
+                          item.status === "published" ? "bg-sip-lime/15 text-sip-lime hover:bg-sip-lime/25" : "bg-white/[0.06] text-white/50 hover:bg-white/10"
                         }`}
                       >
                         {item.status === "published" ? "Published" : "Draft"}

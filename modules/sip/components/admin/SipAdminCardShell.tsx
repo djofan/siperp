@@ -12,7 +12,7 @@ export function SipOverlayCard({
   topRight?: React.ReactNode;
 }) {
   return (
-    <div className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-sip-primary-800">
+    <div className="group relative aspect-[3/4] overflow-hidden rounded-2xl bg-white/[0.04]">
       {image ? (
         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
         <img
@@ -21,7 +21,7 @@ export function SipOverlayCard({
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center text-sip-primary-400">
+        <div className="absolute inset-0 flex items-center justify-center text-white/35">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.6-4.6a2 2 0 0 1 2.8 0L16 16m-2-2 1.6-1.6a2 2 0 0 1 2.8 0L20 14M4 6h16v12H4V6z" />
             <circle cx="9" cy="9" r="1.5" />
@@ -60,7 +60,7 @@ export function SipOverlayIconButton({
       disabled={disabled}
       aria-label={label}
       className={`flex h-6 w-6 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-        tone === "danger" ? "text-red-300 hover:bg-red-500/60 hover:text-white" : "text-white hover:bg-white/25"
+        tone === "danger" ? "text-red-300 hover:bg-red-500/150/60 hover:text-white" : "text-white hover:bg-white/25"
       }`}
     >
       {children}

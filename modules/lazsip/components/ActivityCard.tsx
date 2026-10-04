@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { PINNED_OVERLAY_STYLE } from "@/modules/lazsip/components/ui/pinnedOverlay";
+import { PinnedMark } from "@/modules/lazsip/components/ui/PinnedMark";
 import { formatDate, formatCalendarParts } from "@/modules/lazsip/components/format";
 
 interface ActivityCardProps {
@@ -22,9 +23,12 @@ export function ActivityCard({ id, title, description, image, date, featured = f
       >
         <ImagePlaceholder variant="activity" src={image} alt={title} className="absolute inset-0 h-full w-full" />
         <div className="pointer-events-none absolute inset-0" style={PINNED_OVERLAY_STYLE} />
-        <span className="relative z-10 m-3.5 w-fit self-end rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-          {day} {month}
-        </span>
+        <div className="relative z-10 flex items-center justify-between gap-2 p-3.5">
+          <PinnedMark />
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            {day} {month}
+          </span>
+        </div>
         <div className="relative z-10 mt-auto flex flex-col gap-1 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
           <p className="line-clamp-1 text-xs text-white/75">{description}</p>

@@ -71,58 +71,58 @@ export function PenyaluranBantuanForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Judul<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Judul<span className="ml-0.5 text-red-400">*</span>
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
               placeholder="Judul penyaluran bantuan"
-              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Lokasi</label>
+            <label className="text-sm font-medium text-white">Lokasi</label>
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Mis. Cianjur, Jawa Barat"
-              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Deskripsi<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Deskripsi<span className="ml-0.5 text-red-400">*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={6}
               required
-              className="rounded-2xl bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-2xl bg-white/5 px-4 py-2.5 text-sm leading-relaxed text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Tanggal<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Tanggal<span className="ml-0.5 text-red-400">*</span>
             </label>
             <input
               type="date"
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 py-2.5 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="rounded-full bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
         </div>
       </div>
 
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
         <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Penyaluran Bantuan"}
         </SipLoadingButton>
