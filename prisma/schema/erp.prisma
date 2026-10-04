@@ -1,0 +1,64 @@
+model CoreContact {
+  id String @id @default(cuid())
+  name String
+  phone String?
+  email String?
+  notes String? @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  sources CoreContactSource[]
+  @@index([phone])
+  @@index([email])
+  @@map("core_contacts")
+}
+
+model CoreContactSource {
+  id String @id @default(cuid())
+  contactId String @map("contact_id")
+  source String
+  sourceId String @map("source_id")
+  role String
+  name String
+  phone String?
+  email String?
+  syncedAt DateTime @default(now()) @map("synced_at")
+  contact CoreContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  @@unique([source, sourceId])
+  @@map("core_contact_sources")
+}
+
+model CoreExpense {
+  id String @id @default(cuid())
+  accountId String @map("account_id")
+  moduleSource String @map("module_source")
+  fundType String @map("fund_type")
+  amount Int
+  description String @db.Text
+  reference String @unique
+  spentAt DateTime @map("spent_at")
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  bankLine CoreBankLine?
+  @@index([accountId, spentAt])
+  @@map("core_expenses")
+}
+
+model CoreBankLine {
+  id String @id @default(cuid())
+  accountId String @map("account_id")
+  bookedAt DateTime @map("booked_at")
+  reference String
+  description String @db.Text
+  direction String
+  amount Int
+  fingerprint String @unique
+  paymentId String? @unique @map("payment_id")
+  expenseId String? @unique @map("expense_id")
+  matchNote String? @map("match_note") @db.Text
+  matchedBy String? @map("matched_by")
+  matchedAt DateTime? @map("matched_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  expense CoreExpense? @relation(fields: [expenseId], references: [id], onDelete: Restrict)
+  @@index([accountId, bookedAt])
+  @@map("core_bank_lines")
+}

@@ -36,6 +36,9 @@ export default async function DashboardLayout({
       heading: "Superadmin",
       items: [
         { href: "/admin/super", label: "Overview" },
+        { href: "/admin/super/kontak", label: "Kontak Terpadu" },
+        { href: "/admin/super/keuangan", label: "Keuangan & Rekonsiliasi" },
+        { href: "/admin/super/backup", label: "Backup & Pemulihan" },
         { href: "/admin/super/akun", label: "Kelola Akun" },
         { href: "/admin/super/modul", label: "Modul Terdaftar" },
         { href: "/admin/super/rekening-payment", label: "Rekening Pembayaran" },
