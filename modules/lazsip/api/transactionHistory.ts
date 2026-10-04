@@ -14,7 +14,7 @@ export interface HistoryItem {
 
 /** Riwayat lengkap (semua status) donasi + zakat milik satu donor — dipakai Cek Riwayat
  * publik (§3.11.B) dan halaman detail donatur admin (§4.3). */
-export async function getDonorTransactionHistory(donorId: string): Promise<HistoryItem[]> {
+export async function getDonorTransactionHistory(donorId: string, syncStatus = true): Promise<HistoryItem[]> {
   const queryTransactions = () => prisma.paymentTransaction.findMany({ where: { donorId, moduleSource: "lazsip" } });
   const [initialTransactions, campaigns, zakatDetails, legacyDonations, legacyZakat] = await Promise.all([
     queryTransactions(),
@@ -25,7 +25,7 @@ export async function getDonorTransactionHistory(donorId: string): Promise<Histo
   ]);
   // Sinkron status pending gateway ke Midtrans dulu — halaman detail donatur admin gak boleh
   // nunjukin "Pending" basi kalau donatur ini sebenarnya sudah bayar.
-  const newTransactions = (await syncPendingTransactions(initialTransactions)) ? await queryTransactions() : initialTransactions;
+  const newTransactions = (syncStatus && await syncPendingTransactions(initialTransactions)) ? await queryTransactions() : initialTransactions;
 
   const campaignTitleById = new Map(campaigns.map((c) => [c.id, c.title]));
   const zakatTypeById = new Map(zakatDetails.map((d) => [d.id, d.zakatType]));

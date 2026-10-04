@@ -27,16 +27,16 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       onClose={onClose}
       onCancel={onClose}
       className={cn(
-        "w-full max-w-md rounded-2xl border border-border bg-surface p-6 shadow-xl backdrop:bg-black/40",
+        "fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-4 text-foreground shadow-xl backdrop:bg-black/40 sm:p-6",
         className
       )}
     >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="min-w-0 break-words text-lg font-semibold text-foreground">{title}</h2>
         <button
           type="button"
           onClick={onClose}
-          className="text-foreground/50 hover:text-foreground"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/70 hover:bg-surface-muted hover:text-foreground"
           aria-label="Tutup"
         >
           ✕

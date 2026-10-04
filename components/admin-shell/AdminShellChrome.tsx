@@ -31,7 +31,7 @@ export function AdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden">
+    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
       <AdminGradientBackground glow="116,175,39" placement="top" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <Sidebar groups={groups} userName={userName} />

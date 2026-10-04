@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { GoldQuote } from "@/modules/lazsip/api/goldPrice";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 
 const NISAB_GRAM = 85;
@@ -22,13 +23,34 @@ export function HeroZakatCalculator({
   const [harta, setHarta] = useState("");
   const [jiwa, setJiwa] = useState("");
 
-  const nisabValue = goldPricePerGram * NISAB_GRAM;
+  const [price, setPrice] = useState(goldPricePerGram);
+  const [quote, setQuote] = useState<GoldQuote | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    async function refresh() {
+      try {
+        const response = await fetch("/api/lazsip/gold-price", { cache: "no-store", signal: controller.signal });
+        const data = await response.json();
+        if (!response.ok || !data.quote) throw new Error("Unavailable");
+        setQuote(data.quote);
+        setPrice(data.quote.value);
+        setUnavailable(false);
+      } catch {
+        if (!controller.signal.aborted) { setUnavailable(true); setPrice(0); }
+      }
+    }
+    void refresh();
+    const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 60000);
+    return () => { controller.abort(); clearInterval(timer); };
+  }, []);
+  const nisabValue = price * NISAB_GRAM;
 
   // Dihitung langsung tiap ketikan (bukan nunggu tombol) — harga emas/harga per jiwa
   // sudah diambil sekali dari server, jadi tidak perlu roundtrip API per keystroke.
   const maal = useMemo(() => {
     const hartaAmount = toNumber(harta);
-    const isWajibZakat = hartaAmount > 0 && hartaAmount >= nisabValue;
+    const isWajibZakat = nisabValue > 0 && hartaAmount > 0 && hartaAmount >= nisabValue;
     const zakatAmount = isWajibZakat ? Math.round(hartaAmount * ZAKAT_RATE) : 0;
     return { hartaAmount, isWajibZakat, zakatAmount };
   }, [harta, nisabValue]);
@@ -53,7 +75,7 @@ export function HeroZakatCalculator({
           type="button"
           onClick={() => setType("maal")}
           className={`flex-1 rounded-full py-1.5 text-xs font-bold transition-colors ${
-            isMaal ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-800/60"
+            isMaal ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-800/80"
           }`}
         >
           Zakat Maal
@@ -62,7 +84,7 @@ export function HeroZakatCalculator({
           type="button"
           onClick={() => setType("fitrah")}
           className={`flex-1 rounded-full py-1.5 text-xs font-bold transition-colors ${
-            !isMaal ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-800/60"
+            !isMaal ? "bg-lazsip-primary-900 text-white" : "text-lazsip-primary-800/80"
           }`}
         >
           Zakat Fitrah
@@ -118,12 +140,12 @@ export function HeroZakatCalculator({
                   : "bg-white/10 text-white/60"
             }`}
           >
-            {!hasInput ? "Menunggu input" : isMaal ? (maal.isWajibZakat ? "Wajib Zakat" : "Belum Wajib") : "Siap Dibayar"}
+            {isMaal && !price ? "Harga belum tersedia" : !hasInput ? "Menunggu input" : isMaal ? (maal.isWajibZakat ? "Wajib Zakat" : "Belum Wajib") : "Siap Dibayar"}
           </span>
           <p className="mt-1 truncate text-lg font-extrabold text-white">{formatRupiah(zakatAmount)}</p>
-          <p className="mt-0.5 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-white/50">
+          <p className="mt-0.5 line-clamp-2 min-h-[2rem] text-[11px] leading-snug text-white/75">
             {isMaal
-              ? !hasInput
+              ? !price ? "Perhitungan menunggu harga emas tersedia." : !hasInput
                 ? `Nisab setara ${NISAB_GRAM} gram emas (${formatRupiah(nisabValue)}).`
                 : maal.isWajibZakat
                   ? "Harta Anda sudah mencapai nishab."
@@ -133,6 +155,13 @@ export function HeroZakatCalculator({
         </div>
       </div>
 
+      {isMaal && <div className="mt-3 text-[11px] leading-relaxed text-lazsip-primary-800/70">
+        <p>{price > 0 ? `Emas 24K: ${formatRupiah(price)}/gram (harga pasar dunia).` : "Harga emas tidak tersedia. Coba lagi sebentar."}</p>
+        {quote && !unavailable && <p>Harga: {new Date(quote.updatedAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB. Kurs: {new Date(quote.exchangeUpdatedAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta" })}.</p>}
+        {quote?.stale && !unavailable && <p>Memakai harga terakhir; pembaruan sumber sedang terganggu.</p>}
+        <p>Diperiksa setiap menit. Kurs diperbarui harian. Bukan harga jual batangan ANTAM.</p>
+        <a href="https://gold-api.com" target="_blank" rel="noreferrer" className="underline">Gold API</a> · <a href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer" className="underline">Rates By ExchangeRate-API</a>
+      </div>}
       <a
         href={payHref}
         aria-disabled={zakatAmount === 0}

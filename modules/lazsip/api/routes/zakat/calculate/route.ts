@@ -9,7 +9,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nominal harta tidak valid." }, { status: 400 });
   }
 
-  const result = await calculateZakat(hartaAmount);
-
-  return NextResponse.json(result);
+  try {
+    return NextResponse.json(await calculateZakat(hartaAmount));
+  } catch {
+    return NextResponse.json({ error: "Harga emas belum tersedia. Silakan coba lagi." }, { status: 503 });
+  }
 }

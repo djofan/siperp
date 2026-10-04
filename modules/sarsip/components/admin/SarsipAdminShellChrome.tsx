@@ -29,7 +29,7 @@ export function SarsipAdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden">
+    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
       <AdminGradientBackground glow="16,185,129" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <SarsipSidebar userName={userName} />

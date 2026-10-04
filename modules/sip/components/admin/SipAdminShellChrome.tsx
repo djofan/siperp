@@ -29,7 +29,7 @@ export function SipAdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden">
+    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
       <AdminGradientBackground glow="183,230,62" placement="bottom" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <SipSidebar userName={userName} />

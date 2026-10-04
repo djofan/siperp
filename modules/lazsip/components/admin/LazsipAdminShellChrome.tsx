@@ -34,7 +34,7 @@ export function LazsipAdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-screen overflow-hidden">
+    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
       <AdminGradientBackground glow="115,174,67" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <LazsipSidebar userName={userName} />

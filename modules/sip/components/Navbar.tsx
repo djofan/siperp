@@ -92,7 +92,9 @@ export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
 
         <button
           type="button"
-          aria-label="Buka menu"
+          aria-label={open ? "Tutup menu" : "Buka menu"}
+          aria-expanded={open}
+          aria-controls="sip-mobile-menu"
           onClick={() => setOpen((v) => !v)}
           className="flex h-10 w-10 items-center justify-center rounded-full text-sip-primary-900 transition-colors hover:bg-sip-primary-50 lg:hidden"
         >
@@ -107,7 +109,7 @@ export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
       </nav>
 
       {open && (
-        <div className="px-4 pb-6 pt-2 sm:px-6 lg:hidden">
+        <div id="sip-mobile-menu" className="max-h-[calc(100dvh-5rem)] overflow-y-auto px-4 pb-6 pt-2 sm:px-6 lg:hidden">
           <div className="mx-auto flex max-w-6xl flex-col gap-1">
             {nav.map((item) => (
               <Link
