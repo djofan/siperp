@@ -11,6 +11,7 @@ type Values = {
   description?: string | null; shortDescription?: string | null; contentSummary?: string | null;
   thumbnailUrl?: string | null; materialUrl?: string | null; videoProvider?: string; videoUrl?: string;
   fileUrl?: string; fileType?: string | null; fileSize?: number | null;
+  releaseDay?: number;
 };
 
 type Field = { name: keyof Values; label: string; required?: boolean; long?: boolean; number?: boolean; hint?: string };
@@ -21,7 +22,7 @@ export function ContentForm({ kind, action, initial = {} }: {
   initial?: Values;
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
-  const [values, setValues] = useState<Values>({ order: 0, videoProvider: "YOUTUBE", ...initial });
+  const [values, setValues] = useState<Values>({ order: 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
   const prefix = useId();
   const fields: Field[] = [{ name: "title", label: "Judul", required: true }];
   if (kind !== "attachment") fields.push(
@@ -35,8 +36,9 @@ export function ContentForm({ kind, action, initial = {} }: {
   if (kind === "course" || kind === "chapter") fields.push({ name: "description", label: "Deskripsi", long: true });
   if (kind === "course") fields.push({ name: "materialUrl", label: "URL bahan belajar", hint: "Hanya dapat dibuka peserta yang mengikuti program." });
   if (kind === "lesson") fields.push(
-    { name: "videoUrl", label: "URL video", required: true, hint: "YouTube/Vimeo: tautan video HTTPS. Bunny: https://iframe.mediadelivery.net/embed/..." },
-    { name: "contentSummary", label: "Ringkasan materi", long: true },
+    { name: "videoUrl", label: "URL audio / materi", required: values.videoProvider !== "AUDIO", hint: "Materi boleh berisi teks, audio, atau keduanya. Gunakan URL HTTPS atau path audio lokal." },
+    { name: "releaseDay", label: "Hari rilis (1–30)", required: true, number: true, hint: "Hari pembelajaran dihitung dari tanggal mulai program." },
+    { name: "contentSummary", label: "Teks materi", long: true },
   );
   if (kind === "attachment") fields.push(
     { name: "fileUrl", label: "URL lampiran", required: true, hint: "URL HTTPS atau path file lokal. File disimpan di layanan penyimpanan yang digunakan pengelola." },
@@ -46,9 +48,9 @@ export function ContentForm({ kind, action, initial = {} }: {
 
   return <form action={formAction} className={panelClasses("space-y-5 p-5 sm:p-6")}>
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
-    {kind === "lesson" && <FormField label="Provider video" htmlFor={`${prefix}-provider`}>
+    {kind === "lesson" && <FormField label="Jenis materi" htmlFor={`${prefix}-provider`}>
       <Select id={`${prefix}-provider`} name="videoProvider" value={values.videoProvider} onChange={(event) => setValues({ ...values, videoProvider: event.target.value })}>
-        <option value="YOUTUBE">YouTube</option><option value="VIMEO">Vimeo</option><option value="BUNNY">Bunny</option>
+        <option value="AUDIO">Audio — Ustadz Irham</option><option value="YOUTUBE">YouTube (arsip)</option><option value="VIMEO">Vimeo (arsip)</option><option value="BUNNY">Bunny (arsip)</option>
       </Select>
     </FormField>}
     {fields.map((field) => {

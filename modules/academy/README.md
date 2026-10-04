@@ -1,10 +1,41 @@
-# Zakat Academy
+# Insan Academy
+
+Konfigurasi program, alur pendaftaran web, akun peserta/pengajar simulasi,
+dan skema nilai terbaru dijelaskan di [panduan Insan Academy](../../docs/insan-academy.md).
+Jalankan `npm run db:setup:insan-academy` untuk migrasi tambahan dan data simulasi.
+Pemeriksaan login lokal: `node scripts/check-insan-academy.mjs`.
 
 Port fitur publik dari `djofan/zakat_academy`, referensi commit
 `ac9de275c56ba94f6c79999e98b826e420b1bbe3`.
 Modul memakai datasource **MySQL** Core, Prisma Client bersama, dan sesi Core.
 
+## Tampilan referensi ZIP
+
+Tampilan disesuaikan dengan `zakat_academy-main.zip`: hero, navbar responsif,
+footer, logo, kartu program, halaman autentikasi, sidebar peserta/admin, dan
+ringkasan dashboard termasuk rata-rata nilai kuis. Komponen landing berada di
+`components/landing`; navigasi bersama di `components/AcademyShell.tsx`.
+Warna dibatasi ke `.academy-public` agar modul SIPERP lain tidak terpengaruh.
+URL tetap memakai `/academy` dan `/admin/academy`, dengan akun/sesi Core serta
+data academy yang ada. Program, modul, dan lesson referensi dipetakan ke
+program, bab, dan materi SIPERP; pengelolaan bab/materi berada di dalam program.
+Tombol Daftar membuka `/academy/daftar`; Hubungi Kami memakai tautan WhatsApp
+dari referensi. Halaman masuk/daftar dan pendaftaran akun tetap tersedia saat
+academy nonaktif atau dalam pemeliharaan. Setelah masuk, peserta diarahkan ke
+dashboard jika academy tersedia, atau beranda jika belum tersedia. Materi dan
+kuis tetap mengikuti pembatasan status modul/pemeliharaan.
+
 ## Status
+
+- Database lokal `sipmodular_db` diverifikasi pada 1 Oktober 2026: migrasi
+  academy telah diterapkan (13 tabel), registrasi modul aktif, maintenance
+  nonaktif. Pendaftaran, penyimpanan profil, login, dashboard, katalog, dan
+  logout berhasil diuji melalui HTTP; akun fixture dibersihkan.
+- Jalankan `npm run db:setup:academy` untuk setup khusus academy. Script memakai
+  migrasi academy yang ada dan mencatatnya melalui Prisma, tanpa menerapkan
+  migrasi modul lain atau menjalankan ulang seed akun. Pengulangan aman dan
+  mempertahankan pengaturan modul yang sudah ada. Tabel/migrasi parsial ditolak
+  agar bisa diperiksa terlebih dahulu.
 
 - Schema dan registrasi seed tersedia.
 - Halaman publik dan peserta selesai dan telah di-merge ke main.

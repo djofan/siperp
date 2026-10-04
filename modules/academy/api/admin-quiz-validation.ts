@@ -22,20 +22,31 @@ export function quizInput(form: FormData) {
     }
   }
   const isPublished = form.get("isPublished") === "on";
+  const rawKind = textField(form, "kind", "Jenis evaluasi", 20, false) || "DAILY";
+  if (rawKind !== "DAILY" && rawKind !== "WEEKLY" && rawKind !== "FINAL") throw new AcademyError("Jenis evaluasi tidak valid.");
+  const kind: "DAILY" | "WEEKLY" | "FINAL" = rawKind;
+  const rawClose = textField(form, "closesAt", "Batas evaluasi", 16, false);
+  const closesAt = rawClose ? new Date(rawClose + ":00+07:00") : null;
+  if (closesAt && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(rawClose) || !Number.isFinite(closesAt.getTime()) || quizDateInput(closesAt) !== rawClose || (quizDate && closesAt <= quizDate))) throw new AcademyError("Batas evaluasi WIB harus valid dan setelah waktu buka.");
   const isActive = form.get("isActive") === "on";
   if (isActive && !isPublished) throw new AcademyError("Publikasikan kuis sebelum mengaktifkannya.");
   return {
+    releaseDay: form.has("releaseDay") ? integer(form, "releaseDay", "Hari evaluasi", 1, 30) : 1,
     title: textField(form, "title", "Judul"),
     description: textField(form, "description", "Deskripsi", 30000, false) || null,
     passingScore: integer(form, "passingScore", "Nilai lulus", 0, 100),
     timeLimitMinutes: integer(form, "timeLimitMinutes", "Durasi", 1, 1440),
-    isPublished, isActive, quizDate, allowRetake: form.get("allowRetake") === "on",
+    isPublished, isActive, quizDate, closesAt, kind, allowRetake: form.get("allowRetake") === "on",
   };
 }
 
 export type QuizOptionInput = { id: string; label: string; isCorrect: boolean };
 
 export function questionInput(form: FormData) {
+  const rawType = textField(form, "type", "Jenis soal", 20, false) || "SINGLE";
+  if (rawType !== "SINGLE" && rawType !== "TRUE_FALSE" && rawType !== "MULTIPLE") throw new AcademyError("Jenis soal tidak valid.");
+  const type: "SINGLE" | "TRUE_FALSE" | "MULTIPLE" = rawType;
+  const weight = form.has("weight") ? integer(form, "weight", "Bobot", 1, 100) : 1;
   const question = textField(form, "question", "Pertanyaan", 10000);
   const order = orderField(form);
   const raw = textField(form, "options", "Opsi", 60000);
@@ -50,9 +61,11 @@ export function questionInput(form: FormData) {
     if (!label || label.length > 4000) throw new AcademyError("Setiap opsi wajib diisi, maksimal 4000 karakter.");
     return { id: value.id, label, isCorrect: value.isCorrect };
   });
-  if (options.filter(option => option.isCorrect).length !== 1) throw new AcademyError("Pilih tepat satu jawaban benar.");
+  const correct = options.filter(option => option.isCorrect).length;
+  if (type === "MULTIPLE" ? correct < 1 || correct >= options.length : correct !== 1) throw new AcademyError(type === "MULTIPLE" ? "Pilih satu atau lebih jawaban benar dan sisakan minimal satu pengecoh." : "Pilih tepat satu jawaban benar.");
+  if (type === "TRUE_FALSE" && (options.length !== 2 || !["benar", "salah"].every(label => options.some(option => option.label.toLowerCase() === label)))) throw new AcademyError("Soal benar/salah harus memiliki opsi Benar dan Salah.");
   const ids = options.filter(option => option.id).map(option => option.id);
   if (new Set(ids).size !== ids.length) throw new AcademyError("ID opsi tidak boleh berulang.");
   if (new Set(options.map(option => option.label.toLocaleLowerCase("id-ID"))).size !== options.length) throw new AcademyError("Teks setiap opsi harus berbeda.");
-  return { question, order, options };
+  return { question, order, options, type, weight, explanation: textField(form, "explanation", "Pembahasan", 10000, false) || null };
 }

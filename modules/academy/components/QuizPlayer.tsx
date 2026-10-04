@@ -3,11 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { finishQuiz, saveQuizAnswer } from "../api/actions";
 import { linkButton } from "./ui";
+import { selectedOptions } from "../api/policy";
 
 export function QuizPlayer({ attemptId, quizId, remainingSeconds, questions, responses }: {
   attemptId: string; quizId: string; remainingSeconds: number;
-  questions: { id: string; question: string; options: { id: string; label: string }[] }[];
-  responses: Record<string, string>;
+  questions: { id: string; question: string; type?: string; weight?: number; options: { id: string; label: string }[] }[];
+  responses: Record<string, string | string[]>;
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState(responses);
@@ -44,7 +45,7 @@ export function QuizPlayer({ attemptId, quizId, remainingSeconds, questions, res
     return () => clearInterval(timer);
   }, [remainingSeconds, finish]);
 
-  function selectAnswer(questionId: string, optionId: string) {
+  function selectAnswer(questionId: string, optionId: string | string[]) {
     if (saving || submitting || seconds <= 0) return;
     setSaving(true); setError("");
     saveTask.current = (async () => {
@@ -59,9 +60,9 @@ export function QuizPlayer({ attemptId, quizId, remainingSeconds, questions, res
   }
 
   return <div>
-    <div className="sticky top-0 z-10 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lazsip-primary-200 bg-lazsip-cream p-4"><p className="text-sm">{Object.keys(answers).length}/{questions.length} terjawab</p><p role="timer" className="font-mono text-lg font-bold">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</p><p role="status" className="text-xs">{saving ? "Menyimpan jawaban…" : "Jawaban tersimpan"}</p></div>
+    <div className="sticky top-0 z-10 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lazsip-primary-200 bg-lazsip-cream p-4"><p className="text-sm">{Object.values(answers).filter(value => selectedOptions(value).length).length}/{questions.length} terjawab</p><p role="timer" className="font-mono text-lg font-bold">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</p><p role="status" className="text-xs">{saving ? "Menyimpan jawaban…" : "Jawaban tersimpan"}</p></div>
     {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}
-    <div className="space-y-6">{questions.map((question, index) => <fieldset key={question.id} disabled={saving || submitting || seconds <= 0} className="rounded-2xl border border-lazsip-primary-100 bg-white p-6 disabled:opacity-70"><legend className="max-w-full px-2 font-semibold">{index + 1}. {question.question}</legend><div className="mt-3 space-y-3">{question.options.map((option) => <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-lazsip-primary-100 p-4 text-sm leading-6 hover:bg-lazsip-primary-50"><input className="mt-1 accent-lazsip-primary-700" type="radio" name={question.id} value={option.id} checked={answers[question.id] === option.id} onChange={() => selectAnswer(question.id, option.id)} />{option.label}</label>)}</div></fieldset>)}</div>
+    <div className="space-y-6">{questions.map((question, index) => <fieldset key={question.id} disabled={saving || submitting || seconds <= 0} className="rounded-2xl border border-lazsip-primary-100 bg-white p-6 disabled:opacity-70"><legend className="max-w-full px-2 font-semibold">{index + 1}. {question.question}</legend><p className="mt-2 text-xs text-gray-500">Bobot {question.weight ?? 1} · {question.type === "MULTIPLE" ? "Pilih semua jawaban yang benar" : "Pilih satu jawaban"}</p><div className="mt-3 space-y-3">{question.options.map((option) => <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-lazsip-primary-100 p-4 text-sm leading-6 hover:bg-lazsip-primary-50"><input className="mt-1 accent-lazsip-primary-700" type={question.type === "MULTIPLE" ? "checkbox" : "radio"} name={question.id} value={option.id} checked={selectedOptions(answers[question.id]).includes(option.id)} onChange={() => { const selected = selectedOptions(answers[question.id]); selectAnswer(question.id, question.type === "MULTIPLE" ? selected.includes(option.id) ? selected.filter(id => id !== option.id) : [...selected, option.id] : option.id); }} />{option.label}</label>)}</div></fieldset>)}</div>
     <button disabled={saving || submitting} onClick={() => void finish()} className={`${linkButton} mt-8 disabled:opacity-50`}>{submitting ? "Mengumpulkan…" : "Kumpulkan jawaban"}</button>
     <p className="mt-3 text-sm text-lazsip-ink/70">Jawaban yang belum diisi dihitung salah. Kuis dikumpulkan otomatis saat waktu habis.</p>
   </div>;

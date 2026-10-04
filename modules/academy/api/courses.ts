@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { isCourseComplete } from "./policy";
+import { isCourseComplete, weightedGrade } from "./policy";
+import { getLearningSettings } from "./learning";
 
 export async function listPublicCourses(search = "", take?: number) {
   return prisma.zakatAcademyCourse.findMany({
@@ -17,11 +18,11 @@ export async function getPublicCourse(slug: string) {
   return prisma.zakatAcademyCourse.findFirst({
     where: { slug, isPublished: true },
     select: {
-      id: true, slug: true, title: true, shortDescription: true, description: true, thumbnailUrl: true,
+      id: true, slug: true, title: true, shortDescription: true, description: true, thumbnailUrl: true, teacher: true, startsAt: true, quota: true, durationDays: true, isSimulation: true, _count: { select: { enrollments: true } },
       chapters: {
         where: { isPublished: true }, orderBy: [{ order: "asc" }, { id: "asc" }],
         select: { id: true, title: true, description: true,
-          lessons: { where: { isPublished: true }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, title: true, slug: true } },
+          lessons: { where: { isPublished: true }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, title: true, slug: true, releaseDay: true } },
           quizzes: { where: { isPublished: true }, select: { id: true, title: true } },
         },
       },
@@ -35,13 +36,14 @@ export async function getEnrollment(profileId: string | undefined, courseId: str
 }
 
 export async function getLearningOverview(profileId: string) {
+  const { weights } = await getLearningSettings();
   const [enrollments, progress, attempts] = await Promise.all([
     prisma.zakatAcademyEnrollment.findMany({
       where: { profileId, course: { isPublished: true } }, orderBy: { createdAt: "desc" },
       select: { createdAt: true, course: { select: { id: true, slug: true, title: true,
         chapters: { where: { isPublished: true }, select: {
           lessons: { where: { isPublished: true }, select: { id: true } },
-          quizzes: { where: { isPublished: true }, select: { id: true } },
+          quizzes: { where: { isPublished: true }, select: { id: true, kind: true } },
         } },
       } } },
     }),
@@ -55,6 +57,7 @@ export async function getLearningOverview(profileId: string) {
     const quizzes = course.chapters.flatMap((chapter) => chapter.quizzes);
     const completedLessons = lessons.filter((lesson) => completed.has(lesson.id)).length;
     const passedQuizzes = quizzes.filter((quiz) => passed.has(quiz.id)).length;
+    const grading = weightedGrade(quizzes, attempts.map(attempt => ({ quizId: attempt.quizId, score: Number(attempt.score ?? 0) })), weights);
     const dates = [
       ...progress.filter((item) => lessons.some((lesson) => lesson.id === item.lessonId)).map((item) => item.completedAt),
       ...quizzes.map((quiz) => attempts.filter((item) => item.quizId === quiz.id && item.passed && item.submittedAt).sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime())[0]?.submittedAt),
@@ -62,7 +65,8 @@ export async function getLearningOverview(profileId: string) {
     return { id: course.id, title: course.title, slug: course.slug, enrolledAt: createdAt,
       totalLessons: lessons.length, completedLessons, totalQuizzes: quizzes.length, passedQuizzes,
       percent: lessons.length ? Math.round(completedLessons / lessons.length * 100) : 0,
-      isEligible: isCourseComplete(lessons.length, completedLessons, quizzes.length, passedQuizzes),
+      isEligible: isCourseComplete(lessons.length, completedLessons, quizzes.length, passedQuizzes) && grading.complete && grading.score >= 70,
+      grading,
       completedAt: dates.length ? new Date(Math.max(...dates.map((date) => date.getTime()))) : null,
     };
   });
@@ -71,8 +75,8 @@ export async function getLearningOverview(profileId: string) {
 export async function listParticipantQuizzes(profileId: string) {
   return prisma.zakatAcademyQuiz.findMany({
     where: { isPublished: true, chapter: { isPublished: true, course: { isPublished: true, enrollments: { some: { profileId } } } } },
-    select: { id: true, title: true, isActive: true, quizDate: true, timeLimitMinutes: true, passingScore: true, allowRetake: true,
-      chapter: { select: { title: true } }, _count: { select: { questions: true } },
+    select: { id: true, title: true, isActive: true, quizDate: true, closesAt: true, kind: true, releaseDay: true, timeLimitMinutes: true, passingScore: true, allowRetake: true,
+      chapter: { select: { title: true, course: { select: { startsAt: true } } } }, _count: { select: { questions: true } },
       attempts: { where: { profileId }, orderBy: { attemptNumber: "desc" }, select: { id: true, attemptNumber: true, isCompleted: true, score: true, passed: true } },
     }, orderBy: [{ quizDate: "desc" }, { id: "asc" }],
   });
@@ -92,4 +96,26 @@ export async function getLeaderboard() {
   return Array.from(people.values()).map((person) => ({ id: person.id, name: person.name, total: person.scores.size,
     average: [...person.scores.values()].reduce((sum, score) => sum + score, 0) / person.scores.size,
   })).sort((a, b) => b.average - a.average || b.total - a.total || a.id.localeCompare(b.id));
+}
+
+export async function getOwnRankings(profileId: string) {
+  const own = await prisma.zakatAcademyEnrollment.findMany({ where: { profileId, course: { isPublished: true } }, select: { course: { select: { id: true, title: true, chapters: { where: { isPublished: true }, select: { quizzes: { where: { isPublished: true }, select: { id: true, kind: true } } } } } } } });
+  const courseIds = own.map(item => item.course.id);
+  const [participants, attempts, { weights }] = await Promise.all([
+    prisma.zakatAcademyEnrollment.findMany({ where: { courseId: { in: courseIds }, profile: { user: { isActive: true } } }, select: { profileId: true, courseId: true } }),
+    prisma.zakatAcademyQuizAttempt.findMany({ where: { isCompleted: true, quiz: { chapter: { courseId: { in: courseIds } } } }, select: { profileId: true, quizId: true, score: true } }),
+    getLearningSettings(),
+  ]);
+  const byProfile = new Map<string, { quizId: string; score: number }[]>();
+  for (const attempt of attempts) { const values = byProfile.get(attempt.profileId) ?? []; values.push({ quizId: attempt.quizId, score: Number(attempt.score ?? 0) }); byProfile.set(attempt.profileId, values); }
+  return own.map(({ course }) => {
+    const quizzes = course.chapters.flatMap(chapter => chapter.quizzes);
+    const quizIds = new Set(quizzes.map(quiz => quiz.id));
+    const ranked = participants.filter(person => person.courseId === course.id).map(person => {
+      const values = (byProfile.get(person.profileId) ?? []).filter(value => quizIds.has(value.quizId));
+      return { id: person.profileId, attempted: new Set(values.map(value => value.quizId)).size, grade: weightedGrade(quizzes, values, weights) };
+    }).filter(person => person.attempted > 0);
+    const self = ranked.find(person => person.id === profileId);
+    return { courseId: course.id, title: course.title, rank: self ? 1 + ranked.filter(person => person.grade.score > self.grade.score).length : null, total: ranked.length, score: self?.grade.score ?? 0, complete: self?.grade.complete ?? false };
+  });
 }
