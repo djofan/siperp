@@ -57,21 +57,26 @@ export function SipImageUploadField({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
+      <label className="text-sm font-medium text-white">
         {label}
-        {required && <span className="ml-0.5 text-red-600">*</span>}
+        {required && <span className="ml-0.5 text-red-400">*</span>}
       </label>
       <div className="flex items-center gap-4">
         <div
-          className={`flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-dashed bg-sip-primary-50/60 dark:bg-white/5 ${
-            required && !preview ? "border-red-300" : "border-sip-primary-200 dark:border-white/15"
+          className={`relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/5 ${
+            required && !preview ? "ring-2 ring-red-400/50" : ""
           }`}
         >
+          {uploading && (
+            <span className="absolute inset-0 z-10 flex items-center justify-center bg-black/55 text-[11px] font-semibold text-white">
+              Mengunggah…
+            </span>
+          )}
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element -- preview lokal/hasil upload, bukan asset Next dioptimasi
             <img src={preview} alt="Preview" className="h-full w-full object-cover" />
           ) : (
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-sip-primary-300">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 text-white/30">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -81,18 +86,22 @@ export function SipImageUploadField({
           )}
         </div>
         <div className="flex flex-col gap-1.5">
-          <label className="inline-flex w-fit cursor-pointer items-center rounded-full border border-sip-primary-200 dark:border-white/15 px-4 py-2 text-sm font-semibold text-sip-primary-800 dark:text-white/70 transition-colors hover:border-sip-primary-400">
-            {uploading ? "Mengunggah..." : "Pilih File"}
+          <label className="inline-flex w-fit cursor-pointer items-center rounded-full bg-white/[0.06] px-4 py-2 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 focus-within:ring-2 focus-within:ring-sip-lime/60">
+            {uploading ? "Mengunggah..." : preview ? "Ganti gambar" : "Pilih file"}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
               disabled={uploading}
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                handleFile(e.target.files?.[0] ?? null);
+                // reset supaya file yang sama bisa dipilih ulang setelah gagal
+                e.target.value = "";
+              }}
             />
           </label>
-          <p className="text-xs text-sip-primary-800/50 dark:text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          <p className="text-xs text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
+          {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { SunIcon, MoonIcon } from "@/components/ui/icons";
-import type { Theme } from "@/lib/useTheme";
+import type { AcademyTheme } from "@/modules/academy/components/admin/useAcademyTheme";
 
-export function ThemeToggle({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
+export function AcademyThemeToggle({ theme, onToggle }: { theme: AcademyTheme; onToggle: () => void }) {
   return (
     <button
       type="button"

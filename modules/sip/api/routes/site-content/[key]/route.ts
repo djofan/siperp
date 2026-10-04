@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSession, hasModuleAccess } from "@/lib/auth";
-import { upsertSiteContent, type SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
+import { SIP_SITE_CONTENT_KEYS, upsertSiteContent, type SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 
-const VALID_KEYS: SipSiteContentSectionKey[] = [
-  "hero",
-  "berita",
-  "program",
-  "penyaluranBantuan",
-  "tentang",
-  "jangkauanBantuan",
-  "kontak",
-];
+const VALID_KEYS = SIP_SITE_CONTENT_KEYS;
 
 export async function PUT(request: Request, { params }: { params: Promise<{ key: string }> }) {
   const session = await getSession();
@@ -28,6 +20,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ key:
     return NextResponse.json({ error: "content wajib diisi." }, { status: 400 });
   }
 
-  await upsertSiteContent(key as SipSiteContentSectionKey, body.content);
+  const content: Record<string, string> = {};
+  for (const [field, value] of Object.entries(body.content as Record<string, unknown>)) {
+    if (typeof value === "string") content[field] = value;
+  }
+
+  await upsertSiteContent(key as SipSiteContentSectionKey, content);
   return NextResponse.json({ ok: true });
 }

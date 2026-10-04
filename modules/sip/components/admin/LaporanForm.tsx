@@ -83,51 +83,51 @@ export function LaporanForm({
       <div className={panelClasses("p-6 sm:p-8")}>
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Judul<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Judul<span className="ml-0.5 text-red-400">*</span>
             </label>
             <input
               required
               placeholder="mis. Laporan Keuangan SIP"
               value={form.title}
               onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-              className="h-10 rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+              className="h-10 rounded-full bg-white/5 px-4 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
             />
           </div>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Tipe</label>
+              <label className="text-sm font-medium text-white">Tipe</label>
               <select
                 value={form.type}
                 onChange={(e) => setForm((prev) => ({ ...prev, type: e.target.value }))}
-                className="h-10 rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 text-sm text-sip-primary-900 dark:text-white outline-none"
+                className="h-10 rounded-full bg-white/5 px-4 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
               >
                 <option value="bulanan">Bulanan</option>
                 <option value="tahunan">Tahunan</option>
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-                Tahun<span className="ml-0.5 text-red-600">*</span>
+              <label className="text-sm font-medium text-white">
+                Tahun<span className="ml-0.5 text-red-400">*</span>
               </label>
               <input
                 type="number"
                 required
                 value={form.periodYear}
                 onChange={(e) => setForm((prev) => ({ ...prev, periodYear: e.target.value }))}
-                className="h-10 rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+                className="h-10 rounded-full bg-white/5 px-4 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
               />
             </div>
           </div>
 
           {form.type === "bulanan" && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-sip-primary-900 dark:text-white">Bulan</label>
+              <label className="text-sm font-medium text-white">Bulan</label>
               <select
                 value={form.periodMonth}
                 onChange={(e) => setForm((prev) => ({ ...prev, periodMonth: e.target.value }))}
-                className="h-10 w-full rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 text-sm text-sip-primary-900 dark:text-white outline-none sm:w-1/2"
+                className="h-10 w-full rounded-full bg-white/5 px-4 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60 sm:w-1/2"
               >
                 {MONTH_LABEL.map((label, i) => (
                   <option key={label} value={i + 1}>
@@ -139,8 +139,8 @@ export function LaporanForm({
           )}
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-sip-primary-900 dark:text-white">
-              Tautan Laporan (Google Drive, dll) atau Upload PDF<span className="ml-0.5 text-red-600">*</span>
+            <label className="text-sm font-medium text-white">
+              Tautan Laporan (Google Drive, dll) atau Upload PDF<span className="ml-0.5 text-red-400">*</span>
             </label>
             <div className="flex flex-col gap-2 sm:flex-row">
               <input
@@ -148,9 +148,9 @@ export function LaporanForm({
                 placeholder="https://drive.google.com/..."
                 value={form.fileUrl}
                 onChange={(e) => setForm((prev) => ({ ...prev, fileUrl: e.target.value }))}
-                className="h-10 flex-1 rounded-full bg-sip-primary-50/70 dark:bg-white/5 px-4 text-sm text-sip-primary-900 dark:text-white outline-none focus:ring-2 focus:ring-sip-primary-400"
+                className="h-10 flex-1 rounded-full bg-white/5 px-4 text-sm text-white placeholder:text-white/30 outline-none focus:ring-2 focus:ring-sip-lime/60"
               />
-              <label className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-sip-primary-200 dark:border-white/15 px-4 text-sm font-semibold text-sip-primary-800 dark:text-white/70 transition-colors hover:border-sip-primary-400">
+              <label className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white/[0.06] px-4 text-sm font-semibold text-white/80 transition-colors hover:bg-white/10 focus-within:ring-2 focus-within:ring-sip-lime/60">
                 {uploading ? "Mengunggah..." : "Upload PDF"}
                 <input
                   type="file"
@@ -166,7 +166,7 @@ export function LaporanForm({
       </div>
 
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
         <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Laporan"}
         </SipLoadingButton>

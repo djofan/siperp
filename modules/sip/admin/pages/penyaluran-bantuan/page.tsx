@@ -14,7 +14,7 @@ export default async function PenyaluranBantuanListPage() {
         action={
           <Link
             href="/admin/sip/penyaluran-bantuan/baru"
-            className="inline-flex items-center gap-2 rounded-full bg-sip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sip-primary-800"
+            className="inline-flex items-center gap-2 rounded-full bg-sip-lime px-4 py-2.5 text-sm font-semibold text-sip-ink transition-colors hover:bg-sip-lime-hover"
           >
             + Tambah Penyaluran Bantuan
           </Link>

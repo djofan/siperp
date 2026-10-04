@@ -9,3 +9,11 @@ export const sipSiteConfig = {
     { label: "Laporan", href: "/sip#laporan" },
   ],
 };
+
+/** Buang item navigasi `/sip#anchor` yang section-nya sedang disembunyikan admin. */
+export function filterNavByHidden<T extends { href: string }>(items: T[], hidden: string[]) {
+  return items.filter((item) => {
+    const anchor = item.href.split("#")[1];
+    return !anchor || !hidden.includes(anchor);
+  });
+}

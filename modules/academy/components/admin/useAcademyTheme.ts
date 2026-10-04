@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-const STORAGE_KEY = "sip-admin-theme";
+const STORAGE_KEY = "academy-admin-theme";
 
-export type Theme = "light" | "dark";
+export type AcademyTheme = "light" | "dark";
 
-export function useTheme() {
+export function useAcademyTheme() {
   // Selalu mulai dari "light" di render pertama (sama persis dengan SSR) supaya
   // tidak hydration-mismatch — preferensi tersimpan baru dibaca setelah mount.
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<AcademyTheme>("light");
 
   useEffect(() => {
     let timeoutId: number | undefined;

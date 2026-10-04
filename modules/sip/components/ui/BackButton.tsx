@@ -21,7 +21,7 @@ export function BackButton({ label = "Kembali" }: { label?: string }) {
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 text-sm font-semibold text-sip-primary-800/70 transition-colors hover:text-sip-primary-900"
+      className="inline-flex items-center gap-1.5 text-sm font-semibold text-sip-primary-900/60 transition-colors hover:text-sip-primary-900"
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M11 18l-6-6 6-6" />

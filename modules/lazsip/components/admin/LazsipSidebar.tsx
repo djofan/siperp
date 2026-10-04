@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
 
@@ -31,17 +31,37 @@ function getActiveHref(pathname: string): string | null {
   return matches.reduce((longest, href) => (href.length > longest.length ? href : longest));
 }
 
-export function LazsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
+function LogoutIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+    </svg>
+  );
+}
+
+export function LazsipSidebar({ userName, onNavigate }: { userName: string; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const activeHref = getActiveHref(pathname);
 
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/admin/login");
+    router.refresh();
+  }
+
+  const initials = userName
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
-    <div className="flex h-full w-64 shrink-0 flex-col bg-white dark:bg-[#0b0e0c]">
-      <div className="flex h-20 shrink-0 items-center gap-2.5 border-b border-lazsip-primary-100 px-6 dark:border-white/10">
+    <div className="flex h-full w-64 shrink-0 flex-col py-2">
+      <div className="flex h-18 shrink-0 items-center gap-2.5 px-6">
         <LazsipMark />
-        <span className="text-base font-extrabold tracking-tight text-lazsip-primary-900 dark:text-white">
-          LAZSIP Admin
-        </span>
+        <span className="text-base font-extrabold tracking-tight text-white">LAZSIP Admin</span>
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4">
@@ -53,10 +73,10 @@ export function LazsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors",
+                "relative rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-lazsip-primary-900 text-white dark:bg-lazsip-primary-500"
-                  : "text-lazsip-primary-800/70 hover:bg-lazsip-primary-50 dark:text-white/60 dark:hover:bg-white/10"
+                  ? "bg-white/10 pl-5 text-white before:absolute before:top-1/2 before:left-1.5 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-lazsip-primary-500"
+                  : "text-white/55 hover:bg-white/5 hover:text-white"
               )}
             >
               {item.label}
@@ -64,6 +84,22 @@ export function LazsipSidebar({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
+
+      <div className="flex items-center gap-3 px-5 py-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-white">
+          {initials || "AD"}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">{userName}</span>
+        <button
+          type="button"
+          onClick={handleLogout}
+          aria-label="Keluar"
+          title="Keluar"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <LogoutIcon className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }

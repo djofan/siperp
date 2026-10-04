@@ -10,16 +10,16 @@ const ICONS: Record<string, string> = {
 export function SipDashboardStatCard({ icon, label, value, hint }: { icon: keyof typeof ICONS; label: string; value: string; hint?: string }) {
   return (
     <div className={panelClasses("p-5")}>
-      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sip-primary-50 text-sip-primary-700 dark:bg-white/10 dark:text-sip-primary-300">
+      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-sip-lime/10 text-sip-lime">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
           <path strokeLinecap="round" strokeLinejoin="round" d={ICONS[icon]} />
         </svg>
       </span>
-      <p className="mt-4 truncate text-xl font-extrabold tracking-tight text-sip-primary-900 dark:text-white" title={value}>
+      <p className="mt-4 truncate text-xl font-extrabold tracking-tight text-white" title={value}>
         {value}
       </p>
-      <p className="mt-1 truncate text-sm text-sip-primary-800/60 dark:text-white/55">{label}</p>
-      {hint && <p className="mt-0.5 truncate text-xs text-sip-primary-800/45 dark:text-white/35">{hint}</p>}
+      <p className="mt-1 truncate text-sm text-white/55">{label}</p>
+      {hint && <p className="mt-0.5 truncate text-xs text-white/35">{hint}</p>}
     </div>
   );
 }

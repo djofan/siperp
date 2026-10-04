@@ -10,9 +10,9 @@ export function SipAdminPageHeader({
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h2 className="text-xl font-extrabold tracking-tight text-sip-primary-900 dark:text-white">{title}</h2>
+        <h2 className="text-xl font-extrabold tracking-tight text-white">{title}</h2>
         {description && (
-          <p className="mt-1 text-sm text-sip-primary-800/60 dark:text-white/50">{description}</p>
+          <p className="mt-1 text-sm text-white/50">{description}</p>
         )}
       </div>
       {action}

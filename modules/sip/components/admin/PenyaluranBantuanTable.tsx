@@ -1,5 +1,6 @@
 "use client";
 
+import { useSipConfirm } from "@/modules/sip/components/admin/SipConfirmDialog";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SipRowActions } from "@/modules/sip/components/admin/SipRowActions";
@@ -22,12 +23,13 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle:
 
 export function PenyaluranBantuanTable({ items }: { items: PenyaluranBantuanRow[] }) {
   const router = useRouter();
+  const [confirm, confirmDialog] = useSipConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [view, setView] = useState<SipAdminViewMode>("list");
   const [search, setSearch] = useState("");
 
   async function handleDelete(id: string, title: string) {
-    if (!window.confirm(`Hapus data penyaluran bantuan "${title}"?`)) return;
+    if (!(await confirm({ title: "Hapus penyaluran bantuan?", message: `"${title}" akan dihapus permanen dan tidak bisa dikembalikan.` }))) return;
     setDeletingId(id);
     await fetch(`/api/sip/penyaluran-bantuan/${id}`, { method: "DELETE" });
     setDeletingId(null);
@@ -45,6 +47,7 @@ export function PenyaluranBantuanTable({ items }: { items: PenyaluranBantuanRow[
 
   return (
     <div>
+      {confirmDialog}
       <SipAdminFilterBar>
         <SipAdminSearchInput value={search} onChange={setSearch} placeholder="Cari judul..." />
         <SipAdminFilterResetButton onClick={() => setSearch("")} />
@@ -60,7 +63,7 @@ export function PenyaluranBantuanTable({ items }: { items: PenyaluranBantuanRow[
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>
-                <tr className="border-b border-sip-primary-100 dark:border-white/10 bg-sip-primary-50/60 dark:bg-white/5 text-[11px] font-semibold uppercase tracking-wider text-sip-primary-700/70 dark:text-white/55">
+                <tr className="bg-white/[0.03] text-[11px] font-semibold uppercase tracking-wider text-white/55">
                   <th className="px-4 py-3.5 font-semibold">Thumbnail</th>
                   <th className="px-4 py-3.5 font-semibold">Judul</th>
                   <th className="px-4 py-3.5 font-semibold">Lokasi</th>
@@ -68,20 +71,20 @@ export function PenyaluranBantuanTable({ items }: { items: PenyaluranBantuanRow[
                   <th className="px-4 py-3.5 text-right font-semibold">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-sip-primary-50 dark:divide-white/10">
+              <tbody>
                 {filtered.map((item) => (
-                  <tr key={item.id} className="transition-colors hover:bg-sip-primary-50/40 dark:hover:bg-white/5">
+                  <tr key={item.id} className="transition-colors hover:bg-white/5">
                     <td className="px-4 py-3.5">
                       {item.image ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
-                        <img src={item.image} alt="" className="h-12 w-16 rounded-xl border border-sip-primary-100/80 object-cover" />
+                        <img src={item.image} alt="" className="h-12 w-16 rounded-xl object-cover" />
                       ) : (
-                        <div className="h-12 w-16 rounded-xl bg-sip-primary-50 dark:bg-white/10" />
+                        <div className="h-12 w-16 rounded-xl bg-white/10" />
                       )}
                     </td>
-                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-sip-primary-900 dark:text-white">{item.title}</td>
-                    <td className="px-4 py-3.5 text-sip-primary-800/60 dark:text-white/55">{item.location || "-"}</td>
-                    <td className="px-4 py-3.5 text-sip-primary-800/60 dark:text-white/55">{formatDate(item.date)}</td>
+                    <td className="max-w-xs truncate px-4 py-3.5 font-medium text-white">{item.title}</td>
+                    <td className="px-4 py-3.5 text-white/55">{item.location || "-"}</td>
+                    <td className="px-4 py-3.5 text-white/55">{formatDate(item.date)}</td>
                     <td className="px-4 py-3.5">
                       <SipRowActions
                         onEdit={() => router.push(`/admin/sip/penyaluran-bantuan/${item.id}`)}

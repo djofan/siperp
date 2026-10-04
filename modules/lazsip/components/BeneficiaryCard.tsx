@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { PINNED_OVERLAY_STYLE } from "@/modules/lazsip/components/ui/pinnedOverlay";
+import { PinnedMark } from "@/modules/lazsip/components/ui/PinnedMark";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 
 const AID_TYPE_LABEL: Record<string, string> = {
@@ -28,9 +29,12 @@ export function BeneficiaryCard({ id, name, age, amountReceived, aidType, photo,
         <ImagePlaceholder variant="person" src={photo} alt={name} className="absolute inset-0 h-full w-full" />
         <div className="pointer-events-none absolute inset-0" style={PINNED_OVERLAY_STYLE} />
 
-        <span className="relative z-10 m-3.5 w-fit rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-          {AID_TYPE_LABEL[aidType] ?? aidType}
-        </span>
+        <div className="relative z-10 flex items-center gap-2 p-3.5">
+          <PinnedMark />
+          <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            {AID_TYPE_LABEL[aidType] ?? aidType}
+          </span>
+        </div>
 
         <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
           <h3 className="line-clamp-1 text-base font-bold leading-snug">{name}</h3>

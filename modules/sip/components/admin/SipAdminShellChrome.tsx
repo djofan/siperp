@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { SipSidebar } from "@/modules/sip/components/admin/SipSidebar";
 import { SipTopbar } from "@/modules/sip/components/admin/SipTopbar";
-import { useTheme } from "@/lib/useTheme";
-import { cn } from "@/lib/utils";
+import { AdminGradientBackground } from "@/components/admin-shell/AdminGradientBackground";
 
 const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
@@ -17,7 +16,6 @@ export function SipAdminShellChrome({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(false);
-  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -31,9 +29,10 @@ export function SipAdminShellChrome({
   }
 
   return (
-    <div className={cn("flex h-screen overflow-hidden bg-white dark:bg-[#0b0e0c]", theme === "dark" && "dark")}>
-      <div className="hidden shrink-0 shadow-[1px_0_3px_rgba(0,0,0,0.05)] lg:block">
-        <SipSidebar />
+    <div className="dark relative flex h-screen overflow-hidden">
+      <AdminGradientBackground glow="183,230,62" placement="bottom" />
+      <div className="relative z-10 hidden shrink-0 lg:block">
+        <SipSidebar userName={userName} />
       </div>
 
       {mobileOpen && (
@@ -44,15 +43,15 @@ export function SipAdminShellChrome({
             aria-hidden
           />
           <div
-            className={`absolute inset-y-0 left-0 shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
+            className={`absolute inset-y-0 left-0 bg-[#0a0d08] shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
           >
-            <SipSidebar onNavigate={closeMobileSidebar} />
+            <SipSidebar userName={userName} onNavigate={closeMobileSidebar} />
           </div>
         </div>
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <SipTopbar userName={userName} onMenuClick={() => setMobileOpen(true)} theme={theme} onToggleTheme={toggleTheme} />
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
+        <SipTopbar onMenuClick={() => setMobileOpen(true)} />
         <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>

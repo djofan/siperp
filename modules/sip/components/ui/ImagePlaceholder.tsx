@@ -12,35 +12,37 @@ export function ImagePlaceholder({
   src,
   alt = "",
   className = "",
+  imgClassName = "",
 }: {
   variant?: Variant;
   src?: string | null;
   alt?: string;
   className?: string;
+  imgClassName?: string;
 }) {
   if (src) {
     return (
-      <div className={`overflow-hidden bg-sip-primary-100 ${className}`}>
+      <div className={`overflow-hidden bg-sip-primary-50 ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL gambar bebas dari admin, belum lewat image storage terkelola */}
-        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+        <img src={src} alt={alt} loading="lazy" className={`h-full w-full object-cover ${imgClassName}`} />
       </div>
     );
   }
 
   return (
-    <div className={`relative overflow-hidden bg-gradient-to-br from-sip-primary-100 to-sip-primary-50 ${className}`}>
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{ backgroundImage: "radial-gradient(var(--color-sip-primary-300) 1px, transparent 1px)", backgroundSize: "16px 16px" }}
+    <div className={`flex items-center justify-center overflow-hidden bg-sip-primary-50 ${className}`}>
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-7 w-7 text-sip-primary-300"
         aria-hidden
-      />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/70 shadow-sm ring-1 ring-sip-primary-200/60 sm:h-12 sm:w-12">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 text-sip-primary-600 sm:h-6 sm:w-6">
-            <path d={ICONS[variant]} />
-          </svg>
-        </span>
-      </div>
+      >
+        <path d={ICONS[variant]} />
+      </svg>
     </div>
   );
 }
