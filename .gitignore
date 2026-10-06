@@ -52,3 +52,6 @@ academy-dev*.local.log
 /.academy-uploads/
 /.erp-backups/
 /.erp-restore-test/
+
+#worktrees
+.worktrees/ 
