@@ -1,0 +1,9 @@
+// Modul Tanwir Qurani — belum ada model. Akan diisi mengikuti docs/PRD.md
+// Fase 5 (groups, anak_didik, tasks, submissions, submission_logs,
+// quiz_questions, quiz_answers, profiles). Nama model wajib diprefix
+// "Tanwir" (mis. TanwirGroup, TanwirTask) sesuai CLAUDE.md §5 supaya
+// tidak tabrakan di namespace Prisma global.
+//
+// Jangan tambah datasource/generator di sini — sudah didefinisikan di
+// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di
+// prisma.config.ts.

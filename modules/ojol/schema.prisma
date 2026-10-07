@@ -1,0 +1,8 @@
+// Modul Ojol Mengaji — belum ada model. Isi skema di sini saat fitur
+// mulai dikerjakan. Nama model wajib diprefix "Ojol" (mis. OjolDriver,
+// OjolSesiMengaji) sesuai CLAUDE.md §5 supaya tidak tabrakan di
+// namespace Prisma global.
+//
+// Jangan tambah datasource/generator di sini — sudah didefinisikan di
+// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di
+// prisma.config.ts.
