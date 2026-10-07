@@ -31,7 +31,7 @@ export async function LaporanSection({ content }: { content: Record<string, stri
                 <LaporanCard title={item.title} type={item.type} periodMonth={item.periodMonth} periodYear={item.periodYear} fileUrl={item.fileUrl} />
               )}
             />
-            <Button href="/sip/laporan" variant="soft" icon="arrow" className="self-center">
+            <Button href="/laporan" variant="soft" icon="arrow" className="self-center">
               {content.seeAllLabel}
             </Button>
           </div>

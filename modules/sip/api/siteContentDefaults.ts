@@ -5,6 +5,20 @@ import type { SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 // konten yang SEKARANG benar-benar tampil, dan (2) fallback per-field di halaman publik
 // lewat getMergedSiteContent(). Toggle disimpan sebagai string "true"/"false".
 export const SIP_SITE_CONTENT_DEFAULTS: Record<SipSiteContentSectionKey, Record<string, string>> = {
+  layanan: {
+    title: "Layanan & Program SIP",
+    description: "Temukan cara untuk berbagi, mendukung aksi kemanusiaan, dan mengikuti pembelajaran bersama SIP.",
+    lazsipTitle: "LAZSIP",
+    lazsipDescription: "Layanan zakat, infak, sedekah, dan donasi untuk mendukung program bantuan bagi masyarakat yang membutuhkan.",
+    lazsipActivities: "Menghitung dan menunaikan zakat\nMenyalurkan infak dan donasi melalui program bantuan\nMelihat dokumentasi penyaluran dan transparansi dana",
+    sarsipTitle: "SARSIP",
+    sarsipDescription: "Tim SAR Solidaritas Insan Peduli yang bergerak dalam pencarian, pertolongan, dan aksi kemanusiaan.",
+    sarsipActivities: "Mengenal kegiatan pencarian dan pertolongan\nMendukung campaign bantuan kemanusiaan\nMengikuti berita kegiatan dan dokumentasi penyaluran",
+    academyTitle: "Insan Academy",
+    academyDescription: "Program pembelajaran yang menyediakan materi teks dan audio, evaluasi belajar, serta ruang tanya jawab dengan pengajar.",
+    academyActivities: "Menyimak materi dan menyimpan catatan belajar\nMengikuti ujian harian, mingguan, dan per bab\nBertanya kepada pengajar dan melihat hasil belajar",
+    faq: "Apa perbedaan SIP, LAZSIP, dan SARSIP? | SIP adalah portal yayasan. LAZSIP menyediakan layanan zakat, infak, dan donasi; SARSIP berfokus pada pencarian, pertolongan, dan aksi kemanusiaan.\nBagaimana cara mendukung program bantuan? | Pilih program atau campaign pada layanan LAZSIP maupun SARSIP, lalu ikuti petunjuk donasi yang tersedia.\nDi mana saya dapat melihat penyaluran dan laporan? | Dokumentasi tersedia pada halaman Penyaluran Bantuan. Dokumen laporan bulanan dan tahunan tersedia pada halaman Laporan.\nBagaimana cara mengikuti Insan Academy? | Buka program Insan Academy untuk melihat informasi pembelajaran, kemudian gunakan halaman pendaftaran jika penerimaan peserta sedang dibuka.\nBagaimana cara menghubungi SIP? | Informasi kontak yayasan tersedia pada halaman Hubungi Kami. Untuk pertanyaan tentang program tertentu, gunakan kontak layanan terkait.",
+  },
   hero: {
     badge: "Yayasan Solidaritas Insan Peduli",
     backgroundImage: "",
@@ -89,7 +103,7 @@ export const SIP_SITE_CONTENT_DEFAULTS: Record<SipSiteContentSectionKey, Record<
     description: "Mari salurkan kepedulian bersama Solidaritas Insan Peduli.",
     ctaPrimaryLabel: "Pengajuan Bantuan",
     ctaSecondaryLabel: "Lihat Program Bantuan",
-    ctaSecondaryUrl: "/sip#program",
+    ctaSecondaryUrl: "/#program",
     showPrograms: "true",
     programsTitle: "Program Bantuan",
     copyright: "Solidaritas Insan Peduli. Seluruh hak cipta dilindungi.",

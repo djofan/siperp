@@ -31,7 +31,7 @@ export async function ProgramBantuanSection({ content }: { content: Record<strin
             renderPinnedItem={(program) => (
               <ProgramBantuanCard slug={program.slug} title={program.title} description={program.description} image={program.image} featured />
             )}
-            seeAllHref="/sip/program-bantuan"
+            seeAllHref="/program-bantuan"
             seeAllLabel={content.seeAllLabel}
             emptyLabel="Belum ada program bantuan yang ditambahkan."
           />

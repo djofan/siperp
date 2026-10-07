@@ -7,7 +7,7 @@ import { SIP_SITE_CONTENT_DEFAULTS } from "@/modules/sip/api/siteContentDefaults
 const VISIBLE_FIELD: FieldDef = {
   key: "visible",
   label: "Tampilkan di landing page",
-  hint: "Kalau dimatikan, section ini disembunyikan dan menunya ikut hilang dari navbar & footer.",
+  hint: "Kalau dimatikan, section ini disembunyikan dari beranda. Halaman informasi dan daftar konten tetap dapat dibuka.",
   toggle: true,
 };
 
@@ -30,7 +30,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "hero",
       title: "Hero (Beranda)",
       description: "Bagian paling atas landing page: foto, judul utama, tombol aksi, dan strip Profil di bawahnya.",
-      previewHref: "/sip#beranda",
+      previewHref: "/#beranda",
       fields: [
         { key: "backgroundImage", label: "Foto hero", image: true },
         { key: "badge", label: "Label kecil di atas judul", wide: true },
@@ -52,7 +52,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "berita",
       title: "Section Berita",
       description: "Judul & deskripsi di atas daftar berita terbaru.",
-      previewHref: "/sip#berita",
+      previewHref: "/#berita",
       fields: SECTION_HEADING_FIELDS,
       initialValue: initial.berita,
     },
@@ -60,7 +60,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "program",
       title: "Section Program",
       description: "Judul & deskripsi di atas kartu program bantuan.",
-      previewHref: "/sip#program",
+      previewHref: "/#program",
       fields: SECTION_HEADING_FIELDS,
       initialValue: initial.program,
     },
@@ -68,7 +68,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "penyaluranBantuan",
       title: "Section Penyaluran",
       description: "Judul & deskripsi di atas dokumentasi penyaluran bantuan.",
-      previewHref: "/sip#penyaluran-bantuan",
+      previewHref: "/#penyaluran-bantuan",
       fields: SECTION_HEADING_FIELDS,
       initialValue: initial.penyaluranBantuan,
     },
@@ -76,7 +76,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "tentang",
       title: "Tentang SIP",
       description: "Sejarah, visi, misi, dan legalitas yayasan.",
-      previewHref: "/sip#tentang",
+      previewHref: "/#tentang",
       fields: [
         VISIBLE_FIELD,
         { key: "eyebrow", label: "Label kecil (eyebrow)", group: "Judul section" },
@@ -92,7 +92,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "jangkauanBantuan",
       title: "Jangkauan Bantuan",
       description: "Angka statistik dan daftar kota yang sudah dijangkau.",
-      previewHref: "/sip#jangkauan-bantuan",
+      previewHref: "/#jangkauan-bantuan",
       fields: [
         { ...VISIBLE_FIELD, hint: "Section juga otomatis tersembunyi kalau semua angka & daftar kota masih kosong." },
         { key: "eyebrow", label: "Label kecil (eyebrow)", group: "Judul section" },
@@ -109,7 +109,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "laporan",
       title: "Section Laporan",
       description: "Judul & deskripsi di atas kartu laporan keuangan.",
-      previewHref: "/sip#laporan",
+      previewHref: "/#laporan",
       fields: SECTION_HEADING_FIELDS,
       initialValue: initial.laporan,
     },
@@ -117,7 +117,7 @@ export default async function SipKontenUmumPage() {
       sectionKey: "kontak",
       title: "Kontak",
       description: "Alamat, kanal kontak, dan media sosial — tampil di footer semua halaman.",
-      previewHref: "/sip",
+      previewHref: "/",
       fields: [
         { key: "address", label: "Alamat", multiline: true, rows: 3 },
         { key: "mapsUrl", label: "Link Google Maps", hint: "Tombol “Lihat di peta” di footer. Kosongkan untuk menyembunyikan.", wide: true },
@@ -132,10 +132,27 @@ export default async function SipKontenUmumPage() {
       initialValue: initial.kontak,
     },
     {
+      sectionKey: "layanan",
+      title: "Layanan & FAQ",
+      description: "Pengenalan LAZSIP, SARSIP, Insan Academy, dan pertanyaan umum. Tampil di beranda serta halaman informasi layanan.",
+      previewHref: "/layanan",
+      fields: [
+        { key: "title", label: "Judul layanan", wide: true },
+        { key: "description", label: "Pengantar layanan", multiline: true, rows: 3, wide: true },
+        ...[{ key: "lazsip", label: "LAZSIP" }, { key: "sarsip", label: "SARSIP" }, { key: "academy", label: "Insan Academy" }].flatMap(service => [
+          { key: service.key+"Title", label: "Nama layanan", group: service.label },
+          { key: service.key+"Description", label: "Deskripsi singkat", multiline: true, rows: 3 },
+          { key: service.key+"Activities", label: "Kegiatan dan layanan", multiline: true, rows: 5, hint: "Satu kegiatan per baris.", wide: true },
+        ]),
+        { key: "faq", label: "Pertanyaan umum", multiline: true, rows: 8, hint: "Satu pasangan per baris: Pertanyaan | Jawaban", group: "FAQ", wide: true },
+      ],
+      initialValue: initial.layanan,
+    },
+    {
       sectionKey: "footer",
       title: "Footer",
       description: "Tagline, tombol, daftar program, dan teks hak cipta di bagian paling bawah.",
-      previewHref: "/sip",
+      previewHref: "/",
       fields: [
         { key: "tagline", label: "Tagline", wide: true },
         { key: "description", label: "Deskripsi singkat", multiline: true, rows: 2 },
@@ -155,7 +172,7 @@ export default async function SipKontenUmumPage() {
     <div>
       <SipAdminPageHeader
         title="Konten Umum"
-        description="Semua teks, gambar, dan tampil/sembunyi section di landing page SIP — perubahan langsung tampil tanpa deploy ulang."
+        description="Kelola beranda, profil yayasan, informasi layanan, FAQ, dan kontak SIP. Perubahan langsung tampil tanpa deploy ulang."
       />
       <SipKontenUmumEditor sections={sections} />
     </div>

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSession, hasModuleAccess } from "@/lib/auth";
+import { getSipAdmin } from "@/modules/sip/api/admin-access";
 import { updatePenyaluranBantuan, deletePenyaluranBantuan } from "@/modules/sip/api/penyaluranBantuan";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!hasModuleAccess(session, "sip")) {
+  const admin = await getSipAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 
@@ -25,8 +25,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getSession();
-  if (!hasModuleAccess(session, "sip")) {
+  const admin = await getSipAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 

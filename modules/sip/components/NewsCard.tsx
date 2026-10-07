@@ -13,7 +13,7 @@ interface NewsCardProps {
 
 export function NewsCard({ id, title, content, image, createdAt, featured = false }: NewsCardProps) {
   return (
-    <Link href={`/sip/berita/${id}`} className="group flex w-full flex-col rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sip-primary-500 focus-visible:ring-offset-4">
+    <Link href={`/berita/${id}`} className="group flex w-full flex-col rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sip-primary-500 focus-visible:ring-offset-4">
       <ImagePlaceholder
         variant="blog"
         src={image}

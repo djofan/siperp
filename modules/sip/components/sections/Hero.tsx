@@ -16,7 +16,7 @@ export function Hero({
     hero.whatsappUrl ||
     (waNumber
       ? `https://wa.me/${waNumber}?text=${encodeURIComponent("Assalamu'alaikum, saya ingin mengajukan bantuan / bertanya seputar SIP.")}`
-      : "/sip#program");
+      : "/#program");
   const bantuanIsExternal = Boolean(hero.whatsappUrl || waNumber);
   const values = splitLines(hero.values);
   const showProfil = hero.profilVisible !== "false" && stats.length > 0;

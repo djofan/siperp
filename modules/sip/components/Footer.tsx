@@ -70,7 +70,7 @@ export function Footer({
   const whatsappHref = whatsapp
     ? `https://wa.me/${whatsapp}?text=${encodeURIComponent("Assalamu'alaikum, saya ingin mengajukan bantuan / bertanya seputar SIP.")}`
     : null;
-  const nav = filterNavByHidden(sipSiteConfig.nav, hiddenAnchors);
+  const nav = [...filterNavByHidden(sipSiteConfig.nav, hiddenAnchors), { label: "Pertanyaan Umum", href: "/pertanyaan-umum" }];
   const showPrograms = footer.showPrograms !== "false" && programs.length > 0;
   const socials = (["instagram", "facebook", "youtube", "tiktok"] as const).filter((name) => kontak[name]);
   const hasContact = kontak.address || kontak.phone || kontak.email || kontak.jamLayanan;
@@ -80,7 +80,7 @@ export function Footer({
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-6 gap-y-10 px-4 pb-12 pt-14 sm:px-6 sm:pt-16 lg:grid-cols-12 lg:gap-x-8">
         {/* Brand + ajakan */}
         <div className="col-span-2 lg:col-span-4">
-          <Link href="/sip" className="inline-flex items-center gap-2.5">
+          <Link href="/" className="inline-flex items-center gap-2.5">
             <SipMark />
             <span className="text-lg font-semibold leading-tight text-white">{sipSiteConfig.fullName}</span>
           </Link>
@@ -129,7 +129,7 @@ export function Footer({
               </li>
             ))}
             <li>
-              <Link href="/sip/berita" className="transition-colors hover:text-white">
+              <Link href="/berita" className="transition-colors hover:text-white">
                 Semua Berita
               </Link>
             </li>
@@ -143,7 +143,7 @@ export function Footer({
             <ul className="mt-4 space-y-2.5">
               {programs.map((program) => (
                 <li key={program.slug}>
-                  <Link href={`/sip/program-bantuan/${program.slug}`} className="line-clamp-1 transition-colors hover:text-white">
+                  <Link href={`/program-bantuan/${program.slug}`} className="line-clamp-1 transition-colors hover:text-white">
                     {program.title}
                   </Link>
                 </li>
@@ -219,7 +219,7 @@ export function Footer({
               ))}
             </ul>
             {!hiddenAnchors.includes("tentang") && (
-              <Link href="/sip#tentang" className="shrink-0 font-semibold text-white transition-colors hover:text-sip-primary-200">
+              <Link href="/tentang-kami" className="shrink-0 font-semibold text-white transition-colors hover:text-sip-primary-200">
                 Info lengkap →
               </Link>
             )}
@@ -233,6 +233,7 @@ export function Footer({
             © {new Date().getFullYear()} {footer.copyright}
           </p>
           {footer.bottomNote && <p>{footer.bottomNote}</p>}
+          <Link href="/admin/sip" className="text-white/60 transition-colors hover:text-white">Login Pengelola</Link>
         </div>
       </div>
     </footer>

@@ -11,10 +11,12 @@ import {
   getRecentPenyaluranBantuan,
 } from "@/modules/sip/api/dashboard";
 import { panelClasses } from "@/components/ui/panel";
+import { requireSipAdmin } from "@/modules/sip/api/admin-access";
 
 const formatDate = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeZone: "Asia/Jakarta" }).format(date);
 
 export default async function SipDashboardPage() {
+  const user = await requireSipAdmin();
   const [counts, recentPenyaluran, perYear, coverage, summary] = await Promise.all([
     getDashboardCounts(),
     getRecentPenyaluranBantuan(5),
@@ -34,10 +36,30 @@ export default async function SipDashboardPage() {
     { label: "Program bantuan", value: summary.programPinned, total: counts.programCount, href: "/admin/sip/program-bantuan" },
     { label: "Berita", value: summary.newsPinned, total: counts.publishedNewsCount, href: "/admin/sip/berita" },
   ];
+  const management = [
+    { href: "/admin/sip/konten", title: "Konten Website", description: "Atur hero, profil, legalitas, jangkauan, kontak, footer, dan bagian yang tampil di halaman utama." },
+    { href: "/admin/sip/program-bantuan", title: "Program Bantuan", description: `${counts.programCount} program. Kelola informasi program, gambar, dan tautan donasi.` },
+    { href: "/admin/sip/penyaluran-bantuan", title: "Penyaluran Bantuan", description: `${counts.penyaluranCount} dokumentasi. Catat kegiatan, tanggal, lokasi, dan foto penyaluran.` },
+    { href: "/admin/sip/berita", title: "Berita", description: `${counts.publishedNewsCount} terbit, ${summary.newsDraft} draft. Tulis, publikasikan, dan sematkan berita di beranda.` },
+    { href: "/admin/sip/laporan", title: "Laporan", description: `${counts.laporanCount} laporan. Kelola laporan bulanan dan tahunan melalui upload atau tautan dokumen.` },
+  ];
 
   return (
     <div className="flex flex-col gap-6">
-      <SipAdminPageHeader title="Dashboard" description="Ringkasan konten portal SIP — company profile & CMS yayasan." />
+      <SipAdminPageHeader title="Admin SIP" description={`Selamat datang, ${user.name}. Kelola website utama Solidaritas Insan Peduli dari sini.`} action={
+        <div className="flex flex-wrap gap-2">
+          <Link href="/" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">Lihat Website ↗</Link>
+          <Link href="/admin/sip/konten" className="rounded-full bg-sip-lime px-4 py-2 text-sm font-semibold text-sip-ink hover:bg-sip-lime-hover">Edit Halaman Utama</Link>
+        </div>
+      } />
+
+      <section aria-label="Pengelolaan website utama" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {management.map(item => <Link key={item.href} href={item.href} className={panelClasses("group flex flex-col gap-2 p-5 transition-colors hover:bg-white/10")}>
+          <h3 className="font-semibold text-white">{item.title}</h3>
+          <p className="flex-1 text-sm leading-relaxed text-white/55">{item.description}</p>
+          <span className="mt-2 text-sm font-semibold text-sip-lime">Kelola →</span>
+        </Link>)}
+      </section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SipDashboardStatCard

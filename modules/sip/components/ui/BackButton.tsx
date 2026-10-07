@@ -13,7 +13,7 @@ export function BackButton({ label = "Kembali" }: { label?: string }) {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
-      router.push("/sip");
+      router.push("/");
     }
   }
 

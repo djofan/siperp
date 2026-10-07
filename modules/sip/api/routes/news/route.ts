@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSession, hasModuleAccess } from "@/lib/auth";
+import { getSipAdmin } from "@/modules/sip/api/admin-access";
 import { createNews } from "@/modules/sip/api/news";
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!hasModuleAccess(session, "sip")) {
+  const admin = await getSipAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 
