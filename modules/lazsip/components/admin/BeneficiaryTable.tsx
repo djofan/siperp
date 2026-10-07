@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -46,16 +46,17 @@ const SORT_OPTIONS = [
 export function BeneficiaryTable({ beneficiaries }: { beneficiaries: BeneficiaryRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("beneficiary");
   const [search, setSearch] = useState("");
-  const [aidTypeFilter, setAidTypeFilter] = useState("all");
-  const [verifierAreaFilter, setVerifierAreaFilter] = useState("all");
-  const [sort, setSort] = useState("newest");
+  const [aidTypeFilter, setAidTypeFilter] = useAdminFilter("beneficiary:aidTypeFilter", AID_TYPE_OPTIONS);
+  const [sort, setSort] = useAdminFilter("beneficiary:sort", SORT_OPTIONS, "newest");
 
   const verifierAreaOptions = useMemo(() => {
     const areas = Array.from(new Set(beneficiaries.map((b) => b.verifierArea).filter((v): v is string => Boolean(v)))).sort();
     return [{ value: "all", label: "Semua Wilayah" }, ...areas.map((a) => ({ value: a, label: a }))];
   }, [beneficiaries]);
+
+  const [verifierAreaFilter, setVerifierAreaFilter] = useAdminFilter("beneficiary:verifierAreaFilter", verifierAreaOptions);
 
   async function handleDelete(id: string, name: string) {
     if (!window.confirm(`Hapus data penerima manfaat "${name}"?`)) return;
@@ -80,7 +81,7 @@ export function BeneficiaryTable({ beneficiaries }: { beneficiaries: Beneficiary
     return rows;
   }, [beneficiaries, search, aidTypeFilter, verifierAreaFilter, sort]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "beneficiary");
 
   if (beneficiaries.length === 0) {
     return <AdminEmptyState message="Belum ada data. Klik tombol di atas untuk menambah." />;

@@ -5,12 +5,13 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SipToggle } from "@/modules/sip/components/admin/SipToggle";
 import { SipRowActions } from "@/modules/sip/components/admin/SipRowActions";
-import { SipViewToggle, type SipAdminViewMode } from "@/modules/sip/components/admin/SipViewToggle";
+import { SipViewToggle, useSipViewMode } from "@/modules/sip/components/admin/SipViewToggle";
 import {
   SipAdminFilterBar,
   SipAdminSearchInput,
   SipAdminFilterSelect,
   SipAdminFilterResetButton,
+  useSipAdminFilter,
 } from "@/modules/sip/components/admin/SipAdminFilterBar";
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
@@ -37,9 +38,9 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
   const [confirm, confirmDialog] = useSipConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [view, setView] = useState<SipAdminViewMode>("list");
+  const [view, setView] = useSipViewMode("news");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useSipAdminFilter("news:statusFilter", STATUS_OPTIONS);
 
   async function saveChange(item: NewsRow, changes: Partial<NewsRow>) {
     setPendingIds((prev) => new Set(prev).add(item.id));

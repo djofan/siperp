@@ -1,6 +1,15 @@
 "use client";
 
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
+
 export type SipAdminViewMode = "list" | "grid";
+
+const VIEW_MODES: readonly SipAdminViewMode[] = ["list", "grid"];
+
+// Mode tampilan diingat per tabel, jadi tidak balik ke "list" saat halaman di-refresh.
+export function useSipViewMode(table: string) {
+  return usePersistedPreference<SipAdminViewMode>(`sip-admin-view:${table}`, VIEW_MODES, "list");
+}
 
 export function SipViewToggle({ view, onChange }: { view: SipAdminViewMode; onChange: (view: SipAdminViewMode) => void }) {
   return (

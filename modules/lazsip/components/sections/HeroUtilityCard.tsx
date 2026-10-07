@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import { HeroZakatCalculator } from "@/modules/lazsip/components/sections/HeroZakatCalculator";
 import { HeroCekStatus } from "@/modules/lazsip/components/sections/HeroCekStatus";
 import { HeroCekRiwayat } from "@/modules/lazsip/components/sections/HeroCekRiwayat";
@@ -32,7 +32,11 @@ export function HeroUtilityCard({
   goldPricePerGram: number;
   fitrahPricePerJiwa: number;
 }) {
-  const [tool, setTool] = useState<Tool>("kalkulator");
+  const [tool, setTool] = usePersistedPreference<Tool>(
+    "lazsip-hero-utility:tool",
+    TOOLS.map((t) => t.value),
+    "kalkulator"
+  );
   const whatsapp = process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP;
   const jemputMessage = encodeURIComponent(
     "Assalamu'alaikum, saya ingin menjadwalkan penjemputan zakat oleh tim LAZSIP."

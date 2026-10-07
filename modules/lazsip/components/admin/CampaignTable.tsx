@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
 import { CampaignDonationToggle } from "@/modules/lazsip/components/admin/CampaignDonationToggle";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -41,10 +41,10 @@ const SORT_OPTIONS = [
 export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("campaign");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sort, setSort] = useState("newest");
+  const [statusFilter, setStatusFilter] = useAdminFilter("campaign:statusFilter", STATUS_OPTIONS);
+  const [sort, setSort] = useAdminFilter("campaign:sort", SORT_OPTIONS, "newest");
 
   async function handleDelete(id: string, title: string) {
     if (!window.confirm(`Hapus campaign "${title}"? Riwayat donasi terkait juga akan hilang.`)) return;
@@ -73,7 +73,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
     return rows;
   }, [campaigns, search, statusFilter, sort]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "campaign");
 
   return (
     <div>

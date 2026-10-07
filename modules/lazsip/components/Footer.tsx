@@ -60,7 +60,7 @@ export function Footer({
         aria-hidden
       />
 
-      <div className="relative border-b border-white/10">
+      <div className="relative">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-10 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left">
           <div>
             <p className="text-lg font-semibold text-white">
@@ -173,7 +173,7 @@ export function Footer({
         </div>
       </div>
 
-      <div className="relative border-t border-white/10">
+      <div className="relative">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-6 text-xs text-white/45 sm:flex-row sm:justify-between sm:px-6">
           <p>
             © {new Date().getFullYear()} {lazsipSiteConfig.name}. Seluruh hak cipta dilindungi.

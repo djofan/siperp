@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import { SiteContentSectionForm, type FieldDef } from "@/modules/lazsip/components/admin/SiteContentSectionForm";
 import type { SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 import { cn } from "@/lib/utils";
@@ -16,7 +16,11 @@ interface SectionConfig {
 // Satu panel aktif dalam satu waktu (tab baris horizontal di atas), bukan 6 form ditumpuk
 // lalu di-scroll panjang, dan bukan sidebar kedua di samping sidebar utama.
 export function KontenUmumTabs({ sections }: { sections: SectionConfig[] }) {
-  const [activeKey, setActiveKey] = useState<SiteContentSectionKey>(sections[0].sectionKey);
+  const [activeKey, setActiveKey] = usePersistedPreference<SiteContentSectionKey>(
+    "lazsip-admin-konten-umum:section",
+    sections.map((section) => section.sectionKey),
+    sections[0].sectionKey
+  );
   const active = sections.find((section) => section.sectionKey === activeKey) ?? sections[0];
 
   return (

@@ -1,5 +1,19 @@
 "use client";
 
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
+
+// Filter/urutan tabel admin diingat per tabel supaya tidak balik ke default saat refresh.
+// Nilai tersimpan yang sudah tidak ada di opsi (mis. data sudah dihapus) kembali ke fallback.
+export function useSipAdminFilter(key: string, options: { value: string }[], fallback = "all") {
+  return usePersistedPreference<string>(`sip-admin:${key}`, options.map((option) => option.value), fallback);
+}
+
+const isDateValue = (value: string): value is string => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+export function useSipAdminDateFilter(key: string) {
+  return usePersistedPreference<string>(`sip-admin:${key}`, isDateValue, "");
+}
+
 export function SipAdminFilterBar({ children }: { children: React.ReactNode }) {
   return <div className="mb-3 flex items-center gap-2.5 overflow-x-auto px-0.5 py-1 [scrollbar-width:none]">{children}</div>;
 }

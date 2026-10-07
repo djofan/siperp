@@ -4,7 +4,7 @@ import { useSipConfirm } from "@/modules/sip/components/admin/SipConfirmDialog";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SipRowActions } from "@/modules/sip/components/admin/SipRowActions";
-import { SipViewToggle, type SipAdminViewMode } from "@/modules/sip/components/admin/SipViewToggle";
+import { SipViewToggle, useSipViewMode } from "@/modules/sip/components/admin/SipViewToggle";
 import { SipAdminFilterBar, SipAdminSearchInput, SipAdminFilterResetButton } from "@/modules/sip/components/admin/SipAdminFilterBar";
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
@@ -25,7 +25,7 @@ export function PenyaluranBantuanTable({ items }: { items: PenyaluranBantuanRow[
   const router = useRouter();
   const [confirm, confirmDialog] = useSipConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<SipAdminViewMode>("list");
+  const [view, setView] = useSipViewMode("penyaluran-bantuan");
   const [search, setSearch] = useState("");
 
   async function handleDelete(id: string, title: string) {

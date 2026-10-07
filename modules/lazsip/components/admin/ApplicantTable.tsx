@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ApplicantStatusSelect } from "@/modules/lazsip/components/admin/ApplicantStatusSelect";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
 import { panelClasses } from "@/components/ui/panel";
@@ -25,13 +25,14 @@ const STATUS_OPTIONS = [
 
 export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [programFilter, setProgramFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useAdminFilter("applicant:statusFilter", STATUS_OPTIONS);
 
   const programOptions = useMemo(() => {
     const programs = Array.from(new Map(applicants.map((a) => [a.program.id, a.program.title])).entries());
     return [{ value: "all", label: "Semua Program" }, ...programs.map(([id, title]) => ({ value: id, label: title }))];
   }, [applicants]);
+
+  const [programFilter, setProgramFilter] = useAdminFilter("applicant:programFilter", programOptions);
 
   const resetFilters = () => {
     setSearch("");
@@ -46,7 +47,7 @@ export function ApplicantTable({ applicants }: { applicants: ApplicantRow[] }) {
     return rows;
   }, [applicants, search, statusFilter, programFilter]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "applicant");
 
   if (applicants.length === 0) {
     return <AdminEmptyState message="Belum ada pendaftar." />;

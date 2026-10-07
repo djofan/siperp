@@ -11,7 +11,7 @@ export default async function DonaturInfaqPage() {
         title="Donatur Infaq"
         description="Rekap donatur infaq/donasi campaign — dihitung dari transaksi yang berhasil lunas."
       />
-      <DonorTable donors={donors} showSegmentFilter={false} />
+      <DonorTable donors={donors} showSegmentFilter={false} storageKey="donor-infaq" />
     </div>
   );
 }

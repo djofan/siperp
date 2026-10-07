@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
@@ -24,10 +24,10 @@ const SORT_OPTIONS = [
   { value: "recent", label: "Transaksi Terakhir" },
 ];
 
-export function DonorTable({ donors, showSegmentFilter = true }: { donors: DonorSummary[]; showSegmentFilter?: boolean }) {
+export function DonorTable({ donors, showSegmentFilter = true, storageKey = "donor" }: { donors: DonorSummary[]; showSegmentFilter?: boolean; storageKey?: string }) {
   const [search, setSearch] = useState("");
-  const [segment, setSegment] = useState("all");
-  const [sort, setSort] = useState("total");
+  const [segment, setSegment] = useAdminFilter(`${storageKey}:segment`, SEGMENT_OPTIONS);
+  const [sort, setSort] = useAdminFilter(`${storageKey}:sort`, SORT_OPTIONS, "total");
 
   const resetFilters = () => {
     setSearch("");
@@ -49,7 +49,7 @@ export function DonorTable({ donors, showSegmentFilter = true }: { donors: Donor
     return rows;
   }, [donors, search, segment, sort, showSegmentFilter]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, storageKey);
 
   if (donors.length === 0) {
     return <AdminEmptyState message="Belum ada data donatur." />;

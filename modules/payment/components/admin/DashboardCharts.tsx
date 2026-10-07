@@ -1,5 +1,6 @@
 "use client";
 import { useId, useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import type { ChartSummary } from "@/modules/payment/api/chartData";
 import { panelClasses } from "@/components/ui/panel";
 
@@ -8,7 +9,14 @@ const short = (n: number) => new Intl.NumberFormat("id-ID", { notation: "compact
 const dateLabel = (date: string) => new Date(`${date}T12:00:00+07:00`).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "Asia/Jakarta" });
 
 export function DashboardCharts({ periods, moduleSource }: { periods: ChartSummary[]; moduleSource: "lazsip" | "sarsip" }) {
-  const [days, setDays] = useState(30);
+  // Periode grafik diingat per modul supaya tidak balik ke 30 hari saat refresh.
+  const [daysValue, setDaysValue] = usePersistedPreference<string>(
+    `${moduleSource}-admin-dashboard:days`,
+    periods.map((p) => String(p.days)),
+    periods.some((p) => p.days === 30) ? "30" : String(periods[0]?.days ?? 30)
+  );
+  const days = Number(daysValue);
+  const setDays = (next: number) => setDaysValue(String(next));
   const [selected, setSelected] = useState<number | null>(null);
   const gradient = useId();
   const data = periods.find(p => p.days === days)!;

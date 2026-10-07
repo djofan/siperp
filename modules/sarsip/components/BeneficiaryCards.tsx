@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import Image from "next/image";
 import Link from "next/link";
 import { BENEFICIARY_CATEGORIES } from "@/modules/sarsip/beneficiaryCategories";
 type Row = { id: string; publicName: string | null; category: string; amount: number; image: string | null };
 export function BeneficiaryCards({ rows, limit }: { rows: Row[]; limit?: number }) {
-  const [category, setCategory] = useState("Semua");
+  const [category, setCategory] = usePersistedPreference<string>("sarsip-beneficiary:category", ["Semua", ...BENEFICIARY_CATEGORIES], "Semua");
   const filtered = rows.filter((row) => category === "Semua" || row.category === category);
   return <>
     <div aria-label="Filter kategori bantuan" className="my-8 flex flex-wrap gap-2">{["Semua", ...BENEFICIARY_CATEGORIES].map((item) => <button key={item} type="button" aria-pressed={category === item} onClick={() => setCategory(item)} className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${category === item ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:border-orange-500"}`}>{item}</button>)}</div>

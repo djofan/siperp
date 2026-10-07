@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import type { GoldQuote } from "@/modules/lazsip/api/goldPrice";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 
@@ -12,6 +13,8 @@ const parseDigits = (raw: string) => raw.replace(/[^0-9]/g, "");
 
 type ZakatType = "maal" | "fitrah";
 
+const ZAKAT_TYPES: readonly ZakatType[] = ["maal", "fitrah"];
+
 export function HeroZakatCalculator({
   goldPricePerGram,
   fitrahPricePerJiwa,
@@ -19,7 +22,7 @@ export function HeroZakatCalculator({
   goldPricePerGram: number;
   fitrahPricePerJiwa: number;
 }) {
-  const [type, setType] = useState<ZakatType>("maal");
+  const [type, setType] = usePersistedPreference<ZakatType>("lazsip-zakat-calculator:type", ZAKAT_TYPES, "maal");
   const [harta, setHarta] = useState("");
   const [jiwa, setJiwa] = useState("");
 

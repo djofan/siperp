@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import { BeneficiaryCard } from "@/modules/lazsip/components/BeneficiaryCard";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
 import { PinnedGridSection } from "@/modules/lazsip/components/ui/PinnedGridSection";
@@ -34,12 +35,21 @@ interface BeneficiaryItem {
 const SEMUA_VERIFIKATOR = "semua";
 
 export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] }) {
-  const [filter, setFilter] = useState<FilterValue>("semua");
-  const [verifierFilter, setVerifierFilter] = useState(SEMUA_VERIFIKATOR);
+  const [filter, setFilter] = usePersistedPreference<FilterValue>(
+    "lazsip-penyaluran-bantuan:aid-type",
+    FILTER_OPTIONS.map((o) => o.value),
+    "semua"
+  );
 
   const verifierOptions = useMemo(
     () => Array.from(new Set(items.map((b) => b.verifierName))).sort(),
     [items]
+  );
+  // Verifikator yang tersimpan tapi sudah tidak ada di data otomatis kembali ke "semua".
+  const [verifierFilter, setVerifierFilter] = usePersistedPreference(
+    "lazsip-penyaluran-bantuan:verifier",
+    [SEMUA_VERIFIKATOR, ...verifierOptions],
+    SEMUA_VERIFIKATOR
   );
 
   const filtered = useMemo(

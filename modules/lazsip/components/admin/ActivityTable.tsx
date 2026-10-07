@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
-import { AdminFilterBar, AdminSearchInput, AdminDateInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { AdminFilterBar, AdminSearchInput, AdminDateInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter, useAdminDateFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -31,11 +31,11 @@ const formatDate = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle:
 export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("activity");
   const [search, setSearch] = useState("");
-  const [pinnedFilter, setPinnedFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [pinnedFilter, setPinnedFilter] = useAdminFilter("activity:pinnedFilter", PINNED_OPTIONS);
+  const [dateFrom, setDateFrom] = useAdminDateFilter("activity:dateFrom");
+  const [dateTo, setDateTo] = useAdminDateFilter("activity:dateTo");
 
   async function handleDelete(id: string, title: string) {
     if (!window.confirm(`Hapus kegiatan "${title}"?`)) return;
@@ -60,7 +60,7 @@ export function ActivityTable({ activities }: { activities: ActivityRow[] }) {
     return rows;
   }, [activities, search, pinnedFilter, dateFrom, dateTo]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "activity");
 
   return (
     <div>

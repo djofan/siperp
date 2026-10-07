@@ -57,24 +57,26 @@ export async function TentangSection() {
       />
 
       <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-10">
-        <div className="flex flex-col justify-between gap-5">
-          <StatCounter icon="calendar" value={`${lazsipSiteConfig.foundedYear}`} label="Berdiri sejak" className="border border-lazsip-primary-100" />
+        {/* Dua kolom sama tinggi; kartu di tiap kolom ikut memanjang (flex-auto) supaya
+            ujung atas & bawah kiri-kanan sejajar, tidak ada sisi yang lebih panjang. */}
+        <div className="flex flex-col gap-5">
+          <StatCounter icon="calendar" value={`${lazsipSiteConfig.foundedYear}`} label="Berdiri sejak" className="flex flex-auto flex-col justify-center border border-lazsip-primary-100" />
           <StatCounter
             icon="donors"
             value={formatNumber(totalVerifikator)}
             label="Verifikator lapangan terlatih"
-            className="border border-lazsip-primary-100"
+            className="flex flex-auto flex-col justify-center border border-lazsip-primary-100"
           />
           <StatCounter
             icon="beneficiaries"
             value={`${formatNumber(totalMitra)}+`}
             label="Mitra kerja sama"
-            className="border border-lazsip-primary-100"
+            className="flex flex-auto flex-col justify-center border border-lazsip-primary-100"
           />
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-5">
+          <div className="flex-auto rounded-2xl border border-lazsip-primary-100 bg-white p-5">
             <h3 className="flex items-center gap-2 text-base font-semibold text-lazsip-primary-900">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z" />
@@ -84,7 +86,7 @@ export async function TentangSection() {
             <p className="mt-3 text-sm leading-relaxed text-lazsip-secondary-700">{tentang?.visi || DEFAULT_VISI}</p>
           </div>
 
-          <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-5">
+          <div className="flex-auto rounded-2xl border border-lazsip-primary-100 bg-white p-5">
             <h3 className="flex items-center gap-2 text-base font-semibold text-lazsip-primary-900">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
@@ -101,7 +103,7 @@ export async function TentangSection() {
             </ul>
           </div>
 
-          <div className="rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-5">
+          <div className="flex-auto rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-5">
             <h3 className="flex items-center gap-2 text-base font-semibold text-lazsip-primary-900">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />

@@ -1,5 +1,19 @@
 "use client";
 
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
+
+// Filter/urutan tabel admin diingat per tabel supaya tidak balik ke default saat refresh.
+// Nilai tersimpan yang sudah tidak ada di opsi (mis. data sudah dihapus) kembali ke fallback.
+export function useAdminFilter(key: string, options: { value: string }[], fallback = "all") {
+  return usePersistedPreference<string>(`lazsip-admin:${key}`, options.map((option) => option.value), fallback);
+}
+
+const isDateValue = (value: string): value is string => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+export function useAdminDateFilter(key: string) {
+  return usePersistedPreference<string>(`lazsip-admin:${key}`, isDateValue, "");
+}
+
 export function AdminFilterBar({ children }: { children: React.ReactNode }) {
   return <div className="mb-4 flex flex-wrap items-center gap-2.5">{children}</div>;
 }
