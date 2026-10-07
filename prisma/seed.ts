@@ -7,6 +7,8 @@ import { seedSipModuleRegistration } from "@/modules/sip/api/seed";
 import { seedPaymentModuleRegistration } from "@/modules/payment/api/seed";
 import { seedAcademyModuleRegistration } from "@/modules/academy/api/seed";
 import { seedSarsipModuleRegistration } from "@/modules/sarsip/api/seed";
+import { seedOjolModuleRegistration } from "@/modules/ojol/api/seed";
+import { seedTanwirModuleRegistration } from "@/modules/tanwir/api/seed";
 
 async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
@@ -38,8 +40,15 @@ async function main() {
   await seedPaymentModuleRegistration();  
 
   await seedAcademyModuleRegistration();
+
   await seedSarsipModuleRegistration();
   console.log("Modul academy terdaftar.");
+
+  await seedTanwirModuleRegistration();
+  console.log("Modul tanwir terdaftar.");
+
+  await seedOjolModuleRegistration();
+  console.log("Modul ojol terdaftar.");
 }
 
 main()

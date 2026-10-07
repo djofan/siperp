@@ -1,0 +1,12 @@
+{
+  "name": "tanwir",
+  "displayName": "Tanwir Qurani",
+  "description": "Program pembelajaran Tanwir Qurani — modul masih kosong, pola acuan dari CLAUDE.md §4/§8, PRD Fase 5.",
+  "version": "0.1.0",
+  "providers": {
+    "prismaSchema": "schema.prisma",
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
+}
