@@ -12,6 +12,7 @@ export function ActionForm({ action, label, children, className = "" }: {
   return <form action={formAction} className={`space-y-4 ${className}`}>
     {children}
     {state.error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{state.error}</p>}
+    {state.message && <p role="status" className="rounded-xl bg-green-50 p-3 text-sm text-green-800">{state.message}</p>}
     <Button type="submit" disabled={pending} className="h-auto min-h-11 bg-lazsip-primary-800 px-5 py-3 hover:bg-lazsip-primary-900">{pending ? "Memproses…" : label}</Button>
   </form>;
 }

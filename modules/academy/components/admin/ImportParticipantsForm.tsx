@@ -1,0 +1,9 @@
+"use client";
+import { useActionState, useState } from "react";
+import { importParticipants } from "../../api/intake-actions";
+import type { ActionState } from "../../api/actions";
+export function ImportParticipantsForm({ courseId }: { courseId: string }) {
+  const [csv, setCsv] = useState("");
+  const [state, action, pending] = useActionState<ActionState, FormData>(importParticipants.bind(null, courseId), { error: "" });
+  return <form action={action} className="mt-4 space-y-4"><p className="text-sm text-gray-500">Opsional untuk peserta yang didaftarkan pengelola. Maksimal 50 peserta per batch. Kolom: name,email,phone,gender (IKHWAN/AKHWAT). Tidak menimpa password akun lama.</p><input aria-label="Pilih CSV peserta" type="file" accept=".csv,text/csv" onChange={async event => { const file = event.target.files?.[0]; if (file && file.size <= 100000) setCsv(await file.text()); }} /><label className="block text-sm">CSV peserta<textarea name="csv" required rows={6} maxLength={100000} value={csv} onChange={event => setCsv(event.target.value)} placeholder={'name,email,phone,gender\nNama Peserta,peserta@example.com,081234567890,IKHWAN'} className="mt-2 w-full rounded-xl border p-3 font-mono text-xs" /></label>{state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}{state.message && <p role="status" className="text-sm text-green-700">{state.message}</p>}{!!state.credentials?.length && <div className="overflow-x-auto rounded-xl bg-amber-50 p-4"><p className="mb-3 text-sm font-semibold">Password sementara — simpan sekarang</p><table className="w-full text-left text-xs"><tbody>{state.credentials.map(item => <tr key={item.email}><td className="p-2">{item.email}</td><td className="p-2 font-mono">{item.password}</td></tr>)}</tbody></table></div>}<button disabled={pending} className="rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{pending ? "Mengimpor…" : "Impor peserta"}</button></form>;
+}

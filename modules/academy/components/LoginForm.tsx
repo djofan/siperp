@@ -15,7 +15,7 @@ export function AcademyLoginForm() {
     try {
       const response = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: String(data.get("email")).trim().toLowerCase(), password: data.get("password") }) });
       if (!response.ok) { setError("Email atau password salah, atau akun tidak aktif."); return; }
-      router.push("/academy/belajar"); router.refresh();
+      router.replace("/academy/lanjut"); router.refresh();
     } catch { setError("Tidak dapat masuk. Periksa koneksi dan coba lagi."); }
     finally { setPending(false); }
   }

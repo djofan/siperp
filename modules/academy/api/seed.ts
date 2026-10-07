@@ -6,8 +6,8 @@ export async function seedAcademyModuleRegistration() {
     update: {},
     create: {
       slug: "academy",
-      name: "Zakat Academy",
-      description: "Platform belajar Islami berbasis video untuk LAZSIP",
+      name: "Insan Academy",
+      description: "Platform belajar Islami berbasis audio untuk LAZSIP",
       isActive: true,
     },
   });

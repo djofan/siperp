@@ -27,6 +27,7 @@
 /build
 
 # misc
+/academy-simulation.local.json
 .DS_Store
 *.pem
 
@@ -47,3 +48,10 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+academy-dev*.local.log
+/.academy-uploads/
+/.erp-backups/
+/.erp-restore-test/
+
+#worktrees
+.worktrees/ 
