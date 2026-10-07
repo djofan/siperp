@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
-import { getSession, hasModuleAccess } from "@/lib/auth";
+import { getSipAdmin } from "@/modules/sip/api/admin-access";
 
 /**
  * Upload gambar/PDF admin SIP — SEMENTARA disimpan di disk lokal (public/uploads/sip/),
@@ -17,8 +17,8 @@ const ACCEPTED_TYPES: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!hasModuleAccess(session, "sip")) {
+  const admin = await getSipAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 

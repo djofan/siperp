@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { SIP_SITE_CONTENT_DEFAULTS } from "@/modules/sip/api/siteContentDefaults";
+import { sipPublicUrl } from "@/modules/sip/public-url";
 
 export type SipSiteContentSectionKey =
   | "hero"
@@ -10,6 +11,7 @@ export type SipSiteContentSectionKey =
   | "jangkauanBantuan"
   | "laporan"
   | "kontak"
+  | "layanan"
   | "footer";
 
 export const SIP_SITE_CONTENT_KEYS: SipSiteContentSectionKey[] = [
@@ -21,6 +23,7 @@ export const SIP_SITE_CONTENT_KEYS: SipSiteContentSectionKey[] = [
   "jangkauanBantuan",
   "laporan",
   "kontak",
+  "layanan",
   "footer",
 ];
 
@@ -40,7 +43,7 @@ export async function getMergedSiteContent(sectionKey: SipSiteContentSectionKey)
   const saved = (await getSiteContent(sectionKey)) ?? {};
   const merged: Record<string, string> = { ...SIP_SITE_CONTENT_DEFAULTS[sectionKey] };
   for (const [key, value] of Object.entries(saved)) {
-    if (typeof value === "string" && value.trim() !== "") merged[key] = value;
+    if (typeof value === "string" && value.trim() !== "") merged[key] = /(?:url|href)$/i.test(key) ? sipPublicUrl(value) : value;
   }
   return merged;
 }

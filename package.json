@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:seed:content": "node scripts/seed-demo-content.mjs",
     "db:setup:erp": "node scripts/setup-core-erp.mjs",
     "erp:backup": "node scripts/erp-backup.mjs create",
     "erp:backup:verify": "node scripts/erp-backup.mjs verify",

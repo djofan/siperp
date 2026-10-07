@@ -36,7 +36,7 @@ export async function PenyaluranBantuanSection({ content }: { content: Record<st
                 />
               )}
             />
-            <Button href="/sip/penyaluran-bantuan" variant="soft" icon="arrow" className="self-center">
+            <Button href="/penyaluran-bantuan" variant="soft" icon="arrow" className="self-center">
               {content.seeAllLabel}
             </Button>
           </div>

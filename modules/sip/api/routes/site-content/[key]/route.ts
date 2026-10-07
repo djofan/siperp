@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getSession, hasModuleAccess } from "@/lib/auth";
-import { SIP_SITE_CONTENT_KEYS, upsertSiteContent, type SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
+import { getSipAdmin } from "@/modules/sip/api/admin-access";
+import { SIP_SITE_CONTENT_KEYS, splitLines, upsertSiteContent, type SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 
 const VALID_KEYS = SIP_SITE_CONTENT_KEYS;
 
 export async function PUT(request: Request, { params }: { params: Promise<{ key: string }> }) {
-  const session = await getSession();
-  if (!hasModuleAccess(session, "sip")) {
+  const admin = await getSipAdmin();
+  if (!admin) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 403 });
   }
 
@@ -25,6 +25,12 @@ export async function PUT(request: Request, { params }: { params: Promise<{ key:
     if (typeof value === "string") content[field] = value;
   }
 
+  if (key === "layanan" && splitLines(content.faq).some(line => {
+    const separator = line.indexOf("|");
+    return separator < 1 || !line.slice(separator+1).trim();
+  })) {
+    return NextResponse.json({ error: "Format FAQ: satu pasangan Pertanyaan | Jawaban per baris." }, { status: 400 });
+  }
   await upsertSiteContent(key as SipSiteContentSectionKey, content);
   return NextResponse.json({ ok: true });
 }

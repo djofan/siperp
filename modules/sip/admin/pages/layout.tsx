@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { getSession, hasModuleAccess } from "@/lib/auth";
+import { requireSipAdmin } from "@/modules/sip/api/admin-access";
 import { SipAdminShellChrome } from "@/modules/sip/components/admin/SipAdminShellChrome";
 
 export default async function SipAdminLayout({
@@ -7,13 +6,6 @@ export default async function SipAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getSession();
-  if (!session) {
-    redirect("/admin/login");
-  }
-  if (!hasModuleAccess(session, "sip")) {
-    redirect("/admin?error=forbidden");
-  }
-
-  return <SipAdminShellChrome userName={session.name}>{children}</SipAdminShellChrome>;
+  const user = await requireSipAdmin();
+  return <SipAdminShellChrome userName={user.name}>{children}</SipAdminShellChrome>;
 }

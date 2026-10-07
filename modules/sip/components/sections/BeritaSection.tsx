@@ -31,7 +31,7 @@ export async function BeritaSection({ content }: { content: Record<string, strin
             renderPinnedItem={(item) => (
               <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} featured />
             )}
-            seeAllHref="/sip/berita"
+            seeAllHref="/berita"
             seeAllLabel={content.seeAllLabel}
             emptyLabel="Belum ada berita yang dipublikasikan."
           />

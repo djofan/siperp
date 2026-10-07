@@ -12,7 +12,7 @@ interface ProgramBantuanCardProps {
 
 export function ProgramBantuanCard({ slug, title, description, image, featured = false }: ProgramBantuanCardProps) {
   return (
-    <Link href={`/sip/program-bantuan/${slug}`} className={`group flex h-full w-full flex-col overflow-hidden ${cardSurface}`}>
+    <Link href={`/program-bantuan/${slug}`} className={`group flex h-full w-full flex-col overflow-hidden ${cardSurface}`}>
       <ImagePlaceholder
         variant="program"
         src={image}

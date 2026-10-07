@@ -10,8 +10,10 @@ import { TentangSection } from "@/modules/sip/components/sections/TentangSection
 import { JangkauanBantuanSection } from "@/modules/sip/components/sections/JangkauanBantuanSection";
 import { LaporanSection } from "@/modules/sip/components/sections/LaporanSection";
 import { formatNumber } from "@/modules/sip/components/format";
+import { ServiceCards } from "@/modules/sip/components/Services";
 
 export default async function SipHomePage() {
+  const services = await getMergedSiteContent("layanan");
   const [hero, berita, program, penyaluranBantuan, tentang, jangkauanBantuan, laporan, programList, penyaluranList] =
     await Promise.all([
       getMergedSiteContent("hero"),
@@ -33,6 +35,7 @@ export default async function SipHomePage() {
   return (
     <>
       <Hero hero={hero} stats={stats} />
+      <section className="bg-white py-12 sm:py-16"><div className="mx-auto max-w-6xl px-4 sm:px-6"><h2 className="mb-3 text-3xl font-semibold text-sip-primary-900">{services.title}</h2><p className="mb-8 max-w-2xl leading-7 text-sip-primary-900/60">{services.description}</p><ServiceCards content={services} /></div></section>
       {isSectionVisible(berita) && <BeritaSection content={berita} />}
       {isSectionVisible(program) && <ProgramBantuanSection content={program} />}
       {isSectionVisible(penyaluranBantuan) && <PenyaluranBantuanSection content={penyaluranBantuan} />}

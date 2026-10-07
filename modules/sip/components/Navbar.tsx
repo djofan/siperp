@@ -28,10 +28,10 @@ export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
   const waNumber = process.env.NEXT_PUBLIC_SIP_WHATSAPP;
   const bantuanHref = waNumber
     ? `https://wa.me/${waNumber}?text=${encodeURIComponent("Assalamu'alaikum, saya ingin mengajukan bantuan / bertanya seputar SIP.")}`
-    : "/sip#program";
+    : "/#program";
 
   function handleLogoClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    if (pathname === "/sip") {
+    if (pathname === "/") {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -39,12 +39,12 @@ export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
   }
 
   // Semua section (Tentang, Program, Berita, dst) sekarang hidup sebagai anchor
-  // di landing page, bukan halaman terpisah — kalau lagi di /sip, scroll halus
+  // di landing page, bukan halaman terpisah — kalau lagi di /, scroll halus
   // ke section-nya langsung tanpa reload. Kalau lagi di halaman lain (mis.
-  // detail berita), biarkan Link navigasi normal ke /sip#section.
+  // detail berita), biarkan Link navigasi normal ke /#section.
   function handleNavClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
     const hashIndex = href.indexOf("#");
-    if (pathname === "/sip" && hashIndex !== -1) {
+    if (pathname === "/" && hashIndex !== -1) {
       e.preventDefault();
       const targetId = href.slice(hashIndex + 1);
       document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
@@ -59,12 +59,12 @@ export function Navbar({ hiddenAnchors = [] }: { hiddenAnchors?: string[] }) {
       }`}
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/sip" onClick={handleLogoClick} className="flex items-center gap-2.5">
+        <Link href="/" onClick={handleLogoClick} className="flex items-center gap-2.5">
           <SipMark />
           <span className="text-base font-bold leading-tight tracking-tight text-sip-primary-900 sm:text-lg">{sipSiteConfig.fullName}</span>
         </Link>
 
-        <div className="hidden items-center gap-8 lg:flex">
+        <div className="hidden items-center gap-5 lg:flex">
           {nav.map((item) => (
             <Link
               key={item.href}
