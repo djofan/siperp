@@ -1,6 +1,15 @@
 "use client";
 
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
+
 export type AdminViewMode = "list" | "grid";
+
+const VIEW_MODES: readonly AdminViewMode[] = ["list", "grid"];
+
+// Mode tampilan diingat per tabel, jadi tidak balik ke "list" saat halaman di-refresh.
+export function useAdminViewMode(table: string) {
+  return usePersistedPreference<AdminViewMode>(`lazsip-admin-view:${table}`, VIEW_MODES, "list");
+}
 
 export function ViewToggle({ view, onChange }: { view: AdminViewMode; onChange: (view: AdminViewMode) => void }) {
   return (

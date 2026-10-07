@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RegistrationToggle } from "@/modules/lazsip/components/admin/RegistrationToggle";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -42,10 +42,10 @@ const REGISTRATION_OPTIONS = [
 export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("program");
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [registrationFilter, setRegistrationFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useAdminFilter("program:typeFilter", TYPE_OPTIONS);
+  const [registrationFilter, setRegistrationFilter] = useAdminFilter("program:registrationFilter", REGISTRATION_OPTIONS);
 
   async function handleDelete(id: string, title: string) {
     if (!window.confirm(`Hapus program "${title}"?`)) return;
@@ -70,7 +70,7 @@ export function ProgramTable({ programs }: { programs: ProgramRow[] }) {
     return rows;
   }, [programs, search, typeFilter, registrationFilter]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "program");
 
   return (
     <div>

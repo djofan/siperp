@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { TransactionActions } from "@/modules/lazsip/components/admin/TransactionActions";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton, useAdminFilter, useAdminDateFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { usePagination, AdminPaginationBar } from "@/modules/lazsip/components/admin/AdminPagination";
@@ -49,18 +49,19 @@ function toCsv(rows: TransactionRow[]) {
   return [header.join(","), ...lines].join("\n");
 }
 
-export function TransactionTable({ rows, showTypeFilter = true }: { rows: TransactionRow[]; showTypeFilter?: boolean }) {
+export function TransactionTable({ rows, showTypeFilter = true, storageKey = "transaction" }: { rows: TransactionRow[]; showTypeFilter?: boolean; storageKey?: string }) {
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [methodFilter, setMethodFilter] = useState("all");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [typeFilter, setTypeFilter] = useAdminFilter(`${storageKey}:typeFilter`, TYPE_OPTIONS);
+  const [statusFilter, setStatusFilter] = useAdminFilter(`${storageKey}:statusFilter`, STATUS_OPTIONS);
+  const [dateFrom, setDateFrom] = useAdminDateFilter(`${storageKey}:dateFrom`);
+  const [dateTo, setDateTo] = useAdminDateFilter(`${storageKey}:dateTo`);
 
   const methodOptions = useMemo(() => {
     const methods = Array.from(new Set(rows.map((r) => r.paymentMethod))).sort();
     return [{ value: "all", label: "Semua Metode" }, ...methods.map((m) => ({ value: m, label: m }))];
   }, [rows]);
+
+  const [methodFilter, setMethodFilter] = useAdminFilter(`${storageKey}:methodFilter`, methodOptions);
 
   const resetFilters = () => {
     setSearch("");
@@ -83,7 +84,7 @@ export function TransactionTable({ rows, showTypeFilter = true }: { rows: Transa
     return result;
   }, [rows, search, typeFilter, statusFilter, methodFilter, dateFrom, dateTo]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, storageKey);
 
   function handleExport() {
     const csv = toCsv(filtered);

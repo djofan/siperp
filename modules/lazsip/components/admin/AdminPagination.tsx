@@ -1,13 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 
 const DEFAULT_PAGE_SIZE = 10;
 
-export function usePagination<T>(items: T[], pageSize = DEFAULT_PAGE_SIZE) {
-  const [page, setPage] = useState(1);
-  const [enabled, setEnabled] = useState(true);
+const isPageValue = (value: string): value is string => /^[1-9]\d*$/.test(value);
+const BOOLEAN_VALUES = ["true", "false"] as const;
+
+// Halaman aktif & status pagination diingat per tabel (storageKey) supaya tidak reset saat refresh.
+export function usePagination<T>(items: T[], storageKey: string, pageSize = DEFAULT_PAGE_SIZE) {
+  const [pageValue, setPageValue] = usePersistedPreference<string>(`lazsip-admin:${storageKey}:page`, isPageValue, "1");
+  const [enabledValue, setEnabledValue] = usePersistedPreference<(typeof BOOLEAN_VALUES)[number]>(
+    `lazsip-admin:${storageKey}:pagination`,
+    BOOLEAN_VALUES,
+    "true"
+  );
+  const page = Number(pageValue);
+  const enabled = enabledValue === "true";
+  const setPage = useCallback((next: number) => setPageValue(String(Math.max(1, next))), [setPageValue]);
+  const setEnabled = useCallback((next: boolean) => setEnabledValue(next ? "true" : "false"), [setEnabledValue]);
 
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   // Diklem ke pageCount terbaru (bukan di-reset paksa ke halaman 1) — biar kalau

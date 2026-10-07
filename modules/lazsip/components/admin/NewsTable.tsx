@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
-import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminFilterResetButton, useAdminFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -42,11 +42,11 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("news");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [pinnedFilter, setPinnedFilter] = useState("all");
-  const [sort, setSort] = useState("newest");
+  const [statusFilter, setStatusFilter] = useAdminFilter("news:statusFilter", STATUS_OPTIONS);
+  const [pinnedFilter, setPinnedFilter] = useAdminFilter("news:pinnedFilter", PINNED_OPTIONS);
+  const [sort, setSort] = useAdminFilter("news:sort", SORT_OPTIONS, "newest");
 
   async function saveChange(item: NewsRow, changes: Partial<NewsRow>) {
     setPendingIds((prev) => new Set(prev).add(item.id));
@@ -86,7 +86,7 @@ export function NewsTable({ news }: { news: NewsRow[] }) {
     return rows;
   }, [news, search, statusFilter, pinnedFilter, sort]);
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "news");
 
   return (
     <div>

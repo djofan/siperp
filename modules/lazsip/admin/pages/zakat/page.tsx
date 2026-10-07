@@ -36,7 +36,7 @@ export default async function TransaksiZakatPage() {
         title="Transaksi Zakat"
         description="Transaksi zakat maal & fitrah — settle ke rekening zakat terpisah dari donasi/infaq. Status lunas/gagal ditandai manual di sini."
       />
-      <TransactionTable rows={rows} showTypeFilter={false} />
+      <TransactionTable rows={rows} showTypeFilter={false} storageKey="transaction-zakat" />
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RowActions } from "@/modules/lazsip/components/admin/RowActions";
-import { ViewToggle, type AdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
+import { ViewToggle, useAdminViewMode } from "@/modules/lazsip/components/admin/ViewToggle";
 import { AdminFilterBar, AdminSearchInput, AdminFilterResetButton } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
 import { AdminOverlayCard, AdminOverlayActions } from "@/modules/lazsip/components/admin/AdminCardShell";
@@ -20,7 +20,7 @@ interface PartnerRow {
 export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<AdminViewMode>("list");
+  const [view, setView] = useAdminViewMode("partner");
   const [search, setSearch] = useState("");
 
   async function handleDelete(id: string, name: string) {
@@ -36,7 +36,7 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
     [partners, search]
   );
 
-  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered);
+  const { paginated, page, pageCount, enabled, setEnabled, setPage, startIndex } = usePagination(filtered, "partner");
 
   if (partners.length === 0) {
     return <AdminEmptyState message="Belum ada mitra. Klik tombol di atas untuk menambah." />;

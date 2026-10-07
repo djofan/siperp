@@ -227,7 +227,7 @@ export function Footer({
         </div>
       )}
 
-      <div className="bg-black/20">
+      <div>
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-4 py-5 text-center text-xs text-white/45 sm:flex-row sm:justify-between sm:px-6 sm:text-left">
           <p>
             © {new Date().getFullYear()} {footer.copyright}

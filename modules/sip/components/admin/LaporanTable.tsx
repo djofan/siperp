@@ -4,12 +4,13 @@ import { useSipConfirm } from "@/modules/sip/components/admin/SipConfirmDialog";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SipRowActions } from "@/modules/sip/components/admin/SipRowActions";
-import { SipViewToggle, type SipAdminViewMode } from "@/modules/sip/components/admin/SipViewToggle";
+import { SipViewToggle, useSipViewMode } from "@/modules/sip/components/admin/SipViewToggle";
 import {
   SipAdminFilterBar,
   SipAdminSearchInput,
   SipAdminFilterSelect,
   SipAdminFilterResetButton,
+  useSipAdminFilter,
 } from "@/modules/sip/components/admin/SipAdminFilterBar";
 import { SipAdminEmptyState } from "@/modules/sip/components/admin/SipAdminEmptyState";
 import { SipAdminBadge } from "@/modules/sip/components/admin/SipAdminBadge";
@@ -40,9 +41,9 @@ export function LaporanTable({ laporan }: { laporan: LaporanRow[] }) {
   const router = useRouter();
   const [confirm, confirmDialog] = useSipConfirm();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [view, setView] = useState<SipAdminViewMode>("list");
+  const [view, setView] = useSipViewMode("laporan");
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useSipAdminFilter("laporan:typeFilter", TYPE_OPTIONS);
 
   async function handleDelete(id: string, title: string) {
     if (!(await confirm({ title: "Hapus laporan?", message: `"${title}" akan dihapus permanen dan tidak bisa dikembalikan.` }))) return;

@@ -52,7 +52,7 @@ export default async function TransaksiPage() {
         title="Transaksi Donasi"
         description="Transaksi donasi/infaq campaign — settle ke rekening donasi. Selama payment gateway belum terpasang, status lunas/gagal ditandai manual di sini."
       />
-      <TransactionTable rows={rows} showTypeFilter={false} />
+      <TransactionTable rows={rows} showTypeFilter={false} storageKey="transaction-donasi" />
     </div>
   );
 }

@@ -11,7 +11,7 @@ export default async function DonaturZakatPage() {
         title="Donatur Zakat"
         description="Rekap muzakki (donatur zakat maal & fitrah) — dihitung dari transaksi yang berhasil lunas."
       />
-      <DonorTable donors={donors} showSegmentFilter={false} />
+      <DonorTable donors={donors} showSegmentFilter={false} storageKey="donor-zakat" />
     </div>
   );
 }

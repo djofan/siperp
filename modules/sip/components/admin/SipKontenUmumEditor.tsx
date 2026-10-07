@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { usePersistedPreference } from "@/lib/usePersistedPreference";
 import { SipSiteContentSectionForm, type FieldDef } from "@/modules/sip/components/admin/SipSiteContentSectionForm";
 import type { SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 import { panelClasses } from "@/components/ui/panel";
@@ -19,7 +20,11 @@ export interface SipKontenSection {
 // Semua form tetap ter-mount (yang tidak aktif cuma di-hide) supaya ketikan yang belum
 // disimpan tidak hilang saat pindah section — section itu ditandai titik kuning.
 export function SipKontenUmumEditor({ sections }: { sections: SipKontenSection[] }) {
-  const [activeKey, setActiveKey] = useState(sections[0].sectionKey);
+  const [activeKey, setActiveKey] = usePersistedPreference<SipSiteContentSectionKey>(
+    "sip-admin-konten-umum:section",
+    sections.map((section) => section.sectionKey),
+    sections[0].sectionKey
+  );
   const [dirtyKeys, setDirtyKeys] = useState<Set<SipSiteContentSectionKey>>(new Set());
 
   const handleDirtyChange = useCallback((key: SipSiteContentSectionKey, dirty: boolean) => {
