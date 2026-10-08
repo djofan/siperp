@@ -38,7 +38,7 @@ export function ProfileForm({ action, initial, isPeserta }: { action: Action; in
   const [preview, setPreview] = useState<string | null>(initial.photoUrl);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="crud-form space-y-6">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {state.message && <Notice tone="success">{state.message}</Notice>}
 
@@ -109,7 +109,7 @@ export function ProfileForm({ action, initial, isPeserta }: { action: Action; in
 export function PasswordForm({ action }: { action: Action }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="crud-form space-y-5">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {state.message && <Notice tone="success">{state.message}</Notice>}
       <Field label="Password lama" htmlFor="pw-current">

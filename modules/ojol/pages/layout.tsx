@@ -1,4 +1,5 @@
 import { requireModulePublic } from "@/modules/core/module-access";
+import "@/modules/ojol/components/experience.css";
 import { ojolDisplay } from "@/modules/ojol/components/fonts";
 
 export const metadata = {
@@ -9,5 +10,5 @@ export const metadata = {
 // Akar semua halaman /ojol/**. Selama modul nonaktif: 404 untuk umum, superadmin tetap bisa menguji.
 export default async function OjolRootLayout({ children }: { children: React.ReactNode }) {
   await requireModulePublic("ojol");
-  return <div className={`${ojolDisplay.variable} flex min-h-dvh flex-col bg-ojol-paper text-ojol-ink`}>{children}</div>;
+  return <div className={`${ojolDisplay.variable} ojol-experience flex min-h-dvh flex-col bg-ojol-paper text-ojol-ink`}>{children}</div>;
 }

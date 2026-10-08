@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/FormField";
+import { FormField, Input, Select } from "@/modules/tanwir/components/admin/FormControls";
 import { Switch } from "@/components/ui/Switch";
+import { Icon } from "@/modules/tanwir/components/icons";
 import type { ActionState } from "@/modules/tanwir/api/actions/state";
 import { WilayahFields, type WilayahValue } from "@/modules/tanwir/components/app/WilayahFields";
 
@@ -54,10 +55,10 @@ export function MemberForm({
   const empty: WilayahValue = { provinceId: null, provinceName: null, cityId: null, cityName: null, districtId: null, districtName: null, villageId: null, villageName: null };
 
   return (
-    <form action={formAction} className="space-y-8">
+    <form action={formAction} className="crud-form space-y-8">
       <ErrorText error={state.error} />
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-foreground">Akun</h2>
+        <div><h2 className="text-sm font-medium text-foreground">Informasi akun</h2><p className="form-section-note">Identitas dan akses login. Kode akun dibuat otomatis oleh sistem.</p></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Nama lengkap" htmlFor="m-name">
             <Input id="m-name" name="name" required maxLength={191} defaultValue={initial?.name} />
@@ -80,7 +81,7 @@ export function MemberForm({
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-foreground">Profil</h2>
+        <div><h2 className="text-sm font-medium text-foreground">Profil dan kelompok</h2><p className="form-section-note">Lengkapi kontak, kelompok, dan alamat anggota.</p></div>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Nomor HP / WhatsApp" htmlFor="m-phone">
             <Input id="m-phone" name="phone" type="tel" maxLength={20} defaultValue={initial?.phone ?? ""} />
@@ -116,7 +117,7 @@ export function MemberForm({
         </FormField>
       </section>
 
-      <div className="flex gap-2">
+      <div className="form-actions">
         <Button type="submit" disabled={pending}>
           {pending ? "Menyimpan…" : "Simpan"}
         </Button>
@@ -139,7 +140,7 @@ export function GroupForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="crud-form compact-group-form space-y-5">
       <ErrorText error={state.error} />
       <FormField label="PIC (guru)" htmlFor="g-pic" hint="Guru yang menaungi kelompok ini. Tugas buatan guru tersebut otomatis terkirim ke kelompok ini.">
         <Select id="g-pic" name="picId" required defaultValue={initial?.picId ?? ""}>
@@ -159,7 +160,7 @@ export function GroupForm({
       <FormField label="Deskripsi / info kelompok" htmlFor="g-desc" hint="Tampil di beranda peserta, mis. jadwal setoran atau tautan grup.">
         <textarea id="g-desc" name="description" rows={4} maxLength={5000} defaultValue={initial?.description ?? ""} className={textareaClass} />
       </FormField>
-      <div className="flex gap-2">
+      <div className="form-actions">
         <Button type="submit" disabled={pending}>
           {pending ? "Menyimpan…" : "Simpan"}
         </Button>
@@ -182,7 +183,7 @@ export function AdminStudentForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="crud-form space-y-5">
       <ErrorText error={state.error} />
       <FormField label="Peserta (guru ngaji)" htmlFor="s-owner">
         <Select id="s-owner" name="memberId" required defaultValue={initial?.memberId ?? ""}>
@@ -218,7 +219,7 @@ export function AdminStudentForm({
       <FormField label="Progres belajar / hafalan" htmlFor="s-progress">
         <textarea id="s-progress" name="progress" rows={4} maxLength={5000} defaultValue={initial?.progress ?? ""} className={textareaClass} />
       </FormField>
-      <div className="flex gap-2">
+      <div className="form-actions">
         <Button type="submit" disabled={pending}>
           {pending ? "Menyimpan…" : "Simpan"}
         </Button>
@@ -231,15 +232,15 @@ export function AdminStudentForm({
 }
 
 /** Hapus dua langkah untuk tabel admin (tema gelap Core). */
-export function AdminDeleteButton({ action, confirmText = "Hapus permanen?" }: { action: () => Promise<ActionState>; confirmText?: string }) {
+export function AdminDeleteButton({ action, confirmText = "Hapus permanen?", iconOnly = false }: { action: () => Promise<ActionState>; confirmText?: string; iconOnly?: boolean }) {
   const router = useRouter();
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
   if (!asking) {
     return (
-      <button type="button" onClick={() => setAsking(true)} className="text-sm font-medium text-foreground/50 hover:text-danger">
-        Hapus
+      <button type="button" onClick={() => setAsking(true)} aria-label={iconOnly ? confirmText : undefined} title={iconOnly ? "Hapus" : undefined} className={iconOnly ? "directory-icon-button hover:text-danger" : "text-sm font-medium text-foreground/50 hover:text-danger"}>
+        {iconOnly ? <Icon name="trash" className="h-4 w-4" /> : "Hapus"}
       </button>
     );
   }
@@ -267,12 +268,12 @@ export function AdminDeleteButton({ action, confirmText = "Hapus permanen?" }: {
   );
 }
 
-export function MemberActiveSwitch({ initial, action }: { initial: boolean; action: (isActive: boolean) => Promise<ActionState> }) {
+export function MemberActiveSwitch({ initial, action, showLabel = false }: { initial: boolean; action: (isActive: boolean) => Promise<ActionState>; showLabel?: boolean }) {
   const router = useRouter();
   const [active, setActive] = useState(initial);
   const [pending, startTransition] = useTransition();
   return (
-    <Switch
+    <span className="inline-flex items-center gap-2 whitespace-nowrap"><Switch
       checked={active}
       disabled={pending}
       aria-label={active ? "Nonaktifkan akun" : "Aktifkan akun"}
@@ -284,6 +285,6 @@ export function MemberActiveSwitch({ initial, action }: { initial: boolean; acti
           router.refresh();
         });
       }}
-    />
+    />{showLabel && <span className="text-xs">{active ? "Aktif" : "Nonaktif"}</span>}</span>
   );
 }

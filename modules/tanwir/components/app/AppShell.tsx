@@ -3,140 +3,66 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
 import { Icon, type IconName } from "@/modules/tanwir/components/icons";
 import { Avatar } from "@/modules/tanwir/components/ui";
 import { Wordmark } from "@/modules/tanwir/components/Wordmark";
 
-export interface AppNavItem {
-  href: string;
-  label: string;
-  icon: IconName;
-  badge?: number;
-}
+export interface AppNavItem { href: string; label: string; icon: IconName; badge?: number }
 
-function isActive(pathname: string, href: string, root: string) {
-  return href === root ? pathname === root : pathname === href || pathname.startsWith(href + "/");
-}
-
-export function AppShell({
-  root,
-  roleLabel,
-  nav,
-  user,
-  children,
-}: {
-  root: string;
-  roleLabel: string;
-  nav: AppNavItem[];
+export function AppShell({ root, roleLabel, nav, user, children, logoutHref = "/tanwir/masuk" }: {
+  root: string; roleLabel: string; nav: AppNavItem[];
   user: { name: string; code: string; photo: string | null };
-  children: React.ReactNode;
+  children: React.ReactNode; logoutHref?: string;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [leaving, setLeaving] = useState(false);
-
+  const active = (href: string) => href === root || href === "/admin" ? pathname === href : pathname === href || pathname.startsWith(href + "/");
+  const current = nav.find(item => active(item.href));
   async function logout() {
     setLeaving(true);
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    router.replace("/tanwir/masuk");
+    router.replace(logoutHref);
     router.refresh();
   }
-
   return (
-    <div className="min-h-dvh bg-tanwir-paper text-tanwir-ink">
-      {/* Sidebar desktop */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-tanwir-surface px-4 py-6 ring-1 ring-tanwir-line lg:flex">
-        <div className="px-2">
-          <Wordmark href={root} />
-          <p className="mt-2 text-xs text-tanwir-muted">{roleLabel}</p>
+    <div className="learning-shell">
+      <a href="#tanwir-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:p-3">Lewati ke konten</a>
+      <aside className="learning-sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col px-4 py-4 lg:flex">
+        <div className="px-3">
+          <Wordmark href={root} inverted={false} />
+          <p className="mt-2 text-[11px] text-tanwir-muted">{roleLabel.split(" · ")[0]} · Tanwir Qurani</p>
         </div>
-        <nav aria-label="Menu utama" className="mt-8 flex flex-1 flex-col gap-1">
-          {nav.map((item) => {
-            const active = isActive(pathname, item.href, root);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
-                  active ? "bg-tanwir-primary-soft font-medium text-tanwir-primary" : "text-tanwir-muted hover:bg-tanwir-paper hover:text-tanwir-ink",
-                )}
-              >
-                <Icon name={item.icon} />
-                <span className="flex-1">{item.label}</span>
-                {!!item.badge && (
-                  <span className="min-w-5 rounded-full bg-tanwir-primary px-1.5 py-0.5 text-center text-[11px] font-semibold text-white tabular-nums">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+        <div className="mx-3 mt-9 flex items-center gap-2 border-t border-current/10 pt-5 text-[10px] font-semibold uppercase tracking-[.18em] opacity-65">
+          {roleLabel}
+        </div>
+        <nav aria-label="Menu utama" className="mt-4 flex-1 space-y-1 overflow-y-auto">
+          {nav.map(item => <Link key={item.href} href={item.href} className="learning-nav-item" aria-current={active(item.href) ? "page" : undefined}>
+            <Icon name={item.icon} className="h-[19px] w-[19px] shrink-0" /><span className="flex-1">{item.label}</span>
+            {!!item.badge && <span className="rounded-full bg-tanwir-primary-soft px-2 py-0.5 text-[10px] text-tanwir-primary">{item.badge}</span>}
+          </Link>)}
         </nav>
-        <div className="flex items-center gap-3 rounded-xl px-2 py-2">
+        <div className="flex items-center gap-3 border-t border-current/10 px-2 pt-5">
           <Avatar name={user.name} src={user.photo} size={36} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="text-xs text-tanwir-muted tabular-nums">{user.code}</p>
-          </div>
-          <button
-            type="button"
-            onClick={logout}
-            disabled={leaving}
-            aria-label="Keluar"
-            title="Keluar"
-            className="rounded-lg p-2 text-tanwir-muted transition-colors hover:bg-tanwir-paper hover:text-tanwir-ink"
-          >
-            <Icon name="logout" className="h-[18px] w-[18px]" />
-          </button>
+          <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{user.name}</p><p className="mt-1 text-[10px] opacity-55">{user.code}</p></div>
+          <button type="button" onClick={logout} disabled={leaving} aria-label="Keluar" title="Keluar" className="rounded-lg p-2 hover:bg-current/10 disabled:opacity-50"><Icon name="logout" className="h-4 w-4" /></button>
         </div>
       </aside>
-
-      {/* Header HP */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-tanwir-paper/95 px-4 backdrop-blur lg:hidden">
-        <Wordmark href={root} />
-        <button
-          type="button"
-          onClick={logout}
-          disabled={leaving}
-          className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-tanwir-muted hover:bg-tanwir-surface"
-        >
-          <Icon name="logout" className="h-4 w-4" />
-          Keluar
-        </button>
-      </header>
-
-      <main className="px-4 pb-28 pt-4 sm:px-6 lg:ml-64 lg:px-10 lg:pb-16 lg:pt-10">
-        <div className="mx-auto w-full max-w-5xl">{children}</div>
-      </main>
-
-      {/* Tab bar HP */}
-      <nav
-        aria-label="Menu utama"
-        className="fixed inset-x-0 bottom-0 z-30 grid bg-tanwir-surface pb-[env(safe-area-inset-bottom)] ring-1 ring-tanwir-line lg:hidden"
-        style={{ gridTemplateColumns: `repeat(${nav.length}, minmax(0, 1fr))` }}
-      >
-        {nav.map((item) => {
-          const active = isActive(pathname, item.href, root);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cn("relative flex flex-col items-center gap-1 py-2.5 text-[11px]", active ? "font-medium text-tanwir-primary" : "text-tanwir-muted")}
-            >
-              <Icon name={item.icon} className="h-[22px] w-[22px]" />
-              {item.label}
-              {!!item.badge && (
-                <span className="absolute left-1/2 top-1.5 ml-2 min-w-4 rounded-full bg-tanwir-primary px-1 text-center text-[10px] font-semibold leading-4 text-white tabular-nums">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          );
-        })}
+      <div className="lg:ml-64">
+        <header className="learning-bar flex min-h-20 items-center justify-between gap-4 px-4 sm:px-8">
+          <div><div className="lg:hidden"><Wordmark href={root} /></div><p className="hidden text-xs text-tanwir-muted lg:block">Tanwir Qurani / {roleLabel.split(" · ")[0]} / <span className="text-tanwir-ink">{current?.label ?? "Beranda"}</span></p></div>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-3 sm:flex"><Avatar name={user.name} src={user.photo} size={36} /><div><p className="text-xs font-medium">{user.name}</p><p className="text-xs text-tanwir-muted">{user.code} · {roleLabel.split(" · ")[0]}</p></div></div>
+            <button type="button" onClick={logout} disabled={leaving} className="flex items-center gap-2 rounded-full px-3 py-2 text-xs text-tanwir-muted hover:bg-tanwir-primary-soft disabled:opacity-50"><Icon name="logout" className="h-4 w-4" />Keluar</button>
+          </div>
+        </header>
+        <main id="tanwir-content" className="learning-content px-4 pb-32 pt-7 sm:px-8 lg:pb-12 lg:pt-9">{children}</main>
+      </div>
+      <nav aria-label="Menu utama seluler" className="mobile-tabs fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto pb-[env(safe-area-inset-bottom)] lg:hidden">
+        {nav.map(item => <Link key={item.href} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={`relative flex min-w-[72px] flex-1 flex-col items-center gap-1.5 px-2 py-3 text-[10px] ${active(item.href) ? "font-semibold text-tanwir-primary" : "text-tanwir-muted"}`}>
+          <Icon name={item.icon} className="h-5 w-5" />{item.label}
+          {!!item.badge && <span className="absolute right-2 top-1 rounded-full bg-tanwir-primary-soft px-1.5 text-[9px] text-tanwir-primary">{item.badge}</span>}
+        </Link>)}
       </nav>
     </div>
   );

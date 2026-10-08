@@ -28,7 +28,7 @@ export function StudentForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="crud-form space-y-5">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {owners && (
         <Field label="Peserta (guru ngaji)" htmlFor="student-owner" hint="Santri ini tercatat sebagai anak didik peserta tersebut.">
@@ -66,7 +66,7 @@ export function StudentForm({
       <Field label="Progres belajar / hafalan" htmlFor="student-progress" hint="Catat perkembangan terakhir, mis. surah yang sudah dihafal atau jilid yang sedang dipelajari.">
         <textarea id="student-progress" name="progress" rows={4} maxLength={5000} defaultValue={initial?.progress ?? ""} className={textareaClass} />
       </Field>
-      <div className="flex flex-wrap gap-2 pt-1">
+      <div className="form-actions">
         <button type="submit" disabled={pending} className={buttonClass("primary")}>
           {pending ? "Menyimpan…" : "Simpan"}
         </button>

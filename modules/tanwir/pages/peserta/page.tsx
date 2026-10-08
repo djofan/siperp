@@ -73,7 +73,7 @@ export default async function PesertaHomePage() {
               {group.description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-tanwir-muted">{group.description}</p>}
             </Card>
           )}
-          <Link href="/tanwir/peserta/anak-didik" className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line hover:ring-tanwir-primary/40">
+          <Link href="/tanwir/peserta/anak-didik" className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line hover:bg-tanwir-paper">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-tanwir-gold-soft text-tanwir-gold">
               <Icon name="students" />
             </span>

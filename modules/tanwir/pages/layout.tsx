@@ -1,4 +1,5 @@
 import { requireModulePublic } from "@/modules/core/module-access";
+import "@/modules/tanwir/components/experience.css";
 import { tanwirSerif } from "@/modules/tanwir/components/fonts";
 
 export const metadata = {
@@ -9,5 +10,5 @@ export const metadata = {
 // Akar semua halaman /tanwir/**. Selama modul nonaktif: 404 untuk umum, superadmin tetap bisa menguji.
 export default async function TanwirRootLayout({ children }: { children: React.ReactNode }) {
   await requireModulePublic("tanwir");
-  return <div className={`${tanwirSerif.variable} flex min-h-dvh flex-col bg-tanwir-paper text-tanwir-ink`}>{children}</div>;
+  return <div className={`${tanwirSerif.variable} tanwir-experience flex min-h-dvh flex-col bg-tanwir-paper text-tanwir-ink`}>{children}</div>;
 }

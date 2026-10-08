@@ -1,9 +1,5 @@
-import { Instrument_Serif } from "next/font/google";
+import { Newsreader, Plus_Jakarta_Sans } from "next/font/google";
 
-// Serif display hanya untuk wordmark & judul situs publik (prd-tanwir §4) — UI tetap Geist.
-export const tanwirSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-tanwir-serif",
-});
+const heading = Newsreader({ subsets: ["latin"], variable: "--font-tanwir-serif", display: "swap" });
+const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-tanwir-ui", display: "swap" });
+export const tanwirSerif = { variable: `${heading.variable} ${body.variable}` };

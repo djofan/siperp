@@ -7,7 +7,7 @@ import { SITE_NAV, whatsappAdminHref } from "@/modules/tanwir/components/site/co
 export default function TanwirSiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="sticky top-0 z-40 bg-tanwir-paper/90 backdrop-blur">
+      <header className="program-header sticky top-0 z-40 bg-tanwir-paper/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
           <Wordmark />
           <nav aria-label="Navigasi situs" className="hidden items-center gap-8 text-sm text-tanwir-muted md:flex">
@@ -26,7 +26,7 @@ export default function TanwirSiteLayout({ children }: { children: React.ReactNo
               <summary aria-label="Buka menu" className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-tanwir-ink hover:bg-tanwir-surface [&::-webkit-details-marker]:hidden">
                 <Icon name="menu" />
               </summary>
-              <div className="absolute right-0 top-12 w-52 rounded-2xl bg-tanwir-surface p-2 shadow-[0_12px_40px_-12px_rgba(22,33,29,0.25)] ring-1 ring-tanwir-line">
+              <div className="absolute right-0 top-12 w-52 rounded-2xl bg-tanwir-surface p-2  ring-1 ring-tanwir-line">
                 {SITE_NAV.map((item) => (
                   <Link key={item.href} href={item.href} className="block rounded-xl px-3 py-2.5 text-sm hover:bg-tanwir-paper">
                     {item.label}
@@ -40,7 +40,7 @@ export default function TanwirSiteLayout({ children }: { children: React.ReactNo
 
       <main className="flex-1">{children}</main>
 
-      <footer className="mt-24 bg-tanwir-ink text-white/70">
+      <footer className="program-footer mt-24 bg-tanwir-ink text-white/70">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Wordmark inverted />

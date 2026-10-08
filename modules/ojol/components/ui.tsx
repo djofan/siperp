@@ -59,12 +59,12 @@ export function Field({
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-2xl bg-ojol-surface p-5 ring-1 ring-ojol-line sm:p-6", className)} {...props} />;
+  return <div className={cn("module-card rounded-2xl bg-ojol-surface p-5 ring-1 ring-ojol-line sm:p-6", className)} {...props} />;
 }
 
 export function PageTitle({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="module-title mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-ojol-ink sm:text-[1.75rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-ojol-muted">{description}</p>}
@@ -163,7 +163,7 @@ export function ScoreBadge({ score }: { score: number }) {
 
 export function Stat({ label, value, hint, emphasis = false }: { label: string; value: ReactNode; hint?: string; emphasis?: boolean }) {
   return (
-    <div className={cn("rounded-2xl p-4 ring-1 sm:p-5", emphasis ? "bg-ojol-primary text-white ring-ojol-primary" : "bg-ojol-surface ring-ojol-line")}>
+    <div className={cn("module-stat rounded-2xl p-4 ring-1 sm:p-5", emphasis ? "bg-ojol-primary text-white ring-ojol-primary" : "bg-ojol-surface ring-ojol-line")}>
       <p className={cn("text-xs font-medium", emphasis ? "text-white/70" : "text-ojol-muted")}>{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
       {hint && <p className={cn("mt-1 text-xs", emphasis ? "text-white/70" : "text-ojol-muted")}>{hint}</p>}
@@ -173,6 +173,7 @@ export function Stat({ label, value, hint, emphasis = false }: { label: string; 
 
 export function Avatar({ name, src, size = 40 }: { name: string; src?: string | null; size?: number }) {
   const initials = name
+    .replace(/^\[[^\]]+\]\s*/, "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)

@@ -75,7 +75,7 @@ export function LazsipSidebar({ userName, onNavigate }: { userName: string; onNa
               className={cn(
                 "relative rounded-full px-3.5 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-white/10 pl-5 text-white before:absolute before:top-1/2 before:left-1.5 before:h-4 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-lazsip-primary-500"
+                  ? "bg-white/10 text-white"
                   : "text-white/55 hover:bg-white/5 hover:text-white"
               )}
             >

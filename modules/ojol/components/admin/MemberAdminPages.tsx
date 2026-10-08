@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Input } from "@/components/ui/FormField";
 import { buttonVariants } from "@/components/ui/Button";
 import { panelClasses } from "@/components/ui/panel";
-import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
+import { Icon } from "@/modules/ojol/components/icons";
+import { MemberDirectory } from "./MemberDirectory";
 import { requireOjolAdmin } from "@/modules/ojol/api/access";
 import { getMemberForEdit, listMembers } from "@/modules/ojol/api/members";
 import { groupOptions } from "@/modules/ojol/api/groups";
@@ -17,7 +16,7 @@ const LABEL = { guru: { one: "Guru", many: "Guru" }, peserta: { one: "Peserta", 
 export async function MemberListPage({ role, searchParams }: { role: "guru" | "peserta"; searchParams: Promise<{ q?: string; dibuat?: string }> }) {
   await requireOjolAdmin();
   const { q = "", dibuat } = await searchParams;
-  const members = await listMembers(role, q);
+  const members = await listMembers(role);
   const base = `/admin/ojol/${role}`;
 
   return (
@@ -31,6 +30,7 @@ export async function MemberListPage({ role, searchParams }: { role: "guru" | "p
         }
         actions={
           <Link href={`${base}/baru`} className={buttonVariants()}>
+            <Icon name="plus" className="h-4 w-4" />
             Tambah {LABEL[role].one.toLowerCase()}
           </Link>
         }
@@ -40,52 +40,14 @@ export async function MemberListPage({ role, searchParams }: { role: "guru" | "p
           Akun dibuat dengan kode <strong className="tabular-nums">{dibuat}</strong>. Berikan kode ini beserta password kepada pemilik akun.
         </p>
       )}
-      <form className="mb-4 max-w-sm" role="search">
-        <Input name="q" defaultValue={q} placeholder="Cari nama, kode, atau nomor HP" aria-label="Cari" />
-      </form>
-      {members.length ? (
-        <div className={panelClasses("overflow-x-auto")}>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Kode</Th>
-                <Th>Nama</Th>
-                {role === "peserta" && <Th>Kelompok</Th>}
-                <Th>No. HP</Th>
-                <Th>{role === "guru" ? "Tugas" : "Setoran"}</Th>
-                <Th>Aktif</Th>
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody>
-              {members.map((member) => (
-                <Tr key={member.id}>
-                  <Td className="font-medium tabular-nums">{member.code}</Td>
-                  <Td>
-                    <Link href={`${base}/${member.id}`} className="font-medium text-foreground hover:underline">
-                      {member.user.name}
-                    </Link>
-                  </Td>
-                  {role === "peserta" && <Td className="text-foreground/70">{member.group?.name ?? "—"}</Td>}
-                  <Td className="tabular-nums text-foreground/70">{member.phone ?? "—"}</Td>
-                  <Td className="tabular-nums">{role === "guru" ? member._count.tasks : member._count.submissions}</Td>
-                  <Td>
-                    <MemberActiveSwitch initial={member.user.isActive} action={toggleMemberActiveAction.bind(null, member.id)} />
-                  </Td>
-                  <Td className="whitespace-nowrap text-right">
-                    <Link href={`${base}/${member.id}`} className="mr-4 text-sm font-medium text-accent hover:text-accent-hover">
-                      Ubah
-                    </Link>
-                    <AdminDeleteButton action={deleteMemberAction.bind(null, role, member.id)} confirmText={`Hapus ${member.user.name}?`} />
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </div>
-      ) : (
-        <EmptyState>{q ? "Tidak ada yang cocok dengan pencarian." : `Belum ada ${LABEL[role].one.toLowerCase()}.`}</EmptyState>
-      )}
+      <MemberDirectory role={role} initialQuery={q} members={members.map(member => ({
+        id: member.id, name: member.user.name, code: member.code, phone: member.phone,
+        teachingPlace: null,
+        groups: member.group ? [member.group.name] : [],
+        active: member.user.isActive, count: role === "guru" ? member._count.tasks : member._count.submissions,
+        activeControl: <MemberActiveSwitch initial={member.user.isActive} showLabel action={toggleMemberActiveAction.bind(null, member.id)} />,
+        deleteControl: <AdminDeleteButton iconOnly action={deleteMemberAction.bind(null, role, member.id)} confirmText={`Hapus ${member.user.name}?`} />,
+      }))} />
     </div>
   );
 }

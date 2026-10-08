@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ProgramLoginShell } from "@/components/auth/ProgramLoginShell";
 import { getOjolViewer, homePathFor } from "@/modules/ojol/api/access";
 import { LoginForm } from "@/modules/ojol/components/site/LoginForm";
 import { whatsappAdminHref } from "@/modules/ojol/components/site/content";
@@ -8,22 +9,15 @@ export const metadata = { title: "Masuk" };
 export default async function OjolLoginPage() {
   const viewer = await getOjolViewer();
   if (viewer?.member) redirect(homePathFor(viewer));
-
-  return (
-    <section className="mx-auto flex max-w-6xl justify-center px-4 py-16 sm:px-6 sm:py-24">
-      <div className="w-full max-w-sm">
-        <h1 className="font-[family-name:var(--font-ojol-display)] text-4xl font-extrabold tracking-tight">Assalamu&apos;alaikum.</h1>
-        <p className="mt-2 text-ojol-muted">Masuk dengan kode akun dari admin untuk melanjutkan setoran.</p>
-        <div className="mt-8 rounded-3xl bg-ojol-surface p-6 ring-1 ring-ojol-line sm:p-7">
-          <LoginForm />
-        </div>
-        <p className="mt-6 text-center text-sm text-ojol-muted">
-          Lupa password atau belum punya kode?{" "}
-          <a href={whatsappAdminHref("Assalamu'alaikum, saya butuh bantuan akun Ojol Mengaji.")} target="_blank" rel="noopener noreferrer" className="font-medium text-ojol-primary hover:underline">
-            Hubungi admin
-          </a>
-        </p>
-      </div>
-    </section>
-  );
+  return <ProgramLoginShell name="Ojol Mengaji" href="/ojol" tone="green"
+    heading="Jeda dari jalan, dekat dengan Al-Qur’an."
+    description="Ruang belajar untuk pengemudi ojek online. Lanjutkan mengaji bersama guru pembimbing di sela aktivitas."
+    features={[
+      { title: "Setoran bacaan", description: "Kumpulkan rekaman audio atau video sesuai tugas dari guru." },
+      { title: "Arahan pembimbing", description: "Lihat hasil review dan catatan bacaan di dashboard." },
+      { title: "Kelompok belajar", description: "Tetap terhubung dengan guru dan penugasan kelompokmu." },
+    ]}
+    helpHref={whatsappAdminHref("Assalamu'alaikum, saya butuh bantuan akun Ojol Mengaji.")}>
+    <LoginForm />
+  </ProgramLoginShell>;
 }
