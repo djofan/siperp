@@ -6,16 +6,27 @@ Instruksi ini dibaca otomatis oleh Claude Code setiap sesi dimulai di project in
 
 Platform digital terpadu untuk **Solidaritas Insan Peduli (SIP)** — yayasan dengan beberapa divisi/program yang sebelumnya berjalan sebagai website dan sistem terpisah-pisah (WordPress, Next.js, Go, Laravel). Project ini menyatukan semuanya jadi **satu aplikasi, satu database, satu deploy**, dengan modul-modul (LAZSIP, SARSIP, Divisi Pendidikan, Tanwir Qurani, dan SIP sendiri) sebagai bagian sejajar di dalamnya.
 
-Dokumen lengkap ada di:
-- `PRD.md` — arsitektur keseluruhan, skema data inti, roadmap semua fase.
-- `prd-lazsip.md` — spesifikasi detail modul LAZSIP (fase yang sedang dikerjakan sekarang).
-- File `prd-<modul>.md` lain akan menyusul seiring modul itu mulai dikerjakan.
+Dokumen lengkap ada di folder `docs/`:
+- `docs/PRD.md` — arsitektur keseluruhan, skema data inti, roadmap semua fase (ringkasan lintas modul).
+- `docs/prd-core.md`, `docs/prd-lazsip.md`, `docs/prd-sip.md`, `docs/prd-tanwir.md`, `docs/prd-ojol.md` — spesifikasi detail per modul. PRD modul adalah acuan utama untuk aturan bisnis modul itu.
+- File `docs/prd-<modul>.md` lain dibuat **sebelum** modul itu mulai dikerjakan.
 
 **Baca `PRD.md` dan PRD modul yang relevan sebelum mulai kerja di area itu.** Jangan berasumsi soal fitur/aturan bisnis yang belum dibaca dari PRD-nya.
 
 ## 2. Prioritas kerja saat ini
 
-**Sedang dikerjakan: Modul LAZSIP (Fase 1).** Semua modul lain (SIP, SARSIP, Pendidikan, Tanwir Qurani) belum dikerjakan — jangan bangun fiturnya duluan kecuali diminta eksplisit. Fokus penuh menyelesaikan LAZSIP sampai memenuhi *Definition of Done* di `prd-lazsip.md` sebelum pindah ke modul berikutnya.
+Status modul per 7 Oktober 2026:
+
+| Modul | Status | Acuan |
+|---|---|---|
+| LAZSIP | Berjalan, penyempurnaan | `docs/prd-lazsip.md` |
+| SIP (portal induk, di root `/`) | Berjalan | `docs/prd-sip.md` |
+| SARSIP, Academy | Berjalan (dikerjakan tim) | — |
+| Tanwir Qurani | Dibangun & diuji, mulai dari nol (tanpa migrasi data lama) | `docs/prd-tanwir.md`, `docs/tanwir-demo.md` |
+| Ojol Mengaji | Dibangun & diuji, mulai dari nol (tanpa migrasi data lama) | `docs/prd-ojol.md`, `docs/ojol-demo.md` |
+| Divisi Pendidikan | Belum dimulai, scope belum jelas | `docs/PRD.md` Fase 4 |
+
+Jangan membangun fitur modul yang belum dimulai kecuali diminta eksplisit. Selesaikan modul yang sedang dikerjakan sampai memenuhi *Definition of Done* di PRD-nya sebelum pindah ke modul berikutnya.
 
 ## 3. Prinsip Arsitektur (wajib dipatuhi)
 

@@ -266,6 +266,51 @@ select {
   --font-sip-display: var(--font-sip-display);
 }
 
+/*
+ * Palet modul Tanwir Qurani (docs/prd-tanwir.md §4) — gading, tinta, hijau tua, emas redup.
+ * Dipisah di blok sendiri supaya tidak mengubah token modul lain.
+ */
+@theme {
+  --color-tanwir-paper: #f7f5ef;
+  --color-tanwir-surface: #ffffff;
+  --color-tanwir-ink: #16211d;
+  --color-tanwir-muted: #5e6b66;
+  --color-tanwir-line: #e6e2d8;
+  --color-tanwir-primary: #1f4d43;
+  --color-tanwir-primary-hover: #173c34;
+  --color-tanwir-primary-soft: #e7efec;
+  --color-tanwir-gold: #a8803a;
+  --color-tanwir-gold-soft: #f4eddf;
+  --color-tanwir-success: #2f7d57;
+  --color-tanwir-success-soft: #e6f2eb;
+  --color-tanwir-warning: #9a6512;
+  --color-tanwir-warning-soft: #fbf1de;
+  --color-tanwir-danger: #b3412f;
+  --color-tanwir-danger-soft: #fae9e5;
+}
+
+/*
+ * Palet modul Ojol Mengaji (docs/prd-ojol.md §4) — putih hangat, tinta gelap, hijau segar, aksen amber.
+ */
+@theme {
+  --color-ojol-paper: #fbfaf7;
+  --color-ojol-surface: #ffffff;
+  --color-ojol-ink: #111814;
+  --color-ojol-muted: #5b6660;
+  --color-ojol-line: #e7e5df;
+  --color-ojol-primary: #0e7c4a;
+  --color-ojol-primary-hover: #0a6139;
+  --color-ojol-primary-soft: #e3f3ea;
+  --color-ojol-gold: #b86e0b;
+  --color-ojol-gold-soft: #fcefd9;
+  --color-ojol-success: #1f7a4d;
+  --color-ojol-success-soft: #e4f3ea;
+  --color-ojol-warning: #9a6512;
+  --color-ojol-warning-soft: #fbf1de;
+  --color-ojol-danger: #b3412f;
+  --color-ojol-danger-soft: #fae9e5;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

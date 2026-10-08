@@ -78,10 +78,13 @@ Satu akun bisa punya banyak baris di `module_access` — itulah mekanisme "satu 
 | 2 | Modul SIP | Portal induk (profil yayasan, program umum, laporan, blog, penghubung ke divisi lain) |
 | 3 | Modul SARSIP | Website & admin tanggap bencana |
 | 4 | Divisi Pendidikan | Modul profil & program pendidikan (scope perlu difinalisasi bareng tim) |
-| 5 | Modul Tanwir Qurani | Sistem pembelajaran (admin/guru/peserta) dibangun ulang native di platform |
+| 5 | Modul Tanwir Qurani | Pembinaan hafalan guru ngaji TPQ (admin/guru/peserta) dibangun ulang native — detail: `docs/prd-tanwir.md` |
+| 5b | Modul Ojol Mengaji | Pembinaan hafalan driver ojek online, saudara Tanwir dengan co-reviewer — detail: `docs/prd-ojol.md` |
 | 6 | Integrasi & Peluncuran | QA lintas modul, migrasi data lama, pelatihan admin, go-live |
 
 Urutan ini mengikuti prioritas yang sudah disepakati: LAZSIP dulu (karena progresnya paling jauh), baru SIP, SARSIP, Pendidikan, dan terakhir Tanwir Qurani (paling kompleks, dan sudah berjalan baik di sistem lama sehingga tidak mendesak).
+
+**Pembaruan 7 Oktober 2026:** Tanwir Qurani mulai dikerjakan, disusul Ojol Mengaji (keduanya sebelumnya Laravel/Filament terpisah). Tiap modul punya PRD sendiri di `docs/prd-<modul>.md` — PRD modul adalah acuan detail; dokumen ini hanya ringkasan lintas modul.
 
 ---
 
@@ -227,35 +230,30 @@ lembaga_binaan, program_pendidikan, laporan_penyaluran
 
 ## Fase 5 — Modul Tanwir Qurani
 
-**Tujuan:** Membangun ulang seluruh fitur `tanwir-qurani` (saat ini Laravel/Filament) menjadi modul native di platform, tanpa kehilangan fitur.
+**Tujuan:** Membangun ulang seluruh fitur `tanwir-qurani` (Laravel/Filament) menjadi modul native dengan
+tampilan baru yang elegan & minimalis, tanpa kehilangan fitur maupun aturan bisnisnya.
 
-**Referensi fitur** (dari repo `djofan/tanwir-qurani` yang sudah berjalan):
+**Spesifikasi lengkap: `docs/prd-tanwir.md`.** Ringkasan:
+- **Peran:** Admin (di `/admin/tanwir`), Guru/PIC kelompok (`/tanwir/guru`), Peserta = **guru ngaji TPQ**
+  (`/tanwir/peserta`). Anak didik adalah data santri yang dicatat peserta, **bukan** akun login
+  (koreksi atas versi awal dokumen ini).
+- **Login:** kode akun (GTQ001/PTQ001) yang menerbitkan sesi Core — tidak ada sistem auth terpisah.
+- **Fitur inti:** tugas voice note/video/kuis dengan tenggat & perpanjangan, rekam langsung dari browser,
+  antrean koreksi (setujui/tolak + riwayat percobaan), kuis bernilai otomatis, data anak didik, peta
+  sebaran (MapLibre + OpenFreeMap, gratis tanpa API key), pengingat WhatsApp ke guru (tautan `wa.me`).
+- **File setoran** privat, disimpan di luar folder publik dan diputar lewat endpoint berizin.
 
-### Panel & Peran
-- **Admin**: kelola keseluruhan sistem, kelola guru, kelola grup, laporan lintas grup.
-- **Guru**: kelola grup binaannya, beri tugas, nilai submission, pantau progres anak didik.
-- **Peserta (Anak Didik)**: lihat tugas, submit tugas (termasuk rekaman audio/video), kerjakan kuis, lihat progres sendiri.
+**Definition of done:** lihat `docs/prd-tanwir.md` §12. Data aplikasi lama **tidak dimigrasi** — Tanwir & Ojol mulai dari nol.
 
-### Fitur inti
-- Manajemen Grup — pengelompokan anak didik di bawah satu guru/koordinator.
-- Task & Submission — guru memberi tugas, peserta submit (dengan dukungan upload/rekam audio & video), ada log submission (`SubmissionLog`) untuk riwayat revisi.
-- Kuis — bank soal (`QuizQuestion`) dan jawaban peserta (`QuizAnswer`), dengan penilaian.
-- Peta sebaran (awalnya pakai Leaflet.js) — kemungkinan menampilkan sebaran lokasi anak didik/grup se-Indonesia.
-- Notifikasi WhatsApp — reminder tugas/jadwal ke peserta atau wali.
-- Profile — data pribadi guru/peserta.
+---
 
-### Entitas data (`prisma/schema/tanwir-qurani.prisma`)
-```
-groups, anak_didik, tasks, submissions, submission_logs,
-quiz_questions, quiz_answers, profiles
-```
+## Fase 5b — Modul Ojol Mengaji
 
-### Tantangan migrasi yang perlu diantisipasi
-- Upload/rekaman audio & video: perlu strategi penyimpanan file yang jelas (storage cloud, bukan disk lokal, supaya konsisten dengan arsitektur satu-hosting).
-- Filament menyediakan banyak UI admin otomatis (tabel, form, filter) — di Next.js semua itu harus dibangun manual sebagai komponen React, ini bagian yang paling memakan waktu di fase ini.
-- Integrasi WhatsApp reminder — perlu dipastikan API/provider yang dipakai sekarang, supaya logic-nya bisa direplikasi.
+**Tujuan:** Membangun ulang `ojol-mengaji` (Laravel/Filament) — program hafalan untuk driver ojek online.
+Dikerjakan **setelah Tanwir selesai**, memakai pola yang sama di folder modulnya sendiri.
 
-**Definition of done:** Tiga panel (Admin/Guru/Peserta) berjalan penuh di platform baru, dengan seluruh riwayat tugas/kuis/submission peserta lama berhasil dipindahkan (migrasi data dari database Laravel/MySQL lama).
+**Spesifikasi: `docs/prd-ojol.md`** (berisi perbedaan dari Tanwir): kelompok tanpa PIC, guru memilih
+kelompok penerima tugas, ada **co-reviewer**, tanpa anak didik, situs publik dengan halaman Cara Bergabung.
 
 ---
 
@@ -265,7 +263,7 @@ quiz_questions, quiz_answers, profiles
 
 **Yang dikerjakan:**
 - Uji lintas modul: login satu akun dengan akses ke beberapa modul sekaligus, pastikan sidebar dan izin akses bekerja benar di semua kombinasi.
-- Migrasi data final dari sistem lama (WordPress `insanpeduli.org` & `lazsip.or.id`, database Go `db_sip` LAZSIP & SARSIP, database Laravel Tanwir Qurani) ke database baru.
+- Migrasi data final dari sistem lama (WordPress `insanpeduli.org` & `lazsip.or.id`, database Go `db_sip` LAZSIP & SARSIP, tanpa Tanwir Qurani & Ojol Mengaji yang mulai dari nol) ke database baru.
 - Uji beban dasar (aplikasi tetap responsif walau semua modul aktif bersamaan dalam satu proses).
 - Pelatihan penggunaan dashboard untuk admin tiap divisi.
 - Setup domain final, redirect dari domain-domain lama ke platform baru.
@@ -280,7 +278,8 @@ quiz_questions, quiz_answers, profiles
 
 - **Payment gateway** belum diputuskan (LAZSIP & SARSIP) — perlu keputusan sebelum Fase 1/3 masuk tahap alur pembayaran sungguhan.
 - **Scope Divisi Pendidikan** belum jelas — Fase 4 butuh sesi requirement gathering terlebih dulu.
-- **Migrasi fitur kompleks Tanwir Qurani** (rekaman, kuis, WhatsApp) adalah fase dengan risiko waktu paling tinggi — pertimbangkan alokasi waktu ekstra atau dipecah jadi sub-fase.
+- **Migrasi fitur kompleks Tanwir Qurani & Ojol Mengaji** (rekaman, kuis, peta) adalah fase dengan risiko waktu paling tinggi — dipecah: Tanwir dulu sampai lulus DoD, baru Ojol.
+- **Penyimpanan file setoran** saat ini di disk server (`.tanwir-uploads/`, `.ojol-uploads/`) — wajib volume persisten & ikut backup; pindah ke object storage bila volume membesar.
 - **Duplikasi kemungkinan backend `db_sip`** — perlu dipastikan LAZSIP dan SARSIP tidak sedang menyimpan data yang seharusnya sama di dua tempat berbeda sebelum migrasi Fase 1 & 3 dimulai.
 - **Nama domain final untuk tiap modul** (subdomain vs subpath, mis. `sip.or.id/lazsip` vs `lazsip.sip.or.id`) belum diputuskan — perlu disepakati sebelum Fase 0 selesai karena mempengaruhi konfigurasi routing.
 
@@ -293,5 +292,5 @@ quiz_questions, quiz_answers, profiles
 3. Fase 2 (SIP) — setelah LAZSIP ada, tautan "Infaq Sekarang" di SIP sudah punya tujuan yang nyata.
 4. Fase 3 (SARSIP) — mengikuti pola yang sudah terbukti dari Fase 1.
 5. Fase 4 (Pendidikan) — didahului sesi klarifikasi kebutuhan.
-6. Fase 5 (Tanwir Qurani) — dikerjakan terakhir karena paling kompleks dan sistem lamanya masih berjalan baik, sehingga tidak mendesak.
+6. Fase 5 (Tanwir Qurani) lalu 5b (Ojol Mengaji) — Tanwir dulu sampai lulus DoD-nya, baru Ojol dibangun dengan pola yang sama.
 7. Fase 6 (Integrasi & Peluncuran) — penutup, memastikan semua modul benar-benar siap dipakai bersamaan.

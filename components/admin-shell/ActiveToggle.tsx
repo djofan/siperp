@@ -4,7 +4,16 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Switch } from "@/components/ui/Switch";
 
-export function ActiveToggle({ userId, initialActive }: { userId: string; initialActive: boolean }) {
+// Dipakai untuk status akun (/api/super/akun/:id/status) dan modul (/api/super/modul/:id/status).
+export function ActiveToggle({
+  endpoint,
+  initialActive,
+  subject = "akun",
+}: {
+  endpoint: string;
+  initialActive: boolean;
+  subject?: string;
+}) {
   const router = useRouter();
   const [isActive, setIsActive] = useState(initialActive);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +25,7 @@ export function ActiveToggle({ userId, initialActive }: { userId: string; initia
     setError(null);
 
     startTransition(async () => {
-      const response = await fetch(`/api/super/akun/${userId}/status`, {
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isActive: next }),
@@ -40,7 +49,7 @@ export function ActiveToggle({ userId, initialActive }: { userId: string; initia
           checked={isActive}
           onChange={handleChange}
           disabled={isPending}
-          aria-label={isActive ? "Nonaktifkan akun" : "Aktifkan akun"}
+          aria-label={isActive ? `Nonaktifkan ${subject}` : `Aktifkan ${subject}`}
         />
         <span className={isActive ? "text-xs font-medium text-success" : "text-xs font-medium text-danger"}>
           {isActive ? "Aktif" : "Nonaktif"}

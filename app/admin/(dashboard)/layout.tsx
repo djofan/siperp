@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { listAccessibleModules } from "@/modules/core/modules";
+import { listAccessibleModules, listModules } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
 import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
 
@@ -14,7 +14,9 @@ export default async function DashboardLayout({
     redirect("/admin/login");
   }
 
-  const accessibleModules = await listAccessibleModules(session);
+  // Superadmin juga melihat modul nonaktif (ditandai) supaya modul yang masih dikembangkan
+  // tetap bisa dibuka & dites dari sidebar; admin biasa hanya melihat modul aktif yang diizinkan.
+  const accessibleModules = session.isSuperadmin ? await listModules() : await listAccessibleModules(session);
 
   const groups: NavGroup[] = [
     { items: [{ href: "/admin", label: "Dashboard" }] },
@@ -26,7 +28,7 @@ export default async function DashboardLayout({
       collapsible: true,
       items: accessibleModules.map((module) => ({
         href: `/admin/${module.slug}`,
-        label: module.name,
+        label: module.isActive ? module.name : `${module.name} (nonaktif)`,
       })),
     });
   }

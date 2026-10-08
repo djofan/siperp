@@ -1,9 +1,216 @@
-// Modul Tanwir Qurani — belum ada model. Akan diisi mengikuti docs/PRD.md
-// Fase 5 (groups, anak_didik, tasks, submissions, submission_logs,
-// quiz_questions, quiz_answers, profiles). Nama model wajib diprefix
-// "Tanwir" (mis. TanwirGroup, TanwirTask) sesuai CLAUDE.md §5 supaya
-// tidak tabrakan di namespace Prisma global.
+// Modul Tanwir Qurani — lihat docs/prd-tanwir.md §7.
+// Semua model diprefix "Tanwir" (CLAUDE.md §5). Relasi ke Core hanya lewat
+// TanwirMember.userId → users.id; tidak mereferensi tabel modul lain.
 //
 // Jangan tambah datasource/generator di sini — sudah didefinisikan di
-// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di
-// prisma.config.ts.
+// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di prisma.config.ts.
+
+enum TanwirRole {
+  guru
+  peserta
+}
+
+enum TanwirGender {
+  laki_laki
+  perempuan
+}
+
+enum TanwirTaskType {
+  voice_note
+  video
+  quiz
+}
+
+enum TanwirSubmissionStatus {
+  pending
+  approved
+  rejected
+}
+
+// Profil guru/peserta. Akun login-nya akun Core (users); kode akun dipakai untuk login.
+model TanwirMember {
+  id            String        @id @default(cuid())
+  userId        String        @unique @map("user_id")
+  code          String        @unique
+  role          TanwirRole
+  phone         String?
+  gender        TanwirGender?
+  photo         String?       @db.Text
+  // Nama TPQ / tempat mengajar (peserta = guru ngaji).
+  teachingPlace String?       @map("teaching_place")
+  // Alamat privat — jangan pernah dipilih di query halaman publik (prd-tanwir §6.11).
+  address       String?       @db.Text
+  provinceId    String?       @map("province_id")
+  provinceName  String?       @map("province_name")
+  cityId        String?       @map("city_id")
+  cityName      String?       @map("city_name")
+  districtId    String?       @map("district_id")
+  districtName  String?       @map("district_name")
+  villageId     String?       @map("village_id")
+  villageName   String?       @map("village_name")
+  latitude      Decimal?      @db.Decimal(10, 7)
+  longitude     Decimal?      @db.Decimal(10, 7)
+  // Kelompok tempat peserta bergabung (guru tidak memakai field ini).
+  groupId       String?       @map("group_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       TanwirGroup?          @relation("TanwirGroupMembers", fields: [groupId], references: [id], onDelete: SetNull)
+  picGroups   TanwirGroup[]         @relation("TanwirGroupPic")
+  tasks       TanwirTask[]
+  submissions TanwirSubmission[]
+  reviewLogs  TanwirSubmissionLog[]
+  students    TanwirStudent[]
+
+  @@index([role])
+  @@index([groupId])
+  @@map("tanwir_members")
+}
+
+model TanwirGroup {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  // Guru PIC yang menaungi kelompok ini. Tugas guru otomatis terkirim ke kelompok yang di-PIC-inya.
+  picId       String?  @map("pic_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  pic     TanwirMember?     @relation("TanwirGroupPic", fields: [picId], references: [id], onDelete: SetNull)
+  members TanwirMember[]    @relation("TanwirGroupMembers")
+  tasks   TanwirTaskGroup[]
+
+  @@index([picId])
+  @@map("tanwir_groups")
+}
+
+model TanwirTask {
+  id               String         @id @default(cuid())
+  teacherId        String?        @map("teacher_id")
+  title            String
+  description      String         @db.Text
+  type             TanwirTaskType
+  deadline         DateTime
+  // Tenggat awal — tidak berubah saat diperpanjang; dipakai menandai pengumpulan terlambat.
+  originalDeadline DateTime       @map("original_deadline")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  teacher     TanwirMember?        @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  groups      TanwirTaskGroup[]
+  questions   TanwirQuizQuestion[]
+  submissions TanwirSubmission[]
+
+  @@index([teacherId])
+  @@map("tanwir_tasks")
+}
+
+model TanwirTaskGroup {
+  taskId  String @map("task_id")
+  groupId String @map("group_id")
+
+  task  TanwirTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  group TanwirGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, groupId])
+  @@index([groupId])
+  @@map("tanwir_task_groups")
+}
+
+model TanwirQuizQuestion {
+  id            String   @id @default(cuid())
+  taskId        String   @map("task_id")
+  question      String   @db.Text
+  optionA       String   @map("option_a") @db.Text
+  optionB       String   @map("option_b") @db.Text
+  optionC       String?  @map("option_c") @db.Text
+  optionD       String?  @map("option_d") @db.Text
+  // "a" | "b" | "c" | "d"
+  correctOption String   @map("correct_option")
+  order         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  task    TanwirTask         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  answers TanwirQuizAnswer[]
+
+  @@index([taskId, order])
+  @@map("tanwir_quiz_questions")
+}
+
+// Satu submission per peserta per tugas; kirim ulang memperbarui baris yang sama (prd-tanwir §6.5–6.6).
+model TanwirSubmission {
+  id            String                 @id @default(cuid())
+  taskId        String                 @map("task_id")
+  studentId     String                 @map("student_id")
+  // Path relatif terhadap direktori upload privat Tanwir (bukan folder public).
+  filePath      String?                @map("file_path")
+  fileMime      String?                @map("file_mime")
+  status        TanwirSubmissionStatus @default(pending)
+  attemptsCount Int                    @default(1) @map("attempts_count")
+  score         Int?
+  isLate        Boolean                @default(false) @map("is_late")
+  submittedAt   DateTime               @default(now()) @map("submitted_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  task    TanwirTask            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student TanwirMember          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  logs    TanwirSubmissionLog[]
+  answers TanwirQuizAnswer[]
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("tanwir_submissions")
+}
+
+model TanwirSubmissionLog {
+  id            String                 @id @default(cuid())
+  submissionId  String                 @map("submission_id")
+  reviewerId    String?                @map("reviewer_id")
+  status        TanwirSubmissionStatus
+  feedback      String?                @db.Text
+  attemptNumber Int                    @map("attempt_number")
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  submission TanwirSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   TanwirMember?    @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([submissionId])
+  @@map("tanwir_submission_logs")
+}
+
+model TanwirQuizAnswer {
+  id             String  @id @default(cuid())
+  submissionId   String  @map("submission_id")
+  questionId     String  @map("question_id")
+  selectedOption String  @map("selected_option")
+  isCorrect      Boolean @default(false) @map("is_correct")
+
+  submission TanwirSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   TanwirQuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, questionId])
+  @@map("tanwir_quiz_answers")
+}
+
+// Anak didik (santri) yang dicatat peserta — bukan akun login. Data privat (kontak orang tua).
+model TanwirStudent {
+  id          String   @id @default(cuid())
+  memberId    String   @map("member_id")
+  name        String
+  age         Int?
+  className   String?  @map("class_name")
+  parentName  String?  @map("parent_name")
+  parentPhone String?  @map("parent_phone")
+  progress    String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  member TanwirMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+  @@map("tanwir_students")
+}

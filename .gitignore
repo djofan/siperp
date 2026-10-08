@@ -55,3 +55,6 @@ academy-dev*.local.log
 
 #worktrees
 .worktrees/ 
+
+/.tanwir-uploads/
+/.ojol-uploads/

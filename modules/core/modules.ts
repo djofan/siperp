@@ -19,3 +19,7 @@ export async function listAccessibleModules(session: SessionPayload) {
     (module) => module.isActive && (session.isSuperadmin || session.moduleSlugs.includes(module.slug))
   );
 }
+
+export async function setModuleActive(id: string, isActive: boolean) {
+  await prisma.module.update({ where: { id }, data: { isActive } });
+}
