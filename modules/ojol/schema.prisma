@@ -1,8 +1,204 @@
-// Modul Ojol Mengaji — belum ada model. Isi skema di sini saat fitur
-// mulai dikerjakan. Nama model wajib diprefix "Ojol" (mis. OjolDriver,
-// OjolSesiMengaji) sesuai CLAUDE.md §5 supaya tidak tabrakan di
-// namespace Prisma global.
+// Modul Ojol Mengaji — lihat docs/prd-ojol.md §5 (struktur mengikuti Tanwir, dengan prefix Ojol).
+// Semua model diprefix "Ojol" (CLAUDE.md §5). Relasi ke Core hanya lewat
+// OjolMember.userId → users.id; tidak mereferensi tabel modul lain.
 //
 // Jangan tambah datasource/generator di sini — sudah didefinisikan di
-// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di
-// prisma.config.ts.
+// prisma/schema/core.prisma dan otomatis digabung lewat schema: "." di prisma.config.ts.
+
+enum OjolRole {
+  guru
+  peserta
+}
+
+enum OjolGender {
+  laki_laki
+  perempuan
+}
+
+enum OjolTaskType {
+  voice_note
+  video
+  quiz
+}
+
+enum OjolSubmissionStatus {
+  pending
+  approved
+  rejected
+}
+
+// Profil guru/peserta. Akun login-nya akun Core (users); kode akun dipakai untuk login.
+model OjolMember {
+  id            String        @id @default(cuid())
+  userId        String        @unique @map("user_id")
+  code          String        @unique
+  role          OjolRole
+  phone         String?
+  gender        OjolGender?
+  photo         String?       @db.Text
+  // Alamat privat — jangan pernah dipilih di query halaman publik.
+  address       String?       @db.Text
+  provinceId    String?       @map("province_id")
+  provinceName  String?       @map("province_name")
+  cityId        String?       @map("city_id")
+  cityName      String?       @map("city_name")
+  districtId    String?       @map("district_id")
+  districtName  String?       @map("district_name")
+  villageId     String?       @map("village_id")
+  villageName   String?       @map("village_name")
+  latitude      Decimal?      @db.Decimal(10, 7)
+  longitude     Decimal?      @db.Decimal(10, 7)
+  // Kelompok tempat peserta bergabung (guru tidak memakai field ini).
+  groupId       String?       @map("group_id")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       OjolGroup?          @relation("OjolGroupMembers", fields: [groupId], references: [id], onDelete: SetNull)
+  tasks       OjolTask[]
+  submissions OjolSubmission[]
+  reviewLogs  OjolSubmissionLog[]
+  approverTasks OjolTaskApprover[]
+
+  @@index([role])
+  @@index([groupId])
+  @@map("ojol_members")
+}
+
+model OjolGroup {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  members OjolMember[]    @relation("OjolGroupMembers")
+  tasks   OjolTaskGroup[]
+
+  @@map("ojol_groups")
+}
+
+model OjolTask {
+  id               String         @id @default(cuid())
+  teacherId        String?        @map("teacher_id")
+  title            String
+  description      String         @db.Text
+  type             OjolTaskType
+  deadline         DateTime
+  // Tenggat awal — tidak berubah saat diperpanjang; dipakai menandai pengumpulan terlambat.
+  originalDeadline DateTime       @map("original_deadline")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  teacher     OjolMember?        @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  groups      OjolTaskGroup[]
+  approvers   OjolTaskApprover[]
+  questions   OjolQuizQuestion[]
+  submissions OjolSubmission[]
+
+  @@index([teacherId])
+  @@map("ojol_tasks")
+}
+
+model OjolTaskGroup {
+  taskId  String @map("task_id")
+  groupId String @map("group_id")
+
+  task  OjolTask  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  group OjolGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, groupId])
+  @@index([groupId])
+  @@map("ojol_task_groups")
+}
+
+model OjolQuizQuestion {
+  id            String   @id @default(cuid())
+  taskId        String   @map("task_id")
+  question      String   @db.Text
+  optionA       String   @map("option_a") @db.Text
+  optionB       String   @map("option_b") @db.Text
+  optionC       String?  @map("option_c") @db.Text
+  optionD       String?  @map("option_d") @db.Text
+  // "a" | "b" | "c" | "d"
+  correctOption String   @map("correct_option")
+  order         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  task    OjolTask         @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  answers OjolQuizAnswer[]
+
+  @@index([taskId, order])
+  @@map("ojol_quiz_questions")
+}
+
+// Satu submission per peserta per tugas; kirim ulang memperbarui baris yang sama (prd-ojol §6.5–6.6).
+model OjolSubmission {
+  id            String                 @id @default(cuid())
+  taskId        String                 @map("task_id")
+  studentId     String                 @map("student_id")
+  // Path relatif terhadap direktori upload privat Ojol (bukan folder public).
+  filePath      String?                @map("file_path")
+  fileMime      String?                @map("file_mime")
+  status        OjolSubmissionStatus @default(pending)
+  attemptsCount Int                    @default(1) @map("attempts_count")
+  score         Int?
+  isLate        Boolean                @default(false) @map("is_late")
+  submittedAt   DateTime               @default(now()) @map("submitted_at")
+  createdAt     DateTime               @default(now()) @map("created_at")
+  updatedAt     DateTime               @updatedAt @map("updated_at")
+
+  task    OjolTask            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student OjolMember          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  logs    OjolSubmissionLog[]
+  answers OjolQuizAnswer[]
+
+  @@unique([taskId, studentId])
+  @@index([studentId])
+  @@index([status])
+  @@map("ojol_submissions")
+}
+
+model OjolSubmissionLog {
+  id            String                 @id @default(cuid())
+  submissionId  String                 @map("submission_id")
+  reviewerId    String?                @map("reviewer_id")
+  status        OjolSubmissionStatus
+  feedback      String?                @db.Text
+  attemptNumber Int                    @map("attempt_number")
+  createdAt     DateTime               @default(now()) @map("created_at")
+
+  submission OjolSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   OjolMember?    @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([submissionId])
+  @@map("ojol_submission_logs")
+}
+
+model OjolQuizAnswer {
+  id             String  @id @default(cuid())
+  submissionId   String  @map("submission_id")
+  questionId     String  @map("question_id")
+  selectedOption String  @map("selected_option")
+  isCorrect      Boolean @default(false) @map("is_correct")
+
+  submission OjolSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question   OjolQuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, questionId])
+  @@map("ojol_quiz_answers")
+}
+
+// Guru lain yang ditunjuk ikut meninjau setoran tugas ini (co-reviewer, prd-ojol §3).
+model OjolTaskApprover {
+  taskId    String @map("task_id")
+  teacherId String @map("teacher_id")
+
+  task    OjolTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  teacher OjolMember @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@id([taskId, teacherId])
+  @@index([teacherId])
+  @@map("ojol_task_approvers")
+}

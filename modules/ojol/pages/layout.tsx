@@ -1,5 +1,13 @@
-// Layout publik modul Ojol Mengaji — masih placeholder minimal.
-// Sesuaikan nanti saat fitur mulai dibangun (lihat pola modules/sip/pages/layout.tsx).
-export default function OjolPublicLayout({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen bg-white">{children}</div>;
+import { requireModulePublic } from "@/modules/core/module-access";
+import { ojolDisplay } from "@/modules/ojol/components/fonts";
+
+export const metadata = {
+  title: { default: "Ojol Mengaji", template: "%s · Ojol Mengaji" },
+  description: "Setoran hafalan Qur'an untuk driver ojek online — program LAZ Solidaritas Insan Peduli.",
+};
+
+// Akar semua halaman /ojol/**. Selama modul nonaktif: 404 untuk umum, superadmin tetap bisa menguji.
+export default async function OjolRootLayout({ children }: { children: React.ReactNode }) {
+  await requireModulePublic("ojol");
+  return <div className={`${ojolDisplay.variable} flex min-h-dvh flex-col bg-ojol-paper text-ojol-ink`}>{children}</div>;
 }

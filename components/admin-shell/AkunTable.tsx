@@ -69,7 +69,7 @@ export function AkunTable({ users }: { users: UserRow[] }) {
               )}
             </Td>
             <Td>
-              <ActiveToggle userId={user.id} initialActive={user.isActive} />
+              <ActiveToggle endpoint={`/api/super/akun/${user.id}/status`} initialActive={user.isActive} />
             </Td>
             <Td className="text-right">
               <Link

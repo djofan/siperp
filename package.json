@@ -25,13 +25,18 @@
     "db:seed": "prisma db seed",
     "db:seed:payment-simulation": "tsx prisma/seed-payment-simulation.ts",
     "db:seed:sarsip": "tsx prisma/seed-sarsip.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:tanwir": "tsx --conditions=react-server --test tests/tanwir-policy.test.ts tests/tanwir-flow.db-test.ts",
+    "db:seed:tanwir-demo": "tsx --conditions=react-server scripts/seed-tanwir-demo.ts",
+    "test:ojol": "tsx --conditions=react-server --test tests/ojol-policy.test.ts tests/ojol-flow.db-test.ts",
+    "db:seed:ojol-demo": "tsx --conditions=react-server scripts/seed-ojol-demo.ts"
   },
   "dependencies": {
     "@prisma/adapter-mariadb": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.12",
+    "maplibre-gl": "^5.24.0",
     "mariadb": "^3.5.4",
     "next": "16.3.5",
     "react": "19.2.8",
