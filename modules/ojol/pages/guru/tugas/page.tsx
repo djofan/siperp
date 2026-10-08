@@ -32,7 +32,7 @@ export default async function GuruTasksPage() {
               <Link
                 key={task.id}
                 href={`/ojol/guru/tugas/${task.id}`}
-                className="flex flex-col gap-3 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:ring-ojol-primary/40 sm:flex-row sm:items-center sm:p-5"
+                className="flex flex-col gap-3 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:bg-ojol-paper sm:flex-row sm:items-center sm:p-5"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

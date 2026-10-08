@@ -15,17 +15,21 @@ export function QuizForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const answered = Object.keys(answers).length;
   const complete = answered === questions.length;
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="quiz-form space-y-4">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
-      {questions.map((question, index) => (
+      {Object.entries(answers).map(([id, answer]) => <input key={id} type="hidden" name={`q_${id}`} value={answer} />)}
+      <div className="flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tanwir-line"><div className="h-full bg-tanwir-primary" style={{ width: `${questions.length ? answered / questions.length * 100 : 0}%` }} /></div><span className="text-xs tabular-nums text-tanwir-muted">{answered}/{questions.length} terjawab</span></div>
+      <nav aria-label="Nomor soal" className="flex flex-wrap gap-2">{questions.map((question,index) => <button key={question.id} type="button" onClick={() => setCurrentQuestion(index)} aria-label={`Soal ${index + 1}${answers[question.id] ? ", terjawab" : ""}`} aria-current={currentQuestion === index ? "step" : undefined} className={cn("h-11 w-11 rounded-lg border text-sm", currentQuestion === index ? "border-tanwir-primary bg-tanwir-primary text-white" : answers[question.id] ? "border-tanwir-line bg-tanwir-primary-soft text-tanwir-primary" : "border-tanwir-line bg-white")}>{index + 1}</button>)}</nav>
+      {questions.slice(currentQuestion, currentQuestion + 1).map((question) => (
         <fieldset key={question.id} className="rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line sm:p-6">
-          <legend className="sr-only">Soal {index + 1}</legend>
+          <legend className="sr-only">Soal {currentQuestion + 1}</legend>
           <p className="text-xs font-medium tabular-nums text-tanwir-muted">
-            Soal {index + 1} dari {questions.length}
+            Soal {currentQuestion + 1} dari {questions.length}
           </p>
           <p className="mt-2 whitespace-pre-line font-medium leading-relaxed">{question.question}</p>
           <div className="mt-4 grid gap-2">
@@ -41,7 +45,7 @@ export function QuizForm({
                 >
                   <input
                     type="radio"
-                    name={`q_${question.id}`}
+                    name={`answer_${question.id}`}
                     value={key}
                     checked={selected}
                     onChange={() => setAnswers((current) => ({ ...current, [question.id]: key }))}
@@ -62,19 +66,18 @@ export function QuizForm({
           </div>
         </fieldset>
       ))}
-      <div className="sticky bottom-20 flex items-center justify-between gap-4 rounded-2xl bg-tanwir-ink px-5 py-4 text-white lg:bottom-4">
-        <p className="text-sm tabular-nums text-white/75">
-          {answered}/{questions.length} terjawab
-        </p>
+      <div className="sticky bottom-20 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-tanwir-line bg-white px-5 py-4 lg:bottom-4">
+        <button type="button" disabled={pending || currentQuestion === 0} onClick={() => setCurrentQuestion(index => index - 1)} className="h-11 px-4 text-sm text-tanwir-muted disabled:opacity-40">Sebelumnya</button>
+        {currentQuestion < questions.length - 1 && <button type="button" disabled={pending} onClick={() => setCurrentQuestion(index => index + 1)} className="h-11 bg-tanwir-primary px-5 text-sm text-white">Lanjut</button>}
         <button
           type="submit"
           disabled={!complete || pending}
-          className="inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-medium text-tanwir-ink transition-colors hover:bg-tanwir-paper disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/60"
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-tanwir-primary px-5 text-sm font-medium text-white transition-colors hover:bg-tanwir-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
         >
           {pending ? "Mengirim…" : "Kumpulkan kuis"}
         </button>
       </div>
-      <p className="text-center text-xs text-tanwir-muted">Kuis hanya bisa dikumpulkan sekali. Periksa kembali jawaban sebelum mengirim.</p>
+      <p className="text-xs text-tanwir-muted">Jawaban tersimpan selama halaman ini terbuka, belum dikirim ke server. Kuis hanya bisa dikumpulkan sekali.</p>
     </form>
   );
 }

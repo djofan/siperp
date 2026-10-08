@@ -47,7 +47,7 @@ export default async function GuruHomePage() {
                 <Link
                   key={item.id}
                   href={`/ojol/guru/koreksi/${item.id}`}
-                  className="flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line hover:ring-ojol-primary/40"
+                  className="flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line hover:bg-ojol-paper"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.student.user.name}</p>
@@ -76,7 +76,7 @@ export default async function GuruHomePage() {
                   <Link
                     key={task.id}
                     href={`/ojol/guru/tugas/${task.id}`}
-                    className="block rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line hover:ring-ojol-primary/40"
+                    className="block rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line hover:bg-ojol-paper"
                   >
                     <div className="flex flex-wrap items-center gap-1.5">
                       <TypePill type={task.type} />

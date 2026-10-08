@@ -224,7 +224,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
       )}
 
       {mode === "upload" && phase === "idle" && (
-        <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-ojol-line bg-ojol-paper px-6 py-10 text-center transition-colors hover:border-ojol-primary/50">
+        <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-ojol-line bg-ojol-paper px-6 py-10 text-center transition-colors hover:bg-ojol-primary-soft">
           <Icon name="upload" className="h-7 w-7 text-ojol-primary" />
           <span className="mt-3 text-sm font-medium">Pilih file {isVideo ? "video" : "audio"}</span>
           <span className="mt-1 text-xs text-ojol-muted">{isVideo ? "MP4, WEBM, atau MOV" : "MP3, WAV, OGG, M4A, atau WEBM"} · maksimal 50 MB</span>

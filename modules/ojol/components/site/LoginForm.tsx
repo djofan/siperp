@@ -38,7 +38,6 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} method="post" className="space-y-5">
-      {error && <Notice tone="danger">{error}</Notice>}
       <Field label="Kode akun" htmlFor="ojol-code">
         <input
           id="ojol-code"
@@ -46,6 +45,7 @@ export function LoginForm() {
           required
           autoComplete="username"
           autoCapitalize="characters"
+          onChange={event => { event.currentTarget.value = event.currentTarget.value.toUpperCase(); }}
           spellCheck={false}
           placeholder="Contoh: POM001"
           maxLength={20}
@@ -65,6 +65,8 @@ export function LoginForm() {
           />
           <button
             type="button"
+            aria-pressed={showPassword}
+            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
             onClick={() => setShowPassword((value) => !value)}
             className="absolute inset-y-0 right-2 my-auto h-8 rounded-lg px-2.5 text-xs font-medium text-ojol-muted hover:bg-ojol-paper"
           >
@@ -72,6 +74,7 @@ export function LoginForm() {
           </button>
         </div>
       </Field>
+      {error && <Notice tone="danger">{error}</Notice>}
       <button type="submit" disabled={pending} className={buttonClass("primary", "h-12 w-full")}>
         {pending ? "Memeriksa…" : "Masuk"}
         {!pending && <Icon name="arrowRight" className="h-4 w-4" />}

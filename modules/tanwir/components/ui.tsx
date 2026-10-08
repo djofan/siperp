@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Icon, type IconName } from "@/modules/tanwir/components/icons";
 import type { StudentTaskState, SubmissionStatus, TaskType } from "@/modules/tanwir/api/policy";
 import { TASK_TYPE_LABEL, scoreTone } from "@/modules/tanwir/api/policy";
 
@@ -16,7 +17,7 @@ const VARIANT: Record<Variant, string> = {
 
 export function buttonClass(variant: Variant = "primary", className?: string) {
   return cn(
-    "inline-flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
     VARIANT[variant],
     className,
   );
@@ -59,12 +60,12 @@ export function Field({
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line sm:p-6", className)} {...props} />;
+  return <div className={cn("module-card rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line sm:p-6", className)} {...props} />;
 }
 
 export function PageTitle({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="module-title mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight text-tanwir-ink sm:text-[1.75rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-tanwir-muted">{description}</p>}
@@ -126,26 +127,27 @@ export function Pill({ tone = "neutral", children, className }: { tone?: PillTon
 
 const STATE_PILL: Record<StudentTaskState, { tone: PillTone; label: string }> = {
   todo: { tone: "primary", label: "Belum dikerjakan" },
-  pending: { tone: "warning", label: "Menunggu koreksi" },
-  rejected: { tone: "danger", label: "Perlu diulang" },
-  approved: { tone: "success", label: "Selesai" },
+  pending: { tone: "warning", label: "Menunggu review" },
+  rejected: { tone: "danger", label: "Perlu revisi" },
+  approved: { tone: "success", label: "Disetujui" },
   locked: { tone: "neutral", label: "Terkunci" },
 };
 
 export function TaskStatePill({ state }: { state: StudentTaskState }) {
   const { tone, label } = STATE_PILL[state];
-  return <Pill tone={tone}>{label}</Pill>;
+  const icon: Record<StudentTaskState, IconName> = { todo: "tasks", pending: "clock", rejected: "edit", approved: "check", locked: "lock" };
+  return <Pill tone={tone}><Icon name={icon[state]} className="h-3.5 w-3.5" />{label}</Pill>;
 }
 
 const SUBMISSION_PILL: Record<SubmissionStatus, { tone: PillTone; label: string }> = {
-  pending: { tone: "warning", label: "Menunggu" },
+  pending: { tone: "warning", label: "Menunggu review" },
   approved: { tone: "success", label: "Disetujui" },
-  rejected: { tone: "danger", label: "Ditolak" },
+  rejected: { tone: "danger", label: "Perlu revisi" },
 };
 
 export function SubmissionPill({ status }: { status: SubmissionStatus }) {
   const { tone, label } = SUBMISSION_PILL[status];
-  return <Pill tone={tone}>{label}</Pill>;
+  return <Pill tone={tone}><Icon name={status === "approved" ? "check" : status === "rejected" ? "edit" : "clock"} className="h-3.5 w-3.5" />{label}</Pill>;
 }
 
 export function TypePill({ type }: { type: TaskType }) {
@@ -153,7 +155,7 @@ export function TypePill({ type }: { type: TaskType }) {
 }
 
 export function LatePill({ late }: { late: boolean }) {
-  return late ? <Pill tone="danger">Terlambat</Pill> : <Pill tone="success">Tepat waktu</Pill>;
+  return <Pill tone={late ? "danger" : "success"}><Icon name={late ? "clock" : "check"} className="h-3.5 w-3.5" />{late ? "Terlambat" : "Tepat waktu"}</Pill>;
 }
 
 export function ScoreBadge({ score }: { score: number }) {
@@ -163,7 +165,7 @@ export function ScoreBadge({ score }: { score: number }) {
 
 export function Stat({ label, value, hint, emphasis = false }: { label: string; value: ReactNode; hint?: string; emphasis?: boolean }) {
   return (
-    <div className={cn("rounded-2xl p-4 ring-1 sm:p-5", emphasis ? "bg-tanwir-primary text-white ring-tanwir-primary" : "bg-tanwir-surface ring-tanwir-line")}>
+    <div className={cn("module-stat rounded-2xl p-4 ring-1 sm:p-5", emphasis ? "bg-tanwir-primary text-white ring-tanwir-primary" : "bg-tanwir-surface ring-tanwir-line")}>
       <p className={cn("text-xs font-medium", emphasis ? "text-white/70" : "text-tanwir-muted")}>{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums">{value}</p>
       {hint && <p className={cn("mt-1 text-xs", emphasis ? "text-white/70" : "text-tanwir-muted")}>{hint}</p>}
@@ -173,6 +175,7 @@ export function Stat({ label, value, hint, emphasis = false }: { label: string; 
 
 export function Avatar({ name, src, size = 40 }: { name: string; src?: string | null; size?: number }) {
   const initials = name
+    .replace(/^\[[^\]]+\]\s*/, "")
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)

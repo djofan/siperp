@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { StatCard } from "@/components/ui/StatCard";
+import { DirectorySummary } from "@/modules/ojol/components/admin/DirectorySummary";
 import { panelClasses } from "@/components/ui/panel";
 import { buttonVariants } from "@/components/ui/Button";
 import { requireOjolAdmin } from "@/modules/ojol/api/access";
@@ -24,15 +24,15 @@ export default async function OjolAdminDashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard label="Guru" value={summary.guru} />
-        <StatCard label="Peserta" value={summary.peserta} />
-        <StatCard label="Kelompok" value={summary.groups} />
-        <StatCard label="Tugas" value={summary.tasks} />
-        <StatCard label="Setoran menunggu" value={summary.pending} />
-      </div>
+      <DirectorySummary items={[
+        { label: "Guru", value: summary.guru, detail: "Pembimbing dan musyrif", icon: "user" },
+        { label: "Peserta", value: summary.peserta, detail: "Driver terdaftar", icon: "students" },
+        { label: "Kelompok", value: summary.groups, detail: "Wilayah dan basecamp", icon: "map" },
+        { label: "Total tugas", value: summary.tasks, detail: "Tugas dari seluruh guru", icon: "tasks" },
+      ]} />
+      <Link href="/admin/ojol/tugas?filter=menunggu" className="inline-block text-sm text-ojol-muted hover:text-ojol-primary">{summary.pending} setoran menunggu review</Link>
 
-      <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         <section className={panelClasses("p-5")}>
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-semibold text-foreground">Sebaran guru & peserta</h2>

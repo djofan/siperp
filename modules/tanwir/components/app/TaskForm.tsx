@@ -65,7 +65,7 @@ export function TaskForm({
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="crud-form space-y-6">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
 
       <Field label="Judul tugas" htmlFor="task-title">
@@ -175,7 +175,7 @@ export function TaskForm({
                             onClick={() => update(question.key, { correctOption: value })}
                             className={cn(
                               "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors",
-                              correct ? "bg-tanwir-success text-white" : "bg-tanwir-surface text-tanwir-muted ring-1 ring-tanwir-line hover:ring-tanwir-success",
+                              correct ? "bg-tanwir-success text-white" : "bg-tanwir-surface text-tanwir-muted ring-1 ring-tanwir-line hover:bg-tanwir-primary-soft",
                             )}
                           >
                             {correct ? <Icon name="check" className="h-4 w-4" /> : letter}

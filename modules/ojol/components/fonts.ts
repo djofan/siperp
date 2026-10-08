@@ -1,8 +1,5 @@
-import { Bricolage_Grotesque } from "next/font/google";
+import { Newsreader, Plus_Jakarta_Sans } from "next/font/google";
 
-// Font display untuk wordmark & judul situs publik Ojol — tegas & energik, UI tetap Geist.
-export const ojolDisplay = Bricolage_Grotesque({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
-  variable: "--font-ojol-display",
-});
+const heading = Newsreader({ subsets: ["latin"], variable: "--font-ojol-display", display: "swap" });
+const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-ojol-ui", display: "swap" });
+export const ojolDisplay = { variable: `${heading.variable} ${body.variable}` };

@@ -25,7 +25,7 @@ export default async function GuruReviewQueuePage({ searchParams }: { searchPara
             <Link
               key={item.id}
               href={`/ojol/guru/koreksi/${item.id}`}
-              className="flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:ring-ojol-primary/40 sm:p-5"
+              className="flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:bg-ojol-paper sm:p-5"
             >
               <span className="w-6 shrink-0 text-center text-sm tabular-nums text-ojol-muted">{index + 1}</span>
               <div className="min-w-0 flex-1">

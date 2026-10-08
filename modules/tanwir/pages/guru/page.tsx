@@ -53,7 +53,7 @@ export default async function GuruHomePage() {
                 <Link
                   key={item.id}
                   href={`/tanwir/guru/koreksi/${item.id}`}
-                  className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line hover:ring-tanwir-primary/40"
+                  className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line hover:bg-tanwir-paper"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.student.user.name}</p>

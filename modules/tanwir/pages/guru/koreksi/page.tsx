@@ -25,7 +25,7 @@ export default async function GuruReviewQueuePage({ searchParams }: { searchPara
             <Link
               key={item.id}
               href={`/tanwir/guru/koreksi/${item.id}`}
-              className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line transition-colors hover:ring-tanwir-primary/40 sm:p-5"
+              className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line transition-colors hover:bg-tanwir-paper sm:p-5"
             >
               <span className="w-6 shrink-0 text-center text-sm tabular-nums text-tanwir-muted">{index + 1}</span>
               <div className="min-w-0 flex-1">

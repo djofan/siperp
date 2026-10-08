@@ -20,7 +20,7 @@ export function StudentTaskRow({ task }: { task: StudentTaskRowData }) {
   return (
     <Link
       href={`/ojol/peserta/tugas/${task.id}`}
-      className="group flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:ring-ojol-primary/40 sm:p-5"
+      className="group flex items-center gap-4 rounded-2xl bg-ojol-surface p-4 ring-1 ring-ojol-line transition-colors hover:bg-ojol-paper sm:p-5"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ojol-primary-soft text-ojol-primary">
         <Icon name={TYPE_ICON[task.type]} />

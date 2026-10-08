@@ -17,12 +17,13 @@ export interface StudentTaskRowData {
 }
 
 export function StudentTaskRow({ task }: { task: StudentTaskRowData }) {
+  const relativeDeadline = deadlineLabel(task.deadline);
   return (
     <Link
       href={`/tanwir/peserta/tugas/${task.id}`}
-      className="group flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line transition-colors hover:ring-tanwir-primary/40 sm:p-5"
+      className="group flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line transition-colors hover:bg-tanwir-paper sm:p-5"
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-tanwir-primary-soft text-tanwir-primary">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center text-tanwir-muted">
         <Icon name={TYPE_ICON[task.type]} />
       </span>
       <div className="min-w-0 flex-1">
@@ -31,8 +32,8 @@ export function StudentTaskRow({ task }: { task: StudentTaskRowData }) {
           <TypePill type={task.type} />
           {task.teacher && <span>{task.teacher.user.name}</span>}
           <span aria-hidden>·</span>
-          <span title={formatDateTime(task.deadline)} className={task.dueSoon ? "font-medium text-tanwir-danger" : ""}>
-            Tenggat {deadlineLabel(task.deadline)}
+          <span className={relativeDeadline.startsWith("lewat") ? "font-medium text-tanwir-danger" : task.dueSoon ? "font-medium text-tanwir-warning" : ""}>
+            {formatDateTime(task.deadline)} · {relativeDeadline}
           </span>
         </p>
       </div>
@@ -46,7 +47,7 @@ export function StudentTaskRow({ task }: { task: StudentTaskRowData }) {
       <div className="sm:hidden">
         <TaskStatePill state={task.state} />
       </div>
-      <Icon name="chevronRight" className="hidden h-4 w-4 shrink-0 text-tanwir-muted transition-transform group-hover:translate-x-0.5 sm:block" />
+      <Icon name="chevronRight" className="hidden h-4 w-4 shrink-0 text-tanwir-muted sm:block" />
     </Link>
   );
 }
