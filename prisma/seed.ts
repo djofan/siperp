@@ -9,6 +9,7 @@ import { seedAcademyModuleRegistration } from "@/modules/academy/api/seed";
 import { seedSarsipModuleRegistration } from "@/modules/sarsip/api/seed";
 import { seedOjolModuleRegistration } from "@/modules/ojol/api/seed";
 import { seedTanwirModuleRegistration } from "@/modules/tanwir/api/seed";
+import { seedTeknisiModuleRegistration } from "@/modules/teknisi/api/seed";
 
 async function main() {
   const email = process.env.SUPERADMIN_EMAIL;
@@ -49,6 +50,8 @@ async function main() {
 
   await seedOjolModuleRegistration();
   console.log("Modul ojol terdaftar.");
+  await seedTeknisiModuleRegistration();
+  console.log("Modul teknisi terdaftar.");
 }
 
 main()

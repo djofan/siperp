@@ -17,9 +17,9 @@ export default async function Page({ params, searchParams }: {
   if (!data) notFound();
   const base = "/admin/academy/peserta/" + enrollmentId;
   const pagination = { materi: String(data.lessons.page), kuis: String(data.quizzes.page) };
-  return <><AdminHeading title={data.profile.user.name} description={data.course.title + " · " + data.profile.user.email} backHref="/admin/academy/peserta" />
+  return <><AdminHeading title={data.profile.user.name} description={data.course.title + " · NIP " + (data.profile.nis ?? "—")} backHref="/admin/academy/peserta" />
     <section className="space-y-4 rounded-2xl bg-surface p-6">
-      <p className="text-sm text-foreground/60">NIS: {data.profile.nis ?? "—"} · Terdaftar {adminDate(data.createdAt)} · Akun {data.profile.user.isActive ? "aktif" : "nonaktif"}</p>
+      <p className="text-sm text-foreground/60">NIP: {data.profile.nis ?? "—"} · Terdaftar {adminDate(data.createdAt)} · Akun {data.profile.user.isActive ? "aktif" : "nonaktif"}</p>
       {!data.course.isPublished && <p className="text-sm text-danger">Program sedang tidak dipublikasikan.</p>}
       <ProgressSummary value={data} />
       <p className="text-sm text-foreground">Tanggal selesai: {adminDate(data.completedAt)}</p>

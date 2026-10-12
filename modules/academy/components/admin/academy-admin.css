@@ -1,0 +1,15 @@
+.academy-admin-panel {
+  --color-lazsip-cream: var(--color-surface);
+  --color-lazsip-ink: var(--foreground);
+  --color-lazsip-primary-800: var(--color-accent);
+  --color-lazsip-primary-900: var(--color-accent-hover);
+}
+.academy-admin-panel :is(.bg-white, .bg-gray-50) { background-color: var(--color-surface); }
+.academy-admin-panel :is(.text-gray-900, .text-gray-800, .text-gray-700) { color: var(--foreground); }
+.academy-admin-panel :is(.text-gray-600, .text-gray-500, .text-gray-400) { color: color-mix(in srgb, var(--foreground) 65%, transparent); }
+.academy-admin-panel :is(.border-gray-100, .border-gray-200) { border-color: var(--color-border); }
+.academy-admin-panel :is(.text-green-700, .text-green-800) { color: var(--color-accent); }
+.academy-admin-panel .bg-green-50 { background-color: var(--color-success-soft); }
+.academy-admin-panel .bg-red-50 { background-color: var(--color-danger-soft); }
+.academy-admin-panel .text-red-800 { color: var(--color-danger); }
+.academy-admin-panel :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { color: var(--foreground); background-color: var(--color-surface-muted); border-color: var(--color-border); }

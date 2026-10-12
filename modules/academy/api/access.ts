@@ -14,9 +14,10 @@ export const getAcademyUser = cache(async () => {
   });
   if (!user) return null;
   const academyProfile = await getAcademyAvailability()
-    ? await prisma.zakatAcademyProfile.findUnique({ where: { userId: user.id }, select: { id: true, nis: true, mustChangePassword: true } })
+    ? await prisma.zakatAcademyProfile.findUnique({ where: { userId: user.id }, select: { id: true, nis: true, mustChangePassword: true, deletedAt: true } })
     : null;
-  return { ...user, academyProfile, isTeacher: user.moduleAccess.some(access => access.role === "teacher") };
+  if (academyProfile?.deletedAt && !user.isSuperadmin && !user.moduleAccess.some(access => ["admin", "teacher"].includes(access.role))) return null;
+  return { ...user, academyProfile: academyProfile?.deletedAt ? null : academyProfile, isTeacher: user.moduleAccess.some(access => access.role === "teacher") };
 });
 
 export const getAcademyAvailability = cache(async () => {
