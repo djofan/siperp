@@ -48,7 +48,6 @@ export default async function SipDashboardPage() {
     <div className="flex flex-col gap-6">
       <SipAdminPageHeader title="Admin SIP" description={`Selamat datang, ${user.name}. Kelola website utama Solidaritas Insan Peduli dari sini.`} action={
         <div className="flex flex-wrap gap-2">
-          <Link href="/" target="_blank" rel="noopener noreferrer" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15">Lihat Website ↗</Link>
           <Link href="/admin/sip/konten" className="rounded-full bg-sip-lime px-4 py-2 text-sm font-semibold text-sip-ink hover:bg-sip-lime-hover">Edit Halaman Utama</Link>
         </div>
       } />

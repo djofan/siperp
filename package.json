@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "db:setup:teknisi": "node scripts/setup-teknisi.mjs",
+    "test:teknisi": "tsx --test tests/teknisi-flow.test.ts",
+    "test:teknisi:integration": "node --conditions=react-server --import tsx tests/teknisi-integration.ts",
+    "test:participants": "node --conditions=react-server --import tsx --test tests/participant-accounts.db-test.ts",
     "db:seed:content": "node scripts/seed-demo-content.mjs",
     "db:setup:erp": "node scripts/setup-core-erp.mjs",
     "erp:backup": "node scripts/erp-backup.mjs create",

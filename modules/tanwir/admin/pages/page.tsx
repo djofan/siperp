@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { buttonVariants } from "@/components/ui/Button";
 import { DirectorySummary } from "@/modules/tanwir/components/admin/DirectorySummary";
 import { panelClasses } from "@/components/ui/panel";
-import { buttonVariants } from "@/components/ui/Button";
 import { requireTanwirAdmin } from "@/modules/tanwir/api/access";
 import { adminSummary, mapPoints, recentMembers } from "@/modules/tanwir/api/dashboard";
 import { SpreadMap } from "@/modules/tanwir/components/admin/SpreadMap";
@@ -17,11 +17,6 @@ export default async function TanwirAdminDashboard() {
       <PageHeader
         title="Tanwir Qurani"
         description="Pembinaan hafalan guru ngaji TPQ. Kelola guru, peserta, dan kelompok; pantau tugas dan setoran."
-        actions={
-          <Link href="/tanwir" target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary" })}>
-            Lihat situs ↗
-          </Link>
-        }
       />
 
       <div className="tanwir-dashboard-primary">

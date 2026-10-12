@@ -10,6 +10,7 @@ import { parseParticipantsCsv } from "./intake-policy";
 import { normalizePhone } from "./policy";
 import { quizDateInput } from "./admin-quiz-validation";
 import { AcademyError } from "./errors";
+import { allocateNip } from "@/modules/core/participant-sequence";
 
 export async function importParticipants(courseId: string, _: ActionState, form: FormData): Promise<ActionState> {
   await requireAcademyAdmin();
@@ -28,6 +29,7 @@ export async function importParticipants(courseId: string, _: ActionState, form:
         let user = await tx.user.findUnique({ where: { email: row.email }, select: { id: true, isActive: true } });
         if (user && !user.isActive) throw new AcademyError("CSV memuat akun nonaktif. Periksa akun sebelum mengimpor.");
         const profile = user ? await tx.zakatAcademyProfile.findUnique({ where: { userId: user.id } }) : null;
+        if (profile?.deletedAt) throw new AcademyError("CSV memuat akun peserta yang telah dihapus.");
         if (profile && (profile.phone && profile.phone !== row.phone || profile.gender && profile.gender !== row.gender)) throw new AcademyError("Data profil peserta yang sudah ada tidak cocok. Periksa CSV.");
         if (profile && await tx.zakatAcademyEnrollment.findUnique({ where: { profileId_courseId: { profileId: profile.id, courseId } } })) continue;
         await lockIntake(tx, courseId);
@@ -35,7 +37,8 @@ export async function importParticipants(courseId: string, _: ActionState, form:
           const credential = credentials.find(item => item.email === row.email)!;
           user = await tx.user.create({ data: { name: row.name, email: row.email, passwordHash: credential.passwordHash }, select: { id: true, isActive: true } });
         }
-        const saved = await tx.zakatAcademyProfile.upsert({ where: { userId: user.id }, create: { userId: user.id, phone: row.phone, gender: row.gender, mustChangePassword: !known.has(row.email) }, update: { phone: row.phone, gender: row.gender } });
+        const nis = profile?.nis ?? await allocateNip(tx, "academy");
+        const saved = await tx.zakatAcademyProfile.upsert({ where: { userId: user.id }, create: { userId: user.id, nis, phone: row.phone, gender: row.gender, mustChangePassword: !known.has(row.email) }, update: { nis, phone: row.phone, gender: row.gender } });
         await tx.zakatAcademyEnrollment.create({ data: { profileId: saved.id, courseId } });
       }
     });

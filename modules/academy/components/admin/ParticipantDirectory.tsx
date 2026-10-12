@@ -20,7 +20,7 @@ export async function ParticipantDirectory({ certificates, query }: {
     description={certificates ? "Status saat ini dihitung ulang dari kurikulum dan progres. Buat catatan dari detail peserta." : "Satu baris per keikutsertaan peserta pada program. Progres mencakup materi dan kuis terpublikasi."}
     action={certificates ? <AddLink href="/admin/academy/peserta">Pilih peserta</AddLink> : undefined} />
     <form action={base} className="mb-6 flex flex-wrap gap-3">
-      <Input name="q" aria-label="Cari nama, email atau NIS" placeholder="Nama, email atau NIS…" defaultValue={search} maxLength={100} className="max-w-sm" />
+      <Input name="q" aria-label="Cari nama atau NIP" placeholder="Nama atau NIP…" defaultValue={search} maxLength={100} className="max-w-sm" />
       <Input name="program" aria-label="Cari judul program" placeholder="Judul program…" defaultValue={program} maxLength={100} className="max-w-sm" />
       <Button type="submit">Cari</Button>
     </form>
@@ -29,7 +29,7 @@ export async function ParticipantDirectory({ certificates, query }: {
       <tbody>{result.items.map(item => {
         const current = "current" in item ? item.current : item;
         return <tr key={item.id} className="border-t border-border align-top">
-          <td className="p-3"><p className="font-semibold">{item.profile.user.name}</p><p className="mt-1 break-all text-foreground/60">{item.profile.user.email}</p><p className="mt-1 text-xs">{item.profile.nis ?? "Tanpa NIS"}{!item.profile.user.isActive && " · Akun nonaktif"}</p></td>
+          <td className="p-3"><p className="font-semibold">{item.profile.user.name}</p><p className="mt-1 text-xs">NIP: {item.profile.nis ?? "Belum tersedia"}{!item.profile.user.isActive && " · Akun nonaktif"}</p></td>
           <td className="p-3">{item.course.title}{!item.course.isPublished && <p className="mt-1 text-xs text-foreground/60">Program draft</p>}</td>
           <td className="p-3">{"updatedAt" in item ? <><p>{item.isEligible ? "Lulus" : "Belum lulus"}</p><p className="mt-1 text-xs">{adminDate(item.completedAt)}</p><p className="mt-1 text-xs">{item.certificateUrl ? "Tautan tersedia" : "Tanpa tautan tambahan"}</p></> : adminDate(item.createdAt)}</td>
           <td className="min-w-64 p-3">{current ? <ProgressSummary value={current} /> : <p className="text-danger">Enrollment tidak ditemukan</p>}</td>

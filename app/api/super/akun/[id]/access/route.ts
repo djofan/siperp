@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { setUserModuleAccess } from "@/modules/core/users";
+import { prisma } from "@/lib/prisma";
 
 const VALID_ROLES = new Set(["admin", "editor"]);
 
@@ -16,6 +17,7 @@ export async function PUT(
   const { id } = await params;
   const body = await request.json().catch(() => null);
   const rawEntries = Array.isArray(body?.entries) ? body.entries : [];
+  const technicianModule = await prisma.module.findUnique({ where: { slug: "teknisi" }, select: { id: true } });
 
   const entries = rawEntries
     .filter(
@@ -25,7 +27,7 @@ export async function PUT(
     )
     .map((entry: { moduleId: string; role: string }) => ({
       moduleId: entry.moduleId,
-      role: VALID_ROLES.has(entry.role) ? entry.role : "admin",
+      role: (entry.moduleId === technicianModule?.id ? new Set(["admin", "manager", "technician", "monitoring"]) : VALID_ROLES).has(entry.role) ? entry.role : "admin",
     }));
 
   await setUserModuleAccess(id, entries);

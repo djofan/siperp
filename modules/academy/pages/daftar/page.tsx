@@ -15,12 +15,13 @@ export default async function RegisterPage() {
     {intake.full || !intake.course ? <p role="status" className="rounded-xl border p-5 text-sm">{intake.full ? "Pendaftaran angkatan ini sudah ditutup." : "Program sedang dipersiapkan."} Hubungi CS untuk informasi angkatan berikutnya.</p> : <ActionForm action={registerParticipant} label="Daftar & buat akun">
       <label className="block text-sm font-medium">Nama lengkap<input name="name" required minLength={2} maxLength={100} autoComplete="name" className={inputClass} /></label>
       <label className="block text-sm font-medium">Email<input name="email" type="email" required maxLength={191} autoComplete="email" className={inputClass} /></label>
+      <label className="block text-sm font-medium">Alamat<textarea name="address" required maxLength={2000} rows={3} autoComplete="street-address" className={inputClass} /></label>
       <label className="block text-sm font-medium">Nomor WhatsApp<input name="phone" type="tel" required maxLength={25} autoComplete="tel" placeholder="08xxxxxxxxxx" className={inputClass} /></label>
       <label className="block text-sm font-medium">Jenis kelamin<select name="gender" required className={inputClass} defaultValue=""><option value="" disabled>Pilih</option><option value="IKHWAN">Ikhwan</option><option value="AKHWAT">Akhwat</option></select></label>
       <div className="text-sm font-medium"><label htmlFor="academy-register-password">Password</label><PasswordField id="academy-register-password" name="password" required minLength={10} maxLength={72} autoComplete="new-password" className={inputClass} /><span className="mt-1 block text-xs text-lazsip-ink/70">Minimal 10 karakter.</span></div>
       <div className="text-sm font-medium"><label htmlFor="academy-confirm-password">Ulangi password</label><PasswordField id="academy-confirm-password" name="confirmPassword" required minLength={10} maxLength={72} autoComplete="new-password" className={inputClass} /></div>
     </ActionForm>}
-    <p className="mt-5 text-sm text-gray-500">Admin akan menambahkan peserta ke grup belajar secara manual setelah verifikasi. Pembelajaran berlangsung satu bulan setelah tanggal mulai diumumkan.</p>
+    <p className="mt-5 text-sm text-gray-500">Grup Ikhwan atau Akhwat ditentukan sesuai gender. Setelah pendaftaran, simpan NIP Anda untuk login. Pembelajaran berlangsung satu bulan setelah tanggal mulai diumumkan.</p>
     <a href={`https://wa.me/${settings.csPhone}`} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block text-sm font-semibold text-green-700">Hubungi CS · +62 811-1186-626 ↗</a>
     <p className="mt-6 text-sm">Sudah memiliki akun SIP? <Link href="/academy/masuk" className="font-semibold underline">Masuk</Link>.</p>
   </div>;

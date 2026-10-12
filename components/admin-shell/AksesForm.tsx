@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/Switch";
 interface ModuleOption {
   id: string;
   name: string;
+  slug?: string;
 }
 
 interface AccessState {
@@ -87,7 +88,7 @@ export function AksesForm({
                   className="h-9 w-32"
                 >
                   <option value="admin">Admin</option>
-                  <option value="editor">Editor</option>
+                  {module.slug === "teknisi" ? <><option value="manager">Manajer</option><option value="technician">Teknisi</option><option value="monitoring">Monitoring (lihat saja)</option></> : <option value="editor">Editor</option>}
                 </Select>
               </div>
             );
