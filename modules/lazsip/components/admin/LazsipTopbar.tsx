@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { PublicWebsiteLink } from "@/components/admin-shell/PublicWebsiteLink";
 import { LAZSIP_NAV_ITEMS } from "@/modules/lazsip/components/admin/LazsipSidebar";
 
 export function LazsipTopbar({
@@ -78,6 +79,7 @@ export function LazsipTopbar({
             </span>
           )}
         </Link>
+        <PublicWebsiteLink href="/lazsip" className="text-white/80 hover:text-white" />
       </div>
     </header>
   );

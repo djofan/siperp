@@ -11,10 +11,12 @@ export function AdminShellChrome({
   groups,
   userName,
   children,
+  publicWebsiteHref,
 }: {
   groups: NavGroup[];
   userName: string;
   children: React.ReactNode;
+  publicWebsiteHref?: string;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileVisible, setMobileVisible] = useState(false);
@@ -53,7 +55,7 @@ export function AdminShellChrome({
       )}
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
-        <Topbar onMenuClick={() => setMobileOpen(true)} />
+        <Topbar onMenuClick={() => setMobileOpen(true)} publicWebsiteHref={publicWebsiteHref} />
         <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>

@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { buttonVariants } from "@/components/ui/Button";
 import { DirectorySummary } from "@/modules/ojol/components/admin/DirectorySummary";
 import { panelClasses } from "@/components/ui/panel";
-import { buttonVariants } from "@/components/ui/Button";
 import { requireOjolAdmin } from "@/modules/ojol/api/access";
 import { adminSummary, mapPoints, recentMembers } from "@/modules/ojol/api/dashboard";
 import { SpreadMap } from "@/modules/ojol/components/admin/SpreadMap";
@@ -17,11 +17,6 @@ export default async function OjolAdminDashboard() {
       <PageHeader
         title="Ojol Mengaji"
         description="Setoran hafalan driver ojek online. Kelola guru, peserta, dan kelompok; pantau tugas dan setoran."
-        actions={
-          <Link href="/ojol" target="_blank" rel="noopener noreferrer" className={buttonVariants({ variant: "secondary" })}>
-            Lihat situs ↗
-          </Link>
-        }
       />
 
       <DirectorySummary items={[

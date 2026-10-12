@@ -21,6 +21,7 @@ model User {
   academyProfile ZakatAcademyProfile?
   tanwirMember   TanwirMember?
   ojolMember     OjolMember?
+  teknisiParticipant TeknisiParticipant?
 
   @@map("users")
 }
@@ -61,4 +62,10 @@ model ModuleAccess {
 
   @@unique([userId, moduleId])
   @@map("module_access")
+}
+
+model ParticipantSequence {
+  moduleSlug String @id @map("module_slug")
+  lastNumber Int @default(0) @map("last_number")
+  @@map("participant_sequences")
 }
