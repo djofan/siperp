@@ -1,38 +1,39 @@
 import Link from "next/link";
-import { Wordmark } from "@/modules/ojol/components/Wordmark";
 import { Icon } from "@/modules/ojol/components/icons";
-import { buttonClass } from "@/modules/ojol/components/ui";
 import { SITE_NAV, whatsappAdminHref } from "@/modules/ojol/components/site/content";
+import styles from "./navbar.module.css";
+import footer from "./footer.module.css";
+import palette from "./palette.module.css";
 
 export default function OjolSiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <header className="program-header sticky top-0 z-40 bg-ojol-paper/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
-          <Wordmark />
-          <nav aria-label="Navigasi situs" className="hidden items-center gap-8 text-sm text-ojol-muted md:flex">
+      <header className={`program-header ${palette.theme} ${styles.header}`}>
+        <div className={styles.inner}>
+          <Link href="/ojol" className={styles.brand} aria-label="Ojol Mengaji — beranda"><Icon name="mic" className={styles.brandIcon} /><span className={styles.brandText}>Ojol Mengaji</span></Link>
+          <nav aria-label="Navigasi situs" className={styles.nav}>
             {SITE_NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="transition-colors hover:text-ojol-ink">
+              <Link key={item.href} href={item.href}>
                 {item.label}
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/ojol/masuk" className={buttonClass("primary", "h-10 px-4")}>
-              Masuk
+          <div className={styles.actions}>
+            <Link href="/ojol/masuk" className={styles.login}>
+              Masuk <Icon name="arrowRight" />
             </Link>
             {/* Menu HP tanpa JavaScript: <details> */}
-            <details className="group relative md:hidden">
-              <summary aria-label="Buka menu" className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-ojol-ink hover:bg-ojol-surface [&::-webkit-details-marker]:hidden">
+            <details className={styles.mobile}>
+              <summary aria-label="Buka menu">
                 <Icon name="menu" />
               </summary>
-              <div className="absolute right-0 top-12 w-52 rounded-2xl bg-ojol-surface p-2  ring-1 ring-ojol-line">
+              <nav aria-label="Navigasi situs seluler" className={styles.dropdown}>
                 {SITE_NAV.map((item) => (
-                  <Link key={item.href} href={item.href} className="block rounded-xl px-3 py-2.5 text-sm hover:bg-ojol-paper">
+                  <Link key={item.href} href={item.href}>
                     {item.label}
                   </Link>
                 ))}
-              </div>
+              </nav>
             </details>
           </div>
         </div>
@@ -40,17 +41,17 @@ export default function OjolSiteLayout({ children }: { children: React.ReactNode
 
       <main className="flex-1">{children}</main>
 
-      <footer className="program-footer mt-24 bg-ojol-ink text-white/70">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
+      <footer className={`program-footer ${palette.theme} ${footer.footer}`}>
+        <div className={footer.grid}>
           <div>
-            <Wordmark inverted />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed">
-              Setoran hafalan Qur&apos;an untuk driver ojek online — kapan pun ada jeda di antara order. Program LAZ Solidaritas Insan Peduli.
+            <Link href="/ojol" className={footer.brand}><Icon name="mic" />Ojol Mengaji</Link>
+            <p className={footer.description}>
+              Ruang belajar Al-Qur’an untuk driver ojek online.
+              <span className={footer.institution}>Program LAZ Solidaritas Insan Peduli</span>
             </p>
           </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">Jelajahi</p>
-            <ul className="mt-4 space-y-2.5 text-sm">
+          <nav aria-label="Navigasi footer" className={footer.navigation}>
+            <ul className={footer.links}>
               {SITE_NAV.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="transition-colors hover:text-white">
@@ -59,13 +60,10 @@ export default function OjolSiteLayout({ children }: { children: React.ReactNode
                 </li>
               ))}
             </ul>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">Akses</p>
-            <ul className="mt-4 space-y-2.5 text-sm">
+            <ul className={`${footer.links} ${footer.access}`}>
               <li>
                 <Link href="/ojol/masuk" className="transition-colors hover:text-white">
-                  Masuk dengan kode akun
+                  Masuk
                 </Link>
               </li>
               <li>
@@ -79,10 +77,11 @@ export default function OjolSiteLayout({ children }: { children: React.ReactNode
                 </Link>
               </li>
             </ul>
-          </div>
+          </nav>
         </div>
-        <div className="mx-auto max-w-6xl px-4 pb-8 text-xs text-white/40 sm:px-6">
-          © {new Date().getFullYear()} LAZ Solidaritas Insan Peduli · Ojol Mengaji
+        <div className={footer.bottom}>
+          <span>© {new Date().getFullYear()} LAZ Solidaritas Insan Peduli</span>
+          <span>Belajar di sela perjalanan.</span>
         </div>
       </footer>
     </>

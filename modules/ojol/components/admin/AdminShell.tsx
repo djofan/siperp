@@ -73,13 +73,15 @@ export function AdminShell({ userName, nav, children }: { userName: string; nav:
         <button ref={menuButton} type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-label="Buka menu"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"><Icon name="menu" /></button>
         <button type="button" onClick={() => setCollapsed(value => !value)} aria-expanded={!collapsed} aria-label={collapsed ? "Perluas sidebar" : "Ringkas sidebar"} className="hidden h-11 w-11 shrink-0 items-center justify-center lg:flex"><Icon name="menu" /></button>
-        <div className="min-w-0 flex-1"><p className="truncate text-xs text-ojol-muted">Ojol Mengaji / Admin / <span className="text-ojol-ink">{pageTitle}</span></p></div>
+        <div className="min-w-0 flex-1"><p className="admin-page-label truncate">{pageTitle}</p></div>
         <form onSubmit={search} className="admin-menu-search hidden max-w-xs items-center px-4 py-1 lg:flex">
           <input value={query} onChange={event => setQuery(event.target.value)} aria-label="Cari menu admin"
             placeholder="Cari menu..." className="min-w-0 w-full bg-transparent text-sm outline-none" />
         </form>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <Link href="/ojol" title="Lihat situs" className="rounded-full px-3 py-2 text-xs">Lihat situs ↗</Link>
+          <span className="hidden max-w-36 truncate text-xs font-semibold xl:block">{userName}</span>
+          <span className="hidden sm:block"><Avatar name={userName} size={32} /></span>
         </div>
       </header>
       <main id="ojol-admin-content" className="learning-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>

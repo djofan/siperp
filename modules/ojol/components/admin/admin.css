@@ -102,3 +102,13 @@
 .ojol-admin .directory-stat:last-child .directory-stat-icon { background: #cde8db; color: #18604b; }
 .ojol-admin .directory-panel { box-shadow: 0 6px 22px rgba(13,66,35,.065); }
 .ojol-admin .directory-toolbar { background: #fcfffc; }
+@media (max-width: 767px) {
+  .ojol-experience .directory-filters { flex-wrap: wrap; min-width: 0; }
+  .ojol-experience .directory-search { max-width: 100%; }
+  .ojol-experience .directory-footer { flex-wrap: wrap; }
+  .ojol-experience .directory-table td > * { min-width: 0; overflow-wrap: anywhere; }
+  .ojol-experience .directory-table td::before { flex-shrink: 0; }
+  .ojol-admin .admin-topbar { gap: 8px; padding-inline: 12px; }
+  .ojol-admin .admin-topbar a { padding-inline: 8px; }
+  .ojol-experience .crud-form :is(input:not(.sr-only),select,textarea) { font-size: 16px; }
+}

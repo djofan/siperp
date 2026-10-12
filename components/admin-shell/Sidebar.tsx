@@ -75,7 +75,7 @@ export function Sidebar({
         <span className="text-[11px] font-medium tracking-[0.14em] text-white/35 uppercase">Core Panel</span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-6 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-2">
         {groups.map((group, index) => {
           const key = group.heading ?? String(index);
           const isOpen = !collapsed[key];

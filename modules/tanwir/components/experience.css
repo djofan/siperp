@@ -126,3 +126,7 @@
   .tanwir-experience :where(input,select,textarea) { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .tanwir-experience * { scroll-behavior: auto !important; transition: none !important; } }
+@media (max-width: 359px) {
+  .tanwir-experience .program-header > div { gap: 12px; padding-inline: 12px; }
+  .tanwir-experience .program-header > div > a { min-width: 0; }
+}

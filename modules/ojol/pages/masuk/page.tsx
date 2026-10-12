@@ -10,8 +10,9 @@ export default async function OjolLoginPage() {
   const viewer = await getOjolViewer();
   if (viewer?.member) redirect(homePathFor(viewer));
   return <ProgramLoginShell name="Ojol Mengaji" href="/ojol" tone="green"
-    heading="Jeda dari jalan, dekat dengan Al-Qur’an."
-    description="Ruang belajar untuk pengemudi ojek online. Lanjutkan mengaji bersama guru pembimbing di sela aktivitas."
+    heading="Mengaji di sela perjalanan."
+    description="Pembinaan bacaan Al-Qur’an untuk pengemudi ojek online, bersama guru dan kelompok belajar."
+    accountHint="Kode guru: GOM · Kode peserta: POM"
     features={[
       { title: "Setoran bacaan", description: "Kumpulkan rekaman audio atau video sesuai tugas dari guru." },
       { title: "Arahan pembimbing", description: "Lihat hasil review dan catatan bacaan di dashboard." },

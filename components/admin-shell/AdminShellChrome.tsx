@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Sidebar, type NavGroup } from "@/components/admin-shell/Sidebar";
 import { Topbar } from "@/components/admin-shell/Topbar";
 import { AdminGradientBackground } from "@/components/admin-shell/AdminGradientBackground";
+import styles from "./AdminShellChrome.module.css";
 
 const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
@@ -31,7 +32,7 @@ export function AdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
+    <div className={`${styles.chrome} dark relative flex h-dvh overflow-hidden text-foreground`}>
       <AdminGradientBackground glow="116,175,39" placement="top" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <Sidebar groups={groups} userName={userName} />

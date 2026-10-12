@@ -3,6 +3,8 @@ import type { SVGProps } from "react";
 // Satu set ikon garis tipis untuk modul Ojol (fungsional, bukan dekorasi).
 const PATHS = {
   search: "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 21 21",
+  eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  eyeOff: "M3 3l18 18M10.6 5.1A11 11 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.4 4.3M6.3 6.3C3.7 8 2 12 2 12s3.6 7 10 7a11 11 0 0 0 3.7-.8M9.9 9.9a3 3 0 0 0 4.2 4.2",
   home: "M3.5 10.5 12 4l8.5 6.5V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1z",
   tasks: "M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
   review: "M4 12.5 9 17.5 20 6.5",

@@ -227,7 +227,7 @@ export function Footer({
           {footer.bottomNote && <span className="block sm:inline"><span className="hidden sm:inline"> · </span>{footer.bottomNote}</span>}
         </p>
         <Link
-          href="/admin/sip"
+          href="/admin/login"
           className="inline-flex items-center gap-2 self-start rounded-full bg-white/[0.08] px-4 py-2 font-semibold text-white/75 transition-colors hover:bg-white hover:text-sip-primary-900 sm:self-auto"
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">

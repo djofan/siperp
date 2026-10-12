@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type SVGProps } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 function MailIcon(props: SVGProps<SVGSVGElement>) {
@@ -69,7 +69,6 @@ interface FieldErrors {
 
 export function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -108,8 +107,8 @@ export function LoginForm() {
       return;
     }
 
-    const redirectTo = searchParams.get("from") || "/admin";
-    router.push(redirectTo);
+    // Semua login pengelola dimulai dari dashboard Core; modul dipilih setelahnya.
+    router.replace("/admin");
     router.refresh();
   }
 

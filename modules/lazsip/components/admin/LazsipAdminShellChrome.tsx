@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { LazsipSidebar } from "@/modules/lazsip/components/admin/LazsipSidebar";
 import { LazsipTopbar } from "@/modules/lazsip/components/admin/LazsipTopbar";
 import { AdminGradientBackground } from "@/components/admin-shell/AdminGradientBackground";
+import styles from "./LazsipAdminShellChrome.module.css";
 
 const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
@@ -34,7 +35,7 @@ export function LazsipAdminShellChrome({
   }
 
   return (
-    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
+    <div className={`${styles.chrome} dark relative flex h-dvh overflow-hidden text-foreground`}>
       <AdminGradientBackground glow="115,174,67" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <LazsipSidebar userName={userName} />

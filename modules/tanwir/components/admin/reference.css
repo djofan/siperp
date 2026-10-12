@@ -1,0 +1,292 @@
+/* Warm canvas and floating icon rail, scoped to Tanwir admin. */
+.tanwir-admin {
+  --foreground: #242924;
+  --color-foreground: #242924;
+  --color-tanwir-paper: #ebeae5;
+  --color-tanwir-ink: #242924;
+  --color-tanwir-muted: #626d65;
+  --color-tanwir-primary: #476c59;
+  --color-tanwir-primary-hover: #365342;
+  --color-tanwir-primary-soft: #e7eeE8;
+  --color-accent: #476c59;
+  --color-accent-hover: #365342;
+  --color-accent-soft: #e7eee8;
+  --color-surface-muted: #f2f4ef;
+  --color-border: #e5e8e0;
+  color: #242924;
+  background: #ebeae5;
+}
+.tanwir-admin .admin-shell { background: #ebeae5; padding: 20px; gap: 20px; }
+.tanwir-admin .admin-frame { background: transparent; }
+.tanwir-admin .admin-shell .admin-sidebar { background: #fff; color: #242924; border-radius: 28px; padding: 12px 0; }
+.tanwir-admin .admin-shell > div.hidden { padding-top: 100px; padding-bottom: 8px; }
+.tanwir-admin .admin-sidebar nav { padding: 8px; gap: 8px; }
+.tanwir-admin .admin-sidebar .learning-nav-item { color: #505e54; border-radius: 50px; min-height: 44px; }
+.tanwir-admin .admin-sidebar .learning-nav-item:hover { background: #edf2eb; color: #283e2f; }
+.tanwir-admin .admin-sidebar .learning-nav-item[aria-current=page] { background: #232428; color: #fff; }
+.tanwir-admin .admin-brand-symbol { background: #e7eee8; color: #476c59; }
+.tanwir-admin .admin-shell.is-collapsed .admin-sidebar { width: 60px; }
+.tanwir-admin .is-collapsed .admin-sidebar nav { padding-inline: 8px; }
+.tanwir-admin .is-collapsed .admin-sidebar .learning-nav-item { width: 44px; padding: 0; justify-content: center; }
+.tanwir-admin .is-collapsed .sidebar-account { flex-direction: column; gap: 8px; margin: 0; padding: 8px; }
+.tanwir-admin .is-collapsed .sidebar-account > span { display: none; }
+.tanwir-admin .admin-shell.is-collapsed .sidebar-account { display: flex; }
+.tanwir-admin .admin-topbar { height: 96px; min-height: 96px; background: transparent; padding: 12px 0 20px; }
+.tanwir-admin .tanwir-welcome > p { font-size: 23px; font-weight: 500; letter-spacing: -.6px; }
+.tanwir-admin .tanwir-welcome > span { margin-top: 6px; }
+.tanwir-admin .admin-menu-search { background: #fff; border: 0; border-radius: 50px; width: 280px; padding: 8px 18px; }
+.tanwir-admin .admin-topbar :where(a,button):hover { background: #e0e6db; }
+.tanwir-admin .admin-frame > .learning-content { padding: 0 0 16px; }
+.tanwir-admin .learning-content > div { max-width: 1440px; }
+.tanwir-admin .learning-content :is(h1,h2,h3,.directory-stat-value) { font-family: var(--font-tanwir-ui), Arial, sans-serif; letter-spacing: -.4px; }
+.tanwir-admin .learning-content h1 { font-size: 25px; font-weight: 600; }
+.tanwir-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.tanwir-admin :is(.directory-stat,.directory-panel) { background: #fff; border: 0; border-radius: 18px; box-shadow: none; }
+.tanwir-admin .directory-stat { padding: 18px; }
+.tanwir-admin .directory-stat-value { font-size: 28px; line-height: 1.2; font-weight: 650; margin-top: 8px; }
+.tanwir-admin .directory-stat-detail { margin-top: 6px; color: #626d65; font-size: 11px; }
+.tanwir-admin .directory-stat-icon { background: #e7eee8; color: #476c59; border-radius: 50%; width: 36px; height: 36px; }
+.tanwir-admin .directory-stat:nth-child(n) { background: #fff; border: 0; }
+.tanwir-admin .directory-stat:last-child { background: #476c59; color: #fff; }
+.tanwir-admin .directory-stat:last-child :is(.directory-stat-value,.directory-stat-detail),
+.tanwir-admin .directory-stat:last-child > div > p { color: #fff; }
+.tanwir-admin .directory-stat:last-child .directory-stat-icon { color: #fff; background: #ffffff20; }
+.tanwir-admin .directory-toolbar { background: transparent; }
+.tanwir-admin .directory-table thead { background: #f2f4ef; }
+.tanwir-admin .learning-content :is(th,td) { border-bottom: 0; }
+.tanwir-admin .directory-table tbody tr:nth-child(even) { background: #fafbf8; }
+.tanwir-admin .directory-footer { background: #fff; }
+.tanwir-admin :is(.directory-search,.directory-icon-button,.directory-group-filter,.directory-filters button) { border: 0; background: #f2f4ef; }
+.tanwir-admin .directory-filters button[aria-pressed=true],
+.tanwir-admin .directory-page { background: #476c59; color: #fff; }
+.tanwir-admin .crud-form :is(input:not(.sr-only),select,textarea) { border: 0; background: #f2f4ef; }
+.tanwir-admin .tanwir-reference-dashboard > :first-child { display: none; }
+.tanwir-admin .tanwir-dashboard-links { background: #e0e7dc; border-radius: 12px; padding: 12px 16px; color: #3c5947; }
+.tanwir-admin .tanwir-dashboard-links a { min-height: 24px; display: inline-flex; align-items: center; }
+.tanwir-admin .tanwir-dashboard-body > section { padding: 20px; }
+.tanwir-admin .tanwir-dashboard-body li { padding-block: 6px; }
+.tanwir-admin .tanwir-dashboard-body > section > p { font-size: 12px; padding: 24px 16px; }
+@media (max-width: 1023px) {
+  .tanwir-admin .admin-shell { padding: 16px; gap: 0; }
+  .tanwir-admin .admin-topbar { height: 76px; min-height: 76px; padding-inline: 0; }
+  .tanwir-admin .admin-drawer { background: #fff; }
+  .tanwir-admin .admin-drawer .admin-sidebar { border-radius: 0; }
+}
+@media (max-width: 639px) {
+  .tanwir-admin .admin-shell { padding: 12px; }
+  .tanwir-admin .tanwir-welcome > p { font-size: 17px; }
+  .tanwir-admin .tanwir-welcome > span { font-size: 10px; }
+  .tanwir-admin .directory-stat { padding: 14px; }
+  .tanwir-admin .tanwir-dashboard-body > section { padding: 16px; }
+}
+
+/* Dark sage palette: no changes to geometry or interaction. */
+.tanwir-admin {
+  color-scheme: dark;
+  --foreground: #ecf0eb;
+  --color-foreground: #ecf0eb;
+  --color-tanwir-paper: #161b18;
+  --color-tanwir-surface: #222b25;
+  --color-tanwir-ink: #ecf0eb;
+  --color-tanwir-muted: #acb9af;
+  --color-tanwir-line: #3a493e;
+  --color-tanwir-primary: #486e57;
+  --color-tanwir-primary-hover: #557f65;
+  --color-tanwir-primary-soft: #304337;
+  --color-accent: #486e57;
+  --color-accent-hover: #557f65;
+  --color-accent-soft: #304337;
+  --color-surface: #222b25;
+  --color-surface-muted: #2b382f;
+  --color-border: #3a493e;
+  --color-tanwir-success: #b3debc;
+  --color-tanwir-success-soft: #2a4433;
+  --color-tanwir-warning: #edd092;
+  --color-tanwir-warning-soft: #443b28;
+  --color-tanwir-danger: #ffb4ad;
+  --color-tanwir-danger-soft: #48312f;
+  background: #161b18;
+  color: #ecf0eb;
+}
+.tanwir-admin .admin-shell { background: #161b18; }
+.tanwir-admin .admin-shell .admin-sidebar,
+.tanwir-admin .admin-drawer { background: #222b25; color: #ecf0eb; }
+.tanwir-admin .admin-sidebar .learning-nav-item { color: #bdcbc0; }
+.tanwir-admin .admin-sidebar .learning-nav-item:hover { background: #304337; color: #ecf0eb; }
+.tanwir-admin .admin-sidebar .learning-nav-item[aria-current=page] { background: #b6cfac; color: #1d3021; }
+.tanwir-admin .admin-brand-symbol { background: #304337; color: #c4dcba; }
+.tanwir-admin .admin-topbar :where(a,button):hover { background: #304337; }
+.tanwir-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.tanwir-admin :is(.directory-stat,.directory-panel,.crud-form,.form-actions,.directory-footer) { background: #222b25; color: #ecf0eb; }
+.tanwir-admin .directory-stat:nth-child(n) { background: #222b25; }
+.tanwir-admin .directory-stat:last-child { background: #486e57; }
+.tanwir-admin .directory-stat-value { color: #ecf0eb; }
+.tanwir-admin .directory-stat > div > p,
+.tanwir-admin :is(.directory-stat-detail,.directory-footer,.directory-table th),
+.tanwir-admin .learning-content [class*="text-foreground/"] { color: #acb9af; }
+.tanwir-admin .directory-stat:last-child > div > p,
+.tanwir-admin .directory-stat:last-child :is(.directory-stat-value,.directory-stat-detail) { color: #fff; }
+.tanwir-admin .directory-stat-icon { background: #304337; color: #c4dcba; }
+.tanwir-admin :is(.directory-search,.directory-icon-button,.directory-group-filter,.directory-filters button,.admin-menu-search,.directory-code) { background: #2b382f; color: #d7e1d8; }
+.tanwir-admin .directory-filters button[aria-pressed=true],
+.tanwir-admin .directory-page { background: #b6cfac; color: #1d3021; }
+.tanwir-admin .directory-group { background: #304337; color: #c4dcba; }
+.tanwir-admin .learning-content table thead { background: #2b382f; }
+.tanwir-admin .learning-content th { color: #acb9af; }
+.tanwir-admin .learning-content tbody tr { background: #222b25; }
+.tanwir-admin .directory-table tbody tr:nth-child(even) { background: #263129; }
+.tanwir-admin .learning-content tbody tr:hover { background: #304337; }
+.tanwir-admin .crud-form :is(input:not(.sr-only),select,textarea) { background: #18221b; color: #ecf0eb; }
+.tanwir-admin :is(input,textarea)::placeholder { color: #9aaa9d; }
+.tanwir-admin .tanwir-dashboard-links { background: #304337; color: #c4dcba; }
+.tanwir-admin button[role=switch][aria-checked=true] { background: #486e57; }
+.tanwir-admin :where(a,button,input,select,textarea):focus-visible { outline-color: #b6cfac; }
+.tanwir-admin, .tanwir-admin * { scrollbar-color: #5b6f60 transparent; }
+.tanwir-admin ::-webkit-scrollbar-thumb { background: #5b6f60; }
+
+/* Latest reference: integrated sidebar, compact analytics composition. */
+.tanwir-admin .admin-shell { padding: 0; gap: 0; background: #171f1c; }
+.tanwir-admin .admin-shell > div.hidden { padding: 0; }
+.tanwir-admin .admin-shell .admin-sidebar { width: 204px; border-radius: 0; padding: 12px 0; background: #202d27; }
+.tanwir-admin .sidebar-brand { padding: 16px 18px 22px; }
+.tanwir-admin .sidebar-brand a > span:last-child > span:first-child { font-family: var(--font-tanwir-ui), Arial, sans-serif; font-size: 16px; font-weight: 650; }
+.tanwir-admin .admin-brand-symbol { background: transparent; color: #b6cfac; }
+.tanwir-admin .admin-sidebar nav { padding: 0 12px; gap: 3px; }
+.tanwir-admin .admin-sidebar .nav-group { font-size: 9px; padding-top: 16px; padding-bottom: 6px; }
+.tanwir-admin .admin-sidebar .learning-nav-item { border-radius: 7px; min-height: 38px; padding: 9px 12px; font-size: 12px; }
+.tanwir-admin .admin-sidebar .learning-nav-item[aria-current=page] { background: #364c40; color: #e8f1e9; }
+.tanwir-admin .admin-frame { background: #171f1c; }
+.tanwir-admin .admin-topbar { height: 64px; min-height: 64px; padding: 12px 20px; }
+.tanwir-admin .tanwir-welcome > p { font-size: 18px; font-weight: 600; }
+.tanwir-admin .admin-menu-search { border-radius: 7px; width: 224px; padding: 2px 12px; }
+.tanwir-admin .admin-frame > .learning-content { padding: 4px 20px 20px; }
+.tanwir-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.tanwir-admin :is(.directory-stat,.directory-panel) { border-radius: 10px; background: #25322c; box-shadow: 0 3px 8px #00000014; }
+.tanwir-admin .directory-summary { gap: 12px; }
+.tanwir-admin .directory-stat:nth-child(n) { background: #25322c; padding: 14px; }
+.tanwir-admin .directory-stat:last-child { background: #2e4838; }
+.tanwir-admin .directory-stat-value { font-size: 25px; margin-top: 4px; }
+.tanwir-admin .directory-stat-detail { font-size: 10px; margin-top: 4px; }
+.tanwir-admin .directory-stat-icon { width: 26px; height: 26px; border-radius: 7px; }
+.tanwir-admin .tanwir-reference-dashboard { display: grid; gap: 12px; }
+.tanwir-admin .tanwir-reference-dashboard > * { margin: 0; }
+.tanwir-admin .tanwir-dashboard-links { padding: 8px 12px; border-radius: 7px; font-size: 12px; }
+.tanwir-admin .tanwir-dashboard-body { gap: 12px; }
+.tanwir-admin .tanwir-dashboard-body > section { padding: 16px; min-width: 0; }
+.tanwir-admin .tanwir-dashboard-body h2 { font-size: 13px; }
+.tanwir-admin .tanwir-map-panel { grid-column: 1 / -1; }
+.tanwir-admin .tanwir-program-count { display: grid; place-content: center; text-align: center; gap: 6px; background: #304337; border-radius: 50%; width: 116px; height: 116px; margin: 14px auto; }
+.tanwir-admin .tanwir-program-count strong { font-size: 32px; line-height: 1; }
+.tanwir-admin .tanwir-program-count span { font-size: 10px; color: #c4dcba; }
+.tanwir-admin .tanwir-program-link { display: block; background: #304337; border-radius: 6px; padding: 10px; margin-top: 8px; font-size: 11px; }
+.tanwir-admin .tanwir-program-link:hover { background: #3a5342; }
+/* The content plane overlaps the sidebar base, with depth on its left edge. */
+@media (min-width: 1024px) {
+  .tanwir-admin .admin-shell { padding: 14px; background: #111914; isolation: isolate; }
+  .tanwir-admin .admin-shell > div.hidden { position: relative; z-index: 0; }
+  .tanwir-admin .admin-shell .admin-sidebar { width: 216px; padding-right: 12px; border-radius: 14px 0 0 14px; background: linear-gradient(110deg, #293a30 0%, #233229 65%, #1b281f 100%); }
+  .tanwir-admin .admin-shell.is-collapsed .admin-sidebar { width: 84px; }
+  .tanwir-admin .admin-frame { z-index: 1; margin-left: -12px; border-radius: 14px; background: #1d2922; box-shadow: -14px 0 24px #00000035, 0 10px 24px #00000024; }
+  .tanwir-admin .admin-sidebar nav { padding-right: 18px; }
+  .tanwir-admin .is-collapsed .admin-sidebar nav { padding-inline: 8px 20px; }
+  .tanwir-admin .admin-topbar { background: #1d2922; }
+}
+.tanwir-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.tanwir-admin :is(.directory-stat,.directory-panel) { background: #2a3830; box-shadow: 0 3px 7px #00000026; }
+.tanwir-admin .directory-stat:nth-child(n) { background: #2a3830; }
+.tanwir-admin .directory-stat:last-child { background: #344f3d; }
+/* Latest composition: independent primary column and profile/activity rail. */
+.tanwir-admin .tanwir-dashboard-primary { display: grid; align-content: start; gap: 12px; min-width: 0; }
+.tanwir-admin .tanwir-dashboard-rail { display: grid; align-content: start; gap: 12px; min-width: 0; }
+.tanwir-admin .tanwir-profile-panel { display: flex; align-items: center; flex-direction: column; gap: 8px; padding: 24px 16px; background: #25372d; border-radius: 12px; text-align: center; }
+.tanwir-admin .tanwir-profile-panel h2 { font-size: 14px; overflow-wrap: anywhere; }
+.tanwir-admin .tanwir-profile-panel p { font-size: 11px; color: #acb9af; }
+.tanwir-admin .tanwir-profile-panel a { font-size: 11px; color: #c4dcba; margin-top: 6px; }
+.tanwir-admin .tanwir-dashboard-rail .tanwir-recent-panel { background: #1e2b23; padding: 16px; border-radius: 12px; }
+.tanwir-admin .tanwir-recent-panel h2 { font-size: 13px; }
+.tanwir-admin .tanwir-recent-panel li { flex-wrap: wrap; gap: 8px; padding-block: 8px; }
+.tanwir-admin .tanwir-recent-panel li a { flex: 1; }
+.tanwir-admin .tanwir-recent-panel li > span:last-child { margin-left: 36px; font-size: 10px; }
+.tanwir-admin .tanwir-dashboard-primary .tanwir-dashboard-body { grid-template-columns: minmax(0,1fr); }
+.tanwir-admin .tanwir-program-count { border-radius: 10px; width: auto; height: auto; padding: 14px; margin: 10px 0; text-align: left; place-content: start; }
+.tanwir-admin .tanwir-program-panel { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; }
+.tanwir-admin .tanwir-program-panel h2 { grid-column: 1 / -1; margin-bottom: 0; }
+.tanwir-admin .tanwir-program-count { grid-row: 2 / 4; }
+.tanwir-admin .admin-shell .admin-sidebar { background: #1b2921; }
+@media (min-width: 1024px) {
+  .tanwir-admin .admin-shell { padding: 10px; gap: 8px; background: #101a14; }
+  .tanwir-admin .admin-shell .admin-sidebar { width: 184px; padding-right: 0; border-radius: 14px; }
+  .tanwir-admin .admin-frame { margin-left: 0; border-radius: 14px; background: #19251e; box-shadow: none; }
+  .tanwir-admin .admin-topbar { background: transparent; }
+  .tanwir-admin .tanwir-reference-dashboard { grid-template-columns: minmax(0,1fr) minmax(220px, .34fr); align-items: start; }
+}
+@media (max-width: 639px) {
+  .tanwir-admin .tanwir-program-panel { grid-template-columns: minmax(0,1fr); }
+  .tanwir-admin .tanwir-program-count { grid-row: auto; }
+}
+@media (min-width: 1024px) {
+  .tanwir-admin .tanwir-dashboard-body { grid-template-columns: minmax(0,3fr) minmax(210px,1fr); }
+}
+@media (max-width: 639px) {
+  .tanwir-admin .admin-topbar { padding-inline: 12px; }
+  .tanwir-admin .admin-frame > .learning-content { padding-inline: 12px; }
+  .tanwir-admin .tanwir-welcome > p { font-size: 16px; }
+}
+
+/* Consistent geometry across dashboard, directories and CRUD pages. */
+.tanwir-admin .tanwir-reference-dashboard { align-items: stretch; }
+.tanwir-admin .tanwir-dashboard-primary,
+.tanwir-admin .tanwir-dashboard-rail { min-width: 0; }
+.tanwir-admin .tanwir-dashboard-rail { grid-template-rows: auto 1fr; align-content: stretch; }
+.tanwir-admin .directory-stat { display: flex; flex-direction: column; min-width: 0; }
+.tanwir-admin .directory-summary { grid-auto-rows: 1fr; }
+.tanwir-admin .sidebar-brand { padding: 14px 12px 18px; }
+.tanwir-admin .sidebar-brand a { gap: 8px; }
+.tanwir-admin .sidebar-brand .admin-brand-symbol { width: 28px; height: 28px; flex-shrink: 0; }
+.tanwir-admin .sidebar-brand a > span:last-child > span:first-child { font-size: 15px; }
+.tanwir-admin .directory-stat-detail { white-space: normal; overflow-wrap: anywhere; }
+.tanwir-admin .directory-stat-value { margin-top: 8px; }
+.tanwir-admin .directory-stat-detail { margin-top: auto; padding-top: 6px; }
+.tanwir-admin .tanwir-profile-panel { padding: 18px 16px; }
+.tanwir-admin .tanwir-dashboard-rail .tanwir-recent-panel { display: flex; flex-direction: column; }
+.tanwir-admin .tanwir-recent-panel > div:last-child { margin-top: auto; padding-top: 16px; }
+.tanwir-admin .tanwir-recent-panel li { display: grid; grid-template-columns: 28px minmax(0,1fr); align-items: start; gap: 4px 8px; }
+.tanwir-admin .tanwir-recent-panel li > span:last-child { grid-column: 2; margin-left: 0; }
+.tanwir-admin .tanwir-recent-panel li a { min-width: 0; }
+.tanwir-admin .tanwir-recent-panel li a > span:first-child { white-space: normal; overflow-wrap: anywhere; }
+.tanwir-admin .tanwir-program-count { margin: 0; }
+.tanwir-admin .tanwir-program-link { margin: 0; display: flex; align-items: center; min-height: 44px; }
+.tanwir-admin .tanwir-map-panel [role=img] { height: clamp(220px,30vh,320px); }
+.tanwir-admin .admin-sidebar > .sidebar-account { margin-inline: 12px; padding-inline: 4px; }
+.tanwir-admin .sidebar-account > span { min-width: 0; }
+.tanwir-admin .admin-menu-search { min-width: 0; flex-shrink: 1; }
+.tanwir-admin .directory-toolbar { gap: 8px; }
+.tanwir-admin .directory-filters { flex-wrap: wrap; }
+.tanwir-admin .directory-footer { flex-wrap: wrap; }
+.tanwir-admin .crud-form .grid > * { min-width: 0; }
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .tanwir-admin .tanwir-dashboard-primary .directory-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 1023px) {
+  .tanwir-admin .tanwir-reference-dashboard { grid-template-columns: minmax(0,1fr); }
+  .tanwir-admin .tanwir-dashboard-rail { grid-template-columns: minmax(0,1fr) minmax(0,2fr); grid-template-rows: auto; align-items: stretch; }
+  .tanwir-admin .admin-drawer { width: min(280px,calc(100vw - 32px)); }
+  .tanwir-admin .admin-drawer .admin-sidebar { width: 100%; padding-right: 0; }
+}
+@media (max-width: 639px) {
+  .tanwir-admin .tanwir-dashboard-rail { grid-template-columns: minmax(0,1fr); }
+  .tanwir-admin .admin-topbar { gap: 6px; }
+  .tanwir-admin .admin-topbar a { padding-inline: 8px; }
+  .tanwir-admin .tanwir-dashboard-links { flex-direction: column; align-items: stretch; gap: 4px; }
+  .tanwir-admin .tanwir-dashboard-links a { min-height: 36px; }
+  .tanwir-admin .directory-table td { gap: 10px; }
+  .tanwir-admin .directory-group-filter { max-width: 100%; }
+  .tanwir-admin .crud-form { padding: 16px; }
+  .tanwir-admin .crud-form :is(input:not(.sr-only),select,textarea) { font-size: 16px; }
+}
+@media (max-width: 359px) {
+  .tanwir-admin .directory-summary { gap: 8px; }
+  .tanwir-admin .directory-stat:nth-child(n) { padding: 12px; }
+  .tanwir-admin .directory-stat > div { gap: 6px; }
+  .tanwir-admin .directory-stat > div > p { font-size: 11px; }
+}

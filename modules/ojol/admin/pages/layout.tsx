@@ -1,6 +1,7 @@
 import { AdminShell } from "@/modules/ojol/components/admin/AdminShell";
 import "@/modules/ojol/components/experience.css";
 import "@/modules/ojol/components/admin/admin.css";
+import "@/modules/ojol/components/admin/reference.css";
 import { ojolDisplay } from "@/modules/ojol/components/fonts";
 import { ModuleInactiveNotice } from "@/components/admin-shell/ModuleInactiveNotice";
 import { prisma } from "@/lib/prisma";
