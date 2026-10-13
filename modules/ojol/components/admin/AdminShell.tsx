@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PublicWebsiteLink } from "@/components/admin-shell/PublicWebsiteLink";
 import { usePathname, useRouter } from "next/navigation";
 import { useRef, useState, type FormEvent } from "react";
 import { Icon, type IconName } from "@/modules/ojol/components/icons";
@@ -79,9 +80,7 @@ export function AdminShell({ userName, nav, children }: { userName: string; nav:
             placeholder="Cari menu..." className="min-w-0 w-full bg-transparent text-sm outline-none" />
         </form>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Link href="/ojol" title="Lihat situs" className="rounded-full px-3 py-2 text-xs">Lihat situs ↗</Link>
-          <span className="hidden max-w-36 truncate text-xs font-semibold xl:block">{userName}</span>
-          <span className="hidden sm:block"><Avatar name={userName} size={32} /></span>
+          <PublicWebsiteLink href="/ojol" />
         </div>
       </header>
       <main id="ojol-admin-content" className="learning-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>

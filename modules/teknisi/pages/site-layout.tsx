@@ -1,0 +1,4 @@
+import Link from "next/link";
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return <div className="min-h-screen bg-slate-50 text-slate-900"><header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5"><Link href="/teknisi" className="text-xl font-bold">Teknisi<span className="text-emerald-600">HP.</span></Link><nav className="flex flex-wrap gap-5 text-sm"><Link href="/teknisi/cek-status">Cek Status Servis</Link><Link href="/teknisi/panel">Panel Outlet</Link><Link href="/teknisi/masuk">Masuk Teknisi</Link></nav></div></header><main>{children}</main><footer className="mx-auto max-w-6xl border-t border-slate-200 px-6 py-8 text-sm text-slate-500">Teknisi HP · Bagian dari Platform SIP</footer></div>;
+}

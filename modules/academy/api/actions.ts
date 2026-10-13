@@ -17,6 +17,7 @@ import * as curriculum from "./admin-curriculum";
 import { orderField } from "./admin-validation";
 import * as adminQuizzes from "./admin-quizzes";
 import * as participants from "./admin-participants";
+import { allocateNip } from "@/modules/core/participant-sequence";
 
 export type ActionState = { error: string; message?: string; credentials?: { email: string; password: string }[] };
 
@@ -28,9 +29,11 @@ function errorState(error: unknown): ActionState {
 
 export async function registerParticipant(_: ActionState, form: FormData): Promise<ActionState> {
   const name = String(form.get("name") ?? "").trim();
+  const address = String(form.get("address") ?? "").trim();
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
   if (name.length < 2 || name.length > 100 || email.length > 191 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Isi nama dan alamat email yang valid." };
+  if (!address || address.length > 2000) return { error: "Alamat wajib diisi, maksimal 2.000 karakter." };
   if (password.length < 10 || Buffer.byteLength(password, "utf8") > 72) return { error: "Password minimal 10 karakter dan maksimal 72 byte." };
   if (password !== form.get("confirmPassword")) return { error: "Konfirmasi password tidak sama." };
   const phone = normalizePhone(String(form.get("phone") ?? ""));
@@ -38,12 +41,14 @@ export async function registerParticipant(_: ActionState, form: FormData): Promi
   if (!phone || (gender !== "IKHWAN" && gender !== "AKHWAT")) return { error: "Isi nomor WhatsApp Indonesia dan jenis kelamin yang valid." };
   const { course } = await getIntake();
   if (!course) return { error: "Pendaftaran belum dibuka. Hubungi CS." };
+  let nip = "";
   try {
     // Akun Core yang sudah ada tidak diambil alih dan tidak diberi akses admin.
     const passwordHash = await bcrypt.hash(password, 12);
     await learningTransaction(async tx => {
       await lockIntake(tx, course.id);
-      await tx.user.create({ data: { name, email, passwordHash, academyProfile: { create: { phone, gender, enrollments: { create: { courseId: course.id } } } } } });
+      nip = await allocateNip(tx, "academy");
+      await tx.user.create({ data: { name, email, passwordHash, academyProfile: { create: { nis: nip, address, phone, gender, enrollments: { create: { courseId: course.id } } } } } });
     });
   } catch (error) {
     if (error instanceof AcademyError) return { error: error.message };
@@ -51,7 +56,7 @@ export async function registerParticipant(_: ActionState, form: FormData): Promi
     console.error("Academy registration failed", error instanceof Error ? error.name : "Unknown error");
     return { error: "Pendaftaran belum berhasil. Silakan coba lagi." };
   }
-  redirect("/academy/masuk?terdaftar=1");
+  redirect(`/academy/masuk?terdaftar=1&nip=${encodeURIComponent(nip)}`);
 }
 
 export async function enrollInCourse(courseId: string): Promise<ActionState> {
@@ -62,7 +67,9 @@ export async function enrollInCourse(courseId: string): Promise<ActionState> {
     await learningTransaction(async (tx) => {
       const existing = user.academyProfile && await tx.zakatAcademyEnrollment.findUnique({ where: { profileId_courseId: { profileId: user.academyProfile.id, courseId } } });
       if (!existing) await lockIntake(tx, courseId);
-      const profile = await tx.zakatAcademyProfile.upsert({ where: { userId: user.id }, update: {}, create: { userId: user.id } });
+      const existingProfile = await tx.zakatAcademyProfile.findUnique({ where: { userId: user.id } });
+      if (existingProfile?.deletedAt) throw new AcademyError("Akun peserta sudah dihapus.");
+      const profile = existingProfile ?? await tx.zakatAcademyProfile.create({ data: { userId: user.id, nis: await allocateNip(tx, "academy") } });
       await tx.zakatAcademyEnrollment.upsert({ where: { profileId_courseId: { profileId: profile.id, courseId } }, update: {}, create: { profileId: profile.id, courseId } });
     });
   } catch (error) { return errorState(error); }

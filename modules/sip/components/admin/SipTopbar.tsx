@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import { PublicWebsiteLink } from "@/components/admin-shell/PublicWebsiteLink";
 import { usePathname } from "next/navigation";
 
 export function SipTopbar({ onMenuClick }: { onMenuClick?: () => void }) {
@@ -20,7 +20,7 @@ export function SipTopbar({ onMenuClick }: { onMenuClick?: () => void }) {
         </button>
       )}
       <p className="min-w-0 flex-1 truncate text-sm text-white/60">SIP / <span className="font-medium text-white">{title[section] ?? "Dashboard"}</span></p>
-      <Link href="/" target="_blank" rel="noopener noreferrer" className="shrink-0 text-xs font-semibold text-sip-lime hover:text-white">Lihat website ↗</Link>
+      <PublicWebsiteLink href="/" className="text-sip-lime hover:text-white" />
     </header>
   );
 }

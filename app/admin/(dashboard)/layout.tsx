@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { listAccessibleModules, listModules } from "@/modules/core/modules";
+import { listAccessibleModules, listModules, accountPanelRedirect } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
 import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
 
@@ -13,6 +13,9 @@ export default async function DashboardLayout({
   if (!session) {
     redirect("/admin/login");
   }
+
+  const destination = await accountPanelRedirect(session);
+  if (destination) redirect(destination);
 
   // Superadmin juga melihat modul nonaktif (ditandai) supaya modul yang masih dikembangkan
   // tetap bisa dibuka & dites dari sidebar; admin biasa hanya melihat modul aktif yang diizinkan.
