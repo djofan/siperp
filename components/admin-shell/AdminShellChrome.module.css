@@ -1,0 +1,31 @@
+.chrome,
+.chrome * {
+  scrollbar-width: thin;
+  scrollbar-color: #64705a transparent;
+}
+
+.chrome::-webkit-scrollbar,
+.chrome *::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.chrome::-webkit-scrollbar-thumb,
+.chrome *::-webkit-scrollbar-thumb {
+  background: #64705a;
+  border-radius: 999px;
+}
+
+.chrome::-webkit-scrollbar-track,
+.chrome *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Chromium uses the exact 3px size; Firefox retains its native thin size. */
+@supports selector(::-webkit-scrollbar) {
+  .chrome,
+  .chrome * {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+}

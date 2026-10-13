@@ -74,7 +74,7 @@ export function AdminShell({ userName, nav, children }: { userName: string; nav:
         <button ref={menuButton} type="button" onClick={() => setOpen(true)} aria-expanded={open} aria-label="Buka menu"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"><Icon name="menu" /></button>
         <button type="button" onClick={() => setCollapsed(value => !value)} aria-expanded={!collapsed} aria-label={collapsed ? "Perluas sidebar" : "Ringkas sidebar"} className="hidden h-11 w-11 shrink-0 items-center justify-center lg:flex"><Icon name="menu" /></button>
-        <div className="min-w-0 flex-1"><p className="truncate text-xs text-tanwir-muted">Tanwir Qurani / Admin / <span className="text-tanwir-ink">{pageTitle}</span></p></div>
+        <div className="tanwir-welcome min-w-0 flex-1"><p className="truncate">{pageTitle}</p></div>
         <form onSubmit={search} className="admin-menu-search hidden max-w-xs items-center px-4 py-1 lg:flex">
           <input value={query} onChange={event => setQuery(event.target.value)} aria-label="Cari menu admin"
             placeholder="Cari menu..." className="min-w-0 w-full bg-transparent text-sm outline-none" />

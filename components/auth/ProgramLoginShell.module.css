@@ -23,6 +23,7 @@
 .back { color: var(--login-muted); font-size: 12px; }
 .panels { display: flex; flex: 1; align-items: stretch; justify-content: center; gap: 32px; padding: 24px; }
 .panel { display: flex; flex-direction: column; justify-content: flex-start; padding: 36px; border-radius: 16px; background: var(--login-panel); box-shadow: 0 8px 28px rgba(15,43,26,.06); }
+.panel { min-width: 0; }
 .formPanel { width: 100%; max-width: 448px; }
 .infoPanel { width: 100%; max-width: 448px; background: #e5eee3; }
 .shell[data-tone=green] .brand, .shell[data-tone=green] .footer { color: #d4ebdb; }
@@ -60,3 +61,149 @@
 @media (max-width: 1023px) { .infoPanel { display: none; } .panels { align-items: center; padding-block: 24px; } }
 @media (max-width: 639px) { .brand { padding: 24px; } .brand > a:first-child { font-size: 17px; } .back { font-size: 11px; } .panel { padding: 28px 24px; } .panel h1 { font-size: 32px; } .panels { padding: 16px; } .form input { font-size: 16px; } }
 @media (prefers-reduced-motion: reduce) { .shell * { transition: none !important; } }
+@media (max-width: 359px) {
+  .brand { flex-wrap: wrap; gap: 8px; padding: 20px 16px; }
+  .panels { padding: 12px; }
+  .panel { padding: 24px 20px; }
+  .panel h1 { font-size: 28px; }
+}
+@media (max-height: 520px) and (max-width: 1023px) {
+  .brand { padding-block: 16px; }
+  .panels { padding-block: 12px; }
+  .footer { padding-block: 12px; }
+}
+
+/* Module-specific dark identities, with content-sized equal panels. */
+.shell {
+  color-scheme: dark;
+  --login-canvas: #161f19;
+  --login-panel: #25322a;
+  --login-ink: #ecf0eb;
+  --login-muted: #acb9af;
+  --login-primary: #c4dcba;
+  --login-border: #3a493e;
+  --login-field: #19251d;
+  --login-submit: #486e57;
+  --login-submit-hover: #557f65;
+}
+.shell[data-tone=green] {
+  --login-canvas: #101a16;
+  --login-panel: #192720;
+  --login-ink: #e8f1ec;
+  --login-muted: #a9bab0;
+  --login-primary: #baf395;
+  --login-border: #34483b;
+  --login-field: #101d15;
+  --login-submit: #baf395;
+  --login-submit-hover: #a8e882;
+}
+.brand { padding: 20px 32px; }
+.panels { flex: 1; padding: 12px 24px; gap: 20px; }
+.panel { padding: 28px; }
+.infoPanel { background: #2d4334; }
+.shell[data-tone=green] .infoPanel { --login-ink: #e8f1ec; --login-muted: #b9d0c0; --login-primary: #baf395; background: #254c38; }
+.panel :is(h1,h2) { font-family: var(--font-tanwir-ui,var(--font-ojol-ui,Arial)), sans-serif; min-height: 0; font-size: 28px; font-weight: 600; margin-top: 12px; }
+.description { margin-top: 12px; line-height: 1.6; }
+.form { margin-top: 20px; }
+.form form { display: flex; flex-direction: column; gap: 16px; }
+.form form > * { margin-block: 0; }
+.form button[type=submit] { color: #fff; background: var(--login-submit); }
+.form button[type=submit]:hover { background: var(--login-submit-hover); }
+.shell[data-tone=green] .form button[type=submit] { color: #163c30; background: var(--login-submit); }
+.shell[data-tone=green] .form button[type=submit]:hover { background: var(--login-submit-hover); }
+.infoPanel ul { gap: 16px; margin-top: 20px; }
+.help,.note { padding-top: 20px; }
+.footer { padding: 12px 24px; }
+@media (min-width: 1024px) { .panel { min-height: 0; height: auto; } }
+@media (max-height: 720px) {
+  .brand { padding-block: 16px; }
+  .panel { padding: 24px; }
+  .panel :is(h1,h2) { font-size: 26px; }
+  .form { margin-top: 16px; }
+  .infoPanel ul { gap: 12px; margin-top: 16px; }
+  .help,.note { padding-top: 16px; }
+}
+@media (max-width: 639px) { .brand { padding-inline: 16px; } .panel { padding: 24px; } .panels { padding-inline: 16px; } }
+@media (max-width: 639px) and (max-height: 650px) {
+  .brand { padding-block: 12px; }
+  .panel { padding: 20px; }
+  .panels { padding-block: 8px; }
+  .panel h1 { font-size: 24px; margin-top: 8px; }
+  .description { margin-top: 8px; font-size: 12px; }
+  .form { margin-top: 12px; }
+  .form form { gap: 12px; }
+  .form input,.form button[type=submit] { height: 44px; }
+  .help { padding-top: 12px; }
+  .footer { padding-block: 8px; }
+}
+
+/* Restrained login composition with practical account guidance. */
+.panels { gap: 16px; }
+.panel { border-radius: 12px; box-shadow: none; }
+.infoPanel { background: #203128; }
+.shell[data-tone=green] .infoPanel { background: #1d3729; }
+.panel :is(h1,h2) { font-size: 25px; line-height: 1.3; letter-spacing: -.6px; }
+.eyebrow { font-size: 10px; letter-spacing: .1em; }
+.description { font-size: 12px; }
+.accountHint { margin-top: 12px; color: var(--login-primary); font-size: 11px; line-height: 1.6; }
+.form input { border-color: transparent; border-radius: 7px; }
+.form button[type=submit] { border-radius: 7px; }
+.step { display: flex; flex-shrink: 0; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 7px; background: #ffffff08; color: var(--login-primary); font-size: 10px; font-variant-numeric: tabular-nums; }
+.ojolStage { flex: 1; display: flex; align-items: center; justify-content: center; padding: 12px 24px; }
+.ojolCard { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.12fr); width: 100%; max-width: 920px; padding: 10px; gap: 10px; background: #192720; border-radius: 20px; box-shadow: 0 18px 48px #00000026; }
+.ojolVisual { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; min-width: 0; padding: 28px; border-radius: 13px; background: radial-gradient(ellipse at 85% 15%,#72a96380,transparent 65%),linear-gradient(150deg,#31664b,#17432f 55%,#42694b); }
+.ojolSymbol { font-size: 46px; line-height: 1; color: #d3f5c4; }
+.ojolVisual h2 { font-size: 29px; line-height: 1.25; font-weight: 600; letter-spacing: -.6px; margin-top: 12px; color: #f1f7ed; }
+.ojolVisual .description { color: #d0e2d3; }
+.ojolVisual .eyebrow { color: #d0edbe; font-size: 10px; letter-spacing: .04em; }
+.ojolVisualNote { color: #d0e2d3; font-size: 10px; }
+.ojolFormPanel { min-width: 0; display: flex; flex-direction: column; justify-content: center; padding: 30px; }
+.ojolShell .ojolFormPanel h1, .ojolShell .ojolVisual h2 { font-family: var(--font-ojol-ui), Arial, sans-serif; }
+.ojolFormPanel h1 { font-size: 26px; line-height: 1.25; font-weight: 600; letter-spacing: -.6px; margin-top: 12px; }
+.ojolFormPanel .help { margin-top: 0; text-align: center; }
+.tanwirStage { width: calc(100% - 48px); max-width: 960px; flex: 0 0 auto; margin: auto; padding: 28px; border-radius: 20px; background: radial-gradient(ellipse at 22% 65%,#45694a55,transparent 58%),#1b2820; }
+.tanwirShell .infoPanel { order: -1; background: transparent; padding: 12px 20px 12px 0; }
+.tanwirShell .formPanel { background: #25332a; padding: 28px; border-radius: 16px; }
+.tanwirShell .infoPanel h2 { font-family: var(--font-tanwir-ui),Arial,sans-serif; font-size: 34px; line-height: 1.2; font-weight: 650; }
+.tanwirShell .infoPanel .note { font-size: 11px; }
+.tanwirShell .formPanel h1 { font-size: 24px; text-align: center; }
+.tanwirShell .formPanel > .eyebrow,
+.tanwirShell .formPanel > .description,
+.tanwirShell .formPanel > .accountHint { text-align: center; }
+.tanwirShell .formPanel .help { text-align: center; }
+.tanwirShell .form input { height: 40px; min-height: 40px; border-radius: 6px; }
+.tanwirShell .form button[type=submit] { height: 40px; min-height: 40px; border-radius: 6px; }
+@media (min-width: 1024px) { .tanwirStage { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 32px; } }
+@media (max-width: 1023px) { .tanwirStage { width: calc(100% - 32px); max-width: 440px; padding: 10px; } }
+@media (max-width: 639px) and (max-height: 650px) { .tanwirShell .formPanel { padding: 20px; } .tanwirShell .formPanel h1 { font-size: 22px; } }
+@media (pointer: coarse) { .tanwirShell .form input,.tanwirShell .form button[type=submit] { height: 44px; min-height: 44px; } }
+.ojolFormPanel .form form { gap: 12px; }
+.ojolFormPanel .form label { font-size: 12px; }
+.ojolFormPanel .form input { height: 38px; min-height: 38px; padding-left: 10px; font-size: 13px; border-radius: 6px; }
+.ojolFormPanel .form button[type=button] { height: 30px; min-height: 30px; padding-inline: 8px; font-size: 11px; }
+.ojolFormPanel .form button[type=submit] { height: 38px; min-height: 38px; font-size: 13px; border-radius: 6px; }
+@media (pointer: coarse) {
+  .ojolFormPanel .form input { height: 44px; min-height: 44px; font-size: 16px; }
+  .ojolFormPanel .form button[type=button] { height: 44px; min-height: 44px; }
+  .ojolFormPanel .form button[type=submit] { height: 44px; min-height: 44px; }
+}
+@media (max-width: 767px) {
+  .ojolCard { grid-template-columns: minmax(0,1fr); max-width: 440px; }
+  .ojolVisual { display: none; }
+  .ojolFormPanel { padding: 24px; }
+}
+@media (max-width: 639px) and (max-height: 650px) {
+  .ojolStage { padding: 8px 12px; }
+  .ojolFormPanel { padding: 18px; }
+  .ojolFormPanel h1 { font-size: 22px; }
+}
+.infoPanel ul { gap: 20px; }
+.infoPanel li p { line-height: 1.6; }
+.help { line-height: 1.6; }
+.note { font-size: 11px; }
+@media (min-width: 1024px) { .panels { grid-template-columns: repeat(2,minmax(0,400px)); } }
+@media (max-height: 720px) { .infoPanel ul { gap: 14px; } }
+@media (max-width: 639px) and (max-height: 650px) {
+  .panel :is(h1,h2) { font-size: 22px; }
+  .accountHint { margin-top: 8px; }
+}

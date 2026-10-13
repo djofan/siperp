@@ -1,6 +1,7 @@
 import { AdminShell } from "@/modules/tanwir/components/admin/AdminShell";
 import "@/modules/tanwir/components/experience.css";
 import "@/modules/tanwir/components/admin/admin.css";
+import "@/modules/tanwir/components/admin/reference.css";
 import { tanwirSerif } from "@/modules/tanwir/components/fonts";
 import { ModuleInactiveNotice } from "@/components/admin-shell/ModuleInactiveNotice";
 import { prisma } from "@/lib/prisma";

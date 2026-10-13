@@ -1,0 +1,30 @@
+.shell { height: 100dvh; min-height: 100dvh; overflow: hidden; }
+.brand { padding-top: 20px; }
+.panels { padding-block: 20px; min-height: 0; }
+.panels > div { min-width: 0; }
+.info { height: calc(100dvh - 96px); max-height: 600px; min-height: 0; overflow: hidden; justify-content: flex-start; }
+.info > :not(ul) { flex-shrink: 0; }
+.moduleList { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: 12px 10px 12px 0; scrollbar-width: thin; scrollbar-color: #64705a transparent; mask-image: linear-gradient(to bottom,transparent,#000 12px,#000 calc(100% - 12px),transparent); }
+.moduleList > li { flex-shrink: 0; }
+.moduleList::-webkit-scrollbar { width: 3px; }
+.moduleList::-webkit-scrollbar-track { background: transparent; }
+.moduleList::-webkit-scrollbar-thumb { background: #64705a; border-radius: 10px; }
+.moduleList:focus-visible { outline: 1px solid #73ae43; outline-offset: 4px; }
+@supports selector(::-webkit-scrollbar) { .moduleList { scrollbar-width: auto; scrollbar-color: auto; } }
+.info ul { margin-top: 20px; gap: 12px; }
+.info > div:last-child { margin-top: 20px; padding-top: 16px; }
+@media (min-width: 1024px) {
+  .panels { flex: 0 0 auto; margin-block: auto; }
+}
+@media (max-height: 720px) {
+  .brand { padding-top: 16px; }
+  .panels { padding-block: 16px; gap: 20px; }
+  .panels > div { padding: 24px; }
+  .info { height: calc(100dvh - 96px); }
+  .panels h1 { font-size: 30px; }
+  .info h2 { font-size: 22px; }
+}
+@media (max-width: 639px) {
+  .panels { padding-inline: 16px; }
+  .panels input:not([type=checkbox]) { font-size: 16px; }
+}

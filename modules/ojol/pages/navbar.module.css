@@ -1,0 +1,18 @@
+.header{position:sticky;top:0;z-index:40;background:#fff;color:#183e2e;font-family:var(--font-ojol-ui),Arial,sans-serif}
+.header .inner{width:min(1120px,100% - 48px);height:64px;margin:auto;padding:0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px}
+.brand{display:inline-flex;align-items:center;gap:9px;justify-self:start;white-space:nowrap}
+.brand .brandText{font-family:var(--font-ojol-ui),Arial,sans-serif;font-size:17px;font-weight:650;letter-spacing:-.045em;line-height:1}
+.brand .brandIcon{width:22px;height:22px;color:#2f704a;flex-shrink:0}
+.nav{display:flex;align-items:center;gap:26px}.nav a{font-size:12px;color:#627168;padding:10px 0;transition:color .18s}.nav a:hover{color:#164a38}
+.actions{display:flex;align-items:center;gap:8px;justify-self:end}.login{display:inline-flex;align-items:center;gap:14px;min-height:38px;padding:9px 16px;border-radius:8px;background:#164a38;color:white;font-size:12px;font-weight:550;transition:background .18s}.login:hover{background:#226247}.login svg{width:14px;height:14px}
+.mobile{display:none;position:relative}.mobile summary{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;cursor:pointer;list-style:none;color:#183e2e}.mobile summary::-webkit-details-marker{display:none}.mobile summary:hover,.mobile[open] summary{background:#f1f5ee}.mobile svg{width:19px;height:19px}.dropdown{position:absolute;right:0;top:52px;width:210px;background:white;padding:8px;border-radius:12px;box-shadow:0 10px 32px #163e2c18}.dropdown a{display:block;padding:13px 12px;font-size:12px;color:#365343;border-radius:7px}.dropdown a:hover{background:#f1f5ee}.header a:focus-visible,.header summary:focus-visible{outline:2px solid #769a63;outline-offset:4px}
+.header{color:var(--ojol-site-green,#164a38)}
+.brand .brandIcon,.nav a:hover,.mobile summary,.dropdown a{color:var(--ojol-site-green,#164a38)}
+.login{background:var(--ojol-site-green,#164a38)}
+.login:hover{background:var(--ojol-site-hover,#1e6048)}
+.mobile summary:hover,.mobile[open] summary,.dropdown a:hover{background:var(--ojol-site-soft,#f0f5f2)}
+.header a:focus-visible,.header summary:focus-visible{outline-color:var(--ojol-site-green,#164a38)}
+@media(max-width:900px){.header .inner{grid-template-columns:minmax(0,1fr) auto;gap:12px;height:60px}.nav{display:none}.mobile{display:block}.login{min-height:44px}.login svg{display:none}}
+@media(max-width:400px){.header .inner{width:calc(100% - 32px);gap:8px}.brand .brandText{font-size:15px}.brand{gap:7px}.brand .brandIcon{width:20px}.login{padding:9px 12px}.actions{gap:4px}}
+.dropdown{width:min(230px,calc(100vw - 32px));max-height:calc(100dvh - 88px);overflow-y:auto;overscroll-behavior:contain}
+@media(max-height:480px){.dropdown{top:48px}}

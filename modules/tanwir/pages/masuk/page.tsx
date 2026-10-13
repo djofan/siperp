@@ -10,7 +10,8 @@ export default async function TanwirLoginPage() {
   const viewer = await getTanwirViewer();
   if (viewer?.member) redirect(homePathFor(viewer));
   return <ProgramLoginShell name="Tanwir Qurani" href="/tanwir" tone="light"
-    heading="Satu ruang untuk belajar dan bertumbuh."
+    heading="Bacaan terjaga, belajar terarah."
+    accountHint="Kode guru: GTQ · Kode peserta: PTQ"
     description="Pembinaan hafalan Al-Qur’an untuk guru ngaji TPQ, terhubung bersama guru dan kelompok belajar."
     features={[
       { title: "Tugas dan setoran", description: "Lihat penugasan kelompok dan kumpulkan setoran dari satu dashboard." },

@@ -47,7 +47,6 @@ export function LoginForm() {
           autoCapitalize="characters"
           onChange={event => { event.currentTarget.value = event.currentTarget.value.toUpperCase(); }}
           spellCheck={false}
-          placeholder="Contoh: POM001"
           maxLength={20}
           className={`${inputClass} uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal`}
         />
@@ -61,16 +60,16 @@ export function LoginForm() {
             required
             autoComplete="current-password"
             maxLength={72}
-            className={`${inputClass} pr-20`}
+            className={`${inputClass} pr-11`}
           />
           <button
             type="button"
             aria-pressed={showPassword}
             aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
             onClick={() => setShowPassword((value) => !value)}
-            className="absolute inset-y-0 right-2 my-auto h-8 rounded-lg px-2.5 text-xs font-medium text-ojol-muted hover:bg-ojol-paper"
+            className="absolute inset-y-0 right-1 my-auto flex h-8 w-8 items-center justify-center rounded-md text-ojol-muted hover:bg-ojol-paper"
           >
-            {showPassword ? "Sembunyikan" : "Lihat"}
+            <Icon name={showPassword ? "eyeOff" : "eye"} className="h-4 w-4" />
           </button>
         </div>
       </Field>

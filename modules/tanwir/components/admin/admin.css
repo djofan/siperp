@@ -90,3 +90,13 @@
 .tanwir-admin .directory-stat:last-child { background: #f8f1e4; border-color: #eee4d1; }
 .tanwir-admin .directory-panel { box-shadow: 0 6px 22px rgba(49,54,39,.055); }
 .tanwir-admin .directory-toolbar { background: #fffefb; }
+@media (max-width: 767px) {
+  .tanwir-experience .directory-filters { flex-wrap: wrap; min-width: 0; }
+  .tanwir-experience .directory-search { max-width: 100%; }
+  .tanwir-experience .directory-footer { flex-wrap: wrap; }
+  .tanwir-experience .directory-table td > * { min-width: 0; overflow-wrap: anywhere; }
+  .tanwir-experience .directory-table td::before { flex-shrink: 0; }
+  .tanwir-admin .admin-topbar { gap: 8px; padding-inline: 12px; }
+  .tanwir-admin .admin-topbar a { padding-inline: 8px; }
+  .tanwir-experience .crud-form :is(input:not(.sr-only),select,textarea) { font-size: 16px; }
+}

@@ -45,7 +45,7 @@ export function AcademyShell({ user, children, admin = false, csPhone = "6281111
   if (!admin && (user?.isTeacher || user?.isSuperadmin)) navigation.splice(0, navigation.length, ...teacherLinks.map(item => ({ ...item, href: `/academy/pengajar${item.path}` })));
   const active = (href: string) => href === "/admin/academy" || href === "/academy/pengajar" ? pathname === href : pathname.startsWith(href);
   const logo = <Link href={admin ? "/admin/academy" : "/academy"} className="flex items-center gap-2.5 font-semibold text-gray-900"><img src="/academy/logo-lazsip.webp" alt="LAZSIP" className="h-7 w-7 object-contain" />Insan Academy</Link>;
-  if (auth) return <div className="academy-public flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12"><main id="academy-content" className="w-full">{children}</main></div>;
+  if (auth) return <div className={`academy-public flex min-h-dvh items-center justify-center bg-gray-50 px-4 ${pathname === "/academy/masuk" ? "py-6" : "py-12"}`}><main id="academy-content" className="w-full">{children}</main></div>;
   if (!dashboard) return <div className="academy-public flex min-h-screen flex-col bg-white text-gray-900"><Navbar isLoggedIn={!!user} dashboardHref={user?.isTeacher ? "/academy/pengajar" : "/academy/belajar"} /><main id="academy-content" className="flex-1 pt-14">{children}</main><Footer /></div>;
   return <div className={`academy-public academy-dashboard ${admin ? "academy-admin" : ""} min-h-screen bg-gray-50 text-gray-900`}>
     <header className={`flex h-14 items-center gap-3 border-b border-gray-100 bg-white px-4 print:hidden ${admin ? "md:ml-64 md:px-6" : "justify-between md:hidden"}`}>

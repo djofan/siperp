@@ -134,3 +134,7 @@
   .ojol-experience :where(input,select,textarea) { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .ojol-experience * { scroll-behavior: auto !important; transition: none !important; } }
+@media (max-width: 359px) {
+  .ojol-experience .program-header > div { gap: 12px; padding-inline: 12px; }
+  .ojol-experience .program-header > div > a { min-width: 0; }
+}

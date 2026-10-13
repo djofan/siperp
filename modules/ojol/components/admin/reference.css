@@ -1,0 +1,199 @@
+/* Ojol admin only: pale mint navigation, forest cards and lime accents. */
+.ojol-admin {
+  --color-ojol-paper: #f8f9fb;
+  --color-ojol-ink: #1e453d;
+  --color-ojol-muted: #63716c;
+  --color-ojol-primary: #1e493f;
+  --color-ojol-primary-hover: #163a32;
+  --color-ojol-primary-soft: #edf5e9;
+  --color-accent: #1e493f;
+  --color-accent-hover: #163a32;
+  --color-accent-soft: #edf5e9;
+  --color-surface-muted: #edf5e9;
+  --color-border: #e6e9e7;
+  background: #edf5e9;
+  color: #1e453d;
+}
+.ojol-admin .admin-shell { background: #edf5e9; }
+.ojol-admin .admin-frame { background: #f8f9fb; border-radius: 28px 0 0 28px; }
+.ojol-admin .admin-shell .admin-sidebar { width: 220px; background: #edf5e9; color: #1e453d; padding-block: 12px; }
+.ojol-admin .sidebar-brand a span { font-family: var(--font-ojol-ui), Arial, sans-serif; }
+.ojol-admin .sidebar-brand a > span:last-child > span:first-child { font-size: 17px; font-weight: 700; letter-spacing: -.5px; }
+.ojol-admin .admin-brand-symbol { color: #1e493f; background: transparent; }
+.ojol-admin .admin-sidebar nav { padding-inline: 14px; }
+.ojol-admin .admin-sidebar .sidebar-brand { padding: 12px 28px; min-height: 60px; }
+.ojol-admin .sidebar-brand > a { gap: 12px; min-width: 0; }
+.ojol-admin .sidebar-brand .admin-brand-symbol { width: 16px; height: 24px; flex-shrink: 0; }
+.ojol-admin .sidebar-brand .admin-brand-symbol svg { width: 16px; height: 16px; }
+.ojol-admin .sidebar-brand > a > span:last-child { min-width: 0; }
+.ojol-admin .admin-sidebar .nav-group { padding-inline: 14px; }
+.ojol-admin .admin-sidebar .learning-nav-item { gap: 12px; }
+.ojol-admin .admin-shell.is-collapsed .admin-sidebar { width: 72px; }
+.ojol-admin .admin-shell.is-collapsed .admin-sidebar nav { padding-inline: 14px; }
+.ojol-admin .admin-shell.is-collapsed .admin-sidebar .learning-nav-item { padding-inline: 0; }
+.ojol-admin .admin-sidebar .nav-group { color: #718075; padding-top: 20px; font-size: 9px; }
+.ojol-admin .admin-sidebar .learning-nav-item { min-height: 42px; padding: 10px 14px; border-radius: 24px; color: #53655d; font-size: 12px; }
+.ojol-admin .admin-sidebar .learning-nav-item:hover { background: #e0ecd9; color: #1e453d; }
+.ojol-admin .admin-sidebar .learning-nav-item[aria-current=page] { background: #baf395; color: #163c30; font-weight: 600; }
+.ojol-admin .admin-sidebar .text-ojol-muted { color: #63716c; }
+.ojol-admin .admin-sidebar > .sidebar-account { background: #1e493f; color: #fff; border: 0; margin: 12px 14px; padding: 16px 12px; border-radius: 16px; }
+.ojol-admin .sidebar-account .text-ojol-muted { color: #dcebdc; }
+.ojol-admin .admin-drawer { background: #edf5e9; color: #1e453d; }
+.ojol-admin .admin-topbar { height: 72px; min-height: 72px; background: transparent; }
+.ojol-admin .admin-page-label { font-size: 19px; font-weight: 700; letter-spacing: -.5px; }
+.ojol-admin .admin-menu-search { width: 260px; border: 0; border-radius: 24px; background: #eef0ee; padding: 5px 16px; }
+.ojol-admin .admin-frame > .learning-content { padding: 0 24px 24px; }
+.ojol-admin .learning-content :is(h1,h2,h3,.directory-stat-value) { font-family: var(--font-ojol-ui), Arial, sans-serif; letter-spacing: -.5px; }
+.ojol-admin .learning-content h1 { font-size: 25px; font-weight: 650; }
+.ojol-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.ojol-admin :is(.directory-stat,.directory-panel) { border: 0; border-radius: 17px; background: #fff; box-shadow: none; }
+.ojol-admin .directory-stat { padding: 20px; }
+.ojol-admin .directory-stat-value { font-size: 30px; font-weight: 650; margin-top: 20px; }
+.ojol-admin .directory-stat-icon { background: #edf5e9; color: #1e493f; border-radius: 10px; }
+.ojol-admin .directory-stat:first-child { background: #1e493f; border-color: #1e493f; color: #fff; }
+.ojol-admin .directory-stat:first-child .directory-stat-icon { background: #baf395; color: #1e493f; }
+.ojol-admin .directory-stat:nth-child(n+2) { background: #fff; border: 0; }
+.ojol-admin .directory-stat:last-child .directory-stat-icon { background: #edf5e9; color: #1e493f; }
+.ojol-admin .directory-stat:first-child :is(.directory-stat-value,.directory-stat-detail) { color: #fff; }
+.ojol-admin .directory-toolbar { background: transparent; }
+.ojol-admin .directory-table thead, .ojol-admin .learning-content table thead { background: #edf5e9; }
+.ojol-admin .directory-table th { text-transform: none; letter-spacing: 0; }
+.ojol-admin .directory-footer { background: #fdfdfe; }
+.ojol-admin .directory-filters button[aria-pressed=true], .ojol-admin .directory-page { background: #1e493f; border-color: #1e493f; }
+.ojol-admin button[role=switch][aria-checked=true] { background: #1e493f; }
+.ojol-admin .ojol-reference-dashboard { padding-top: 4px; }
+.ojol-admin .ojol-dashboard-grid { align-items: start; }
+.ojol-admin .ojol-map-panel { min-width: 0; }
+.ojol-admin .ojol-review-panel { border-radius: 17px; background: #1e493f; padding: 22px; color: #fff; }
+.ojol-admin .ojol-review-value { font-size: 42px; font-weight: 600; line-height: 1.2; margin: 16px 0; font-variant-numeric: tabular-nums; }
+.ojol-admin .ojol-review-link { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; background: #baf395; color: #163c30; border-radius: 9px; font-size: 12px; font-weight: 600; }
+.ojol-admin .ojol-review-link:hover { background: #a8e882; }
+.ojol-admin .ojol-recent-panel li { padding-block: 8px; }
+.ojol-admin .ojol-recent-panel li a { flex: 1; }
+.ojol-admin .learning-content :is(th,td) { border-bottom: 0; }
+.ojol-admin .directory-table tr { border-bottom: 0; }
+.ojol-admin :is(.directory-search,.directory-icon-button,.directory-group-filter,.directory-filters button,.admin-menu-search) { border: 0; background: #f0f3ef; }
+.ojol-admin .directory-filters button[aria-pressed=true] { background: #1e493f; }
+.ojol-admin .crud-form :is(input:not(.sr-only),select,textarea) { border: 0; background: #f4f6f3; }
+.ojol-admin .directory-table tbody tr:nth-child(even) { background: #fafbf9; }
+.ojol-admin .ojol-reference-dashboard > :first-child { display: none; }
+.ojol-admin .ojol-dashboard-primary { display: grid; gap: 16px; min-width: 0; }
+.ojol-admin .admin-sidebar .sidebar-brand .text-ojol-muted,
+.ojol-admin .admin-sidebar .nav-group { color: #63716c; }
+.ojol-admin .ojol-reference-dashboard .directory-stat-value { margin-top: 10px; }
+.ojol-admin .ojol-reference-dashboard .directory-stat-detail { margin-top: 6px; }
+.ojol-admin .ojol-review-panel { padding: 18px; }
+.ojol-admin .ojol-map-panel > p { padding: 24px 18px; font-size: 12px; }
+.ojol-admin .ojol-shortcut-links { gap: 10px; margin-top: 12px; }
+.ojol-admin .ojol-shortcut-links a { padding: 12px; }
+.ojol-admin .ojol-recent-panel ul { display: grid; gap: 6px; }
+.ojol-admin .ojol-recent-panel ul > li { margin: 0; padding-block: 6px; }
+.ojol-admin .ojol-dashboard-shortcuts { padding: 20px; border-radius: 17px; background: #fff; min-width: 0; }
+.ojol-admin .ojol-dashboard-shortcuts h2 { font-size: 14px; }
+.ojol-admin .ojol-shortcut-caption { color: #63716c; font-size: 11px; margin-top: 8px; }
+.ojol-admin .ojol-shortcut-links { display: grid; gap: 14px; margin-top: 18px; }
+.ojol-admin .ojol-shortcut-links a { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 14px; background: #f4f7f1; border-radius: 12px; font-size: 12px; }
+.ojol-admin .ojol-shortcut-links a:hover { background: #e9f2e1; }
+.ojol-admin .ojol-shortcut-links strong { font-size: 20px; line-height: 1.2; }
+.ojol-admin .ojol-shortcut-links small { grid-column: 1 / -1; color: #63716c; font-size: 10px; }
+.ojol-admin .ojol-review-panel { background: #fff; color: #1e493f; }
+.ojol-admin .ojol-review-value { display: flex; width: 100px; height: 100px; margin: 16px auto; align-items: center; justify-content: center; border: 10px solid #ddefd2; border-radius: 50%; font-size: 30px; }
+.ojol-admin .ojol-review-link { display: flex; justify-content: center; }
+@media (min-width: 1100px) {
+  .ojol-admin .ojol-reference-dashboard { display: grid; grid-template-columns: minmax(0,3.05fr) minmax(240px,1fr); gap: 16px; align-items: start; }
+  .ojol-admin .ojol-reference-dashboard > * { margin: 0; }
+  .ojol-admin .ojol-dashboard-grid { display: grid; grid-template-columns: minmax(180px,1fr) minmax(0,2.05fr); gap: 16px; }
+  .ojol-admin .ojol-reference-dashboard .directory-stat { min-height: 120px; padding: 16px; }
+  .ojol-admin .ojol-reference-dashboard .directory-stat-value { font-size: 27px; }
+  .ojol-admin .ojol-reference-dashboard .directory-stat-detail { font-size: 10px; }
+  .ojol-admin .ojol-recent-panel li { align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+  .ojol-admin .ojol-recent-panel li > span:last-child { margin-left: 40px; font-size: 10px; }
+}
+@media (min-width: 1024px) and (max-width: 1099px) {
+  .ojol-admin .ojol-dashboard-shortcuts { grid-column: 1 / -1; }
+  .ojol-admin .ojol-shortcut-links { grid-template-columns: repeat(3,minmax(0,1fr)); }
+}
+@media (min-width: 1280px) {
+  .ojol-admin .ojol-dashboard-grid { grid-template-columns: minmax(180px,1fr) minmax(0,2.05fr); }
+}
+@media (max-width: 1023px) { .ojol-admin .admin-frame { border-radius: 0; } }
+@media (max-width: 639px) {
+  .ojol-admin .admin-frame > .learning-content { padding: 8px 14px 24px; }
+  .ojol-admin .admin-topbar { height: 60px; min-height: 60px; }
+  .ojol-admin .admin-page-label { font-size: 17px; }
+  .ojol-admin .directory-stat { padding: 16px; }
+  .ojol-admin .directory-stat-value { font-size: 28px; margin-top: 12px; }
+  .ojol-admin .ojol-recent-panel li { flex-wrap: wrap; }
+}
+
+/* Dark palette only; all sizing and positioning above stays unchanged. */
+.ojol-admin {
+  color-scheme: dark;
+  --foreground: #e8f1ec;
+  --color-foreground: #e8f1ec;
+  --color-ojol-paper: #101a16;
+  --color-ojol-surface: #192720;
+  --color-ojol-ink: #e8f1ec;
+  --color-ojol-muted: #a9bab0;
+  --color-ojol-line: #34483b;
+  --color-ojol-primary: #28734c;
+  --color-ojol-primary-hover: #32885b;
+  --color-ojol-primary-soft: #263d2e;
+  --color-accent: #28734c;
+  --color-accent-hover: #32885b;
+  --color-accent-soft: #263d2e;
+  --color-surface: #192720;
+  --color-surface-muted: #22342a;
+  --color-border: #34483b;
+  --color-ojol-success: #abe0ba;
+  --color-ojol-success-soft: #234331;
+  --color-ojol-warning: #f1d18c;
+  --color-ojol-warning-soft: #443b25;
+  --color-ojol-danger: #ffb2aa;
+  --color-ojol-danger-soft: #482d2b;
+  background: #132019;
+  color: #e8f1ec;
+}
+.ojol-admin .admin-shell,
+.ojol-admin .admin-shell .admin-sidebar,
+.ojol-admin .admin-drawer { background: #132019; color: #e8f1ec; }
+.ojol-admin .admin-frame { background: #101a16; }
+.ojol-admin .admin-brand-symbol { color: #baf395; }
+.ojol-admin .admin-sidebar .learning-nav-item { color: #b7c8bd; }
+.ojol-admin .admin-sidebar .learning-nav-item:hover { background: #263d2e; color: #eef7f0; }
+.ojol-admin .admin-sidebar .learning-nav-item[aria-current=page] { background: #baf395; color: #163c30; }
+.ojol-admin .admin-sidebar :is(.nav-group,.text-ojol-muted),
+.ojol-admin .admin-sidebar .sidebar-brand .text-ojol-muted { color: #a9bab0; }
+.ojol-admin .admin-sidebar > .sidebar-account { background: #254c38; }
+.ojol-admin .admin-topbar :where(a,button):hover { background: #263d2e; }
+.ojol-admin .learning-content :where(section,div,article)[class*="shadow-"],
+.ojol-admin :is(.directory-stat,.directory-panel,.ojol-dashboard-shortcuts,.ojol-review-panel,.crud-form,.form-actions) { background: #192720; color: #e8f1ec; }
+.ojol-admin .directory-stat:nth-child(n+2) { background: #192720; }
+.ojol-admin .directory-stat:first-child { background: #254c38; }
+.ojol-admin .directory-stat-value { color: #e8f1ec; }
+.ojol-admin .directory-stat > div > p,
+.ojol-admin :is(.directory-stat-detail,.directory-footer,.directory-table th,.ojol-shortcut-caption,.ojol-shortcut-links small),
+.ojol-admin .learning-content [class*="text-foreground/"] { color: #a9bab0; }
+.ojol-admin .directory-stat:first-child > div > p { color: #e8f1ec; }
+.ojol-admin .directory-stat-icon,
+.ojol-admin .directory-stat:last-child .directory-stat-icon { background: #263d2e; color: #baf395; }
+.ojol-admin :is(.directory-search,.directory-icon-button,.directory-group-filter,.directory-filters button,.admin-menu-search,.directory-code) { background: #22342a; color: #c6d7cd; }
+.ojol-admin .directory-filters button[aria-pressed=true],
+.ojol-admin .directory-page { background: #baf395; color: #163c30; }
+.ojol-admin .directory-group { background: #263d2e; color: #baf395; }
+.ojol-admin .directory-footer,
+.ojol-admin .learning-content tbody tr { background: #192720; }
+.ojol-admin .directory-table tbody tr:nth-child(even) { background: #1d2d24; }
+.ojol-admin .learning-content tbody tr:hover { background: #263d2e; }
+.ojol-admin .directory-table thead,
+.ojol-admin .learning-content table thead { background: #22342a; }
+.ojol-admin .learning-content th { color: #a9bab0; }
+.ojol-admin .crud-form :is(input:not(.sr-only),select,textarea) { background: #101d15; color: #e8f1ec; }
+.ojol-admin :is(input,textarea)::placeholder { color: #90a497; }
+.ojol-admin .ojol-shortcut-links a { background: #22342a; }
+.ojol-admin .ojol-shortcut-links a:hover { background: #2b4332; }
+.ojol-admin .ojol-review-value { border-color: #355d40; color: #baf395; }
+.ojol-admin button[role=switch][aria-checked=true] { background: #28734c; }
+.ojol-admin :where(a,button,input,select,textarea):focus-visible { outline-color: #baf395; }
+.ojol-admin, .ojol-admin * { scrollbar-color: #526e5b transparent; }
+.ojol-admin ::-webkit-scrollbar-thumb { background: #526e5b; }
