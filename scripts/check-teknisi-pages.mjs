@@ -20,7 +20,7 @@ try {
   const admin = (await db.query("SELECT id,name FROM users WHERE is_active=TRUE AND is_superadmin=TRUE LIMIT 1"))[0];
   assert.ok(admin, "Superadmin aktif diperlukan untuk pengujian halaman");
   const token = await new SignJWT({ userId: admin.id, name: admin.name, isSuperadmin: true, moduleSlugs: [] }).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("5m").sign(new TextEncoder().encode(process.env.SESSION_SECRET));
-  for (const route of ["/teknisi", "/teknisi/cek-status", "/admin/teknisi", "/admin/teknisi/tiket", "/admin/teknisi/tiket/baru", `/admin/teknisi/tiket/${fixtureId}`, "/admin/teknisi/outlet", "/admin/teknisi/teknisi", "/admin/teknisi/sparepart", "/api/teknisi/ekspor"]) {
+  for (const route of ["/teknisi", "/teknisi/cek-status", "/admin/teknisi", "/admin/teknisi/tiket", "/admin/teknisi/tiket/baru", `/admin/teknisi/tiket/${fixtureId}`, "/admin/teknisi/outlet", "/admin/teknisi/teknisi", "/admin/teknisi/laporan", "/api/teknisi/ekspor"]) {
     const response = await fetch(new URL(route, base), { headers: { Cookie: `sip_session=${token}` }, redirect: "manual" });
     const body = await response.text();
     assert.equal(response.status, 200, route);

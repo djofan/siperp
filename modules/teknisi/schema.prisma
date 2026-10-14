@@ -57,6 +57,20 @@ model TeknisiTicket {
   dueAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  diagnosis String? @db.Text
+  plannedWork String? @db.Text
+  evaluation String? @db.Text
+  outcome String @default("repaired")
+  checks Json?
+  warrantyDays Int @default(0)
+  originalTicketId String?
+  startedAt DateTime?
+  readyAt DateTime?
+  paidAt DateTime?
+  paidAmount Int @default(0)
+  paymentMethod String?
+  collectedBy String?
+  photos TeknisiPhoto[]
   outlet TeknisiOutlet @relation(fields: [outletId], references: [id])
   technician TeknisiTechnician? @relation(fields: [technicianId], references: [id])
   participant TeknisiParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
@@ -88,6 +102,9 @@ model TeknisiPart {
   stock Int @default(0)
   minimum Int @default(3)
   price Int @default(0)
+  costPrice Int @default(0)
+  compatibility String?
+  isActive Boolean @default(true)
   outlet TeknisiOutlet @relation(fields: [outletId], references: [id])
   uses TeknisiPartUse[]
   movements TeknisiStockMovement[]
@@ -101,10 +118,23 @@ model TeknisiPartUse {
   partId String
   quantity Int
   unitPrice Int
+  unitCost Int @default(0)
+  returnedQuantity Int @default(0)
   createdAt DateTime @default(now())
   ticket TeknisiTicket @relation(fields: [ticketId], references: [id])
   part TeknisiPart @relation(fields: [partId], references: [id])
   @@map("teknisi_part_uses")
+}
+
+model TeknisiPhoto {
+  id String @id @default(cuid())
+  ticketId String
+  stage String
+  data Bytes @db.LongBlob
+  createdAt DateTime @default(now())
+  ticket TeknisiTicket @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  @@index([ticketId, stage])
+  @@map("teknisi_photos")
 }
 
 model TeknisiStockMovement {

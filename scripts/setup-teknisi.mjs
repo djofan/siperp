@@ -17,7 +17,7 @@ try {
     const resolved = spawnSync(process.execPath, ["node_modules/prisma/build/index.js", "migrate", "resolve", "--applied", migration], { stdio: "inherit" });
     if (resolved.status !== 0) throw new Error("Tabel dibuat, tetapi migrasi belum tercatat. Jalankan prisma migrate resolve --applied setelah memverifikasi struktur.");
   }
-  await db.query("INSERT INTO modules (id, slug, name, description, is_active) VALUES (?, 'teknisi', 'Teknisi HP', ?, true) ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description)", ["module_teknisi_hp", "Pengelolaan outlet, tiket servis HP, teknisi, sparepart, dan monitoring."]);
+  await db.query("INSERT INTO modules (id, slug, name, description, is_active) VALUES (?, 'teknisi', 'Teknisi HP', ?, true) ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description)", ["module_teknisi_hp", "Pengelolaan outlet, tiket servis HP, teknisi, pembayaran, dan monitoring."]);
   const generated = spawnSync(process.execPath, ["node_modules/prisma/build/index.js", "generate"], { stdio: "inherit" });
   if (generated.status !== 0) throw new Error("Prisma Client belum berhasil diperbarui.");
   console.log("Modul Teknisi HP siap. Buka /admin/teknisi menggunakan akun SIP.");

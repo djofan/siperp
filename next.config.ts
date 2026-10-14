@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: { serverActions: { bodySizeLimit: "16mb" } },
   // Dev saja: izinkan membuka app lewat 127.0.0.1 (cookie terpisah dari localhost) untuk menguji
   // dua sesi sekaligus, mis. superadmin di localhost & akun demo Tanwir di 127.0.0.1.
   allowedDevOrigins: ["127.0.0.1"],

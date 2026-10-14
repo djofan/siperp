@@ -69,7 +69,7 @@ async function main() {
         const filtered = await fetch(new URL(`/teknisi/panel/tiket?outlet=${foreign.id}`, base), { headers: { Cookie: cookie } });
         assert.equal(filtered.status, 200);
         assert.ok(!(await filtered.text()).includes(privateName), "Filter outlet tidak boleh menembus cakupan akun teknisi");
-        for (const page of ["/teknisi/panel/tiket/baru", "/teknisi/panel/sparepart", "/teknisi/panel/outlet", "/teknisi/panel/profil"]) {
+        for (const page of ["/teknisi/panel/tiket/baru", "/teknisi/panel/laporan", "/teknisi/panel/outlet", "/teknisi/panel/profil"]) {
           const operatorResponse: Response = await fetch(new URL(page, base), { headers: { Cookie: cookie } });
           const html = await operatorResponse.text();
           assert.equal(operatorResponse.status, 200, page);
