@@ -2,12 +2,13 @@
 // npm install --save-dev prisma dotenv
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
+import { fileURLToPath } from "node:url";
+import { scopedPrismaSchema } from "./api/tools/prisma-schema-scope.mjs";
 
 export default defineConfig({
-  // Core (framework) tetap di prisma/schema/; schema tiap modul ikut co-located
-  // di modules/<modul>/schema.prisma (pola Laravel Modules). Prisma men-scan
-  // seluruh project secara rekursif tapi otomatis skip node_modules & folder yang di-gitignore.
-  schema: ".",
+  // Scan only existing schema roots; the recursive Prisma loader does not honor gitignore.
+  // Junctions preserve original schema locations and generator output; api/vendor is excluded.
+  schema: scopedPrismaSchema(fileURLToPath(new URL(".", import.meta.url))),
   migrations: {
     path: "prisma/migrations",
     seed: "tsx prisma/seed.ts",

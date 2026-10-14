@@ -81,8 +81,6 @@ export function AdminShell({ userName, nav, children }: { userName: string; nav:
         </form>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           <PublicWebsiteLink href="/ojol" />
-          <span className="hidden max-w-36 truncate text-xs font-semibold xl:block">{userName}</span>
-          <span className="hidden sm:block"><Avatar name={userName} size={32} /></span>
         </div>
       </header>
       <main id="ojol-admin-content" className="learning-content min-w-0 flex-1 overflow-x-hidden overflow-y-auto">{children}</main>
