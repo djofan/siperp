@@ -1,0 +1,10 @@
+*.log
+.env*
+!.env.example
+/vendor/
+/node_modules/
+/storage/app/*.local.*
+/.phpunit.cache/
+/.phpunit.result.cache
+/bootstrap/cache/*.php
+/auth.json
