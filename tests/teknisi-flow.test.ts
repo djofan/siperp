@@ -3,13 +3,13 @@ import test from "node:test";
 import { canTransition, csvCell, integer, isStatus, nextStatuses } from "../modules/teknisi/api/policy";
 test("alur servis mencegah loncat dari penerimaan ke pengambilan", () => {
   assert.equal(canTransition("received", "collected"), false);
-  for (const [from, to] of [["received", "diagnosis"], ["diagnosis", "approval"], ["approval", "repairing"], ["repairing", "waiting_parts"], ["waiting_parts", "repairing"], ["repairing", "ready"], ["ready", "collected"]]) assert.equal(canTransition(from, to), true);
+  for (const [from, to] of [["received", "diagnosis"], ["diagnosis", "approval"], ["approval", "repairing"], ["repairing", "paused"], ["paused", "repairing"], ["repairing", "ready"], ["ready", "collected"]]) assert.equal(canTransition(from, to), true);
   assert.deepEqual(nextStatuses("collected"), []);
   assert.equal(canTransition("cancelled", "repairing"), false);
   assert.equal(isStatus("toString"), false);
   assert.equal(canTransition("invalid", "diagnosis"), false);
 });
-test("jumlah stok dan nominal harus bilangan bulat nonnegatif", () => {
+test("nominal harus bilangan bulat nonnegatif", () => {
   const form = new FormData();
   for (const value of ["-1", "1.5", "NaN", "", "1000000001"]) { form.set("quantity", value); assert.throws(() => integer(form, "quantity")); }
   form.set("quantity", "0"); assert.throws(() => integer(form, "quantity", 1));

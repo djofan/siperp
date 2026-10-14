@@ -14,7 +14,7 @@ export const getTechnicianUser = cache(async () => {
   const role = user.isSuperadmin ? "admin" : user.moduleAccess[0]?.role;
   if (!role || !["admin", "manager", "technician", "monitoring"].includes(role)) return null;
   const technician = role === "technician" ? await prisma.teknisiTechnician.findUnique({ where: { userId: user.id } }) : null;
-  if (role === "technician" && !technician?.isActive) return null;
+  if (role === "technician" && (!technician?.isActive || !await prisma.teknisiOutlet.findFirst({where:{id:technician.outletId,isActive:true},select:{id:true}}))) return null;
   return { id: user.id, name: user.name, role, technician, canManage: role === "admin" || role === "manager", canWrite: role !== "monitoring" };
 });
 export type TechnicianUser = NonNullable<Awaited<ReturnType<typeof getTechnicianUser>>>;

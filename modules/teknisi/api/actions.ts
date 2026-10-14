@@ -21,10 +21,6 @@ async function execute(form: FormData, operation: (user: NonNullable<Awaited<Ret
 }
 export async function addOutlet(_: ActionState, form: FormData) { return execute(form, service.createOutlet); }
 export async function addTechnician(_: ActionState, form: FormData) { return execute(form, service.saveTechnician); }
-export async function addPart(_: ActionState, form: FormData) { return execute(form, service.createPart); }
-export async function restock(_: ActionState, form: FormData) { return execute(form, service.restockPart); }
-export async function consumePart(_: ActionState, form: FormData) { return execute(form, service.consumeSparepart); }
-export async function addPartNeed(_: ActionState, form: FormData) { return execute(form, service.recordPartNeed); }
 export async function changeTicket(_: ActionState, form: FormData) { return execute(form, service.updateTicket); }
 export async function assignTicketParticipant(_: ActionState, form: FormData) { return execute(form, service.linkTicketParticipant); }
 export async function addTicket(_: ActionState, form: FormData): Promise<ActionState> {

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireTechnicianOperator } from "../../api/access";
-import { OperatorShell } from "../../components/OperatorShell";
+import { Workspace } from "../../components/Workspace";
 export const metadata = { title: { default: "Panel Outlet", template: "%s | Teknisi HP" }, robots: { index: false, follow: false } };
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const user = await requireTechnicianOperator();
@@ -8,5 +8,5 @@ export default async function Layout({ children }: { children: React.ReactNode }
     prisma.teknisiOutlet.findUniqueOrThrow({ where: { id: user.technician.outletId }, select: { name: true } }),
     prisma.teknisiParticipant.findFirst({ where: { userId: user.id, deletedAt: null }, select: { nip: true } }),
   ]);
-  return <OperatorShell user={{ name: user.name, nip: profile?.nip ?? "NIP belum tersedia" }} outletName={outlet.name}>{children}</OperatorShell>;
+  return <Workspace name={user.name} subtitle={`${outlet.name} · ${profile?.nip ?? "Teknisi"}`} root="/teknisi/panel">{children}</Workspace>;
 }

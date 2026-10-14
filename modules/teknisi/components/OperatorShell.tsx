@@ -7,7 +7,6 @@ import { useState } from "react";
 const links = [
   { href: "/teknisi/panel", label: "Dashboard Outlet" },
   { href: "/teknisi/panel/tiket", label: "Tiket Servis" },
-  { href: "/teknisi/panel/sparepart", label: "Sparepart" },
   { href: "/teknisi/panel/outlet", label: "Informasi Outlet" },
   { href: "/teknisi/panel/profil", label: "Profil Saya" },
 ];

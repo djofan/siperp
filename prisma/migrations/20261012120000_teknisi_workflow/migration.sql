@@ -1,0 +1,17 @@
+ALTER TABLE `teknisi_tickets`
+ ADD COLUMN `diagnosis` TEXT NULL, ADD COLUMN `plannedWork` TEXT NULL,
+ ADD COLUMN `evaluation` TEXT NULL, ADD COLUMN `checks` JSON NULL,
+ ADD COLUMN `warrantyDays` INTEGER NOT NULL DEFAULT 0, ADD COLUMN `originalTicketId` VARCHAR(191) NULL,
+ ADD COLUMN `startedAt` DATETIME(3) NULL, ADD COLUMN `readyAt` DATETIME(3) NULL,
+ ADD COLUMN `paidAt` DATETIME(3) NULL, ADD COLUMN `paidAmount` INTEGER NOT NULL DEFAULT 0,
+ ADD COLUMN `paymentMethod` VARCHAR(191) NULL, ADD COLUMN `collectedBy` VARCHAR(191) NULL;
+ALTER TABLE `teknisi_parts` ADD COLUMN `costPrice` INTEGER NOT NULL DEFAULT 0,
+ ADD COLUMN `compatibility` VARCHAR(191) NULL, ADD COLUMN `isActive` BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE `teknisi_part_uses` ADD COLUMN `unitCost` INTEGER NOT NULL DEFAULT 0,
+ ADD COLUMN `returnedQuantity` INTEGER NOT NULL DEFAULT 0;
+CREATE TABLE `teknisi_photos` (
+ `id` VARCHAR(191) NOT NULL, `ticketId` VARCHAR(191) NOT NULL, `stage` VARCHAR(191) NOT NULL,
+ `data` LONGBLOB NOT NULL, `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+ PRIMARY KEY (`id`), INDEX `teknisi_photos_ticketId_stage_idx` (`ticketId`, `stage`),
+ CONSTRAINT `teknisi_photos_ticketId_fkey` FOREIGN KEY (`ticketId`) REFERENCES `teknisi_tickets` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
