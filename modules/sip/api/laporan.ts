@@ -1,37 +1,8 @@
-import { prisma } from "@/lib/prisma";
-
-export async function listLaporan(type?: "bulanan" | "tahunan") {
-  return prisma.sipLaporan.findMany({
-    where: type ? { type } : undefined,
-    orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }],
-  });
-}
+import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import type { SipLaporan } from "@/lib/domain";
 
 export async function getLaporanById(id: string) {
-  return prisma.sipLaporan.findUnique({ where: { id } });
+  try { return await apiRequest<SipLaporan>(`sip/laporan/${encodeURIComponent(id)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-
-interface LaporanInput {
-  title: string;
-  type: "bulanan" | "tahunan";
-  periodMonth?: number;
-  periodYear: number;
-  fileUrl: string;
-}
-
-export async function createLaporan(input: LaporanInput) {
-  return prisma.sipLaporan.create({
-    data: { ...input, periodMonth: input.type === "bulanan" ? input.periodMonth : null },
-  });
-}
-
-export async function updateLaporan(id: string, input: LaporanInput) {
-  return prisma.sipLaporan.update({
-    where: { id },
-    data: { ...input, periodMonth: input.type === "bulanan" ? input.periodMonth : null },
-  });
-}
-
-export async function deleteLaporan(id: string) {
-  await prisma.sipLaporan.delete({ where: { id } });
-}
+export async function listLaporan(type?: "bulanan" | "tahunan") { return apiCollection<SipLaporan>("sip/laporan" + (type ? `?type=${type}` : "")); }

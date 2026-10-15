@@ -1,13 +1,13 @@
 "use server";
+import { apiRequest, ApiError } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { requireAcademyProfile } from "./access";
-import { getExamNotifications } from "./notifications";
+import { redirect } from "next/navigation";
 import type { ActionState } from "./actions";
-export async function markReminderRead(key: string): Promise<ActionState> {
-  const { profileId } = await requireAcademyProfile();
-  if (!(await getExamNotifications(profileId)).some(item => item.key === key)) return { error: "Pengingat tidak tersedia." };
-  await prisma.academyNotificationRead.upsert({ where: { profileId_key: { profileId, key } }, create: { profileId, key }, update: {} });
-  revalidatePath("/academy", "layout");
-  return { error: "", message: "Ditandai sudah dibaca." };
+export async function markReminderRead(key: string): Promise<ActionState> { let result: ActionState & {
+    id?: string;
+}; try {
+    result = await apiRequest<typeof result>("academy/notifications/read", { method: "POST", body: JSON.stringify({ key }) });
 }
+catch (error) {
+    return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); return { ...result, error: "", message: result.message ?? "Data berhasil disimpan." }; }

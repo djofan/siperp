@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { getTechnicianUser } from "./access";
 import * as service from "./service";
 import type { ActionState } from "../components/ActionForm";
-import { Prisma } from "@/generated/prisma/client";
 import { operationalRoot } from "./navigation";
 
 async function execute(form: FormData, operation: (user: NonNullable<Awaited<ReturnType<typeof getTechnicianUser>>>, form: FormData) => Promise<unknown>): Promise<ActionState> {
@@ -12,7 +11,6 @@ async function execute(form: FormData, operation: (user: NonNullable<Awaited<Ret
   if (!user) return { error: "Akses ditolak. Silakan masuk dengan akun yang memiliki akses modul Teknisi HP." };
   try { await operation(user, form); }
   catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) return { error: error.code === "P2002" ? "Data dengan kode tersebut sudah terdaftar." : "Data gagal disimpan. Muat ulang lalu coba lagi." };
     return { error: error instanceof Error ? error.message : "Data gagal disimpan." };
   }
   revalidatePath("/admin/teknisi", "layout");

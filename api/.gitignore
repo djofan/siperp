@@ -4,6 +4,12 @@
 /vendor/
 /node_modules/
 /storage/app/*.local.*
+/storage/app/private/**
+/storage/app/public/uploads/**
+/storage/app/backups/**
+!/storage/app/private/.gitignore
+!/storage/app/public/uploads/.gitignore
+!/storage/app/backups/.gitignore
 /.phpunit.cache/
 /.phpunit.result.cache
 /bootstrap/cache/*.php

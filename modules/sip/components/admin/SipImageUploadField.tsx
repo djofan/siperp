@@ -45,7 +45,7 @@ export function SipImageUploadField({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengunggah gambar.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal mengunggah gambar.");
       setPreview(initialUrl ?? null);
       return;
     }

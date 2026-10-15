@@ -54,7 +54,7 @@ export function NewsForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan berita.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan berita.");
       setIsSubmitting(false);
       return;
     }
