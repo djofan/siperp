@@ -1,15 +1,19 @@
-import Link from "next/link";
-import type { TechnicianUser } from "../../api/access";
-import { prisma } from "@/lib/prisma";
+import type { TechnicianUser } from "@/modules/teknisi/api/access";
 import { redirect } from "next/navigation";
-import { outletScope,ticketScope } from "../../api/policy";
-import { addTicket } from "../../api/actions";
-import { ActionForm } from "../ActionForm";
-import { Field,Choice } from "../Fields";
-import { PhotoFields } from "../PhotoFields";
-export async function NewTicketView({user,rootHref,searchParams}:{user:TechnicianUser;rootHref:string;searchParams?:Promise<{garansi?:string}>}){
- if(!user.canWrite)redirect(`${rootHref}/tiket`);
- const query=await searchParams;const original=query?.garansi?await prisma.teknisiTicket.findFirst({where:{id:query.garansi,status:"collected",...ticketScope(user)}}):null;
- const [outlets,technicians]=await Promise.all([prisma.teknisiOutlet.findMany({where:{isActive:true,...outletScope(user)}}),prisma.teknisiTechnician.findMany({where:{isActive:true,...(user.technician?{id:user.technician.id}:{})}})]);
- return <div className="tech-form-page"><Link href={`${rootHref}/tiket`}>← Pending Service</Link><h1 className="mt-4">{original?"Servis lanjutan / garansi":"Terima servis baru"}</h1><p className="tech-note">Catat kondisi awal dan estimasi. Servis masuk ke Pending setelah disimpan.{original&&` Terhubung ke ${original.number}.`}</p><div className="tech-box">{!outlets.length?<p>Tambahkan outlet terlebih dahulu.</p>:<ActionForm action={addTicket} submit="Simpan ke Pending"><input type="hidden" name="originalTicketId" value={original?.id??""}/><input type="hidden" name="priority" value="normal"/><div className="tech-form-grid">{user.technician?<input type="hidden" name="outletId" value={user.technician.outletId}/>:<><Choice name="outletId" label="Outlet" value={original?.outletId} required><option value="">Pilih outlet</option>{outlets.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</Choice><Choice name="technicianId" label="Teknisi penanggung jawab"><option value="">Tugaskan saat proses</option>{technicians.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</Choice></>}<Field name="customerName" label="Nama pelanggan" value={original?.customerName}/><Field name="customerPhone" label="Nomor HP pelanggan" type="tel" maxLength={30} value={original?.customerPhone}/><Field name="device" label="Merek & tipe HP" value={original?.device}/><Field name="imei" label="IMEI / nomor seri (opsional)" required={false}/><div className="full"><Field name="complaint" label="Keluhan pelanggan" maxLength={3000}/></div><div className="full"><Field name="accessories" label="Kondisi fisik & kelengkapan" maxLength={1000} required={false}/></div><Field name="estimate" label="Estimasi total biaya (Rp)" type="number" min={0} value={0}/><Field name="dueAt" label="Estimasi tanggal selesai" type="date"/><div className="full"><PhotoFields/></div></div></ActionForm>}</div></div>;
+import { apiRequest, ApiError } from "@/lib/api";
+import type { Response2 } from "@/modules/teknisi/api/contracts";
+import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { outletScope } from "@/modules/teknisi/api/access";
+import { addTicket } from "@/modules/teknisi/api/actions";
+import { ActionForm } from "@/modules/teknisi/components/ActionForm";
+import { Field, Choice } from "@/modules/teknisi/components/Fields";
+export async function NewTicketView({ user, rootHref }: {
+    user: TechnicianUser;
+    rootHref: string;
+}) {
+    if (!user.canWrite)
+        redirect(`${rootHref}/tiket`);
+    const { outlets, technicians } = await apiRequest<Response2>("teknisi/new-ticket");
+    return <><PageHeader title="Terima Servis Baru" description="Catat perangkat, keluhan, dan target pengerjaan pelanggan."/><Card>{!outlets.length ? <p>Tambahkan outlet terlebih dahulu melalui menu Outlet.</p> : <ActionForm action={addTicket} submit="Buat Tiket Servis"><div className="grid gap-5 md:grid-cols-2"><Choice name="outletId" label="Outlet penerimaan" required><option value="">Pilih outlet</option>{outlets.map(outlet => <option key={outlet.id} value={outlet.id}>{outlet.name}</option>)}</Choice><Choice name="technicianId" label="Teknisi"><option value="">{user.role === "technician" ? user.name : "Tugaskan nanti"}</option>{technicians.map(tech => <option key={tech.id} value={tech.id}>{tech.name} · {tech.outlet.name}</option>)}</Choice><Field name="customerName" label="Nama pelanggan"/><Field name="customerPhone" label="Nomor HP pelanggan" type="tel" maxLength={30}/><Field name="device" label="Merek dan tipe HP"/><Field name="imei" label="IMEI / nomor seri (opsional)" required={false} maxLength={30}/><Field name="complaint" label="Keluhan perangkat" maxLength={3000}/><Field name="accessories" label="Kondisi fisik dan kelengkapan (opsional)" required={false} maxLength={1000}/><Choice name="priority" label="Prioritas" value="normal"><option value="normal">Normal</option><option value="urgent">Mendesak</option></Choice><Field name="dueAt" label="Target selesai (opsional)" type="date" required={false}/><Field name="estimate" label="Estimasi biaya (Rp)" type="number" min={0} value={0}/></div></ActionForm>}</Card></>;
 }

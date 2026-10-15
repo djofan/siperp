@@ -1,69 +1,63 @@
-import "server-only";
-import { prisma } from "@/lib/prisma";
-
-export async function adminSummary() {
-  const [guru, peserta, groups, tasks, pending] = await Promise.all([
-    prisma.ojolMember.count({ where: { role: "guru" } }),
-    prisma.ojolMember.count({ where: { role: "peserta" } }),
-    prisma.ojolGroup.count(),
-    prisma.ojolTask.count(),
-    prisma.ojolSubmission.count({ where: { status: "pending" } }),
-  ]);
-  return { guru, peserta, groups, tasks, pending };
-}
-
-/** Titik peta sebaran — hanya untuk dashboard admin (bukan publik): nama, peran, kota. */
-export async function mapPoints() {
-  const members = await prisma.ojolMember.findMany({
-    where: { latitude: { not: null }, longitude: { not: null } },
-    select: { role: true, latitude: true, longitude: true, cityName: true, provinceName: true, user: { select: { name: true } } },
-  });
-  return members.map((member) => ({
-    name: member.user.name,
-    role: member.role,
-    place: [member.cityName, member.provinceName].filter(Boolean).join(", "),
-    lat: Number(member.latitude),
-    lng: Number(member.longitude),
-  }));
-}
-
-export async function recentMembers(limit = 6) {
-  return prisma.ojolMember.findMany({
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    select: { id: true, code: true, role: true, createdAt: true, user: { select: { name: true } } },
-  });
-}
-
-/** Ringkasan guru: koreksi menunggu (milik sendiri + co-review), tugas dibuat, koreksi selesai, tugas aktif. */
-export async function teacherSummary(teacherId: string) {
-  const reviewScope = { OR: [{ teacherId }, { approvers: { some: { teacherId } } }] };
-  const [pending, tasks, reviewed, activeTasks] = await Promise.all([
-    prisma.ojolSubmission.count({ where: { status: "pending", task: { type: { not: "quiz" }, ...reviewScope } } }),
-    prisma.ojolTask.count({ where: { teacherId } }),
-    prisma.ojolSubmissionLog.count({ where: { reviewerId: teacherId } }),
-    prisma.ojolTask.findMany({
-      where: { ...reviewScope, deadline: { gt: new Date() } },
-      orderBy: { deadline: "asc" },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        type: true,
-        deadline: true,
-        teacherId: true,
-        groups: { select: { group: { select: { name: true, _count: { select: { members: true } } } } } },
-        _count: { select: { submissions: true } },
-      },
-    }),
-  ]);
-  return { pending, tasks, reviewed, activeTasks };
-}
-
-export async function studentGroupInfo(groupId: string | null) {
-  if (!groupId) return null;
-  return prisma.ojolGroup.findUnique({
-    where: { id: groupId },
-    select: { code: true, name: true, description: true, _count: { select: { members: true } } },
-  });
-}
+import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import type * as Domain from "@/lib/domain";
+import type { OjolMemberRole } from "./access";
+import type { QuestionInput } from "./tasks";
+export type AdminSummaryResult = {
+    guru: number;
+    peserta: number;
+    groups: number;
+    tasks: number;
+    pending: number;
+};
+export async function adminSummary(): Promise<AdminSummaryResult> { return apiRequest<AdminSummaryResult>("ojol/dashboard/admin"); }
+export type MapPointsResult = {
+    name: string;
+    role: Domain.OjolRole;
+    place: string;
+    lat: number;
+    lng: number;
+}[];
+export async function mapPoints(): Promise<MapPointsResult> { return apiRequest<MapPointsResult>("ojol/dashboard/map"); }
+export type RecentMembersResult = {
+    id: string;
+    code: string;
+    role: Domain.OjolRole;
+    createdAt: Date;
+    user: {
+        name: string;
+    };
+}[];
+export async function recentMembers(limit = 6): Promise<RecentMembersResult> { return apiRequest<RecentMembersResult>(`ojol/dashboard/recent?limit=${limit}`); }
+export type TeacherSummaryResult = {
+    pending: number;
+    tasks: number;
+    reviewed: number;
+    activeTasks: {
+        id: string;
+        _count: {
+            submissions: number;
+        };
+        title: string;
+        teacherId: string | null;
+        type: Domain.OjolTaskType;
+        deadline: Date;
+        groups: {
+            group: {
+                _count: {
+                    members: number;
+                };
+                name: string;
+            };
+        }[];
+    }[];
+};
+export async function teacherSummary(teacherId: string): Promise<TeacherSummaryResult> { return apiRequest<TeacherSummaryResult>("ojol/dashboard/teacher"); }
+export type StudentGroupInfoResult = {
+    code: string;
+    _count: {
+        members: number;
+    };
+    name: string;
+    description: string | null;
+} | null;
+export async function studentGroupInfo(groupId: string | null): Promise<StudentGroupInfoResult> { return apiRequest<StudentGroupInfoResult>("ojol/student/group"); }

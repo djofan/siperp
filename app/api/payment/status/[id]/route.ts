@@ -1,1 +1,0 @@
-export * from "@/modules/payment/api/routes/status/[id]/route";

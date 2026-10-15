@@ -1,0 +1,43 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use Symfony\Component\Process\Process;
+
+it('serves every application endpoint below the versioned Laravel API', function () {
+    $routes = collect(Route::getRoutes())->map->uri();
+
+    expect($routes)->not->toBeEmpty();
+    foreach ($routes as $route) {
+        expect($route)->toStartWith('api/v1/');
+    }
+    expect($routes)->not->toContain('sanctum/csrf-cookie');
+});
+
+it('returns stable JSON errors without exposing internal exceptions', function () {
+    Route::get('/api/v1/test-internal-error', fn () => throw new RuntimeException('private database path'))->middleware('api');
+
+    $this->getJson('/api/v1/missing')
+        ->assertNotFound()
+        ->assertJsonPath('error.code', 'not_found');
+
+    $response = $this->getJson('/api/v1/test-internal-error')
+        ->assertStatus(500)
+        ->assertExactJson(['error' => [
+            'code' => 'server_error',
+            'message' => 'An unexpected error occurred.',
+            'details' => [],
+        ]]);
+
+    expect($response->getContent())->not->toContain('database', 'private');
+});
+
+it('passes the full migrated API flow against an isolated in-memory database', function () {
+    $process = new Process([PHP_BINARY, base_path('tools/verify-migration.php')], base_path(), timeout: 120);
+    $process->run();
+
+    expect($process->getExitCode())->toBe(0, $process->getErrorOutput().$process->getOutput());
+    expect($process->getOutput())
+        ->toContain('Migration smoke checks completed; no external database was used.')
+        ->not->toContain('FAIL');
+    expect(substr_count($process->getOutput(), 'PASS '))->toBeGreaterThanOrEqual(70);
+});

@@ -4,7 +4,6 @@
   "description": "Program Ojol Mengaji — modul masih kosong, pola acuan dari CLAUDE.md §4/§8.",
   "version": "0.1.0",
   "providers": {
-    "prismaSchema": "schema.prisma",
     "publicRoot": "pages",
     "adminRoot": "admin/pages",
     "apiRoot": "api"

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { apiRequest } from "@/lib/api";
+import type { ContactsResponse } from "./contracts";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { requireSuperadmin } from "./access";
 import { ActionForm } from "./ActionForm";
@@ -9,11 +10,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   await requireSuperadmin();
   const { q = "", page = "1", id } = await searchParams;
   const current = Math.max(1, Number.parseInt(page) || 1);
-  const where = q ? { OR: [{ name: { contains: q } }, { phone: { contains: q } }, { email: { contains: q } }] } : {};
-  const [contacts, count, selected] = await Promise.all([
-    prisma.coreContact.findMany({ where, include: { sources: true }, orderBy: { name: "asc" }, take: 30, skip: (current-1)*30 }),
-    prisma.coreContact.count({ where }), id ? prisma.coreContact.findUnique({ where: { id }, include: { sources: true } }) : null,
-  ]);
+  const {contacts, count, selected} = await apiRequest<ContactsResponse>(`super/erp/contacts?q=${encodeURIComponent(q)}&page=${current}${id ? "&id="+encodeURIComponent(id) : ""}`);
   return <div className="space-y-6"><PageHeader title="Kontak Terpadu" description="Gabungkan peran lintas modul sambil mempertahankan sumber data asli. Sinkronkan setelah data modul berubah." />
     <ActionForm action={syncContacts} button="Sinkronkan dari semua modul" />
     <form className="flex gap-2"><input aria-label="Cari kontak" name="q" defaultValue={q} placeholder="Nama, email, nomor telepon" className={input} /><button className="rounded-lg border px-4">Cari</button></form>
