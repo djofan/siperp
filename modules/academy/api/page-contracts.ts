@@ -395,13 +395,13 @@ export type AcademyPage12 = {
         quizDate: Date | null;
         timeLimitMinutes: number;
         allowRetake: boolean;
-        kind: import("C:/file/siperp/lib/domain").AcademyQuizKind;
+        kind: import("@/lib/domain").AcademyQuizKind;
         closesAt: Date | null;
         questions: {
             id: string;
             order: number;
             question: string;
-            type: import("C:/file/siperp/lib/domain").AcademyQuestionType;
+            type: import("@/lib/domain").AcademyQuestionType;
             weight: number;
             explanation: string | null;
             options: {
@@ -427,13 +427,13 @@ export type AcademyPage12 = {
         quizDate: Date | null;
         timeLimitMinutes: number;
         allowRetake: boolean;
-        kind: import("C:/file/siperp/lib/domain").AcademyQuizKind;
+        kind: import("@/lib/domain").AcademyQuizKind;
         closesAt: Date | null;
         questions: {
             id: string;
             order: number;
             question: string;
-            type: import("C:/file/siperp/lib/domain").AcademyQuestionType;
+            type: import("@/lib/domain").AcademyQuestionType;
             weight: number;
             explanation: string | null;
             options: {

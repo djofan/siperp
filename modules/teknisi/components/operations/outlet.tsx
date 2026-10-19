@@ -1,15 +1,7 @@
-import type { TechnicianUser } from "@/modules/teknisi/api/access";
-import { apiRequest, ApiError } from "@/lib/api";
-import type { Response3 } from "@/modules/teknisi/api/contracts";
-import { Card, CardTitle } from "@/components/ui/Card";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { outletScope } from "@/modules/teknisi/api/access";
-import { addOutlet } from "@/modules/teknisi/api/actions";
-import { ActionForm } from "@/modules/teknisi/components/ActionForm";
-import { Field } from "@/modules/teknisi/components/Fields";
-export async function OutletView({ user }: {
-    user: TechnicianUser;
-}) {
-    const outlets = await apiRequest<Response3["outlets"]>("teknisi/outlets");
-    return <><PageHeader title="Outlet" description="Lokasi penerimaan perangkat dan layanan servis HP."/><div className="grid gap-6 xl:grid-cols-3"><div className="space-y-4 xl:col-span-2">{outlets.map(outlet => <Card key={outlet.id}><div className="flex justify-between gap-3"><CardTitle>{outlet.name}</CardTitle><span className="text-xs text-emerald-500">{outlet.isActive ? "Aktif" : "Nonaktif"}</span></div><p className="mt-3 text-sm text-foreground/60">{outlet.address}</p><p className="mt-2 text-sm">{outlet.phone}</p><div className="mt-5 flex gap-5 text-xs text-foreground/50"><span>{outlet._count.technicians} teknisi</span><span>{outlet._count.tickets} tiket tercatat</span></div></Card>)}{!outlets.length && <Card>Belum ada outlet. Tambahkan lokasi pertama untuk mulai menerima servis.</Card>}</div>{user.canManage && <Card className="h-fit"><CardTitle>Tambah outlet</CardTitle><ActionForm action={addOutlet} className="mt-5"><Field name="name" label="Nama outlet"/><Field name="address" label="Alamat" maxLength={1000}/><Field name="phone" label="Nomor telepon" type="tel" maxLength={30}/></ActionForm></Card>}</div></>;
+import Link from "next/link";
+import type { TechnicianUser } from "../../api/access";
+import { outletData } from "../../api/view-data";
+export async function OutletView({user}:{user:TechnicianUser}){
+ const outlets=await outletData();
+ return <><header className="tech-dash-heading"><div><span className="tech-eyebrow">LOKASI LAYANAN</span><h1>{user.technician?"Informasi outlet":"Outlet"}</h1><p>Lokasi, kontak, dan jumlah servisan dari Laravel.</p></div>{user.canManage&&<Link className="tech-btn" href="/admin/teknisi/outlet/baru">+ Buat outlet</Link>}</header><div className="tech-cards">{outlets.map(o=><article className="tech-ticket" key={o.id}><div className="tech-card-head"><h2>{o.name}</h2><span>{o.isActive?"Aktif":"Nonaktif"}</span></div><p>{o.address}</p><p>{o.phone}</p><div className="tech-cost-row"><span>Teknisi</span><strong>{o._count.technicians}</strong></div><div className="tech-cost-row"><span>Servisan tercatat</span><strong>{o._count.tickets}</strong></div><Link href={`${user.technician?"/teknisi/panel":"/admin/teknisi"}/tiket?outlet=${encodeURIComponent(o.id)}`}>Lihat servisan →</Link></article>)}</div>{!outlets.length&&<section className="tech-box"><h2>Belum ada outlet</h2><p>Buat outlet sebelum mendaftarkan akun PTH.</p></section>}</>;
 }
