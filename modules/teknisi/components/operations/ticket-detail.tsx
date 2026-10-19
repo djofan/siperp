@@ -1,11 +1,10 @@
 import Link from "next/link";
 import type { TechnicianUser } from "@/modules/teknisi/api/access";
 import { notFound } from "next/navigation";
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type { Response1 } from "@/modules/teknisi/api/contracts";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { ticketScope } from "@/modules/teknisi/api/access";
 import { currency, dateTime } from "@/modules/teknisi/api/queries";
 import { statuses, isStatus, nextStatuses, terminalStatuses } from "@/modules/teknisi/api/policy";
 import { changeTicket, consumePart, addPartNeed } from "@/modules/teknisi/api/actions";

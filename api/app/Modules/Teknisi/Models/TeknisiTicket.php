@@ -3,6 +3,8 @@
 namespace App\Modules\Teknisi\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TeknisiTicket extends DomainModel
 {
@@ -22,27 +24,32 @@ class TeknisiTicket extends DomainModel
 
     protected $hidden = [];
 
-    public function outlet()
+    /** @return BelongsTo<TeknisiOutlet, $this> */
+    public function outlet(): BelongsTo
     {
         return $this->belongsTo(TeknisiOutlet::class, 'outletId', 'id');
     }
 
-    public function technician()
+    /** @return BelongsTo<TeknisiTechnician, $this> */
+    public function technician(): BelongsTo
     {
         return $this->belongsTo(TeknisiTechnician::class, 'technicianId', 'id');
     }
 
-    public function participant()
+    /** @return BelongsTo<TeknisiParticipant, $this> */
+    public function participant(): BelongsTo
     {
         return $this->belongsTo(TeknisiParticipant::class, 'participantId', 'id');
     }
 
-    public function events()
+    /** @return HasMany<TeknisiEvent, $this> */
+    public function events(): HasMany
     {
         return $this->hasMany(TeknisiEvent::class, 'ticketId', 'id');
     }
 
-    public function partUses()
+    /** @return HasMany<TeknisiPartUse, $this> */
+    public function partUses(): HasMany
     {
         return $this->hasMany(TeknisiPartUse::class, 'ticketId', 'id');
     }

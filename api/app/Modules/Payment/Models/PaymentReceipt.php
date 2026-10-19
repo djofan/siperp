@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PaymentReceipt extends DomainModel
 {
@@ -22,7 +23,8 @@ class PaymentReceipt extends DomainModel
 
     protected $hidden = [];
 
-    public function transaction()
+    /** @return BelongsTo<PaymentTransaction, $this> */
+    public function transaction(): BelongsTo
     {
         return $this->belongsTo(PaymentTransaction::class, 'transaction_id', 'id');
     }

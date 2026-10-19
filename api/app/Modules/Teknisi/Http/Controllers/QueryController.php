@@ -95,7 +95,7 @@ class QueryController
     public function monitoring(Request $request)
     {
         $actor = $this->context->actor($request);
-        $outlet = $actor['tech']?->outletId ?? $request->input('outlet');
+        $outlet = $actor['tech'] ? $actor['tech']->outletId : $request->input('outlet');
         $tickets = $this->tickets($actor)->when($outlet, fn ($q) => $q->where('outletId', $outlet));
         $grouped = (clone $tickets)->select('status')->selectRaw('COUNT(*) AS total')->groupBy('status')->get()->map(fn ($row) => ['status' => $row->status, '_count' => ['_all' => (int) $row->total]]);
 

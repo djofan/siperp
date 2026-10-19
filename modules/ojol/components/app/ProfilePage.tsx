@@ -6,7 +6,7 @@ import { photoUrl } from "./media";
 import { PasswordForm, ProfileForm } from "./ProfileForms";
 
 /** Halaman profil bersama guru & peserta (server component). */
-export async function ProfilePage({ memberId }: { memberId: string }) {
+export async function ProfilePage({ memberId: _memberId }: { memberId: string }) {
   const member = await getOwnProfile();
   if (!member) notFound();
   const email = member.user.email.endsWith(".invalid") ? null : member.user.email;

@@ -86,7 +86,7 @@ class FinanceController
         $recent = [];
         foreach (PaymentTransaction::with('donor:id,name')->where('module_source', 'lazsip')->orderByDesc('created_at')->limit($limit)->get() as $row) {
             $campaign = $row->sourceType === 'campaign';
-            $label = $campaign ? 'Donasi — '.(LazsipCampaign::find($row->sourceId)?->title ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal');
+            $label = $campaign ? 'Donasi — '.(LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal');
             $recent[] = ['id' => $row->id, 'label' => $label, 'donorName' => $row->donor->name, 'amount' => $campaign ? $row->amount + $row->adminFee : $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];
         }
         foreach ([LazsipDonation::class, LazsipZakatPayment::class] as $model) {

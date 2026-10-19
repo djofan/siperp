@@ -26,7 +26,7 @@ class StudentController extends BaseController
 
     public function index(Request $request)
     {
-        $data = $request->validate(['search' => 'sometimes|string|max:200']);
+        $data = $request->validate(['search' => 'sometimes|nullable|string|max:200']);
         $query = $this->scoped($request)->with(['member.user:id,name', 'member.group:id,name']);
         if (! empty($data['search'])) {
             $query->where(fn ($query) => $query->where('name', 'like', '%'.$data['search'].'%')->orWhere('parent_name', 'like', '%'.$data['search'].'%'));
@@ -72,7 +72,7 @@ class StudentController extends BaseController
                 $query->whereHas('group', fn ($query) => $query->where('pic_id', $context['member']->id));
             }
             $owner = $query->find($request->input('memberId'));
-            abort_unless($owner, 422, 'Pilih peserta yang valid.');
+            abort_unless($owner !== null, 422, 'Pilih peserta yang valid.');
         }
         $data['memberId'] = $owner->id;
 

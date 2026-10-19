@@ -96,6 +96,7 @@ class ContentController
             'partners' => ['name' => $title, 'logo' => $image, 'url' => 'sometimes|nullable|url:http,https|max:191'],
             'programs' => ['title' => $title, 'description' => $text, 'requirements' => 'sometimes|nullable|string|max:1000000', 'image' => $image, 'category' => 'sometimes|in:umum,pendidikan,sarsip', 'type' => 'required|in:berita,daftar', 'formUrl' => 'required_if:type,daftar|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],
             'payment-fees' => ['method' => $title, 'feeAmount' => 'sometimes|nullable|integer|min:0|max:2147483647', 'feePercentage' => 'sometimes|nullable|numeric|min:0|max:100'],
+            default => abort(404),
             'beneficiaries' => ['name' => $title, 'address' => $text, 'problemFaced' => $text, 'birthDate' => 'required|date|before_or_equal:today', 'age' => 'required|integer|min:0|max:150', 'gender' => $title, 'referralSource' => $title, 'photo' => $image, 'needs' => $text, 'aidType' => 'required|in:pendidikan,kesehatan,kebutuhan_pokok,lainnya', 'amountReceived' => 'required|integer|min:0|max:2147483647', 'verifierName' => $title, 'verifierArea' => $title, 'maritalStatus' => 'required|in:menikah,janda-cerai,janda-meninggal,duda-cerai,duda-meninggal', 'nik' => 'sometimes|nullable|string|max:191', 'occupation' => 'sometimes|nullable|string|max:191', 'monthlyIncome' => 'sometimes|nullable|integer|min:0|max:2147483647', 'dependentsCount' => 'sometimes|nullable|integer|min:0|max:2147483647', 'dependentsDetail' => 'sometimes|nullable|string|max:1000000', 'isPinned' => 'required|boolean'],
         };
         $data = $request->validate($rules);
@@ -200,7 +201,7 @@ class ContentController
 
     public function checkoutMethods(): JsonResponse
     {
-        $data = config('payment.gateway') === 'midtrans_sandbox' ? [['id' => 'midtrans-sandbox', 'method' => 'Midtrans Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]] : LazsipPaymentFeeRef::orderBy('method')->get();
+        $data = config('payment.gateway') === 'ipaymu_sandbox' ? [['id' => 'ipaymu-sandbox', 'method' => 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]] : LazsipPaymentFeeRef::orderBy('method')->get();
 
         return response()->json(['data' => $data]);
     }

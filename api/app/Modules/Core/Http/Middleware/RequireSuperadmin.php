@@ -10,7 +10,8 @@ class RequireSuperadmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->is_active && $request->user()?->is_superadmin, 403, 'Tidak diizinkan.');
+        $user = $request->user();
+        abort_unless($user && $user->is_active && $user->is_superadmin, 403, 'Tidak diizinkan.');
 
         return $next($request);
     }

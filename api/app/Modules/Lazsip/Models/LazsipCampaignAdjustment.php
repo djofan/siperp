@@ -3,6 +3,7 @@
 namespace App\Modules\Lazsip\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LazsipCampaignAdjustment extends DomainModel
 {
@@ -22,7 +23,8 @@ class LazsipCampaignAdjustment extends DomainModel
 
     protected $hidden = [];
 
-    public function campaign()
+    /** @return BelongsTo<LazsipCampaign, $this> */
+    public function campaign(): BelongsTo
     {
         return $this->belongsTo(LazsipCampaign::class, 'campaign_id', 'id');
     }

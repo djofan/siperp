@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CoreContactSource extends DomainModel
 {
@@ -22,7 +23,8 @@ class CoreContactSource extends DomainModel
 
     protected $hidden = [];
 
-    public function contact()
+    /** @return BelongsTo<CoreContact, $this> */
+    public function contact(): BelongsTo
     {
         return $this->belongsTo(CoreContact::class, 'contact_id', 'id');
     }

@@ -29,7 +29,7 @@ class CourseController
     {
         $course = Course::where('is_published', true)->where('is_simulation', false)->where('registration_open', true)->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '>', now()))->withCount('enrollments')->orderBy('order')->orderBy('id')->first();
 
-        return $this->data(['course' => $course ? AcademyDto::make($course) : null, 'filled' => $course?->enrollments_count ?? 0, 'full' => $course ? $course->enrollments_count >= $course->quota : false]);
+        return $this->data(['course' => $course ? AcademyDto::make($course) : null, 'filled' => $course ? $course->enrollments_count : 0, 'full' => $course ? $course->enrollments_count >= $course->quota : false]);
     }
 
     public function index(Request $request)

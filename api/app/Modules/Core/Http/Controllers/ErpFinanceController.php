@@ -37,7 +37,7 @@ class ErpFinanceController
 
     private function paid()
     {
-        return Payment::where('status', 'paid')->whereNotIn('gateway', ['simulation', 'midtrans_sandbox']);
+        return Payment::where('status', 'paid')->whereNotIn('gateway', ['simulation', 'ipaymu_sandbox']);
     }
 
     public function index(Request $request)

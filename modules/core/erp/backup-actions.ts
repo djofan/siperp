@@ -5,7 +5,7 @@ import { runBackup } from "./backup";
 import { revalidatePath } from "next/cache";
 import type { ErpActionState } from "./contact-actions";
 export async function createErpBackup(): Promise<ErpActionState> {
-  const actor = await requireSuperadmin();
+  await requireSuperadmin();
   try {
     const result = await runBackup("create");
     if (Array.isArray(result)) throw new Error();

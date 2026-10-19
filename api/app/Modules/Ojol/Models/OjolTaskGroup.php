@@ -3,6 +3,7 @@
 namespace App\Modules\Ojol\Models;
 
 use App\Support\DomainPivotModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OjolTaskGroup extends DomainPivotModel
 {
@@ -24,12 +25,14 @@ class OjolTaskGroup extends DomainPivotModel
 
     protected $hidden = [];
 
-    public function task()
+    /** @return BelongsTo<OjolTask, $this> */
+    public function task(): BelongsTo
     {
         return $this->belongsTo(OjolTask::class, 'task_id', 'id');
     }
 
-    public function group()
+    /** @return BelongsTo<OjolGroup, $this> */
+    public function group(): BelongsTo
     {
         return $this->belongsTo(OjolGroup::class, 'group_id', 'id');
     }

@@ -3,6 +3,8 @@
 namespace App\Modules\Tanwir\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TanwirQuizQuestion extends DomainModel
 {
@@ -22,12 +24,14 @@ class TanwirQuizQuestion extends DomainModel
 
     protected $hidden = [];
 
-    public function task()
+    /** @return BelongsTo<TanwirTask, $this> */
+    public function task(): BelongsTo
     {
         return $this->belongsTo(TanwirTask::class, 'task_id', 'id');
     }
 
-    public function answers()
+    /** @return HasMany<TanwirQuizAnswer, $this> */
+    public function answers(): HasMany
     {
         return $this->hasMany(TanwirQuizAnswer::class, 'question_id', 'id');
     }

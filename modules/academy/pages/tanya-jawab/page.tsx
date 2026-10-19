@@ -5,7 +5,7 @@ import { askTeacher } from "../../api/actions";
 import { ActionForm } from "../../components/ActionForm";
 import { PageHeading, EmptyState, inputClass } from "../../components/ui";
 export default async function QuestionsPage() {
-    const { profileId } = await requireAcademyProfile();
+    await requireAcademyProfile();
     const { enrollments, questions } = await academyPage<AcademyPage5>("academy/learning/discussions");
     return <div className="p-6"><PageHeading title="Tanya jawab Ustadz">Ajukan pertanyaan kepada Ustadz Irham dan ikuti sesi tanya jawab terjadwal.</PageHeading>
     {!enrollments.length && <EmptyState>Ikuti program terlebih dahulu untuk mengajukan pertanyaan.</EmptyState>}

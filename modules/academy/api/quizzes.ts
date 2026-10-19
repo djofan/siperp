@@ -1,7 +1,6 @@
 import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
-import { cache } from "react";
 import { quizDeadline } from "./policy";
 export function remainingQuizSeconds(startedAt: Date, minutes: number, closesAt?: string | null) {
     return Math.ceil((quizDeadline(startedAt, minutes, closesAt) - Date.now()) / 1000);

@@ -3,6 +3,7 @@
 namespace App\Modules\Teknisi\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TeknisiEvent extends DomainModel
 {
@@ -22,7 +23,8 @@ class TeknisiEvent extends DomainModel
 
     protected $hidden = [];
 
-    public function ticket()
+    /** @return BelongsTo<TeknisiTicket, $this> */
+    public function ticket(): BelongsTo
     {
         return $this->belongsTo(TeknisiTicket::class, 'ticketId', 'id');
     }

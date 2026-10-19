@@ -3,6 +3,7 @@
 namespace App\Modules\Tanwir\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TanwirStudent extends DomainModel
 {
@@ -22,7 +23,8 @@ class TanwirStudent extends DomainModel
 
     protected $hidden = [];
 
-    public function member()
+    /** @return BelongsTo<TanwirMember, $this> */
+    public function member(): BelongsTo
     {
         return $this->belongsTo(TanwirMember::class, 'member_id', 'id');
     }

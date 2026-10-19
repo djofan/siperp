@@ -1,9 +1,8 @@
 import type { TechnicianUser } from "@/modules/teknisi/api/access";
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type { Response3 } from "@/modules/teknisi/api/contracts";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { outletScope } from "@/modules/teknisi/api/access";
 import { addOutlet } from "@/modules/teknisi/api/actions";
 import { ActionForm } from "@/modules/teknisi/components/ActionForm";
 import { Field } from "@/modules/teknisi/components/Fields";

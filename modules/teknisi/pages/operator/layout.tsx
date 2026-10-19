@@ -1,4 +1,4 @@
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type { Response10 } from "@/modules/teknisi/api/contracts";
 import { requireTechnicianOperator } from "../../api/access";
 import { OperatorShell } from "../../components/OperatorShell";
@@ -8,6 +8,6 @@ export default async function Layout({ children }: {
 }) {
     const user = await requireTechnicianOperator();
     const [outlets, profile] = await Promise.all([apiRequest<Response10["outlet"][]>("teknisi/outlets"), apiRequest<Response10["profile"]>("teknisi/profile")]);
-    const outlet = outlets.find(row => true)!;
+    const outlet = outlets[0]!;
     return <OperatorShell user={{ name: user.name, nip: profile?.nip ?? "NIP belum tersedia" }} outletName={outlet.name}>{children}</OperatorShell>;
 }

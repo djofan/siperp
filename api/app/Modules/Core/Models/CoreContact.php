@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CoreContact extends DomainModel
 {
@@ -22,7 +23,8 @@ class CoreContact extends DomainModel
 
     protected $hidden = [];
 
-    public function sources()
+    /** @return HasMany<CoreContactSource, $this> */
+    public function sources(): HasMany
     {
         return $this->hasMany(CoreContactSource::class, 'contact_id', 'id');
     }

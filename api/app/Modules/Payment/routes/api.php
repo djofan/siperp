@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('checkout', [PaymentController::class, 'checkout'])->middleware('throttle:checkout');
 Route::get('status/{id}', [PaymentController::class, 'status'])->middleware('throttle:payment-status');
-Route::post('midtrans-session/{id}', [PaymentController::class, 'session'])->middleware('throttle:checkout');
-Route::post('midtrans-status/{id}', [PaymentController::class, 'sync'])->middleware('throttle:payment-status');
-Route::post('webhook', [PaymentController::class, 'webhook']);
+Route::post('gateway-session/{id}', [PaymentController::class, 'session'])->middleware('throttle:checkout');
+Route::post('gateway-status/{id}', [PaymentController::class, 'sync'])->middleware('throttle:payment-status');
+Route::post('webhook/ipaymu', [PaymentController::class, 'webhook']);
 Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::get('transactions', [PaymentController::class, 'index']);
     Route::get('charts', [PaymentController::class, 'charts']);

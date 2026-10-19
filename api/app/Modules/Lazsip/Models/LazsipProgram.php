@@ -3,6 +3,7 @@
 namespace App\Modules\Lazsip\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LazsipProgram extends DomainModel
 {
@@ -22,7 +23,8 @@ class LazsipProgram extends DomainModel
 
     protected $hidden = [];
 
-    public function applicants()
+    /** @return HasMany<LazsipProgramApplicant, $this> */
+    public function applicants(): HasMany
     {
         return $this->hasMany(LazsipProgramApplicant::class, 'program_id', 'id');
     }

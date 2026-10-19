@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type { Response5 } from "@/modules/teknisi/api/contracts";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Input } from "@/components/ui/FormField";
 import { buttonVariants } from "@/components/ui/Button";
 import { requireTechnicianUser } from "../../../api/access";
-import { terminalStatuses } from "../../../api/policy";
 import { registerTeknisiParticipant, deleteTeknisiAccount } from "../../../api/participant-actions";
 import { ActionForm } from "../../../components/ActionForm";
 import { Choice, Field } from "../../../components/Fields";

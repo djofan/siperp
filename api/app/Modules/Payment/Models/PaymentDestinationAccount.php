@@ -3,6 +3,7 @@
 namespace App\Modules\Payment\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentDestinationAccount extends DomainModel
 {
@@ -22,7 +23,8 @@ class PaymentDestinationAccount extends DomainModel
 
     protected $hidden = [];
 
-    public function transactions()
+    /** @return HasMany<PaymentTransaction, $this> */
+    public function transactions(): HasMany
     {
         return $this->hasMany(PaymentTransaction::class, 'destination_account_id', 'id');
     }

@@ -71,6 +71,7 @@ class ContentController
             'program-bantuan' => ['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'slug' => ['required', 'string', 'max:191', Rule::unique('sip_program_bantuan', 'slug')->ignore($id)], 'image' => $image, 'campaignUrl' => 'sometimes|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],
             'penyaluran-bantuan' => ['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'image' => $image, 'location' => 'sometimes|nullable|string|max:191', 'date' => 'required|date'],
             'laporan' => ['title' => 'required|string|max:191', 'type' => 'required|in:bulanan,tahunan', 'periodYear' => 'required|integer|min:1900|max:9999', 'periodMonth' => 'required_if:type,bulanan|nullable|integer|min:1|max:12', 'fileUrl' => 'required|string|max:191'],
+            default => abort(404),
         };
         if ($resource === 'program-bantuan') {
             $request->merge(['slug' => Str::slug($request->input('slug') ?: $request->input('title', ''))]);

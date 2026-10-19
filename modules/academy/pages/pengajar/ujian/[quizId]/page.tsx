@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage12 } from "@/modules/academy/api/page-contracts";
 import { requireAcademyTeacher } from "../../../../api/access";
-import { getAdminQuiz } from "../../../../api/admin-quizzes";
 import { quizDateInput } from "../../../../api/admin-quiz-validation";
 import { saveTeacherQuiz, saveTeacherQuestion } from "../../../../api/teacher-actions";
 import { QuizForm } from "../../../../components/admin/QuizForm";

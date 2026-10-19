@@ -20,13 +20,13 @@ class ErpOverviewController
     public function __invoke(Request $request, ErpFinanceController $finance)
     {
         [$start, $end] = $finance->period($request);
-        $paid = PaymentTransaction::where('status', 'paid')->whereNotIn('gateway', ['simulation', 'midtrans_sandbox'])->where('paid_at', '>=', $start)->where('paid_at', '<', $end);
+        $paid = PaymentTransaction::where('status', 'paid')->whereNotIn('gateway', ['simulation', 'ipaymu_sandbox'])->where('paid_at', '>=', $start)->where('paid_at', '<', $end);
         $income = (clone $paid)->select('module_source', 'fund_type')->selectRaw('SUM(amount) AS amount, SUM(admin_fee) AS fees, COUNT(*) AS total')->groupBy('module_source', 'fund_type')->get()->map(fn ($r) => ['moduleSource' => $r->moduleSource, 'fundType' => $r->fundType, '_sum' => ['amount' => (int) $r->amount, 'adminFee' => (int) $r->fees], '_count' => (int) $r->total]);
         $expense = CoreExpense::where('spent_at', '>=', $start)->where('spent_at', '<', $end);
 
         return response()->json(['data' => [
             'income' => $income, 'expenses' => ['_sum' => ['amount' => (int) (clone $expense)->sum('amount')], '_count' => $expense->count()],
-            'pending' => PaymentTransaction::where('status', 'pending')->whereNotIn('gateway', ['simulation', 'midtrans_sandbox'])->count(),
+            'pending' => PaymentTransaction::where('status', 'pending')->whereNotIn('gateway', ['simulation', 'ipaymu_sandbox'])->count(),
             'applications' => LazsipProgramApplicant::whereIn('status', ['baru', 'diproses'])->count(),
             'courses' => ZakatAcademyCourse::where('is_simulation', false)->withCount('enrollments')->orderByDesc('created_at')->take(8)->get()->map(fn ($r) => AcademyDto::make($r)),
             'enrollments' => ZakatAcademyEnrollment::whereHas('course', fn ($q) => $q->where('is_simulation', false))->count(),

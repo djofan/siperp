@@ -3,6 +3,7 @@
 namespace App\Modules\Ojol\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OjolGroup extends DomainModel
 {
@@ -22,12 +23,14 @@ class OjolGroup extends DomainModel
 
     protected $hidden = [];
 
-    public function members()
+    /** @return HasMany<OjolMember, $this> */
+    public function members(): HasMany
     {
         return $this->hasMany(OjolMember::class, 'group_id', 'id');
     }
 
-    public function tasks()
+    /** @return HasMany<OjolTaskGroup, $this> */
+    public function tasks(): HasMany
     {
         return $this->hasMany(OjolTaskGroup::class, 'group_id', 'id');
     }

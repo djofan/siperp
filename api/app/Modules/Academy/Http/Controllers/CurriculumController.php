@@ -293,7 +293,7 @@ class CurriculumController
                 $this->ready($row);
             }
 
-return $this->assign($row, $data + ['chapterId' => $chapterId]);
+            return $this->assign($row, $data + ['chapterId' => $chapterId]);
         }, 3));
     }
 
@@ -328,7 +328,7 @@ return $this->assign($row, $data + ['chapterId' => $chapterId]);
             $quiz->save();
             $row = $id ? Question::where('id', $id)->where('quiz_id', $quizId)->firstOrFail() : new Question;
             $owned = $row->exists ? $row->options()->pluck('id')->all() : [];
-            abort_if(array_diff(array_filter(array_column($options, 'id')), $owned), 422, 'Opsi bukan milik pertanyaan ini.');
+            abort_if(array_diff(array_filter(array_column($options, 'id')), $owned) !== [], 422, 'Opsi bukan milik pertanyaan ini.');
             $this->assign($row, $data + ['quizId' => $quizId]);
             $retained = array_filter(array_column($options, 'id'));
             $row->options()->whereNotIn('id', $retained)->delete();

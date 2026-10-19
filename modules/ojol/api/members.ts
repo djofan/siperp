@@ -1,7 +1,6 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
 import type { OjolMemberRole } from "./access";
-import type { QuestionInput } from "./tasks";
 export interface AddressInput {
     address: string | null;
     provinceId: string | null;
@@ -23,7 +22,7 @@ export async function updateMember(memberId: string, role: OjolMemberRole, form:
 export type SetMemberActiveResult = void;
 export async function setMemberActive(memberId: string, isActive: boolean): Promise<SetMemberActiveResult> { await apiRequest(`ojol/members/${encodeURIComponent(memberId)}/status`, { method: "PUT", body: JSON.stringify({ isActive }) }); }
 export type DeleteMemberResult = void;
-export async function deleteMember(memberId: string, role: OjolMemberRole): Promise<DeleteMemberResult> { await apiRequest(`ojol/members/${encodeURIComponent(memberId)}`, { method: "DELETE" }); }
+export async function deleteMember(memberId: string, _role: OjolMemberRole): Promise<DeleteMemberResult> { await apiRequest(`ojol/members/${encodeURIComponent(memberId)}`, { method: "DELETE" }); }
 export type UpdateOwnProfileResult = void;
 export async function updateOwnProfile(memberId: string, form: FormData): Promise<UpdateOwnProfileResult> { await apiRequest("ojol/profile", { method: "PUT", body: form }); }
 export type ChangeOwnPasswordResult = void;

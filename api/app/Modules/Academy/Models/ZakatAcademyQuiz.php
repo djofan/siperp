@@ -3,6 +3,8 @@
 namespace App\Modules\Academy\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZakatAcademyQuiz extends DomainModel
 {
@@ -22,17 +24,20 @@ class ZakatAcademyQuiz extends DomainModel
 
     protected $hidden = [];
 
-    public function chapter()
+    /** @return BelongsTo<ZakatAcademyChapter, $this> */
+    public function chapter(): BelongsTo
     {
         return $this->belongsTo(ZakatAcademyChapter::class, 'chapter_id', 'id');
     }
 
-    public function questions()
+    /** @return HasMany<ZakatAcademyQuizQuestion, $this> */
+    public function questions(): HasMany
     {
         return $this->hasMany(ZakatAcademyQuizQuestion::class, 'quiz_id', 'id');
     }
 
-    public function attempts()
+    /** @return HasMany<ZakatAcademyQuizAttempt, $this> */
+    public function attempts(): HasMany
     {
         return $this->hasMany(ZakatAcademyQuizAttempt::class, 'quiz_id', 'id');
     }

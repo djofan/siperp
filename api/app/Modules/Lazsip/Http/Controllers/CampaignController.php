@@ -93,7 +93,7 @@ class CampaignController
         $row = DB::transaction(function () use ($id, $data, $phone, $email, $donors, $transactions, $receipts): PaymentTransaction {
             LazsipCampaign::whereKey($id)->lockForUpdate()->firstOrFail();
             $account = PaymentDestinationAccount::where('module_source', 'lazsip')->where('fund_type', 'infak')->orderBy('id')->lockForUpdate()->first();
-            abort_unless($account, 503, 'Rekening tujuan belum tersedia.');
+            abort_unless($account !== null, 503, 'Rekening tujuan belum tersedia.');
             $donor = $donors->resolve(trim($data['name']), $phone, $email);
             $payment = new PaymentTransaction;
             $payment->forceFill(['trackingCode' => $transactions->trackingCode('lazsip'), 'moduleSource' => 'lazsip', 'sourceType' => 'campaign', 'sourceId' => $id, 'fundType' => 'infak', 'donorId' => $donor->id, 'isAnonymous' => false, 'amount' => $data['amount'], 'adminFee' => 0, 'paymentMethod' => 'Input Manual Admin', 'destinationAccountId' => $account->id, 'gateway' => 'manual', 'gatewayState' => 'not_started', 'status' => 'paid', 'paidAt' => now()])->save();

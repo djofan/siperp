@@ -12,11 +12,11 @@ class TransactionService
     public function create(array $input): PaymentTransaction
     {
         $account = PaymentDestinationAccount::where('module_source', $input['moduleSource'])->where('fund_type', $input['fundType'])->orderBy('id')->lockForUpdate()->first();
-        abort_unless($account, 503, 'Rekening tujuan belum tersedia.');
+        abort_unless($account !== null, 503, 'Rekening tujuan belum tersedia.');
         $gateway = config('payment.gateway');
-        abort_unless(in_array($gateway, ['simulation', 'midtrans_sandbox'], true), 503, 'Gateway belum dikonfigurasi.');
-        if ($gateway === 'midtrans_sandbox') {
-            app(MidtransService::class)->configuration();
+        abort_unless(in_array($gateway, ['simulation', 'ipaymu_sandbox'], true), 503, 'Gateway belum dikonfigurasi.');
+        if ($gateway === 'ipaymu_sandbox') {
+            app(IpaymuService::class)->configuration();
         }
         $input['adminFee'] ??= 0;
         $recent = PaymentTransaction::where('donor_id', $input['donorId'])->where('module_source', $input['moduleSource'])
@@ -32,8 +32,8 @@ class TransactionService
         $row->forceFill([
             ...$input, 'trackingCode' => $this->trackingCode($input['moduleSource']), 'destinationAccountId' => $account->id,
             'isAnonymous' => $input['isAnonymous'] ?? false, 'status' => 'pending', 'gateway' => $gateway,
-            'gatewayState' => 'not_started', 'gatewayMerchantId' => $gateway === 'midtrans_sandbox' ? config('payment.midtrans.merchant_id') : null,
-            'midtransOrderId' => $gateway === 'midtrans_sandbox' ? 'SIP-'.Str::uuid() : null,
+            'gatewayState' => 'not_started', 'gatewayAccountId' => $gateway === 'ipaymu_sandbox' ? config('payment.ipaymu.va') : null,
+            'gatewayReferenceId' => $gateway === 'ipaymu_sandbox' ? 'SIP-'.Str::uuid() : null,
         ])->save();
         $row->refresh();
         DB::afterCommit(fn () => app(ReceiptService::class)->tracking($row));

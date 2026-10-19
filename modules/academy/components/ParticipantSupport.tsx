@@ -2,7 +2,6 @@ import Link from "next/link";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage15 } from "@/modules/academy/api/page-contracts";
 import { requireAcademyTeacher } from "../api/access";
-import { examOpensAt } from "../api/development-policy";
 export async function ParticipantSupport({ compact = false }: {
     compact?: boolean;
 }) {

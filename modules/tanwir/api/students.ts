@@ -1,7 +1,4 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
-import type { TanwirMemberRole } from "./access";
-import type { QuestionInput } from "./tasks";
 export type StudentScope = {
     kind: "peserta";
     memberId: string;
@@ -64,4 +61,4 @@ export type OwnerOptionsResult = {
         name: string;
     };
 }[];
-export async function ownerOptions(scope: StudentScope): Promise<OwnerOptionsResult> { return apiRequest<OwnerOptionsResult>("tanwir/students/owners"); }
+export async function ownerOptions(_scope: StudentScope): Promise<OwnerOptionsResult> { return apiRequest<OwnerOptionsResult>("tanwir/students/owners"); }

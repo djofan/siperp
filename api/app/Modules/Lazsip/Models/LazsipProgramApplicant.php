@@ -3,6 +3,7 @@
 namespace App\Modules\Lazsip\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LazsipProgramApplicant extends DomainModel
 {
@@ -22,7 +23,8 @@ class LazsipProgramApplicant extends DomainModel
 
     protected $hidden = [];
 
-    public function program()
+    /** @return BelongsTo<LazsipProgram, $this> */
+    public function program(): BelongsTo
     {
         return $this->belongsTo(LazsipProgram::class, 'program_id', 'id');
     }

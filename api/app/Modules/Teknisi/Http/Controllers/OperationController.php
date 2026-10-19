@@ -83,7 +83,7 @@ class OperationController
         $data = $request->validate(['outletId' => 'required|string', 'technicianId' => 'nullable|string', 'participantId' => 'nullable|string', 'priority' => 'required|in:normal,urgent', 'dueAt' => 'nullable|date_format:Y-m-d', 'customerName' => 'nullable|string|max:191', 'customerPhone' => 'nullable|string|max:30', 'device' => 'required|string|max:191', 'imei' => 'nullable|string|max:30', 'complaint' => 'required|string|max:3000', 'accessories' => 'nullable|string|max:1000', 'estimate' => 'required|integer|min:0|max:1000000000']);
         $row = DB::transaction(function () use ($data, $actor) {
             $outlet = $this->context->scope(TeknisiOutlet::where('isActive', true), $actor, 'id')->where('id', $data['outletId'])->lockForUpdate()->firstOrFail();
-            $techId = $actor['tech']?->id ?? ($data['technicianId'] ?? null);
+            $techId = $actor['tech'] ? $actor['tech']->id : ($data['technicianId'] ?? null);
             if ($techId) {
                 TeknisiTechnician::where('id', $techId)->where('outletId', $outlet->id)->where('isActive', true)->firstOrFail();
             }
@@ -99,7 +99,7 @@ class OperationController
             $row->technicianId = $techId;
             $row->participantId = $participantId;
             $row->customerName = $participant?->user->name ?? trim($data['customerName'] ?? '');
-            $row->customerPhone = $participant?->phone ?? trim($data['customerPhone'] ?? '');
+            $row->customerPhone = $participant ? $participant->phone : trim($data['customerPhone'] ?? '');
             abort_if(! $row->customerName || ! $row->customerPhone, 422, 'Nama dan telepon pelanggan wajib diisi.');
             $row->dueAt = empty($data['dueAt']) ? null : CarbonImmutable::createFromFormat('!Y-m-d', $data['dueAt'], 'Asia/Jakarta')->endOfDay()->utc();
             $row->status = 'received';
@@ -142,7 +142,7 @@ class OperationController
             abort_unless($row->status === $data['expectedStatus'] && $row->updatedAt->equalTo(CarbonImmutable::parse($data['expectedVersion'])), 409, 'Tiket telah diperbarui. Muat ulang halaman.');
             abort_unless($row->status === $data['status'] || in_array($data['status'], TeknisiContext::TRANSITIONS[$row->status] ?? [], true), 422, 'Perubahan status tidak sesuai alur servis.');
             abort_if($data['status'] === 'collected' && ! $actor['manager'], 403, 'Pengambilan perangkat harus dicatat admin outlet.');
-            $techId = $actor['tech']?->id ?? ($data['technicianId'] ?? null);
+            $techId = $actor['tech'] ? $actor['tech']->id : ($data['technicianId'] ?? null);
             if ($techId) {
                 TeknisiTechnician::where('id', $techId)->where('outletId', $row->outletId)->where('isActive', true)->firstOrFail();
             }
