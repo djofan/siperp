@@ -1,6 +1,6 @@
 export const statuses = {
   received: "Diterima", diagnosis: "Pengecekan", approval: "Menunggu persetujuan",
-  repairing: "Dikerjakan", paused: "Ditunda", ready: "Siap diambil",
+  repairing: "Dikerjakan", waiting_parts: "Menunggu sparepart", ready: "Siap diambil",
   collected: "Sudah diambil", cancelled: "Dibatalkan",
 } as const;
 export type TicketStatus = keyof typeof statuses;
@@ -10,9 +10,9 @@ type ScopeUser = { role: string; technician: { id: string; outletId: string } | 
 export function ticketScope(user: ScopeUser) { return user.role === "technician" ? { outletId: user.technician?.outletId ?? "__no_access__" } : {}; }
 export function outletScope(user: ScopeUser) { return user.role === "technician" ? { id: user.technician?.outletId ?? "__no_access__" } : {}; }
 const transitions: Record<TicketStatus, TicketStatus[]> = {
-  received: ["diagnosis", "repairing", "cancelled"], diagnosis: ["approval", "repairing", "paused", "ready", "cancelled"],
-  approval: ["repairing", "paused", "cancelled"], repairing: ["paused", "ready", "cancelled"],
-  paused: ["diagnosis", "repairing", "approval", "ready", "cancelled"], ready: ["collected"], collected: [], cancelled: [],
+  received: ["diagnosis", "cancelled"], diagnosis: ["approval", "repairing", "waiting_parts", "cancelled"],
+  approval: ["repairing", "waiting_parts", "cancelled"], repairing: ["waiting_parts", "ready", "cancelled"],
+  waiting_parts: ["diagnosis", "repairing", "cancelled"], ready: ["repairing", "collected"], collected: [], cancelled: [],
 };
 export function isStatus(value: string): value is TicketStatus { return Object.hasOwn(statuses, value); }
 export function canTransition(from: string, to: string) { return isStatus(from) && isStatus(to) && (from === to || transitions[from].includes(to)); }
@@ -23,7 +23,7 @@ const fieldLabels: Record<string, string> = {
   customerName: "nama pelanggan", customerPhone: "nomor telepon pelanggan", device: "perangkat",
   imei: "IMEI / nomor seri", complaint: "keluhan", accessories: "kondisi dan kelengkapan",
   ticketId: "tiket", status: "status", expectedStatus: "status sebelumnya", expectedVersion: "versi tiket",
-  note: "catatan",
+  note: "catatan", sku: "kode sparepart", partId: "sparepart",
 };
 export function text(form: FormData, key: string, max = 191, required = true) {
   const value = String(form.get(key) ?? "").trim();

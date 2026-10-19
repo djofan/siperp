@@ -1,7 +1,11 @@
 {
   "name": "teknisi",
   "displayName": "Teknisi HP",
-  "description": "Pengelolaan outlet, tiket servis HP, teknisi, pembayaran, dan monitoring pengerjaan.",
+  "description": "Pengelolaan outlet, tiket servis HP, teknisi, sparepart, dan monitoring pengerjaan.",
   "version": "1.0.0",
-  "providers": { "prismaSchema": "schema.prisma", "publicRoot": "pages", "adminRoot": "admin/pages", "apiRoot": "api" }
+  "providers": {
+    "publicRoot": "pages",
+    "adminRoot": "admin/pages",
+    "apiRoot": "api"
+  }
 }

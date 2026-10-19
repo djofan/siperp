@@ -1,0 +1,119 @@
+model TeknisiParticipant {
+  id String @id @default(cuid())
+  userId String @unique
+  nip String @unique
+  address String @db.Text
+  phone String? @unique
+  createdAt DateTime @default(now())
+  deletedAt DateTime? @map("deleted_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  tickets TeknisiTicket[]
+  @@map("teknisi_participants")
+}
+
+model TeknisiOutlet {
+  id        String @id @default(cuid())
+  name      String
+  address   String @db.Text
+  phone     String
+  isActive  Boolean @default(true)
+  createdAt DateTime @default(now())
+  technicians TeknisiTechnician[]
+  tickets TeknisiTicket[]
+  parts TeknisiPart[]
+  @@map("teknisi_outlets")
+}
+
+model TeknisiTechnician {
+  id String @id @default(cuid())
+  userId String @unique
+  name String
+  outletId String
+  specialty String
+  isActive Boolean @default(true)
+  activeOutletId String? @unique @map("active_outlet_id")
+  outlet TeknisiOutlet @relation(fields: [outletId], references: [id])
+  tickets TeknisiTicket[]
+  @@map("teknisi_technicians")
+}
+
+model TeknisiTicket {
+  id String @id @default(cuid())
+  number String @unique
+  trackingToken String @unique
+  outletId String
+  technicianId String?
+  participantId String?
+  customerName String
+  customerPhone String
+  device String
+  imei String?
+  complaint String @db.Text
+  accessories String? @db.Text
+  status String @default("received")
+  priority String @default("normal")
+  estimate Int @default(0)
+  serviceCost Int @default(0)
+  dueAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  outlet TeknisiOutlet @relation(fields: [outletId], references: [id])
+  technician TeknisiTechnician? @relation(fields: [technicianId], references: [id])
+  participant TeknisiParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  events TeknisiEvent[]
+  partUses TeknisiPartUse[]
+  @@index([outletId, status, createdAt])
+  @@index([technicianId, status])
+  @@index([participantId])
+  @@map("teknisi_tickets")
+}
+
+model TeknisiEvent {
+  id String @id @default(cuid())
+  ticketId String
+  status String
+  note String @db.Text
+  actorName String
+  createdAt DateTime @default(now())
+  ticket TeknisiTicket @relation(fields: [ticketId], references: [id])
+  @@index([ticketId, createdAt])
+  @@map("teknisi_events")
+}
+
+model TeknisiPart {
+  id String @id @default(cuid())
+  outletId String
+  sku String
+  name String
+  stock Int @default(0)
+  minimum Int @default(3)
+  price Int @default(0)
+  outlet TeknisiOutlet @relation(fields: [outletId], references: [id])
+  uses TeknisiPartUse[]
+  movements TeknisiStockMovement[]
+  @@unique([outletId, sku])
+  @@map("teknisi_parts")
+}
+
+model TeknisiPartUse {
+  id String @id @default(cuid())
+  ticketId String
+  partId String
+  quantity Int
+  unitPrice Int
+  createdAt DateTime @default(now())
+  ticket TeknisiTicket @relation(fields: [ticketId], references: [id])
+  part TeknisiPart @relation(fields: [partId], references: [id])
+  @@map("teknisi_part_uses")
+}
+
+model TeknisiStockMovement {
+  id String @id @default(cuid())
+  partId String
+  quantity Int
+  note String
+  actorName String
+  createdAt DateTime @default(now())
+  part TeknisiPart @relation(fields: [partId], references: [id])
+  @@map("teknisi_stock_movements")
+}

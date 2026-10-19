@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { listEntries } from "@/modules/sarsip/api/data";
 import { KINDS, type EntryKind } from "@/modules/sarsip/api/data";
 
 const labels = { kegiatan: "Kegiatan lain", berita: "Berita lain", campaign: "Campaign lain" };
@@ -9,11 +9,7 @@ export async function RelatedEntries({ currentId, kind }: { currentId: string; k
   const kinds = [kind, ...KINDS.filter((item) => item !== kind)];
   const groups = await Promise.all(kinds.map(async (category) => ({
     category,
-    entries: await prisma.sarsipEntry.findMany({
-      where: { kind: category, id: { not: currentId }, status: { in: ["published", "completed"] } },
-      select: { id: true, title: true, image: true, description: true },
-      orderBy: { createdAt: "desc" }, take: 3,
-    }),
+    entries: (await listEntries(category)).filter(entry => entry.id !== currentId).slice(0, 3),
   })));
   return <div className="space-y-6" aria-label="Konten SARSIP lainnya">
     {groups.map(({ category, entries }) => <section key={category} className="rounded-2xl border border-slate-200 bg-white p-5">

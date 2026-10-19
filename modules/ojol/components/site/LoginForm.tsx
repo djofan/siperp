@@ -24,7 +24,7 @@ export function LoginForm() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(body?.error ?? "Tidak dapat masuk.");
+        setError((body?.error?.message ?? body?.error) ?? "Tidak dapat masuk.");
         return;
       }
       router.replace(body?.redirectTo ?? "/ojol");

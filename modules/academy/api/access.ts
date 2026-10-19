@@ -2,31 +2,18 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { apiRequest, ApiError } from "@/lib/api";
 import { getSession } from "@/lib/auth";
 
 export const getAcademyUser = cache(async () => {
-  const session = await getSession();
-  if (!session) return null;
-  const user = await prisma.user.findFirst({
-    where: { id: session.userId, isActive: true },
-    select: { id: true, name: true, isSuperadmin: true, moduleAccess: { where: { module: { slug: "academy" } }, select: { role: true } } },
-  });
-  if (!user) return null;
-  const academyProfile = await getAcademyAvailability()
-    ? await prisma.zakatAcademyProfile.findUnique({ where: { userId: user.id }, select: { id: true, nis: true, mustChangePassword: true, deletedAt: true } })
-    : null;
-  if (academyProfile?.deletedAt && !user.isSuperadmin && !user.moduleAccess.some(access => ["admin", "teacher"].includes(access.role))) return null;
-  return { ...user, academyProfile: academyProfile?.deletedAt ? null : academyProfile, isTeacher: user.moduleAccess.some(access => access.role === "teacher") };
+  if (!await getSession()) return null;
+  try { return await apiRequest<{ id: string; name: string; isSuperadmin: boolean; moduleAccess: { role: string }[]; academyProfile: { id: string; nis: string | null; mustChangePassword: boolean; deletedAt: null } | null; isTeacher: boolean }>("academy/viewer"); }
+  catch (error) { if (error instanceof ApiError && [401, 403].includes(error.status)) return null; throw error; }
 });
 
 export const getAcademyAvailability = cache(async () => {
   await connection();
-  const academyModule = await prisma.module.findUnique({ where: { slug: "academy" }, select: { isActive: true } });
-  // Registry belum di-seed: beranda tetap bisa dibaca tanpa mengakses tabel academy.
-  if (!academyModule?.isActive) return false;
-  const setting = await prisma.zakatAcademySetting.findUnique({ where: { key: "maintenance_mode" }, select: { value: true } });
-  return setting?.value !== "true";
+  return apiRequest<boolean>("academy/availability");
 });
 
 export async function requireAcademyAvailable() {

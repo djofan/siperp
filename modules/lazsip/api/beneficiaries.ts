@@ -1,110 +1,22 @@
-import { prisma } from "@/lib/prisma";
-
-// --- Admin (semua field, termasuk yang sensitif) ---
-
-export async function listBeneficiariesForAdmin() {
-  return prisma.lazsipBeneficiary.findMany({ orderBy: { createdAt: "desc" } });
-}
-
+import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import type { LazsipBeneficiary } from "@/lib/domain";
+type PublicCard = Pick<LazsipBeneficiary, "id" | "name" | "age" | "amountReceived" | "aidType" | "photo" | "isPinned" | "verifierArea" | "verifierName">;
+type PublicDetail = Pick<LazsipBeneficiary, "id" | "name" | "age" | "problemFaced" | "gender" | "photo" | "referralSource" | "needs" | "aidType" | "amountReceived" | "verifierName" | "verifierArea">;
+export async function listBeneficiariesForAdmin() { return apiCollection<LazsipBeneficiary>("lazsip/admin/beneficiaries"); }
 export async function getBeneficiaryForAdmin(id: string) {
-  return prisma.lazsipBeneficiary.findUnique({ where: { id } });
+  try { return await apiRequest<LazsipBeneficiary>(`lazsip/admin/beneficiaries/${encodeURIComponent(id)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-
-interface BeneficiaryInput {
-  name: string;
-  address: string;
-  problemFaced: string;
-  birthDate: Date;
-  age: number;
-  gender: string;
-  referralSource: string;
-  photo?: string;
-  needs: string;
-  aidType: string;
-  amountReceived: number;
-  verifierName: string;
-  verifierArea: string;
-  maritalStatus: string;
-  nik?: string;
-  occupation?: string;
-  monthlyIncome?: number;
-  dependentsCount?: number;
-  dependentsDetail?: string;
-  isPinned: boolean;
-}
-
-export async function createBeneficiary(input: BeneficiaryInput) {
-  return prisma.lazsipBeneficiary.create({ data: input });
-}
-
-export async function updateBeneficiary(id: string, input: BeneficiaryInput) {
-  return prisma.lazsipBeneficiary.update({ where: { id }, data: input });
-}
-
-export async function deleteBeneficiary(id: string) {
-  await prisma.lazsipBeneficiary.delete({ where: { id } });
-}
-
-// --- Publik (§7-CHECKPOINT: whitelist eksplisit, JANGAN tambah address/birthDate/maritalStatus) ---
-
-const PUBLIC_CARD_SELECT = {
-  id: true,
-  name: true,
-  age: true,
-  amountReceived: true,
-  aidType: true,
-  photo: true,
-  isPinned: true,
-  verifierArea: true,
-  verifierName: true,
-} as const;
-
-const PUBLIC_DETAIL_SELECT = {
-  id: true,
-  name: true,
-  age: true,
-  problemFaced: true,
-  gender: true,
-  photo: true,
-  referralSource: true,
-  needs: true,
-  aidType: true,
-  amountReceived: true,
-  verifierName: true,
-  verifierArea: true,
-} as const;
-
 export async function listBeneficiariesPublic(aidType?: string, verifierName?: string) {
-  return prisma.lazsipBeneficiary.findMany({
-    where: {
-      ...(aidType ? { aidType } : {}),
-      ...(verifierName ? { verifierName } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-    select: PUBLIC_CARD_SELECT,
-  });
+  const query = new URLSearchParams();
+  if (aidType) query.set("aidType", aidType); if (verifierName) query.set("verifierName", verifierName);
+  return apiCollection<PublicCard>("lazsip/beneficiaries?" + query);
 }
-
 export async function getBeneficiaryPublicById(id: string) {
-  return prisma.lazsipBeneficiary.findUnique({ where: { id }, select: PUBLIC_DETAIL_SELECT });
+  try { return await apiRequest<PublicDetail>(`lazsip/beneficiaries/${encodeURIComponent(id)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-
-export async function countBeneficiaries() {
-  return prisma.lazsipBeneficiary.count();
-}
-
-export async function listDistinctVerifierAreas() {
-  const rows = await prisma.lazsipBeneficiary.findMany({
-    select: { verifierArea: true },
-    distinct: ["verifierArea"],
-  });
-  return rows.map((r) => r.verifierArea).sort();
-}
-
-export async function listDistinctVerifierNames() {
-  const rows = await prisma.lazsipBeneficiary.findMany({
-    select: { verifierName: true },
-    distinct: ["verifierName"],
-  });
-  return rows.map((r) => r.verifierName).sort();
-}
+async function filters() { return apiRequest<{ count: number; areas: string[]; names: string[] }>("lazsip/verifier-filters"); }
+export async function countBeneficiaries() { return (await filters()).count; }
+export async function listDistinctVerifierAreas() { return (await filters()).areas; }
+export async function listDistinctVerifierNames() { return (await filters()).names; }

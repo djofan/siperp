@@ -103,7 +103,7 @@ export function LoginForm() {
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Email atau password salah.");
+      setError((data?.error?.message ?? data?.error) ?? "Email atau password salah.");
       return;
     }
 

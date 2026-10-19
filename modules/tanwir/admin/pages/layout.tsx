@@ -4,14 +4,14 @@ import "@/modules/tanwir/components/admin/admin.css";
 import "@/modules/tanwir/components/admin/reference.css";
 import { tanwirSerif } from "@/modules/tanwir/components/fonts";
 import { ModuleInactiveNotice } from "@/components/admin-shell/ModuleInactiveNotice";
-import { prisma } from "@/lib/prisma";
+import { listModules } from "@/modules/core/modules";
 import { requireTanwirAdmin } from "@/modules/tanwir/api/access";
 
 export const metadata = { title: "Admin Tanwir Qurani", robots: { index: false, follow: false } };
 
 export default async function TanwirAdminLayout({ children }: { children: React.ReactNode }) {
   const viewer = await requireTanwirAdmin();
-  const registered = await prisma.module.findUnique({ where: { slug: "tanwir" }, select: { isActive: true } });
+  const registered = (await listModules()).find(module => module.slug === "tanwir");
   return <div className={`${tanwirSerif.variable} tanwir-experience tanwir-admin`}>
     <AdminShell userName={viewer.sessionName}
       nav={[

@@ -1,8 +1,12 @@
 <?php
 
+use App\Http\Middleware\AuthenticateApiCookie;
 use App\Http\Middleware\RequireValidJson;
 use App\Http\Resources\ErrorResource;
+use App\Modules\Core\Http\Middleware\RequireActiveUser;
 use App\Modules\Core\Http\Middleware\RequireModuleAccess;
+use App\Modules\Core\Http\Middleware\RequirePublicModule;
+use App\Modules\Core\Http\Middleware\RequireSuperadmin;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -14,7 +18,8 @@ use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(api: __DIR__.'/../routes/api.php', apiPrefix: 'api/v1', commands: __DIR__.'/../routes/console.php')
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias(['module.access' => RequireModuleAccess::class]);
+        $middleware->alias(['module.access' => RequireModuleAccess::class, 'module.public' => RequirePublicModule::class, 'user.active' => RequireActiveUser::class, 'superadmin' => RequireSuperadmin::class]);
+        $middleware->prependToGroup('api', AuthenticateApiCookie::class);
         $middleware->appendToGroup('api', RequireValidJson::class);
         // Bearer only: do not enable statefulApi().
     })

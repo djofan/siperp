@@ -1,10 +1,12 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { apiRequest, ApiError } from "@/lib/api";
+import type { CoreModule } from "./modules";
 
 async function findModule(slug: string) {
-  return prisma.module.findUnique({ where: { slug }, select: { slug: true, name: true, isActive: true } });
+  try { return await apiRequest<CoreModule>(`core/modules/${encodeURIComponent(slug)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
 
 // Guard admin modul. Modul NONAKTIF tetap bisa dibuka superadmin (buat ngetes modul yang

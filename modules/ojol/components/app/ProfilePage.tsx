@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getOwnProfile } from "@/modules/ojol/api/members";
 import { changePasswordAction, updateProfileAction } from "@/modules/ojol/api/actions/profile";
 import { Card, PageTitle, Pill, SectionTitle } from "@/modules/ojol/components/ui";
 import { photoUrl } from "./media";
@@ -7,10 +7,7 @@ import { PasswordForm, ProfileForm } from "./ProfileForms";
 
 /** Halaman profil bersama guru & peserta (server component). */
 export async function ProfilePage({ memberId }: { memberId: string }) {
-  const member = await prisma.ojolMember.findUnique({
-    where: { id: memberId },
-    include: { user: { select: { name: true, email: true } }, group: { select: { name: true, code: true } } },
-  });
+  const member = await getOwnProfile();
   if (!member) notFound();
   const email = member.user.email.endsWith(".invalid") ? null : member.user.email;
 

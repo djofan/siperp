@@ -4,14 +4,14 @@ import "@/modules/ojol/components/admin/admin.css";
 import "@/modules/ojol/components/admin/reference.css";
 import { ojolDisplay } from "@/modules/ojol/components/fonts";
 import { ModuleInactiveNotice } from "@/components/admin-shell/ModuleInactiveNotice";
-import { prisma } from "@/lib/prisma";
+import { listModules } from "@/modules/core/modules";
 import { requireOjolAdmin } from "@/modules/ojol/api/access";
 
 export const metadata = { title: "Admin Ojol Mengaji", robots: { index: false, follow: false } };
 
 export default async function OjolAdminLayout({ children }: { children: React.ReactNode }) {
   const viewer = await requireOjolAdmin();
-  const registered = await prisma.module.findUnique({ where: { slug: "ojol" }, select: { isActive: true } });
+  const registered = (await listModules()).find(module => module.slug === "ojol");
   return <div className={`${ojolDisplay.variable} ojol-experience ojol-admin`}>
     <AdminShell userName={viewer.sessionName}
       nav={[
