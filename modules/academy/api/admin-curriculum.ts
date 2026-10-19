@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { AcademyError } from "./errors";
 import { courseInput, chapterInput, lessonInput, attachmentInput } from "./admin-validation";
 
+import { prepareAudioUpload } from "./audio-upload";
+
 // Service internal: setiap pemanggil halaman/Server Action wajib requireAcademyAdmin().
 // Jangan diekspor sebagai endpoint publik atau mengirim record kuis/snapshot ke client.
 export async function curriculumStats() {
@@ -121,15 +123,22 @@ export async function saveChapter(courseId: string, id: string | null, form: For
 }
 
 export async function saveLesson(courseId: string, chapterId: string, id: string | null, form: FormData) {
-  const data = lessonInput(form);
-  return transaction(async (tx) => {
-    await chapterExists(tx, courseId, chapterId);
-    if (id) {
-      await lessonExists(tx, courseId, chapterId, id);
-      return tx.zakatAcademyLesson.update({ where: { id }, data, select: { id: true } });
-    }
-    return tx.zakatAcademyLesson.create({ data: { ...data, chapterId }, select: { id: true } });
-  });
+  const chapter = await prisma.zakatAcademyChapter.findFirst({ where: { id: chapterId, courseId }, select: { id: true } });
+  if (!chapter) throw new AcademyError("Bab tidak ditemukan pada program ini.");
+  const audio = await prepareAudioUpload(form);
+  try {
+    if (audio) { form.set("videoProvider", "AUDIO"); form.set("videoUrl", audio.fileUrl); }
+    const data = lessonInput(form);
+    return await transaction(async (tx) => {
+      await chapterExists(tx, courseId, chapterId);
+      if (id) await lessonExists(tx, courseId, chapterId, id);
+      const lessonData = { ...data, ...(audio ? { videoProvider: "AUDIO" as const, videoUrl: audio.fileUrl } : {}) };
+      const lesson = id ? await tx.zakatAcademyLesson.update({ where: { id }, data: lessonData, select: { id: true } })
+        : await tx.zakatAcademyLesson.create({ data: { ...lessonData, chapterId }, select: { id: true } });
+      if (audio) await tx.zakatAcademyLessonAttachment.create({ data: { ...audio.attachment, lessonId: lesson.id } });
+      return lesson;
+    });
+  } catch (error) { await audio?.cleanup(); throw error; }
 }
 
 export async function saveAttachment(courseId: string, chapterId: string, lessonId: string, id: string | null, form: FormData) {

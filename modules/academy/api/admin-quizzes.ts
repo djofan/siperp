@@ -61,7 +61,8 @@ async function requireReady(tx: Prisma.TransactionClient, quizId: string) {
     type: true,
     options: { select: { isCorrect: true } },
   } });
-  if (!questions.length || questions.some(question => question.options.length < 2 || question.options.length > 10
+  if (!questions.length) throw new AcademyError("Kuis belum memiliki soal. Tambahkan dan simpan minimal satu soal beserta opsi dan kunci jawaban, lalu publikasikan kuis.");
+  if (questions.some(question => question.options.length < 2 || question.options.length > 10
     || (question.type === "MULTIPLE" ? !question.options.some(option => option.isCorrect) || question.options.every(option => option.isCorrect) : question.options.filter(option => option.isCorrect).length !== 1)
     || question.type === "TRUE_FALSE" && question.options.length !== 2)) {
     throw new AcademyError("Periksa jenis soal, opsi dan kunci jawaban sebelum publikasi.");

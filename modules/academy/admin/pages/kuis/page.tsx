@@ -2,8 +2,8 @@ import Link from "next/link";
 import { requireAcademyAdmin } from "@/modules/academy/api/admin-access";
 import { listAdminQuizzes } from "@/modules/academy/api/admin-quizzes";
 import { AdminHeading, AddLink, AdminEmpty, PublishBadge } from "@/modules/academy/components/admin/AdminUi";
-import { Input } from "@/components/ui/FormField";
-import { Button } from "@/components/ui/Button";
+import { Input } from "@/modules/academy/components/ui/FieldCompat";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requireAcademyAdmin();
   const query = await searchParams;

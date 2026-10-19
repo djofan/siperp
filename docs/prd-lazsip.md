@@ -2,14 +2,16 @@
 
 **Bagian dari:** Platform Modular SIP (lihat `PRD.md` untuk arsitektur & roadmap keseluruhan)
 **Fase:** 1 (dikerjakan pertama)
-**Stack modul ini:** Next.js (App Router), Prisma, MySQL — native, tanpa backend terpisah
-**Status:** Draft untuk direview sebelum eksekusi
+**Stack modul ini:** Next.js (App Router), Prisma, MySQL — backend saat ini masih di Next.js; **belum dimigrasikan ke Laravel** (lihat `arsitektur.md` §7). Tidak ada backend terpisah per modul.
+**Status:** Berjalan, penyempurnaan
+
+> **Catatan arsitektur (14 Oktober 2026):** migrasi backend LAZSIP ke Laravel **tidak mengubah scope fitur maupun aturan bisnis** di dokumen ini. Aturan bisnis (§6) dan aturan privasi tetap berlaku penuh; di Laravel, privasi dijaga dengan API Resource yang memilih field secara eksplisit. Rincian di [`arsitektur.md`](arsitektur.md).
 
 ---
 
 ## 1. Ringkasan
 
-LAZSIP (LAZ Solidaritas Insan Peduli) adalah divisi zakat & donasi di bawah SIP. Modul ini menggantikan `lazsip.or.id` (WordPress) dan menuntaskan pekerjaan yang sudah dimulai di repo `lazsiplp`, dengan menulis ulang seluruhnya sebagai modul native di platform baru — mengikuti struktur folder standar (`app/(public)/lazsip`, `app/admin/lazsip`, `app/api/lazsip`, `modules/lazsip`, `components/lazsip`, `prisma/schema/lazsip.prisma`) dan terhubung ke sistem auth Core (bukan login sendiri lagi).
+LAZSIP (LAZ Solidaritas Insan Peduli) adalah divisi zakat & donasi di bawah SIP. Modul ini menggantikan `lazsip.or.id` (WordPress) dan menuntaskan pekerjaan yang sudah dimulai di repo `lazsiplp`, dengan menulis ulang seluruhnya sebagai modul native di platform baru — mengikuti struktur folder standar (file jembatan di `app/(public)/lazsip` dan `app/admin/lazsip`; isi di `modules/lazsip/{pages, admin/pages, components, api, schema.prisma}` — lihat `CLAUDE.md` §4) dan terhubung ke sistem auth Core (bukan login sendiri lagi).
 
 **Aset yang di-reuse:** komponen React dari `lazsiplp` (sudah sesuai arah desain), serta aturan bisnis yang sudah terbukti jalan di backend Go sebelumnya (validasi, kalkulasi zakat, aturan privasi data penerima manfaat).
 
@@ -122,7 +124,7 @@ Dua alur terpisah, tujuannya beda:
 ### 4.6 Dashboard Overview
 - Statistik ringkas: total donasi/zakat bulan berjalan, campaign paling banyak terkumpul, transaksi terbaru, jumlah pendaftar baru, jumlah donatur baru vs donatur lama (repeat).
 
-## 5. Skema Data (`prisma/schema/lazsip.prisma`)
+## 5. Skema Data (`modules/lazsip/schema.prisma`)
 
 ```
 News            id, title, content, image, is_pinned, status, created_at
@@ -199,6 +201,7 @@ PaymentFeeRef   id, method, fee_amount / fee_percentage
 - Kode pelacakan otomatis ter-generate unik tiap transaksi, ditampilkan di layar, dan (kalau email diisi) terkirim ke email lewat Resend. Halaman Cek Status Pembayaran berfungsi untuk semua donatur (cukup modal kode pelacakan).
 - Fitur Cek Riwayat berfungsi untuk email (mengirim data lewat email, bukan menampilkan langsung di layar), dan tidak membocorkan status terdaftar/tidaknya suatu email. Input WA di fitur ini boleh belum ada di Fase 1.
 - Modul mengikuti struktur folder standar platform, siap dijadikan acuan pola untuk modul-modul berikutnya.
+- (Fase migrasi) Saat dimigrasikan ke Laravel: endpoint mengikuti `api/docs/CONVENTIONS.md`, terdaftar di `api/docs/openapi.json`, dan semua aturan privasi §6 lulus uji di level API Resource.
 
 ## 10. Design Pattern — Admin Dashboard
 

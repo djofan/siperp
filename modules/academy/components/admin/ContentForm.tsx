@@ -1,10 +1,14 @@
 "use client";
 
+import { Textarea } from "../ui/textarea";
+
 import { useActionState, useId, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
+
+import { AudioUploadField } from "../AudioUploadField";
 
 type Values = {
   title?: string; slug?: string; order?: number; isPublished?: boolean;
@@ -58,7 +62,7 @@ export function ContentForm({ kind, action, initial = {} }: {
       const value = String(values[field.name] ?? "");
       const maxLength = field.name === "slug" ? 160 : field.long ? (field.name === "shortDescription" ? 2000 : 30_000) : field.name.endsWith("Url") ? 2048 : 191;
       return <FormField key={field.name} label={`${field.label}${field.required ? " *" : ""}`} htmlFor={id} hint={field.hint}>
-        {field.long ? <textarea id={id} name={field.name} required={field.required} maxLength={maxLength} rows={5}
+        {field.long ? <Textarea id={id} name={field.name} required={field.required} maxLength={maxLength} rows={5}
           value={value} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}
           className="w-full rounded-xl border border-border bg-surface px-3 py-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft" />
           : <Input id={id} name={field.name} type={field.number ? "number" : "text"} min={field.number ? 0 : undefined} max={field.number ? 2147483647 : undefined} step={field.number ? 1 : undefined}
@@ -71,6 +75,7 @@ export function ContentForm({ kind, action, initial = {} }: {
       Publikasikan {kind === "course" ? "program" : kind === "chapter" ? "bab" : "materi"}
     </label>}
     {kind !== "course" && kind !== "attachment" && <p className="text-xs text-foreground/60">Konten tampil kepada peserta hanya jika induknya juga dipublikasikan.</p>}
+    {kind === "lesson" && values.videoProvider === "AUDIO" && <AudioUploadField />}
     <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : "Simpan perubahan"}</Button>
   </form>;
 }

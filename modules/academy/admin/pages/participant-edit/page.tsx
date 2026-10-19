@@ -6,7 +6,7 @@ import { editAcademyAccount } from "../../../api/participant-registration";
 import { ParticipantRegistrationFields } from "@/components/auth/ParticipantRegistrationFields";
 import { ActionForm } from "../../../components/ActionForm";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/modules/academy/components/ui/CardCompat";
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   await requireAcademyAdmin();
   const { id } = await params;

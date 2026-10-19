@@ -8,6 +8,7 @@ import { lessonInput } from "./admin-validation";
 import { saveAdminQuiz, saveAdminQuestion } from "./admin-quizzes";
 import { AcademyError } from "./errors";
 import type { ActionState } from "./actions";
+import { prepareAudioUpload } from "./audio-upload";
 function failure(error: unknown): ActionState {
   return { error: error instanceof AcademyError ? error.message : "Data belum dapat disimpan. Coba kembali." };
 }
@@ -22,9 +23,17 @@ export async function saveTeacherMaterial(id: string | null, _: ActionState, for
       if (!existing || existing.chapterId !== chapterId) throw new AcademyError("Materi tidak ditemukan dalam bab ini.");
       form.set("slug", existing.slug);
     } else form.set("slug", `materi-${randomUUID()}`);
-    const data = lessonInput(form);
-    if (id) await prisma.zakatAcademyLesson.update({ where: { id }, data });
-    else await prisma.zakatAcademyLesson.create({ data: { ...data, chapterId } });
+    const audio = await prepareAudioUpload(form);
+    try {
+      if (audio) form.set("videoUrl", audio.fileUrl);
+      const data = lessonInput(form);
+      await prisma.$transaction(async tx => {
+        const lessonData = { ...data, ...(audio ? { videoUrl: audio.fileUrl } : {}) };
+        const lesson = id ? await tx.zakatAcademyLesson.update({ where: { id }, data: lessonData })
+          : await tx.zakatAcademyLesson.create({ data: { ...lessonData, chapterId } });
+        if (audio) await tx.zakatAcademyLessonAttachment.create({ data: { ...audio.attachment, lessonId: lesson.id } });
+      });
+    } catch (error) { await audio?.cleanup(); throw error; }
   } catch (error) { return failure(error); }
   revalidatePath("/academy", "layout");
   return { error: "", message: "Materi tersimpan." };

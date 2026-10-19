@@ -4,6 +4,8 @@
 > Disusun dari pembedahan kode aplikasi lama `djofan/ojol-mengaji` (Laravel 12 + Filament).
 > Aplikasi lama ini adalah "saudara" Tanwir Qurani (± 85% kodenya sama), jadi PRD ini **hanya mencatat
 > perbedaannya**. Semua hal yang tidak disebut di sini mengikuti `docs/prd-tanwir.md`.
+>
+> **Catatan arsitektur (14 Oktober 2026):** backend modul ini saat ini di Next.js dan **belum dimigrasikan ke Laravel** (lihat `docs/arsitektur.md` §7). "Aplikasi lama" di dokumen ini adalah `djofan/ojol-mengaji` (Laravel/Filament, repo terpisah), **bukan** `api/` di repo ini. Migrasi mengikuti Tanwir karena strukturnya hampir sama.
 
 ## 1. Ringkasan
 

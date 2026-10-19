@@ -2,8 +2,10 @@
 
 **Bagian dari:** Platform Modular SIP (lihat `PRD.md` untuk arsitektur & roadmap keseluruhan)
 **Fase:** 2
-**Stack modul ini:** Next.js (App Router), Prisma, MySQL — native, tanpa backend terpisah, mengikuti struktur `modules/sip/` (lihat `CLAUDE.md` §4)
-**Status:** Draft berdasarkan hasil riset langsung ke `insanpeduli.org` (WordPress/Elementor, situs lama yang digantikan)
+**Stack modul ini:** Next.js (App Router), Prisma, MySQL — backend saat ini masih di Next.js, **belum dimigrasikan ke Laravel** (lihat `arsitektur.md` §7); tanpa backend terpisah per modul; mengikuti struktur `modules/sip/` (lihat `CLAUDE.md` §4)
+**Status:** Berjalan; spesifikasi disusun dari riset langsung ke `insanpeduli.org` (WordPress/Elementor, situs lama yang digantikan)
+
+> **Catatan arsitektur (14 Oktober 2026):** modul SIP tidak menangani uang, sehingga risikonya terendah untuk dimigrasikan ke Laravel, tetapi urutan migrasi tetap mengikuti [`arsitektur.md`](arsitektur.md) §7. Folder `modules/sip/api/` pada §6 poin 3 hanya ada selama backend masih di Next.js.
 
 ---
 

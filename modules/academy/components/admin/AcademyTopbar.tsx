@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { AcademyThemeToggle } from "@/modules/academy/components/admin/AcademyThemeToggle";
 import type { AcademyTheme } from "@/modules/academy/components/admin/useAcademyTheme";
 

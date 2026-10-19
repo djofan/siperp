@@ -1,8 +1,10 @@
 "use client";
 
+import { Textarea } from "../ui/textarea";
+
 import { useActionState, useId, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField, Input } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField, Input } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 
@@ -13,8 +15,9 @@ type Values = {
   releaseDay?: number;
 };
 
-export function QuizForm({ action, initial, creating = false, chapterField }: {
+export function QuizForm({ action, initial, creating = false, chapterField, questionCount }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: Values; creating?: boolean; chapterField?: ReactNode;
+  questionCount?: number;
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [values, setValues] = useState<Values>(initial ?? {
@@ -24,10 +27,11 @@ export function QuizForm({ action, initial, creating = false, chapterField }: {
   return <form action={formAction} className={panelClasses("space-y-5 p-5 sm:p-6")}>
     {chapterField}
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
+    {!creating && questionCount === 0 && <p role="status" className="rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Kuis belum memiliki soal. <a href="#pertanyaan" className="font-semibold underline">Tambahkan dan simpan soal</a> beserta opsi dan kunci jawaban terlebih dahulu, lalu centang Publikasikan kuis dan simpan.</p>}
     <label className="block text-sm">Jenis evaluasi<select name="kind" value={values.kind ?? "DAILY"} onChange={event => setValues({ ...values, kind: event.target.value })} className="mt-2 w-full rounded-xl border border-border p-3"><option value="DAILY">Harian</option><option value="WEEKLY">Mingguan</option><option value="FINAL">Ujian per bab (akhir bulan)</option></select></label>
     <FormField label="Judul kuis *" htmlFor={prefix + "-title"}><Input id={prefix + "-title"} name="title" required maxLength={191} value={values.title} onChange={event => setValues({ ...values, title: event.target.value })} /></FormField>
     <label className="block text-sm">Hari evaluasi (1–30 sejak program dimulai)<Input name="releaseDay" type="number" min={1} max={30} required defaultValue={initial?.releaseDay ?? 1} /></label>
-    <FormField label="Deskripsi" htmlFor={prefix + "-description"}><textarea id={prefix + "-description"} name="description" maxLength={30000} rows={4} value={values.description} onChange={event => setValues({ ...values, description: event.target.value })} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" /></FormField>
+    <FormField label="Deskripsi" htmlFor={prefix + "-description"}><Textarea id={prefix + "-description"} name="description" maxLength={30000} rows={4} value={values.description} onChange={event => setValues({ ...values, description: event.target.value })} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" /></FormField>
     <div className="grid gap-5 sm:grid-cols-2">{([
       ["passingScore", "Nilai lulus (0–100)", 0, 100], ["timeLimitMinutes", "Durasi (menit, maksimal 24 jam)", 1, 1440],
     ] as const).map(([name, label, min, max]) => <FormField key={name} label={label} htmlFor={prefix + name}><Input id={prefix + name} name={name} type="number" min={min} max={max} step={1} required value={values[name]} onChange={event => setValues({ ...values, [name]: event.target.value })} /></FormField>)}</div>

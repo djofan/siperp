@@ -16,7 +16,7 @@ export default async function Page({ params, searchParams }: {
   if (!quiz) notFound();
   return <><AdminHeading title={quiz.title} description={`Bab: ${quiz.chapter.title} · ${quiz._count.attempts} percobaan peserta`} backHref={`/admin/academy/program/${courseId}/bab/${chapterId}`} />
     <SavedNotice saved={(await searchParams).tersimpan === "1"} />
-    <QuizForm action={saveAcademyQuiz.bind(null, courseId, chapterId, quizId)} initial={{
+    <QuizForm questionCount={quiz.questions.length} action={saveAcademyQuiz.bind(null, courseId, chapterId, quizId)} initial={{
       title: quiz.title, description: quiz.description ?? "", passingScore: quiz.passingScore, timeLimitMinutes: quiz.timeLimitMinutes,
       quizDate: quizDateInput(quiz.quizDate), isPublished: quiz.isPublished, isActive: quiz.isActive, allowRetake: quiz.allowRetake,
       kind: quiz.kind, closesAt: quizDateInput(quiz.closesAt),
@@ -30,7 +30,7 @@ export default async function Page({ params, searchParams }: {
           <DeleteForm title={"pertanyaan " + (index + 1)} description="Pertanyaan beserta opsi dihapus dari kuis. Soal dan jawaban pada percobaan yang sudah dimulai tetap tersimpan." action={deleteAcademyQuestion.bind(null, courseId, chapterId, quizId, question.id)} />
         </div>
       </details>) : <AdminEmpty>Belum ada pertanyaan. Tambahkan sebelum mempublikasikan kuis.</AdminEmpty>}
-      <details className="rounded-2xl bg-surface p-5"><summary className="cursor-pointer font-semibold text-accent">Tambah pertanyaan</summary><div className="mt-5"><QuestionForm key={quiz.questions.length} action={saveAcademyQuestion.bind(null, courseId, chapterId, quizId, null)} /></div></details>
+      <details open={quiz.questions.length === 0} className="rounded-2xl bg-surface p-5"><summary className="cursor-pointer font-semibold text-accent">Tambah pertanyaan</summary><div className="mt-5"><QuestionForm key={quiz.questions.length} action={saveAcademyQuestion.bind(null, courseId, chapterId, quizId, null)} /></div></details>
     </section>
     <DeleteForm title={quiz.title} description="Kuis beserta pertanyaan dan opsi dihapus permanen. Kuis yang sudah memiliki percobaan peserta tidak dapat dihapus; nonaktifkan publikasinya." action={deleteAcademyQuiz.bind(null, courseId, chapterId, quizId)} />
   </>;
