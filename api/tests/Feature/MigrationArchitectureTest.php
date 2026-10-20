@@ -31,6 +31,21 @@ it('returns stable JSON errors without exposing internal exceptions', function (
     expect($response->getContent())->not->toContain('database', 'private');
 });
 
+it('resolves the encrypted backup service from its console command', function () {
+    $directory = storage_path('framework/testing/backup-cli-'.bin2hex(random_bytes(6)));
+    config(['backup.directory' => $directory]);
+
+    try {
+        $this->artisan('erp:backup', ['operation' => 'list'])
+            ->expectsOutput('[]')
+            ->assertSuccessful();
+    } finally {
+        if (is_dir($directory)) {
+            rmdir($directory); // This test only creates an empty, uniquely named directory.
+        }
+    }
+});
+
 it('passes the full migrated API flow against an isolated in-memory database', function () {
     $process = new Process([PHP_BINARY, base_path('tools/verify-migration.php')], base_path(), timeout: 120);
     $process->run();
