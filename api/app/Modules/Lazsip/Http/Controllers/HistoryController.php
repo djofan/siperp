@@ -11,7 +11,7 @@ use App\Modules\Lazsip\Services\HistoryOtpService;
 use App\Modules\Payment\Models\PaymentDonor;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Modules\Payment\Services\DonorService;
-use App\Modules\Payment\Services\MidtransService;
+use App\Modules\Payment\Services\IpaymuService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,7 +21,7 @@ class HistoryController
     {
         $data = $request->validate(['email' => 'required|string|max:191', 'action' => 'required|in:request,verify', 'challengeId' => 'required_if:action,verify|string|max:191', 'code' => 'required_if:action,verify|digits:6']);
         $email = $donors->normalizeEmail($data['email']);
-        abort_unless($email, 422, 'Masukkan alamat email yang valid.');
+        abort_unless($email !== null, 422, 'Masukkan alamat email yang valid.');
         if ($data['action'] === 'request') {
             $result = $otp->request($email);
             abort_unless(! $result['limited'], 429, 'Tunggu 60 detik sebelum meminta ulang. Maksimal 5 kode per jam.');
@@ -40,7 +40,7 @@ class HistoryController
         return response()->json(['items' => $items])->header('Cache-Control', 'no-store');
     }
 
-    public function status(Request $request, MidtransService $gateway): JsonResponse
+    public function status(Request $request, IpaymuService $gateway): JsonResponse
     {
         $data = $request->validate(['code' => 'sometimes|nullable|string|max:191']);
         $code = trim($data['code'] ?? '');
@@ -48,16 +48,16 @@ class HistoryController
             return response()->json(['found' => false]);
         }
         $row = PaymentTransaction::where('module_source', 'lazsip')->where('tracking_code', $code)->first();
-        if ($row && $row->status === 'pending' && $row->gateway === 'midtrans_sandbox' && $row->midtransOrderId) {
+        if ($row && $row->status === 'pending' && $row->gateway === 'ipaymu_sandbox') {
             try {
-                $gateway->sync($row->midtransOrderId);
+                $gateway->sync($row);
                 $row->refresh();
             } catch (\Throwable) {
             }
         }
         if ($row) {
             $campaign = $row->sourceType === 'campaign';
-            $result = ['found' => true, 'code' => $row->trackingCode, 'type' => $campaign ? 'donasi' : 'zakat', 'label' => $campaign ? (LazsipCampaign::find($row->sourceId)?->title ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt];
+            $result = ['found' => true, 'code' => $row->trackingCode, 'type' => $campaign ? 'donasi' : 'zakat', 'label' => $campaign ? (LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt];
             if ($row->status === 'pending') {
                 $result += ['checkoutId' => $row->id, 'gateway' => $row->gateway];
             }
@@ -71,7 +71,7 @@ class HistoryController
             return response()->json(['found' => false]);
         }
 
-        return response()->json(['found' => true, 'code' => $row->id, 'type' => $donation ? 'donasi' : 'zakat', 'label' => $donation ? ($donation->campaign?->title ?? 'Donasi') : ($zakat->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $donation ? $row->adminFee : 0, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt])->header('Cache-Control', 'no-store');
+        return response()->json(['found' => true, 'code' => $row->id, 'type' => $donation ? 'donasi' : 'zakat', 'label' => $donation ? ($donation->campaign ? $donation->campaign->title : 'Donasi') : ($zakat->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $donation ? $row->adminFee : 0, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt])->header('Cache-Control', 'no-store');
     }
 
     public function donors(Request $request, DonorHistoryService $history): JsonResponse
@@ -88,14 +88,14 @@ class HistoryController
     public function donor(string $id, DonorHistoryService $history): JsonResponse
     {
         $summary = $history->summary(PaymentDonor::findOrFail($id));
-        abort_unless($summary, 404);
+        abort_unless($summary !== null, 404);
 
         return response()->json(['data' => $summary]);
     }
 
     public function donorHistory(Request $request, string $id, DonorHistoryService $history): JsonResponse
     {
-        abort_unless($history->summary(PaymentDonor::findOrFail($id)), 404);
+        abort_unless($history->summary(PaymentDonor::findOrFail($id)) !== null, 404);
 
         return response()->json(['data' => $history->history($id)]);
     }

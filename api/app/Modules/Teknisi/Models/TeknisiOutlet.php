@@ -3,6 +3,7 @@
 namespace App\Modules\Teknisi\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TeknisiOutlet extends DomainModel
 {
@@ -22,17 +23,20 @@ class TeknisiOutlet extends DomainModel
 
     protected $hidden = [];
 
-    public function technicians()
+    /** @return HasMany<TeknisiTechnician, $this> */
+    public function technicians(): HasMany
     {
         return $this->hasMany(TeknisiTechnician::class, 'outletId', 'id');
     }
 
-    public function tickets()
+    /** @return HasMany<TeknisiTicket, $this> */
+    public function tickets(): HasMany
     {
         return $this->hasMany(TeknisiTicket::class, 'outletId', 'id');
     }
 
-    public function parts()
+    /** @return HasMany<TeknisiPart, $this> */
+    public function parts(): HasMany
     {
         return $this->hasMany(TeknisiPart::class, 'outletId', 'id');
     }

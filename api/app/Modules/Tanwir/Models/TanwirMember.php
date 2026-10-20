@@ -4,6 +4,8 @@ namespace App\Modules\Tanwir\Models;
 
 use App\Modules\Core\Models\User;
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TanwirMember extends DomainModel
 {
@@ -23,37 +25,44 @@ class TanwirMember extends DomainModel
 
     protected $hidden = [];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function group()
+    /** @return BelongsTo<TanwirGroup, $this> */
+    public function group(): BelongsTo
     {
         return $this->belongsTo(TanwirGroup::class, 'group_id', 'id');
     }
 
-    public function picGroups()
+    /** @return HasMany<TanwirGroup, $this> */
+    public function picGroups(): HasMany
     {
         return $this->hasMany(TanwirGroup::class, 'pic_id', 'id');
     }
 
-    public function tasks()
+    /** @return HasMany<TanwirTask, $this> */
+    public function tasks(): HasMany
     {
         return $this->hasMany(TanwirTask::class, 'teacher_id', 'id');
     }
 
-    public function submissions()
+    /** @return HasMany<TanwirSubmission, $this> */
+    public function submissions(): HasMany
     {
         return $this->hasMany(TanwirSubmission::class, 'student_id', 'id');
     }
 
-    public function reviewLogs()
+    /** @return HasMany<TanwirSubmissionLog, $this> */
+    public function reviewLogs(): HasMany
     {
         return $this->hasMany(TanwirSubmissionLog::class, 'reviewer_id', 'id');
     }
 
-    public function students()
+    /** @return HasMany<TanwirStudent, $this> */
+    public function students(): HasMany
     {
         return $this->hasMany(TanwirStudent::class, 'member_id', 'id');
     }

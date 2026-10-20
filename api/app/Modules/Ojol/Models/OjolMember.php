@@ -4,6 +4,8 @@ namespace App\Modules\Ojol\Models;
 
 use App\Modules\Core\Models\User;
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OjolMember extends DomainModel
 {
@@ -23,32 +25,38 @@ class OjolMember extends DomainModel
 
     protected $hidden = [];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function group()
+    /** @return BelongsTo<OjolGroup, $this> */
+    public function group(): BelongsTo
     {
         return $this->belongsTo(OjolGroup::class, 'group_id', 'id');
     }
 
-    public function tasks()
+    /** @return HasMany<OjolTask, $this> */
+    public function tasks(): HasMany
     {
         return $this->hasMany(OjolTask::class, 'teacher_id', 'id');
     }
 
-    public function submissions()
+    /** @return HasMany<OjolSubmission, $this> */
+    public function submissions(): HasMany
     {
         return $this->hasMany(OjolSubmission::class, 'student_id', 'id');
     }
 
-    public function reviewLogs()
+    /** @return HasMany<OjolSubmissionLog, $this> */
+    public function reviewLogs(): HasMany
     {
         return $this->hasMany(OjolSubmissionLog::class, 'reviewer_id', 'id');
     }
 
-    public function approverTasks()
+    /** @return HasMany<OjolTaskApprover, $this> */
+    public function approverTasks(): HasMany
     {
         return $this->hasMany(OjolTaskApprover::class, 'teacher_id', 'id');
     }

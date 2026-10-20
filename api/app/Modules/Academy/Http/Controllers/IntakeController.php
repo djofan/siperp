@@ -40,7 +40,7 @@ class IntakeController
             $value = '62'.substr($value, 1);
         }
 
-return preg_match('/^62[1-9]\d{7,12}$/', $value) ? $value : null;
+        return preg_match('/^62[1-9]\d{7,12}$/', $value) ? $value : null;
     }
 
     private function nip(): string
@@ -116,7 +116,7 @@ return preg_match('/^62[1-9]\d{7,12}$/', $value) ? $value : null;
                 $enrollment->save();
             }
 
-return $credentials;
+            return $credentials;
         }, 3);
 
         return $this->data(['credentials' => $credentials]);

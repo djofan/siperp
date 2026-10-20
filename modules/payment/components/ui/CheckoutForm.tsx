@@ -11,13 +11,13 @@ const STATUS = {
 type PaymentStatus = keyof typeof STATUS;
 
 export function CheckoutForm({ transaction }: { transaction: { id: string; trackingCode: string; status: string; moduleSource: string; gateway?: string } }) {
-  const isMidtrans = transaction.gateway === "midtrans_sandbox";
+  const isIpaymu = transaction.gateway === "ipaymu_sandbox";
   const [starting, setStarting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  async function startMidtrans() {
+  async function startIpaymu() {
     setStarting(true); setCheckoutError(null);
     try {
-      const response = await fetch(`/api/payment/midtrans-session/${encodeURIComponent(transaction.id)}`, { method: "POST" });
+      const response = await fetch(`/api/payment/gateway-session/${encodeURIComponent(transaction.id)}`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Pembayaran belum tersedia.");
       window.location.assign(data.url);
@@ -27,10 +27,10 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
   const [status, setStatus] = useState<PaymentStatus>(transaction.status in STATUS ? transaction.status as PaymentStatus : "pending");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  async function refreshMidtrans() {
+  async function refreshIpaymu() {
     setChecking(true); setCheckoutError(null);
     try {
-      const response = await fetch(`/api/payment/midtrans-status/${encodeURIComponent(transaction.id)}`, { method: "POST" });
+      const response = await fetch(`/api/payment/gateway-status/${encodeURIComponent(transaction.id)}`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
       if (["pending", "paid", "failed"].includes(data.status)) setStatus(data.status);
@@ -109,17 +109,17 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
     };
   }, [transaction.id, status]);
 
-  const current = isMidtrans ? {
-    pending: { title: "Menunggu pembayaran test", description: "Lanjutkan ke Midtrans untuk memilih metode pembayaran. Status diperbarui otomatis setelah konfirmasi Midtrans." },
-    paid: { title: "Pembayaran test berhasil", description: "Midtrans telah mengonfirmasi pembayaran test ini." },
+  const current = isIpaymu ? {
+    pending: { title: "Menunggu pembayaran test", description: "Lanjutkan ke iPaymu Sandbox untuk memilih metode pembayaran. Status diperbarui otomatis setelah callback iPaymu." },
+    paid: { title: "Pembayaran test berhasil", description: "iPaymu telah mengonfirmasi pembayaran test ini." },
     failed: { title: "Sesi pembayaran berakhir", description: "Sesi test kedaluwarsa. Pembayaran ini tidak dihitung sebagai dana masuk." },
   }[status] : STATUS[status];
   return (
     <div className="mt-6 space-y-5">
       {trackingCodeCard}
-      {isMidtrans && status === "pending" && <button type="button" disabled={starting} onClick={startMidtrans} className="w-full rounded-full bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{starting ? "Menyiapkan pembayaran…" : "Lanjut ke Midtrans (sandbox)"}</button>}
+      {isIpaymu && status === "pending" && <button type="button" disabled={starting} onClick={startIpaymu} className="w-full rounded-full bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{starting ? "Menyiapkan pembayaran…" : "Lanjut ke iPaymu (sandbox)"}</button>}
       {checkoutError && <p role="alert" className="text-sm text-red-700">{checkoutError}</p>}
-      {isMidtrans && status === "pending" && <button type="button" disabled={checking} onClick={refreshMidtrans} className="w-full rounded-full border border-indigo-700 px-5 py-3 font-semibold text-indigo-700 disabled:opacity-50">{checking ? "Memeriksa…" : "Cek status ke Midtrans"}</button>}
+      {isIpaymu && status === "pending" && <button type="button" disabled={checking} onClick={refreshIpaymu} className="w-full rounded-full border border-indigo-700 px-5 py-3 font-semibold text-indigo-700 disabled:opacity-50">{checking ? "Memeriksa…" : "Cek status ke iPaymu"}</button>}
       <div role="status" aria-live="polite" className={`rounded-2xl border p-5 ${status === "paid" ? "border-emerald-200 bg-emerald-50" : status === "failed" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>
         <h2 className="font-semibold text-slate-900">{current.title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-600">{current.description}</p>

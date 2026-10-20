@@ -17,7 +17,7 @@ class MemberController extends BaseController
     public function index(Request $request)
     {
         $this->context($request, true);
-        $data = $request->validate(['role' => 'required|in:guru,peserta', 'search' => 'sometimes|string|max:200']);
+        $data = $request->validate(['role' => 'required|in:guru,peserta', 'search' => 'sometimes|nullable|string|max:200']);
         $model = $this->model($request, 'Member');
         $query = $model::with(['user:id,name,email,is_active', 'group'])->where('role', $data['role']);
         if (! empty($data['search'])) {

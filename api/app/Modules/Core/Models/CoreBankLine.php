@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CoreBankLine extends DomainModel
 {
@@ -22,7 +23,8 @@ class CoreBankLine extends DomainModel
 
     protected $hidden = [];
 
-    public function expense()
+    /** @return BelongsTo<CoreExpense, $this> */
+    public function expense(): BelongsTo
     {
         return $this->belongsTo(CoreExpense::class, 'expense_id', 'id');
     }

@@ -13,7 +13,7 @@ class RequirePublicModule
     {
         $module = DB::table('modules')->where('slug', $slug)->first();
         $user = $request->user('sanctum');
-        abort_unless($module && ($module->is_active || ($user?->is_active && $user?->is_superadmin)), 404);
+        abort_unless($module && ($module->is_active || ($user && $user->is_active && $user->is_superadmin)), 404);
 
         return $next($request);
     }

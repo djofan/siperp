@@ -3,6 +3,8 @@
 namespace App\Modules\Teknisi\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TeknisiPart extends DomainModel
 {
@@ -22,17 +24,20 @@ class TeknisiPart extends DomainModel
 
     protected $hidden = [];
 
-    public function outlet()
+    /** @return BelongsTo<TeknisiOutlet, $this> */
+    public function outlet(): BelongsTo
     {
         return $this->belongsTo(TeknisiOutlet::class, 'outletId', 'id');
     }
 
-    public function uses()
+    /** @return HasMany<TeknisiPartUse, $this> */
+    public function uses(): HasMany
     {
         return $this->hasMany(TeknisiPartUse::class, 'partId', 'id');
     }
 
-    public function movements()
+    /** @return HasMany<TeknisiStockMovement, $this> */
+    public function movements(): HasMany
     {
         return $this->hasMany(TeknisiStockMovement::class, 'partId', 'id');
     }

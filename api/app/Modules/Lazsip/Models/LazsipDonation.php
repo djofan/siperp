@@ -4,6 +4,7 @@ namespace App\Modules\Lazsip\Models;
 
 use App\Modules\Payment\Models\PaymentDonor;
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LazsipDonation extends DomainModel
 {
@@ -23,12 +24,14 @@ class LazsipDonation extends DomainModel
 
     protected $hidden = [];
 
-    public function campaign()
+    /** @return BelongsTo<LazsipCampaign, $this> */
+    public function campaign(): BelongsTo
     {
         return $this->belongsTo(LazsipCampaign::class, 'campaign_id', 'id');
     }
 
-    public function donor()
+    /** @return BelongsTo<PaymentDonor, $this> */
+    public function donor(): BelongsTo
     {
         return $this->belongsTo(PaymentDonor::class, 'donor_id', 'id');
     }

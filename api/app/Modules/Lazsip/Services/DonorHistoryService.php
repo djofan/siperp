@@ -20,7 +20,7 @@ class DonorHistoryService
             $items[] = ['trackingCode' => $row->trackingCode, 'type' => $row->sourceType === 'campaign' ? 'donasi' : 'zakat', 'label' => $row->sourceType === 'campaign' ? ($titles[$row->sourceId] ?? 'Donasi') : (($types[$row->sourceId] ?? null) === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];
         }
         foreach (LazsipDonation::with('campaign:id,title')->where('donor_id', $donorId)->get() as $row) {
-            $items[] = ['trackingCode' => $row->id, 'type' => 'donasi', 'label' => $row->campaign?->title ?? 'Donasi', 'amount' => $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];
+            $items[] = ['trackingCode' => $row->id, 'type' => 'donasi', 'label' => $row->campaign ? $row->campaign->title : 'Donasi', 'amount' => $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];
         }
         foreach (LazsipZakatPayment::where('donor_id', $donorId)->get() as $row) {
             $items[] = ['trackingCode' => $row->id, 'type' => 'zakat', 'label' => $row->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal', 'amount' => $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];

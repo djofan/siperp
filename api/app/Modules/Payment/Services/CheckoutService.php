@@ -76,14 +76,14 @@ class CheckoutService
         $source = $input['sourceType'];
         $fund = $module === 'sarsip' ? 'donasi' : ($source === 'zakat' ? 'zakat' : 'infak');
         abort_unless($input['fundType'] === $fund && ($source === 'campaign' || ($source === 'zakat' && $module === 'lazsip')), 422);
-        $method = config('payment.gateway') === 'midtrans_sandbox'
-            ? ($input['paymentMethod'] === 'Midtrans Sandbox' ? (object) ['method' => 'Midtrans Sandbox', 'feeAmount' => 0, 'feePercentage' => 0] : null)
+        $method = config('payment.gateway') === 'ipaymu_sandbox'
+            ? ($input['paymentMethod'] === 'iPaymu Sandbox' ? (object) ['method' => 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0] : null)
             : ($module === 'sarsip' ? SarsipPaymentMethod::where('method', $input['paymentMethod'])->first() : LazsipPaymentFeeRef::where('method', $input['paymentMethod'])->first());
-        abort_unless($method, 422, 'Metode pembayaran tidak tersedia.');
+        abort_unless($method !== null, 422, 'Metode pembayaran tidak tersedia.');
         $amount = $input['amount'];
         if ($source === 'campaign') {
             $campaign = $module === 'sarsip' ? SarsipEntry::where('kind', 'campaign')->where('status', 'published')->lockForUpdate()->find($input['sourceId']) : LazsipCampaign::where('status', 'active')->lockForUpdate()->find($input['sourceId']);
-            abort_unless($campaign, 404, 'Campaign tidak ditemukan atau sudah selesai.');
+            abort_unless($campaign !== null, 404, 'Campaign tidak ditemukan atau sudah selesai.');
             if ($module === 'lazsip') {
                 abort_unless(preg_match('/^\d{2}$/D', $campaign->uniqueCode), 503);
                 $amount = (int) (ceil($amount / 100) * 100 + (int) $campaign->uniqueCode);

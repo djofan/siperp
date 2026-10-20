@@ -601,10 +601,12 @@ export interface PaymentTransaction {
   paymentMethod: string;
   destinationAccountId: string;
   status: string;
-  midtransOrderId: string | null;
+  gatewayReferenceId: string | null;
+  gatewaySessionId: string | null;
+  gatewayTransactionId: string | null;
   gateway: string;
   gatewayState: string;
-  gatewayMerchantId: string | null;
+  gatewayAccountId: string | null;
   gatewayCheckoutUrl: string | null;
   createdAt: Date;
   paidAt: Date | null;

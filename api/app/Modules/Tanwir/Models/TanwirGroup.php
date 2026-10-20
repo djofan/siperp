@@ -3,6 +3,8 @@
 namespace App\Modules\Tanwir\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TanwirGroup extends DomainModel
 {
@@ -22,17 +24,20 @@ class TanwirGroup extends DomainModel
 
     protected $hidden = [];
 
-    public function pic()
+    /** @return BelongsTo<TanwirMember, $this> */
+    public function pic(): BelongsTo
     {
         return $this->belongsTo(TanwirMember::class, 'pic_id', 'id');
     }
 
-    public function members()
+    /** @return HasMany<TanwirMember, $this> */
+    public function members(): HasMany
     {
         return $this->hasMany(TanwirMember::class, 'group_id', 'id');
     }
 
-    public function tasks()
+    /** @return HasMany<TanwirTaskGroup, $this> */
+    public function tasks(): HasMany
     {
         return $this->hasMany(TanwirTaskGroup::class, 'group_id', 'id');
     }

@@ -1,5 +1,3 @@
-import { apiRequest, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
 export type Response1 = {
     ticket: ({
         outlet: {

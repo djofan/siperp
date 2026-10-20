@@ -183,8 +183,8 @@ class ContentController
 
     public function paymentMethods(): JsonResponse
     {
-        $data = config('payment.gateway') === 'midtrans_sandbox'
-            ? [['id' => 'midtrans-sandbox', 'method' => 'Midtrans Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]]
+        $data = config('payment.gateway') === 'ipaymu_sandbox'
+            ? [['id' => 'ipaymu-sandbox', 'method' => 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]]
             : SarsipPaymentMethod::orderBy('method')->get();
 
         return response()->json(['data' => $data]);

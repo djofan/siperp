@@ -3,6 +3,7 @@
 namespace App\Modules\Tanwir\Models;
 
 use App\Support\DomainPivotModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TanwirTaskGroup extends DomainPivotModel
 {
@@ -24,12 +25,14 @@ class TanwirTaskGroup extends DomainPivotModel
 
     protected $hidden = [];
 
-    public function task()
+    /** @return BelongsTo<TanwirTask, $this> */
+    public function task(): BelongsTo
     {
         return $this->belongsTo(TanwirTask::class, 'task_id', 'id');
     }
 
-    public function group()
+    /** @return BelongsTo<TanwirGroup, $this> */
+    public function group(): BelongsTo
     {
         return $this->belongsTo(TanwirGroup::class, 'group_id', 'id');
     }

@@ -3,6 +3,7 @@
 namespace App\Modules\Academy\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ZakatAcademyLessonAttachment extends DomainModel
 {
@@ -22,7 +23,8 @@ class ZakatAcademyLessonAttachment extends DomainModel
 
     protected $hidden = [];
 
-    public function lesson()
+    /** @return BelongsTo<ZakatAcademyLesson, $this> */
+    public function lesson(): BelongsTo
     {
         return $this->belongsTo(ZakatAcademyLesson::class, 'lesson_id', 'id');
     }

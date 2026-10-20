@@ -6,21 +6,22 @@ use App\Modules\Core\Http\Middleware\RequireModuleAccess;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Modules\Payment\Services\ChartService;
 use App\Modules\Payment\Services\CheckoutService;
-use App\Modules\Payment\Services\MidtransService;
+use App\Modules\Payment\Services\IpaymuService;
 use App\Modules\Payment\Services\TransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class PaymentController
 {
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): Response
     {
         $input = $request->validate(['moduleSource' => 'required|in:lazsip,sarsip', 'page' => 'sometimes|integer|min:1', 'per_page' => 'sometimes|integer|min:1|max:100']);
 
         return app(RequireModuleAccess::class)->handle($request, fn () => response()->json(PaymentTransaction::with('donor:id,name')->where('module_source', $input['moduleSource'])->orderByDesc('created_at')->orderBy('id')->paginate($request->integer('per_page', 100))), $input['moduleSource']);
     }
 
-    public function charts(Request $request, ChartService $charts): JsonResponse
+    public function charts(Request $request, ChartService $charts): Response
     {
         $input = $request->validate(['moduleSource' => 'required|in:lazsip,sarsip']);
 
@@ -43,12 +44,12 @@ class PaymentController
         return response()->json($transactions->publicData(PaymentTransaction::findOrFail($id)))->header('Cache-Control', 'no-store');
     }
 
-    public function simulate(Request $request, string $id, TransactionService $transactions): JsonResponse
+    public function simulate(Request $request, string $id, TransactionService $transactions): Response
     {
         $row = PaymentTransaction::findOrFail($id);
 
         return app(RequireModuleAccess::class)->handle($request, function () use ($request, $row, $transactions): JsonResponse {
-            abort_unless($row->gateway === 'simulation', 409, 'Pembayaran gateway harus diverifikasi melalui Midtrans.');
+            abort_unless($row->gateway === 'simulation', 409, 'Pembayaran gateway harus diverifikasi melalui iPaymu.');
             $data = $request->validate(['status' => 'required|in:paid,failed']);
             $transactions->finalize($row->id, $data['status']);
 
@@ -56,33 +57,32 @@ class PaymentController
         }, $row->moduleSource);
     }
 
-    public function session(string $id, MidtransService $gateway): JsonResponse
+    public function session(string $id, IpaymuService $gateway): JsonResponse
     {
         $row = PaymentTransaction::findOrFail($id);
-        abort_unless($row->gateway === 'midtrans_sandbox' && $row->status === 'pending', 409);
+        abort_unless($row->gateway === 'ipaymu_sandbox' && $row->status === 'pending', 409);
         if ($gateway->safeUrl($row->gatewayCheckoutUrl)) {
             return response()->json(['url' => $row->gatewayCheckoutUrl]);
         }
         $gateway->configuration();
-        $claimed = PaymentTransaction::whereKey($id)->where('gateway', 'midtrans_sandbox')->where('status', 'pending')->where('gateway_state', 'not_started')->update(['gateway_state' => 'creating']);
-        abort_unless($claimed, 409, 'Sesi sedang diproses atau perlu diperiksa admin. Jangan membuat transaksi ulang.');
+        $claimed = PaymentTransaction::whereKey($id)->where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->where('gateway_state', 'not_started')->update(['gateway_state' => 'creating']);
+        abort_unless($claimed === 1, 409, 'Sesi sedang diproses atau perlu diperiksa admin. Jangan membuat transaksi ulang.');
         try {
-            $url = $gateway->createSession($row);
-            PaymentTransaction::whereKey($id)->where('status', 'pending')->where('gateway_state', 'creating')->update(['gateway_checkout_url' => $url, 'gateway_state' => 'ready']);
+            $session = $gateway->createSession($row);
+            PaymentTransaction::whereKey($id)->where('status', 'pending')->where('gateway_state', 'creating')->update(['gateway_session_id' => $session['sessionId'], 'gateway_checkout_url' => $session['url'], 'gateway_state' => 'ready']);
 
-            return response()->json(['url' => $url]);
+            return response()->json(['url' => $session['url']]);
         } catch (\Throwable) {
             PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'needs_review']);
             abort(502, 'Sesi belum dapat dipastikan. Hubungi admin; jangan membuat pembayaran ulang.');
         }
     }
 
-    public function sync(string $id, MidtransService $gateway, TransactionService $transactions): JsonResponse
+    public function sync(string $id, IpaymuService $gateway, TransactionService $transactions): JsonResponse
     {
-        $row = PaymentTransaction::where('gateway', 'midtrans_sandbox')->findOrFail($id);
-        abort_unless($row->midtransOrderId, 404);
+        $row = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->findOrFail($id);
         try {
-            $gateway->sync($row->midtransOrderId);
+            $row = $gateway->sync($row);
         } catch (\Throwable) {
             abort(502, 'Status belum dapat diverifikasi.');
         }
@@ -90,13 +90,13 @@ class PaymentController
         return response()->json($transactions->publicData($row->refresh()))->header('Cache-Control', 'no-store');
     }
 
-    public function webhook(Request $request, MidtransService $gateway): JsonResponse
+    public function webhook(Request $request, IpaymuService $gateway): JsonResponse
     {
         $gateway->configuration();
-        $data = $request->json()->all();
-        abort_unless($gateway->verifySignature($data), 401, 'Tanda tangan tidak valid.');
+        $data = $request->all();
+        abort_unless($gateway->verifyCallback($data, $request->header('X-Signature')), 401, 'Tanda tangan tidak valid.');
         try {
-            $gateway->sync($data['order_id']);
+            $gateway->handleCallback($data);
         } catch (\Throwable) {
             abort(503, 'Notifikasi belum dapat diverifikasi.');
         }

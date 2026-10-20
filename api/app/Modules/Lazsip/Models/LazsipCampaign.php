@@ -3,6 +3,7 @@
 namespace App\Modules\Lazsip\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LazsipCampaign extends DomainModel
 {
@@ -22,12 +23,14 @@ class LazsipCampaign extends DomainModel
 
     protected $hidden = [];
 
-    public function donations()
+    /** @return HasMany<LazsipDonation, $this> */
+    public function donations(): HasMany
     {
         return $this->hasMany(LazsipDonation::class, 'campaign_id', 'id');
     }
 
-    public function adjustments()
+    /** @return HasMany<LazsipCampaignAdjustment, $this> */
+    public function adjustments(): HasMany
     {
         return $this->hasMany(LazsipCampaignAdjustment::class, 'campaign_id', 'id');
     }
