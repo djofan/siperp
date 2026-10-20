@@ -30,7 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
             $code = match ($status) {
                 400 => 'bad_request', 409 => 'conflict', 401 => 'unauthenticated', 403 => 'forbidden', 404 => 'not_found', 422 => 'validation_failed', 429 => 'rate_limited', 501 => 'not_implemented', default => $status >= 500 ? 'server_error' : 'request_error'
             };
-            $message = $status >= 500 ? 'An unexpected error occurred.' : $e->getMessage();
+            $explicitHttpMessage = $e instanceof HttpExceptionInterface && trim($e->getMessage()) !== '';
+            $message = $status >= 500 && ! $explicitHttpMessage ? 'An unexpected error occurred.' : $e->getMessage();
 
             return (new ErrorResource(['code' => $code, 'message' => $message, 'details' => $e instanceof ValidationException ? $e->errors() : (object) []]))
                 ->response()->setStatusCode($status)->withHeaders($e instanceof HttpExceptionInterface ? $e->getHeaders() : []);

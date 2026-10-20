@@ -39,7 +39,15 @@ class IpaymuService
     {
         $parsed = $url ? parse_url($url) : false;
 
-        return (bool) ($parsed && ($parsed['scheme'] ?? '') === 'https' && ($parsed['host'] ?? '') === 'sandbox.ipaymu.com' && ! isset($parsed['user']) && ! isset($parsed['pass']) && str_starts_with($parsed['path'] ?? '', '/payment/'));
+        if (! $parsed || ($parsed['scheme'] ?? '') !== 'https' || isset($parsed['user']) || isset($parsed['pass'])) {
+            return false;
+        }
+
+        $host = strtolower($parsed['host'] ?? '');
+        $path = $parsed['path'] ?? '';
+
+        return ($host === 'sandbox.ipaymu.com' && str_starts_with($path, '/payment/'))
+            || ($host === 'sandbox-payment.ipaymu.com' && $path === '/');
     }
 
     public function createSession(PaymentTransaction $row): array
