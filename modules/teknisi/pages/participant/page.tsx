@@ -1,4 +1,4 @@
-import { apiRequest, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type { Response9 } from "@/modules/teknisi/api/contracts";
 import { requireTeknisiParticipant } from "../../api/participant-access";
 import { currency, dateTime } from "../../api/queries";

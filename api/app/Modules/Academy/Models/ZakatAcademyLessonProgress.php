@@ -3,6 +3,7 @@
 namespace App\Modules\Academy\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ZakatAcademyLessonProgress extends DomainModel
 {
@@ -22,12 +23,14 @@ class ZakatAcademyLessonProgress extends DomainModel
 
     protected $hidden = [];
 
-    public function profile()
+    /** @return BelongsTo<ZakatAcademyProfile, $this> */
+    public function profile(): BelongsTo
     {
         return $this->belongsTo(ZakatAcademyProfile::class, 'profile_id', 'id');
     }
 
-    public function lesson()
+    /** @return BelongsTo<ZakatAcademyLesson, $this> */
+    public function lesson(): BelongsTo
     {
         return $this->belongsTo(ZakatAcademyLesson::class, 'lesson_id', 'id');
     }

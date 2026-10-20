@@ -1,8 +1,5 @@
 import "server-only";
-import { apiRequest, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
-import { cache } from "react";
-import { quizDeadline } from "./policy";
+import { apiRequest } from "@/lib/api";
 export interface ExamNotification {
     key: string;
     quizId: string;
@@ -14,4 +11,4 @@ export interface ExamNotification {
     read: boolean;
 }
 export type GetExamNotificationsResult = ExamNotification[];
-export async function getExamNotifications(profileId: string): Promise<GetExamNotificationsResult> { return await apiRequest<GetExamNotificationsResult>("academy/notifications"); }
+export async function getExamNotifications(_profileId: string): Promise<GetExamNotificationsResult> { return await apiRequest<GetExamNotificationsResult>("academy/notifications"); }

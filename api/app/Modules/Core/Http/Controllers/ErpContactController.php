@@ -31,7 +31,7 @@ class ErpContactController
             $value = '62'.$value;
         }
 
-return preg_match('/^\d{8,15}$/', $value) ? $value : null;
+        return preg_match('/^\d{8,15}$/', $value) ? $value : null;
     }
 
     private function email(?string $value): ?string

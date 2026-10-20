@@ -1,7 +1,6 @@
 import type { QuizOption } from "./policy";
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
-import type { TanwirMemberRole } from "./access";
 export interface QuestionInput {
     question: string;
     optionA: string;
@@ -17,7 +16,7 @@ export async function createTask(teacherId: string, form: FormData): Promise<Cre
 export type UpdateTaskResult = void;
 export async function updateTask(taskId: string, teacherId: string, form: FormData): Promise<UpdateTaskResult> { await apiRequest(`tanwir/tasks/${encodeURIComponent(taskId)}`, { method: "PUT", body: form }); }
 export type DeleteTaskResult = void;
-export async function deleteTask(taskId: string, teacherId: string | null): Promise<DeleteTaskResult> { await apiRequest(`tanwir/tasks/${encodeURIComponent(taskId)}`, { method: "DELETE" }); }
+export async function deleteTask(taskId: string, _teacherId: string | null): Promise<DeleteTaskResult> { await apiRequest(`tanwir/tasks/${encodeURIComponent(taskId)}`, { method: "DELETE" }); }
 export type ExtendTaskResult = void;
 export async function extendTask(taskId: string, teacherId: string, hours: number): Promise<ExtendTaskResult> { await apiRequest(`tanwir/tasks/${encodeURIComponent(taskId)}/extensions`, { method: "POST", body: JSON.stringify({ hours }) }); }
 export type ListTeacherTasksResult = {
@@ -40,7 +39,7 @@ export type ListTeacherTasksResult = {
         };
     }[];
 }[];
-export async function listTeacherTasks(teacherId: string): Promise<ListTeacherTasksResult> { return apiCollection<(ListTeacherTasksResult)[number]>("tanwir/tasks"); }
+export async function listTeacherTasks(_teacherId: string): Promise<ListTeacherTasksResult> { return apiCollection<(ListTeacherTasksResult)[number]>("tanwir/tasks"); }
 export type GetTeacherTaskResult = ({
     _count: {
         submissions: number;
@@ -77,7 +76,7 @@ export type GetTeacherTaskResult = ({
     deadline: Date;
     originalDeadline: Date;
 }) | null;
-export async function getTeacherTask(taskId: string, teacherId: string): Promise<GetTeacherTaskResult> { try {
+export async function getTeacherTask(taskId: string, _teacherId: string): Promise<GetTeacherTaskResult> { try {
     return await apiRequest<GetTeacherTaskResult>(`tanwir/tasks/${encodeURIComponent(taskId)}`);
 }
 catch (error) {

@@ -57,7 +57,7 @@ class ParticipantController
             $data['completedAt'] = null;
         }
 
-return $data;
+        return $data;
     }
 
     private function current($record): ?array
@@ -168,7 +168,7 @@ return $data;
         $this->context->admin($request);
         $module = DB::table('modules')->where('slug', 'academy')->first();
 
-        return $this->data(['maintenance' => Setting::where('key', 'maintenance_mode')->value('value') === 'true', 'registered' => (bool) $module, 'active' => (bool) ($module?->is_active ?? false)]);
+        return $this->data(['maintenance' => Setting::where('key', 'maintenance_mode')->value('value') === 'true', 'registered' => (bool) $module, 'active' => $module ? (bool) $module->is_active : false]);
     }
 
     public function maintenance(Request $request)

@@ -68,7 +68,7 @@ class QuizController
             $row = new ZakatAcademyQuizAttempt;
             $row->profileId = $profile->id;
             $row->quizId = $quizId;
-            $row->attemptNumber = ($latest?->attemptNumber ?? 0) + 1;
+            $row->attemptNumber = ($latest ? $latest->attemptNumber : 0) + 1;
             $row->answers = ['passingScore' => $quiz->passingScore, 'timeLimitMinutes' => $quiz->timeLimitMinutes, 'closesAt' => $quiz->closesAt?->toISOString(), 'questions' => $quiz->questions->toArray(), 'responses' => new \stdClass];
             $row->save();
 

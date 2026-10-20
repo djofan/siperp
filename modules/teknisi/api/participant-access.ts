@@ -1,7 +1,5 @@
 import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
-import type { TechnicianUser } from "./access";
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 export async function getTeknisiParticipant(): Promise<{

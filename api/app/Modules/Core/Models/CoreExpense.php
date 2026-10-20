@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CoreExpense extends DomainModel
 {
@@ -22,7 +23,8 @@ class CoreExpense extends DomainModel
 
     protected $hidden = [];
 
-    public function bankLine()
+    /** @return HasOne<CoreBankLine, $this> */
+    public function bankLine(): HasOne
     {
         return $this->hasOne(CoreBankLine::class, 'expense_id', 'id');
     }

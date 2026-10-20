@@ -95,7 +95,7 @@ php artisan queue:work
 php artisan schedule:work
 ```
 
-Atur `PAYMENT_GATEWAY`, kredensial Midtrans sandbox, Resend, `ERP_BACKUP_KEY`, dan `CORS_ALLOWED_ORIGINS` di `api/.env`. Restore backup hanya tersedia lewat CLI dan memerlukan database serta folder target kosong:
+Atur `PAYMENT_GATEWAY`, kredensial iPaymu sandbox (`IPAYMU_API_KEY` dan `IPAYMU_VA`), `PAYMENT_API_URL`, Resend, `ERP_BACKUP_KEY`, dan `CORS_ALLOWED_ORIGINS` di `api/.env`. Gunakan `PAYMENT_GATEWAY=ipaymu_sandbox` untuk checkout iPaymu atau `simulation` untuk simulasi lokal. Restore backup hanya tersedia lewat CLI dan memerlukan database serta folder target kosong:
 
 ```bash
 php artisan erp:backup list

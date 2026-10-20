@@ -76,7 +76,6 @@ export function CampaignDetailColumns({
       observer.disconnect();
       window.removeEventListener("resize", recompute);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.length]);
 
   return (

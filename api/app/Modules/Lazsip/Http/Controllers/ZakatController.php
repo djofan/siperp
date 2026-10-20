@@ -59,7 +59,7 @@ class ZakatController
         $data = $request->validate(['donorName' => 'sometimes|nullable|string|max:191', 'zakatType' => 'required|in:maal,fitrah', 'amount' => 'required|integer|min:1|max:2147483647', 'coversFee' => 'sometimes|boolean', 'isAnonymous' => 'sometimes|boolean', 'goldPriceSnapshot' => 'sometimes|nullable|integer|min:0|max:2147483647', 'jiwaCount' => 'sometimes|nullable|integer|min:1|max:100000', 'paymentMethod' => 'required|string|max:191']);
         $row = DB::transaction(function () use ($data): LazsipZakatPayment {
             $fee = LazsipPaymentFeeRef::where('method', $data['paymentMethod'])->first();
-            abort_unless($fee, 422, 'Metode pembayaran tidak tersedia.');
+            abort_unless($fee !== null, 422, 'Metode pembayaran tidak tersedia.');
             $adminFee = ($data['coversFee'] ?? true) ? (int) ($fee->feeAmount ?? 0) + (int) round($data['amount'] * (($fee->feePercentage ?? 0) / 100)) : 0;
             abort_unless($data['amount'] + $adminFee <= 2147483647, 422);
             $donor = new PaymentDonor;

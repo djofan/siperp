@@ -1,7 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
-import type { OjolMemberRole } from "./access";
-import type { QuestionInput } from "./tasks";
 export type ListStudentTasksResult = {
     submission: {
         score: number | null;
@@ -23,7 +21,7 @@ export type ListStudentTasksResult = {
     type: Domain.OjolTaskType;
     deadline: Date;
 }[];
-export async function listStudentTasks(member: {
+export async function listStudentTasks(_member: {
     id: string;
     groupId: string | null;
 }): Promise<ListStudentTasksResult> { return apiCollection<(ListStudentTasksResult)[number]>("ojol/student/tasks"); }
@@ -80,7 +78,7 @@ export type GetStudentTaskDetailResult = {
     canSubmit: boolean;
     state: import("./policy").StudentTaskState;
 } | null;
-export async function getStudentTaskDetail(taskId: string, member: {
+export async function getStudentTaskDetail(taskId: string, _member: {
     id: string;
     groupId: string | null;
 }): Promise<GetStudentTaskDetailResult> { try {
@@ -118,7 +116,7 @@ export type ListReviewQueueResult = {
         };
     };
 }[];
-export async function listReviewQueue(teacherId: string): Promise<ListReviewQueueResult> { return apiCollection<(ListReviewQueueResult)[number]>("ojol/review-queue"); }
+export async function listReviewQueue(_teacherId: string): Promise<ListReviewQueueResult> { return apiCollection<(ListReviewQueueResult)[number]>("ojol/review-queue"); }
 export type GetSubmissionForReviewResult = {
     id: string;
     score: number | null;
@@ -171,7 +169,7 @@ export type GetSubmissionForReviewResult = {
         } | null;
     }[];
 } | null;
-export async function getSubmissionForReview(submissionId: string, teacherId: string): Promise<GetSubmissionForReviewResult> { try {
+export async function getSubmissionForReview(submissionId: string, _teacherId: string): Promise<GetSubmissionForReviewResult> { try {
     return await apiRequest<GetSubmissionForReviewResult>(`ojol/submissions/${encodeURIComponent(submissionId)}`);
 }
 catch (error) {

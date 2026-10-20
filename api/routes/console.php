@@ -1,6 +1,12 @@
 <?php
 
 use App\Modules\Core\Services\BackupService;
+use App\Modules\Payment\Models\PaymentTransaction;
+use App\Modules\Payment\Services\IpaymuService;
+use App\Modules\Payment\Services\ReceiptService;
+use Illuminate\Foundation\Inspiring;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('erp:backup {operation=create} {id?} {--confirm-empty-target} {--files-dir=}', function () {
     $service = app(BackupService::class);
@@ -15,23 +21,16 @@ Artisan::command('erp:backup {operation=create} {id?} {--confirm-empty-target} {
     $this->line(json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
 })->purpose('Create, inspect or restore encrypted ERP backups on an empty target');
 
-use App\Modules\Payment\Models\PaymentTransaction;
-use App\Modules\Payment\Services\MidtransService;
-use App\Modules\Payment\Services\ReceiptService;
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Schedule;
-
 Artisan::command('payment:receipts-retry', function (): void {
     $count = app(ReceiptService::class)->retry();
     $this->info("Processed {$count} queued receipts.");
 })->purpose('Retry queued payment receipts with their original idempotency key');
 
 Artisan::command('payment:sync-pending', function (): void {
-    $rows = PaymentTransaction::where('gateway', 'midtrans_sandbox')->where('status', 'pending')->whereNotNull('midtrans_order_id')->orderBy('created_at')->limit(50)->get();
+    $rows = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->whereNotNull('gateway_transaction_id')->orderBy('created_at')->limit(50)->get();
     foreach ($rows as $row) {
         try {
-            app(MidtransService::class)->sync($row->midtransOrderId);
+            app(IpaymuService::class)->sync($row);
         } catch (Throwable) {
             $this->warn('Gateway sync deferred for '.$row->id);
         }

@@ -21,7 +21,7 @@ class BackupService
             throw new RuntimeException('ID backup tidak valid.');
         }
 
-return rtrim(config('backup.directory'), '/\\').DIRECTORY_SEPARATOR.$id;
+        return rtrim(config('backup.directory'), '/\\').DIRECTORY_SEPARATOR.$id;
     }
 
     private function directory(): string
@@ -31,7 +31,7 @@ return rtrim(config('backup.directory'), '/\\').DIRECTORY_SEPARATOR.$id;
             throw new RuntimeException('Folder backup tidak tersedia.');
         }
 
-return $root;
+        return $root;
     }
 
     private function key(bool $create = false): string
@@ -52,7 +52,7 @@ return $root;
             throw new RuntimeException('ERP_BACKUP_KEY harus 64 karakter hex.');
         }
 
-return hex2bin($key);
+        return hex2bin($key);
     }
 
     private function limit(int $size): void
@@ -68,7 +68,7 @@ return hex2bin($key);
             throw new RuntimeException('Nama tabel/kolom tidak valid.');
         }
 
-return '`'.$name.'`';
+        return '`'.$name.'`';
     }
 
     private function capture(string $root, string $label, array &$files, int &$budget): void

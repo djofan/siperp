@@ -24,10 +24,10 @@ class ReceiptService
         }
         $label = $row->sourceType === 'zakat'
             ? (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal')
-            : ($row->moduleSource === 'sarsip' ? (SarsipEntry::find($row->sourceId)?->title ?? 'Donasi SARSIP') : (LazsipCampaign::find($row->sourceId)?->title ?? 'Donasi LAZSIP'));
+            : ($row->moduleSource === 'sarsip' ? (SarsipEntry::whereKey($row->sourceId)->value('title') ?? 'Donasi SARSIP') : (LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi LAZSIP'));
         $brand = $row->moduleSource === 'sarsip' ? 'SARSIP' : 'LAZSIP';
         $zakat = $row->sourceType === 'zakat';
-        $test = in_array($row->gateway, ['simulation', 'midtrans_sandbox'], true);
+        $test = in_array($row->gateway, ['simulation', 'ipaymu_sandbox'], true);
         $title = $zakat ? 'Pembayaran zakat berhasil' : 'Donasi '.$brand.' berhasil';
         $note = $test ? 'Ini konfirmasi pengujian/simulasi, bukan bukti penerimaan uang nyata.' : 'Pembayaran Anda telah dikonfirmasi berhasil.';
         $message = $zakat ? 'Terima kasih telah menunaikan zakat melalui LAZSIP. Semoga Allah menerima zakat Anda dan memberikan keberkahan.' : ($brand === 'SARSIP' ? 'Terima kasih atas dukungan Anda untuk misi pencarian, pertolongan, dan kemanusiaan SARSIP.' : 'Terima kasih telah berbagi melalui LAZSIP. Dukungan Anda berarti bagi penerima manfaat campaign ini.');

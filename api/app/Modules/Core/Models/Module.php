@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Module extends DomainModel
 {
@@ -22,7 +23,8 @@ class Module extends DomainModel
 
     protected $hidden = [];
 
-    public function moduleAccess()
+    /** @return HasMany<ModuleAccess, $this> */
+    public function moduleAccess(): HasMany
     {
         return $this->hasMany(ModuleAccess::class, 'module_id', 'id');
     }

@@ -8,7 +8,6 @@ import { createExpense, importBankLines, matchBankLine, unmatchBankLine } from "
 import { bankDate } from "./policy";
 const input = "w-full rounded-lg border border-border bg-surface p-2 text-sm";
 const rp = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-type PaymentCandidate = { id: string; trackingCode: string; amount: number; adminFee: number; destinationAccountId: string; paidAt: Date | null };
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ account?: string; from?: string; to?: string; page?: string; status?: string }> }) {
   await requireSuperadmin();
   const params = await searchParams;

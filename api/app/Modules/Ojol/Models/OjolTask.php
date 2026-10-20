@@ -3,6 +3,8 @@
 namespace App\Modules\Ojol\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OjolTask extends DomainModel
 {
@@ -22,27 +24,32 @@ class OjolTask extends DomainModel
 
     protected $hidden = [];
 
-    public function teacher()
+    /** @return BelongsTo<OjolMember, $this> */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(OjolMember::class, 'teacher_id', 'id');
     }
 
-    public function groups()
+    /** @return HasMany<OjolTaskGroup, $this> */
+    public function groups(): HasMany
     {
         return $this->hasMany(OjolTaskGroup::class, 'task_id', 'id');
     }
 
-    public function approvers()
+    /** @return HasMany<OjolTaskApprover, $this> */
+    public function approvers(): HasMany
     {
         return $this->hasMany(OjolTaskApprover::class, 'task_id', 'id');
     }
 
-    public function questions()
+    /** @return HasMany<OjolQuizQuestion, $this> */
+    public function questions(): HasMany
     {
         return $this->hasMany(OjolQuizQuestion::class, 'task_id', 'id');
     }
 
-    public function submissions()
+    /** @return HasMany<OjolSubmission, $this> */
+    public function submissions(): HasMany
     {
         return $this->hasMany(OjolSubmission::class, 'task_id', 'id');
     }

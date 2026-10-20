@@ -3,6 +3,7 @@
 namespace App\Modules\Academy\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZakatAcademyCourse extends DomainModel
 {
@@ -22,27 +23,32 @@ class ZakatAcademyCourse extends DomainModel
 
     protected $hidden = [];
 
-    public function chapters()
+    /** @return HasMany<ZakatAcademyChapter, $this> */
+    public function chapters(): HasMany
     {
         return $this->hasMany(ZakatAcademyChapter::class, 'course_id', 'id');
     }
 
-    public function enrollments()
+    /** @return HasMany<ZakatAcademyEnrollment, $this> */
+    public function enrollments(): HasMany
     {
         return $this->hasMany(ZakatAcademyEnrollment::class, 'course_id', 'id');
     }
 
-    public function completionRecords()
+    /** @return HasMany<ZakatAcademyCompletionRecord, $this> */
+    public function completionRecords(): HasMany
     {
         return $this->hasMany(ZakatAcademyCompletionRecord::class, 'course_id', 'id');
     }
 
-    public function sessions()
+    /** @return HasMany<AcademyLiveSession, $this> */
+    public function sessions(): HasMany
     {
         return $this->hasMany(AcademyLiveSession::class, 'course_id', 'id');
     }
 
-    public function discussions()
+    /** @return HasMany<AcademyDiscussion, $this> */
+    public function discussions(): HasMany
     {
         return $this->hasMany(AcademyDiscussion::class, 'course_id', 'id');
     }

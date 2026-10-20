@@ -114,6 +114,31 @@ check($status === 200 && PaymentTransaction::find($paymentId)->status === 'paid'
 [$status, $publicDonors] = sendRequest('GET', 'sarsip/entries/'.$campaign->id.'/donations');
 check($status === 200 && $publicDonors['data'][0]['name'] === 'Hamba Allah' && ! isset($publicDonors['data'][0]['email']), 'Public campaign donations preserve anonymity');
 
+config([
+    'payment.gateway' => 'ipaymu_sandbox',
+    'payment.public_url' => 'http://localhost:3000',
+    'payment.api_url' => 'http://localhost:8000/api/v1',
+    'payment.ipaymu.api_key' => 'smoke-api-key',
+    'payment.ipaymu.va' => '1179000899',
+    'payment.ipaymu.base_url' => 'https://sandbox.ipaymu.com/api/v2',
+]);
+Http::fake(['https://sandbox.ipaymu.com/api/v2/payment' => Http::response(['Status' => 200, 'Data' => ['SessionID' => 'SMOKE-SESSION', 'Url' => 'https://sandbox.ipaymu.com/payment/SMOKE-SESSION']])]);
+$ipaymuCheckout = [...$checkout, 'paymentMethod' => 'iPaymu Sandbox'];
+[$status, $ipaymuBody] = sendRequest('POST', 'payment/checkout', $ipaymuCheckout, null, ['Idempotency-Key' => 'smoke-ipaymu-1']);
+check($status === 201 && isset($ipaymuBody['transactionId']), 'Laravel creates an iPaymu sandbox checkout');
+$ipaymuId = $ipaymuBody['transactionId'];
+[$status, $session] = sendRequest('POST', 'payment/gateway-session/'.$ipaymuId);
+check($status === 200 && $session['url'] === 'https://sandbox.ipaymu.com/payment/SMOKE-SESSION', 'Laravel creates a signed iPaymu redirect session');
+$ipaymu = PaymentTransaction::findOrFail($ipaymuId);
+$callback = ['reference_id' => $ipaymu->gatewayReferenceId, 'sid' => 'SMOKE-SESSION', 'merchant' => '1179000899', 'trx_id' => 4719, 'status_code' => 1, 'transaction_status_code' => 1, 'paid_off' => $ipaymu->amount + $ipaymu->adminFee, 'is_escrow' => false, 'amount' => (string) ($ipaymu->amount + $ipaymu->adminFee), 'additional_info' => []];
+$signedCallback = $callback;
+ksort($signedCallback, SORT_STRING);
+$callbackSignature = hash_hmac('sha256', json_encode($signedCallback, JSON_THROW_ON_ERROR), '1179000899');
+[$status] = sendRequest('POST', 'payment/webhook/ipaymu', $callback, null, ['X-Signature' => $callbackSignature]);
+check($status === 200 && PaymentTransaction::findOrFail($ipaymuId)->status === 'paid', 'A valid signed iPaymu callback finalizes payment once');
+[$status] = sendRequest('POST', 'payment/webhook/ipaymu', [...$callback, 'amount' => '1'], null, ['X-Signature' => $callbackSignature]);
+check($status === 401 && PaymentTransaction::findOrFail($ipaymuId)->status === 'paid', 'A modified iPaymu callback is rejected without changing payment');
+
 foreach (['tanwir', 'ojol'] as $learning) {
     [$status, $created] = sendRequest('POST', $learning.'/members', ['role' => 'guru', 'name' => $learning.' teacher', 'password' => 'test-password', 'isActive' => true], $adminToken);
     check($status === 201, $learning.' creates teacher accounts in Laravel');
@@ -128,6 +153,12 @@ foreach (['tanwir', 'ojol'] as $learning) {
     check($status === 201, $learning.' creates participant accounts in Laravel');
     $participant = $memberClass::findOrFail($created['data']['id']);
     $participantToken = app(TokenIssuer::class)->issue($participant->user)->plainTextToken;
+    [$status] = sendRequest('GET', $learning.'/members?role=guru&search=', [], $adminToken);
+    check($status === 200, $learning.' accepts an empty member search from list pages');
+    if ($learning === 'tanwir') {
+        [$status] = sendRequest('GET', 'tanwir/students?search=', [], $adminToken);
+        check($status === 200, 'Tanwir accepts an empty student search from the admin page');
+    }
     [$status, $created] = sendRequest('POST', $learning.'/tasks', ['title' => 'Test quiz', 'description' => 'Test instructions', 'type' => 'quiz', 'deadline' => now()->addDay()->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i'), 'groupIds' => [$groupId], 'questions' => [['question' => 'One question', 'optionA' => 'Correct', 'optionB' => 'Incorrect', 'correctOption' => 'a']]], $teacherToken);
     check($status === 201, $learning.' creates and distributes teacher tasks');
     $taskId = $created['data']['id'];

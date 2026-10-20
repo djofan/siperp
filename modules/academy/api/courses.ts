@@ -1,8 +1,6 @@
 import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
-import { cache } from "react";
-import { quizDeadline } from "./policy";
 export type ListPublicCoursesResult = {
     id: string;
     title: string;
@@ -229,7 +227,7 @@ export type GetLearningOverviewResult = {
     };
     completedAt: Date | null;
 }[];
-export async function getLearningOverview(profileId: string): Promise<GetLearningOverviewResult> {
+export async function getLearningOverview(_profileId: string): Promise<GetLearningOverviewResult> {
     return await apiRequest<{
         id: string;
         title: string;
@@ -308,7 +306,7 @@ export type ListParticipantQuizzesResult = {
         isCompleted: boolean;
     }[];
 }[];
-export async function listParticipantQuizzes(profileId: string): Promise<ListParticipantQuizzesResult> {
+export async function listParticipantQuizzes(_profileId: string): Promise<ListParticipantQuizzesResult> {
     return await apiRequest<{
         id: string;
         title: string;
@@ -380,7 +378,7 @@ export type GetOwnRankingsResult = {
     score: number;
     complete: boolean;
 }[];
-export async function getOwnRankings(profileId: string): Promise<GetOwnRankingsResult> {
+export async function getOwnRankings(_profileId: string): Promise<GetOwnRankingsResult> {
     return await apiRequest<{
         courseId: string;
         title: string;

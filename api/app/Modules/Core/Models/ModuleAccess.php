@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Models;
 
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ModuleAccess extends DomainModel
 {
@@ -22,12 +23,14 @@ class ModuleAccess extends DomainModel
 
     protected $hidden = [];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function module()
+    /** @return BelongsTo<Module, $this> */
+    public function module(): BelongsTo
     {
         return $this->belongsTo(Module::class, 'module_id', 'id');
     }

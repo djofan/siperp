@@ -4,6 +4,8 @@ namespace App\Modules\Academy\Models;
 
 use App\Modules\Core\Models\User;
 use App\Support\DomainModel;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZakatAcademyProfile extends DomainModel
 {
@@ -23,42 +25,50 @@ class ZakatAcademyProfile extends DomainModel
 
     protected $hidden = [];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function enrollments()
+    /** @return HasMany<ZakatAcademyEnrollment, $this> */
+    public function enrollments(): HasMany
     {
         return $this->hasMany(ZakatAcademyEnrollment::class, 'profile_id', 'id');
     }
 
-    public function lessonProgress()
+    /** @return HasMany<ZakatAcademyLessonProgress, $this> */
+    public function lessonProgress(): HasMany
     {
         return $this->hasMany(ZakatAcademyLessonProgress::class, 'profile_id', 'id');
     }
 
-    public function quizAttempts()
+    /** @return HasMany<ZakatAcademyQuizAttempt, $this> */
+    public function quizAttempts(): HasMany
     {
         return $this->hasMany(ZakatAcademyQuizAttempt::class, 'profile_id', 'id');
     }
 
-    public function completionRecords()
+    /** @return HasMany<ZakatAcademyCompletionRecord, $this> */
+    public function completionRecords(): HasMany
     {
         return $this->hasMany(ZakatAcademyCompletionRecord::class, 'profile_id', 'id');
     }
 
-    public function notes()
+    /** @return HasMany<AcademyStudyNote, $this> */
+    public function notes(): HasMany
     {
         return $this->hasMany(AcademyStudyNote::class, 'profile_id', 'id');
     }
 
-    public function questions()
+    /** @return HasMany<AcademyDiscussion, $this> */
+    public function questions(): HasMany
     {
         return $this->hasMany(AcademyDiscussion::class, 'profile_id', 'id');
     }
 
-    public function notificationReads()
+    /** @return HasMany<AcademyNotificationRead, $this> */
+    public function notificationReads(): HasMany
     {
         return $this->hasMany(AcademyNotificationRead::class, 'profile_id', 'id');
     }

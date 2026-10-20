@@ -1,7 +1,5 @@
-import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import { apiRequest } from "@/lib/api";
 import type * as Domain from "@/lib/domain";
-import type { TanwirMemberRole } from "./access";
-import type { QuestionInput } from "./tasks";
 export type AdminSummaryResult = {
     guru: number;
     peserta: number;
@@ -53,7 +51,7 @@ export type TeacherSummaryResult = {
         }[];
     }[];
 };
-export async function teacherSummary(teacherId: string): Promise<TeacherSummaryResult> { return apiRequest<TeacherSummaryResult>("tanwir/dashboard/teacher"); }
+export async function teacherSummary(_teacherId: string): Promise<TeacherSummaryResult> { return apiRequest<TeacherSummaryResult>("tanwir/dashboard/teacher"); }
 export type StudentGroupInfoResult = {
     code: string;
     _count: {
@@ -68,4 +66,4 @@ export type StudentGroupInfoResult = {
         };
     } | null;
 } | null;
-export async function studentGroupInfo(groupId: string | null): Promise<StudentGroupInfoResult> { return apiRequest<StudentGroupInfoResult>("tanwir/student/group"); }
+export async function studentGroupInfo(_groupId: string | null): Promise<StudentGroupInfoResult> { return apiRequest<StudentGroupInfoResult>("tanwir/student/group"); }
