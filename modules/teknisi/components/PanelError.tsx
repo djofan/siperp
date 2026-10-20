@@ -1,0 +1,2 @@
+"use client";
+export function PanelError({reset}:{reset:()=>void}){return <section className="tech-box" role="alert"><h2>Data Teknisi belum dapat dimuat</h2><p>Periksa koneksi dan layanan API Laravel. Bila sesi berakhir, silakan masuk kembali.</p><div className="tech-toolbar"><button type="button" className="tech-btn" onClick={reset}>Coba lagi</button><a href="/admin/login">Masuk melalui Core</a></div></section>;}
