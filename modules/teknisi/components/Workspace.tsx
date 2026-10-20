@@ -6,6 +6,7 @@ import "./workspace.css";
 import "./lazsip-theme.css";
 import "./team-workspace.css";
 import "./dashboard.css";
+import styles from "./WorkspaceIdentity.module.css";
 
 export function Workspace({ name, roleLabel, outletName, accountCode, root, admin = false, children }: { name: string; roleLabel: string; outletName: string; accountCode?: string; root: string; admin?: boolean; children: React.ReactNode }) {
   const path = usePathname(), query = useSearchParams();
@@ -49,13 +50,17 @@ export function Workspace({ name, roleLabel, outletName, accountCode, root, admi
   return <div className={`tech-workspace ${admin ? "tech-central" : "tech-operator"}`}>
     <a className="sr-only focus:not-sr-only" href="#tech-main">Lewati ke konten</a>
     {open && <button className="tech-backdrop" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
-    <aside ref={drawer} role={open ? "dialog" : undefined} aria-modal={open ? true : undefined} aria-label="Navigasi Teknisi HP" onKeyDown={keys} className={`tech-sidebar ${open ? "is-open" : ""}`}>
+    <aside ref={drawer} role={open ? "dialog" : undefined} aria-modal={open ? true : undefined} aria-label="Navigasi Teknisi HP" onKeyDown={keys} className={`tech-sidebar ${styles.sidebar} ${open ? "is-open" : ""}`}>
       <Link href={root} className="tech-brand">Teknisi<span>HP</span></Link><p className="tech-subtitle">{admin ? "Pusat pengelolaan" : "Workspace teknisi"}</p>
-      <div className="tech-scope-card"><small>{roleLabel}</small><strong>{name}</strong><span>{accountCode ?? "Akun pengelola"}</span><span>{admin ? "Cakupan" : "Outlet"} · {outletName}</span></div>
+      <div className={styles.identity}>
+        <span className={styles.avatar} aria-hidden="true">{name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</span>
+        <div className={styles.person}><small>{roleLabel}</small><strong>{name}</strong><span>{accountCode ?? "Akun pengelola"}</span></div>
+        <div className={styles.outlet}><small>{admin ? "Cakupan akses" : "Outlet aktif"}</small><span>{outletName}</span></div>
+      </div>
       <button className="tech-mobile-close" aria-label="Tutup menu" onClick={() => setOpen(false)}>×</button>
       <nav aria-label="Menu Teknisi HP">{links.map(item => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={active(item.href) ? "is-active" : ""} aria-current={active(item.href) ? "page" : undefined}>{item.label}</Link>)}</nav>
       <div className="tech-account"><span>{admin ? "Kontrol lintas outlet" : "Operasional outlet"}</span>{admin && <Link href="/admin">← Kembali ke Core</Link>}</div>
     </aside>
-    <div className="tech-frame"><header className="tech-topbar"><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><span className="tech-topbar-context"><strong>{admin ? "Panel pusat" : outletName}</strong><small>{name} · {accountCode ?? roleLabel}</small></span><div><Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
+    <div className="tech-frame"><header className={`tech-topbar ${styles.header}`}><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className={styles.actions}><Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
   </div>;
 }

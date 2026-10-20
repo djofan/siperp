@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Core\Services\BackupService;
+
 Artisan::command('erp:backup {operation=create} {id?} {--confirm-empty-target} {--files-dir=}', function () {
     $service = app(BackupService::class);
     $operation = $this->argument('operation');
@@ -13,7 +15,6 @@ Artisan::command('erp:backup {operation=create} {id?} {--confirm-empty-target} {
     $this->line(json_encode($result, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT));
 })->purpose('Create, inspect or restore encrypted ERP backups on an empty target');
 
-use App\Modules\Core\Services\BackupService;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Modules\Payment\Services\MidtransService;
 use App\Modules\Payment\Services\ReceiptService;

@@ -15,6 +15,18 @@ export async function updateService(_:ActionState,form:FormData):Promise<ActionS
   const user=await requireTechnicianUser();
   if(!user.canWrite)return {error:"Akun monitoring hanya dapat melihat data."};
   const id=String(form.get("ticketId")??"");
+  const sections = [["diagnosis", "Diagnosis kerusakan"], ["treatment", "Tindakan pengerjaan"], ["changeReason", "Persetujuan / alasan perubahan"]] as const;
+  if (sections.some(([key]) => form.has(key))) {
+    const notes: string[] = [];
+    for (const [key, label] of sections) {
+      const value = String(form.get(key) ?? "").trim();
+      if (value.length > 900) return {error: `${label} maksimal 900 karakter.`};
+      if (value) notes.push(`${label}:\n${value}`);
+      form.delete(key);
+    }
+    if (!notes.length) return {error: "Isi diagnosis, tindakan, atau alasan perubahan terlebih dahulu."};
+    form.set("note", notes.join("\n\n"));
+  }
   try {await apiRequest("teknisi/tickets/update",{method:"POST",body:form});}
   catch(error){return errorState(error);}
   refresh();redirect(`${operationalRoot(user.role)}/tiket/${encodeURIComponent(id)}`);
