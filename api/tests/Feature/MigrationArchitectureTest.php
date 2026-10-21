@@ -15,6 +15,7 @@ it('serves every application endpoint below the versioned Laravel API', function
 
 it('returns stable JSON errors without exposing internal exceptions', function () {
     Route::get('/api/v1/test-internal-error', fn () => throw new RuntimeException('private database path'))->middleware('api');
+    Route::get('/api/v1/test-service-unavailable', fn () => abort(503, 'Layanan pembayaran belum siap.'))->middleware('api');
 
     $this->getJson('/api/v1/missing')
         ->assertNotFound()
@@ -29,6 +30,10 @@ it('returns stable JSON errors without exposing internal exceptions', function (
         ]]);
 
     expect($response->getContent())->not->toContain('database', 'private');
+
+    $this->getJson('/api/v1/test-service-unavailable')
+        ->assertStatus(503)
+        ->assertJsonPath('error.message', 'Layanan pembayaran belum siap.');
 });
 
 it('resolves the encrypted backup service from its console command', function () {

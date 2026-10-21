@@ -10,6 +10,16 @@ const STATUS = {
 };
 type PaymentStatus = keyof typeof STATUS;
 
+function apiErrorMessage(data: unknown, fallback: string) {
+  if (!data || typeof data !== "object" || !("error" in data)) return fallback;
+  const error = data.error;
+  if (typeof error === "string" && error) return error;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message) {
+    return error.message;
+  }
+  return fallback;
+}
+
 export function CheckoutForm({ transaction }: { transaction: { id: string; trackingCode: string; status: string; moduleSource: string; gateway?: string } }) {
   const isIpaymu = transaction.gateway === "ipaymu_sandbox";
   const [starting, setStarting] = useState(false);
@@ -19,7 +29,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
     try {
       const response = await fetch(`/api/payment/gateway-session/${encodeURIComponent(transaction.id)}`, { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Pembayaran belum tersedia.");
+      if (!response.ok) throw new Error(apiErrorMessage(data, "Pembayaran belum tersedia."));
       window.location.assign(data.url);
     } catch (err) { setCheckoutError((err as Error).message); }
     finally { setStarting(false); }
@@ -32,7 +42,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
     try {
       const response = await fetch(`/api/payment/gateway-status/${encodeURIComponent(transaction.id)}`, { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(apiErrorMessage(data, "Status pembayaran belum dapat diperiksa."));
       if (["pending", "paid", "failed"].includes(data.status)) setStatus(data.status);
     } catch (err) { setCheckoutError((err as Error).message); }
     finally { setChecking(false); }
