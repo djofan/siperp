@@ -40,7 +40,7 @@ class HistoryEmailService
         $intro = "Assalamu'alaikum,\n\nBerikut riwayat transaksi (donasi & zakat) yang tercatat dengan email ini:";
         $text = $intro."\n\nTanggal\tJenis\tNominal\tStatus\tKode\n";
         $rows = '';
-        $statuses = ['paid' => 'Lunas', 'pending' => 'Menunggu pembayaran', 'failed' => 'Gagal', 'expired' => 'Kedaluwarsa', 'cancelled' => 'Dibatalkan'];
+        $statuses = ['paid' => 'Lunas', 'pending' => 'Menunggu pembayaran', 'escrow' => 'Sudah dibayar · Escrow (dana ditahan)', 'failed' => 'Gagal', 'expired' => 'Kedaluwarsa', 'cancelled' => 'Dibatalkan'];
         foreach ($items as $item) {
             $cells = [\Illuminate\Support\Carbon::parse($item['createdAt'])->setTimezone('Asia/Jakarta')->format('d/m/Y'),
                 ($item['type'] === 'donasi' ? 'Donasi' : 'Zakat').' — '.$item['label'],

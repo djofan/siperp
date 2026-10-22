@@ -27,10 +27,10 @@ Artisan::command('payment:receipts-retry', function (): void {
 })->purpose('Retry queued payment receipts with their original idempotency key');
 
 Artisan::command('payment:sync-pending', function (): void {
-    $rows = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->whereNotNull('gateway_transaction_id')->orderBy('created_at')->limit(50)->get();
+    $rows = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->whereNotNull('gateway_session_id')->orderBy('created_at')->limit(50)->get();
     foreach ($rows as $row) {
         try {
-            app(IpaymuService::class)->sync($row);
+            app(IpaymuService::class)->enqueueReconciliation($row);
         } catch (Throwable) {
             $this->warn('Gateway sync deferred for '.$row->id);
         }

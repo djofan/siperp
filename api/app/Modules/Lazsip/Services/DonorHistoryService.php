@@ -17,6 +17,9 @@ class DonorHistoryService
         $titles = LazsipCampaign::pluck('title', 'id');
         $types = LazsipZakatDetail::pluck('zakat_type', 'id');
         foreach (PaymentTransaction::where('module_source', 'lazsip')->where('donor_id', $donorId)->get() as $row) {
+            if ($row->status === 'pending' && $row->gatewayState === 'escrow') {
+                $row->status = 'escrow'; // Presentation only; never save this derived status.
+            }
             $items[] = ['trackingCode' => $row->trackingCode, 'type' => $row->sourceType === 'campaign' ? 'donasi' : 'zakat', 'label' => $row->sourceType === 'campaign' ? ($titles[$row->sourceId] ?? 'Donasi') : (($types[$row->sourceId] ?? null) === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'status' => $row->status, 'createdAt' => $row->createdAt];
         }
         foreach (LazsipDonation::with('campaign:id,title')->where('donor_id', $donorId)->get() as $row) {
