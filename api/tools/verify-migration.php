@@ -128,13 +128,13 @@ config([
     'payment.ipaymu.va' => '1179000899',
     'payment.ipaymu.base_url' => 'https://sandbox.ipaymu.com/api/v2',
 ]);
-Http::fake(['https://sandbox.ipaymu.com/api/v2/payment' => Http::response(['Status' => 200, 'Data' => ['SessionID' => 'SMOKE-SESSION', 'Url' => 'https://sandbox.ipaymu.com/payment/SMOKE-SESSION']])]);
+Http::fake(['https://sandbox.ipaymu.com/api/v2/payment' => Http::response(['Status' => 200, 'Data' => ['SessionID' => 'SMOKE-SESSION', 'Url' => 'https://sandbox-payment.ipaymu.com/?sid=SMOKE-SESSION']])]);
 $ipaymuCheckout = [...$checkout, 'paymentMethod' => 'iPaymu Sandbox'];
 [$status, $ipaymuBody] = sendRequest('POST', 'payment/checkout', $ipaymuCheckout, null, ['Idempotency-Key' => 'smoke-ipaymu-1']);
 check($status === 201 && isset($ipaymuBody['transactionId']), 'Laravel creates an iPaymu sandbox checkout');
 $ipaymuId = $ipaymuBody['transactionId'];
 [$status, $session] = sendRequest('POST', 'payment/gateway-session/'.$ipaymuId);
-check($status === 200 && $session['url'] === 'https://sandbox.ipaymu.com/payment/SMOKE-SESSION', 'Laravel creates a signed iPaymu redirect session');
+check($status === 200 && $session['url'] === 'https://sandbox-payment.ipaymu.com/?sid=SMOKE-SESSION', 'Laravel creates a signed iPaymu redirect session');
 $ipaymu = PaymentTransaction::findOrFail($ipaymuId);
 $callback = ['reference_id' => $ipaymu->gatewayReferenceId, 'sid' => 'SMOKE-SESSION', 'merchant' => '1179000899', 'trx_id' => 4719, 'status_code' => 1, 'transaction_status_code' => 1, 'paid_off' => $ipaymu->amount + $ipaymu->adminFee, 'is_escrow' => false, 'amount' => (string) ($ipaymu->amount + $ipaymu->adminFee), 'additional_info' => []];
 $signedCallback = $callback;

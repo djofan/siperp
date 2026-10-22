@@ -25,7 +25,7 @@ it('creates an iPaymu sandbox session with the expected signed contract', functi
             'Message' => 'success',
             'Data' => [
                 'SessionID' => 'sandbox-session-id',
-                'Url' => 'https://sandbox.ipaymu.com/payment/sandbox-session-id',
+                'Url' => 'https://sandbox-payment.ipaymu.com/?sid=sandbox-session-id',
             ],
         ]),
     ]);
@@ -47,8 +47,13 @@ it('creates an iPaymu sandbox session with the expected signed contract', functi
 
     expect(app(IpaymuService::class)->createSession($transaction))->toBe([
         'sessionId' => 'sandbox-session-id',
-        'url' => 'https://sandbox.ipaymu.com/payment/sandbox-session-id',
+        'url' => 'https://sandbox-payment.ipaymu.com/?sid=sandbox-session-id',
     ]);
+
+    $gateway = app(IpaymuService::class);
+    expect($gateway->safeUrl('https://sandbox.ipaymu.com/payment/legacy-session'))->toBeTrue()
+        ->and($gateway->safeUrl('https://sandbox-payment.ipaymu.com/?sid=current-session'))->toBeTrue()
+        ->and($gateway->safeUrl('https://sandbox-payment.ipaymu.com.evil.test/?sid=fake'))->toBeFalse();
 
     Http::assertSent(function (Request $request) {
         $body = $request->body();
