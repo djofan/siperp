@@ -469,6 +469,7 @@ export type Response7 = {
         name: string;
         address: string;
         phone: string;
+        technicians: { id: string; name: string; specialty: string | null }[];
     }[];
 };
 export type Response8 = {

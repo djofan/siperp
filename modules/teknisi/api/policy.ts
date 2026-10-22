@@ -1,7 +1,7 @@
 export const statuses = {
-  received: "Diterima", diagnosis: "Pengecekan", approval: "Menunggu persetujuan",
-  repairing: "Dikerjakan", waiting_parts: "Menunggu sparepart", ready: "Siap diambil",
-  collected: "Sudah diambil", cancelled: "Dibatalkan",
+  received: "Pending", diagnosis: "Pending · pengecekan", approval: "Pending · persetujuan",
+  repairing: "Sedang diproses", waiting_parts: "Pending · menunggu part", ready: "Ready · siap diambil",
+  collected: "Finish · sudah diambil", cancelled: "Batal",
 } as const;
 export type TicketStatus = keyof typeof statuses;
 export const priorities = { normal: "Normal", urgent: "Mendesak" } as const;

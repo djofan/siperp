@@ -40,12 +40,14 @@ class QueryController
     public function ticketsList(Request $request)
     {
         $actor = $this->context->actor($request);
-        $query = $this->tickets($actor)->with(['outlet', 'technician']);
+        $query = $this->tickets($actor)->with(['outlet', 'technician', 'workflow']);
         if ($request->filled('outlet')) {
             $query->where('outletId', $request->string('outlet')->toString());
         }
         if (array_key_exists($request->input('status', ''), TeknisiContext::TRANSITIONS)) {
-            $query->where('status', $request->input('status'));
+            $request->input('status') === 'received'
+                ? $query->whereIn('status', ['received', 'diagnosis', 'approval', 'waiting_parts'])
+                : $query->where('status', $request->input('status'));
         }
         if ($request->filled('q')) {
             $q = '%'.mb_substr($request->string('q')->toString(), 0, 200).'%';
@@ -60,7 +62,12 @@ class QueryController
     public function detail(Request $request, string $id)
     {
         $actor = $this->context->actor($request);
-        $ticket = $this->tickets($actor)->where('id', $id)->with(['outlet', 'technician', 'events' => fn ($q) => $q->orderByDesc('createdAt'), 'partUses.part'])->firstOrFail();
+        $ticket = $this->tickets($actor)->where('id', $id)->with(['outlet', 'technician', 'workflow', 'media', 'events' => fn ($q) => $q->orderByDesc('createdAt'), 'partUses.part'])->firstOrFail();
+        $source = $ticket->workflow?->warrantyParentId
+            ? $this->tickets($actor)->where('id', $ticket->workflow->warrantyParentId)
+                ->with(['outlet', 'technician', 'workflow', 'media', 'events' => fn ($q) => $q->orderBy('createdAt')])->first()
+            : null;
+        $ticket->setRelation('warranty_source', $source);
 
         return $this->data(['ticket' => $ticket, 'technicians' => TeknisiTechnician::where('outletId', $ticket->outletId)->where('isActive', true)->get(), 'parts' => TeknisiPart::where('outletId', $ticket->outletId)->get()]);
     }
@@ -69,7 +76,12 @@ class QueryController
     {
         $actor = $this->context->actor($request, true);
 
-        return $this->data(['outlets' => $this->outlets($actor)->where('isActive', true)->get(), 'technicians' => $this->technicians($actor)->where('isActive', true)->with('outlet')->get()]);
+        return $this->data(['outlets' => $this->outlets($actor)->where('isActive', true)->get(),
+            'technicians' => $this->technicians($actor)->where('isActive', true)->with('outlet')->get(),
+            'warrantyTickets' => $this->tickets($actor)->where('status', 'collected')
+                ->whereHas('workflow', fn ($q) => $q->where('warrantyUntil', '>', now()))
+                ->when($request->filled('warranty'), fn ($q) => $q->where('id', $request->input('warranty')))
+                ->select('id', 'number', 'device', 'outletId', 'customerName', 'customerPhone')->orderByDesc('updatedAt')->take(100)->get()]);
     }
 
     public function outletsList(Request $request)
@@ -160,7 +172,11 @@ class QueryController
 
     public function publicOutlets()
     {
-        return $this->data(TeknisiOutlet::where('isActive', true)->select('id', 'name', 'address', 'phone')->orderBy('name')->get());
+        return $this->data(TeknisiOutlet::where('isActive', true)
+            ->select('id', 'name', 'address', 'phone')
+            ->with(['technicians' => fn ($query) => $query->where('isActive', true)
+                ->select('id', 'outletId', 'name', 'specialty')->orderBy('name')])
+            ->orderBy('name')->get());
     }
 
     public function tracking(Request $request, string $token)

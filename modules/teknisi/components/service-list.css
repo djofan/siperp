@@ -1,0 +1,24 @@
+.tech-workspace .tech-service-list{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:16px;align-items:center;max-width:1440px;margin-inline:auto;min-width:0}
+.tech-service-list>.tech-dash-heading{grid-column:1/-1;margin-bottom:18px}
+.tech-workspace .tech-service-list>form.tech-toolbar{display:flex;align-items:center;gap:8px;margin:0 0 16px;min-width:0;flex-wrap:wrap}
+.tech-workspace .tech-service-list>form.tech-toolbar>input:not([type=hidden]){flex:1 1 220px;max-width:420px;min-width:140px}
+.tech-workspace .tech-service-list>form select{flex:0 1 180px;min-width:130px;max-width:100%}
+.tech-service-list>.tech-list-controls{align-self:start;margin-bottom:16px}
+.tech-workspace .tech-service-list .tech-view-switch{display:flex;gap:3px;padding:3px;margin:0;background:#ffffff04;border-radius:9px}
+.tech-workspace .tech-service-list .tech-view-switch button{border-radius:6px;padding:8px 12px;min-height:34px;background:transparent;font-size:11px}
+.tech-workspace .tech-service-list .tech-view-switch button[aria-pressed=true]{background:#86c25722;color:#d4e9c7}
+.tech-service-list>.tech-cards,.tech-service-list>.tech-box,.tech-service-list>.tech-list-empty,.tech-service-list>.tech-list-pagination{grid-column:1/-1;min-width:0}
+.tech-service-list.is-empty>.tech-cards,.tech-service-list.is-empty>.tech-box{display:none}
+.tech-workspace .tech-list-empty{display:flex;align-items:center;flex-direction:column;justify-content:center;text-align:center;gap:12px;padding:40px 24px;min-height:260px;background:#ffffff03;border-radius:14px}
+.tech-workspace .tech-empty-symbol{display:grid;place-items:center;width:48px;height:48px;background:#86c25712;color:#aec994;border-radius:14px}
+.tech-empty-symbol svg{width:26px;height:26px}
+.tech-workspace .tech-list-empty h2{font-size:16px;margin:2px 0 0;font-weight:600}
+.tech-workspace .tech-list-empty p{max-width:380px;font-size:12px;line-height:1.8;color:#9ca995;margin:0 0 4px}
+.tech-workspace .tech-list-empty .tech-btn{font-size:11px;min-height:36px}
+.tech-list-pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;color:#9ca995;padding:16px 2px}
+.tech-list-pagination nav{display:flex;gap:16px}
+.tech-central .tech-empty-symbol{color:#adc7e3;background:#90b9e812}
+.tech-central .tech-list-empty p,.tech-central .tech-list-pagination{color:#9caec2}
+.tech-workspace.tech-central .tech-service-list .tech-view-switch button[aria-pressed=true]{background:#90b9e822;color:#d4e3f4}
+@media(max-width:900px){.tech-workspace .tech-service-list{grid-template-columns:minmax(0,1fr)}.tech-service-list>.tech-list-controls{justify-self:end;margin-top:-4px;margin-bottom:12px}}
+@media(max-width:600px){.tech-workspace .tech-service-list>form.tech-toolbar>input:not([type=hidden]){flex-basis:100%;width:100%;max-width:none}.tech-workspace .tech-service-list>form select{flex:1 1 130px}.tech-workspace .tech-list-empty{min-height:240px;padding:28px 18px}.tech-list-pagination{align-items:flex-start;flex-wrap:wrap}.tech-service-list>.tech-dash-heading{gap:12px}}

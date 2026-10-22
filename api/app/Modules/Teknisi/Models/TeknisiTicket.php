@@ -5,6 +5,7 @@ namespace App\Modules\Teknisi\Models;
 use App\Support\DomainModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TeknisiTicket extends DomainModel
 {
@@ -23,6 +24,16 @@ class TeknisiTicket extends DomainModel
     protected $casts = ['estimate' => 'integer', 'serviceCost' => 'integer', 'dueAt' => 'immutable_datetime', 'createdAt' => 'immutable_datetime', 'updatedAt' => 'immutable_datetime'];
 
     protected $hidden = [];
+
+    public function workflow(): HasOne
+    {
+        return $this->hasOne(ServiceDetail::class, 'ticketId', 'id');
+    }
+
+    public function media(): HasMany
+    {
+        return $this->hasMany(ServiceMedia::class, 'ticketId', 'id');
+    }
 
     /** @return BelongsTo<TeknisiOutlet, $this> */
     public function outlet(): BelongsTo

@@ -6,7 +6,13 @@ import "./workspace.css";
 import "./lazsip-theme.css";
 import "./team-workspace.css";
 import "./dashboard.css";
+import "./form-controls.css";
+import "./service-list.css";
+import "./service-card.css";
+import "./central-theme.css";
+import "./operator-theme.css";
 import styles from "./WorkspaceIdentity.module.css";
+import { selectedServiceMenu } from "../api/workflow";
 
 export function Workspace({ name, roleLabel, outletName, accountCode, root, admin = false, children }: { name: string; roleLabel: string; outletName: string; accountCode?: string; root: string; admin?: boolean; children: React.ReactNode }) {
   const path = usePathname(), query = useSearchParams();
@@ -31,10 +37,12 @@ export function Workspace({ name, roleLabel, outletName, accountCode, root, admi
     ...(admin ? [{ href: `${root}/teknisi`, label: "Akun teknisi" }] : [{ href: `${root}/profil`, label: "Profil saya" }]),
   ];
   function active(href: string) {
-    if (href.includes("?")) return path === `${root}/tiket` && query.get("status") === href.split("status=")[1];
-    if (href === `${root}/tiket`) return (path === href && !query.get("status")) || path.startsWith(`${href}/`);
+    const selected=selectedServiceMenu(path, root, query.get("status"));
+    if (href.includes("?")) return selected === href.split("status=")[1];
+    if (href === `${root}/tiket`) return !selected && (path === href || path.startsWith(`${href}/`));
     return href === root ? path === root : path === href || path.startsWith(`${href}/`);
   }
+  const pageLabel = path === `${root}/tiket/baru` ? "Buat servisan" : links.find(item => active(item.href))?.label ?? "Detail servisan";
   function keys(event: React.KeyboardEvent) {
     if (event.key === "Escape") setOpen(false);
     if (event.key !== "Tab") return;
@@ -61,6 +69,6 @@ export function Workspace({ name, roleLabel, outletName, accountCode, root, admi
       <nav aria-label="Menu Teknisi HP">{links.map(item => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={active(item.href) ? "is-active" : ""} aria-current={active(item.href) ? "page" : undefined}>{item.label}</Link>)}</nav>
       <div className="tech-account"><span>{admin ? "Kontrol lintas outlet" : "Operasional outlet"}</span>{admin && <Link href="/admin">← Kembali ke Core</Link>}</div>
     </aside>
-    <div className="tech-frame"><header className={`tech-topbar ${styles.header}`}><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button><div className={styles.actions}><Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
+    <div className="tech-frame"><header className={`tech-topbar ${styles.header}`}><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button>{!admin&&<div className={styles.context} aria-label="Halaman dan outlet aktif"><span className={styles.contextLabel}>Workspace teknisi<span aria-hidden="true"> / </span><strong>{pageLabel}</strong></span><span className={styles.contextOutlet} title={outletName}>{outletName}</span></div>}<div className={styles.actions}><Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
   </div>;
 }
