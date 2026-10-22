@@ -362,6 +362,7 @@ export interface LazsipProgram {
   description: string;
   requirements: string | null;
   image: string | null;
+  documentationPhotos?: DocumentationPhoto[] | null;
   category: string;
   type: string;
   formUrl: string | null;
@@ -384,10 +385,19 @@ export interface LazsipActivity {
   title: string;
   description: string;
   image: string | null;
+  documentationPhotos?: DocumentationPhoto[] | null;
   date: Date;
   isPinned: boolean;
   createdAt: Date;
 }
+
+export interface DocumentationPhoto {
+  id: string;
+  image: string;
+  caption: string | null;
+  isDemo?: boolean;
+}
+export type CampaignDocumentationPhoto = DocumentationPhoto;
 
 export interface LazsipCampaign {
   id: string;
@@ -396,6 +406,7 @@ export interface LazsipCampaign {
   targetAmount: number;
   currentAmount: number;
   image: string | null;
+  documentationPhotos?: CampaignDocumentationPhoto[] | null;
   uniqueCode: string;
   isPinned: boolean;
   status: string;
@@ -463,6 +474,8 @@ export interface LazsipBeneficiary {
   gender: string;
   referralSource: string;
   photo: string | null;
+  handoverPhoto: string | null;
+  certificatePhoto: string | null;
   needs: string;
   aidType: string;
   amountReceived: number;

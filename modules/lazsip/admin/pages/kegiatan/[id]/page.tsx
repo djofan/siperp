@@ -25,6 +25,7 @@ export default async function EditKegiatanPage({
           title: activity.title,
           description: activity.description,
           image: activity.image ?? "",
+          documentationPhotos: activity.documentationPhotos ?? [],
           date: activity.date.toISOString().slice(0, 10),
           isPinned: activity.isPinned,
         }}
