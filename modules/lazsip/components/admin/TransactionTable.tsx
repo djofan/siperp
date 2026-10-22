@@ -10,6 +10,8 @@ import { panelClasses } from "@/components/ui/panel";
 
 export interface TransactionRow {
   id: string;
+  trackingCode: string;
+  gateway?: string;
   type: "donasi" | "zakat";
   source: "legacy-donation" | "payment" | "zakat";
   label: string;
@@ -23,8 +25,8 @@ export interface TransactionRow {
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDateTime = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
 
-const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Success", failed: "Failed" };
-const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger" };
+const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Lunas", failed: "Gagal", escrow: "Sudah dibayar · Escrow" };
+const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger", escrow: "neutral" };
 
 const TYPE_OPTIONS = [
   { value: "all", label: "Semua Jenis" },
@@ -35,14 +37,15 @@ const TYPE_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "all", label: "Semua Status" },
   { value: "pending", label: "Pending" },
+  { value: "escrow", label: "Escrow · Dana ditahan" },
   { value: "paid", label: "Success" },
   { value: "failed", label: "Failed" },
 ];
 
 function toCsv(rows: TransactionRow[]) {
-  const header = ["Jenis", "Donatur", "Nominal", "Metode", "Waktu", "Status"];
+  const header = ["Kode Pembayaran", "Jenis", "Donatur", "Nominal", "Metode", "Waktu", "Status"];
   const lines = rows.map((row) =>
-    [row.type, row.donorName, row.amount, row.paymentMethod, row.createdAt.toISOString(), row.status]
+    [row.trackingCode, row.type, row.donorName, row.amount, row.paymentMethod, row.createdAt.toISOString(), row.status]
       .map((field) => `"${String(field).replace(/"/g, '""')}"`)
       .join(",")
   );
@@ -74,7 +77,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
 
   const filtered = useMemo(() => {
     let result = rows.filter(
-      (r) => r.donorName.toLowerCase().includes(search.toLowerCase()) || r.label.toLowerCase().includes(search.toLowerCase())
+      (r) => r.donorName.toLowerCase().includes(search.toLowerCase()) || r.label.toLowerCase().includes(search.toLowerCase()) || r.trackingCode.toLowerCase().includes(search.toLowerCase())
     );
     if (typeFilter !== "all") result = result.filter((r) => r.type === typeFilter);
     if (statusFilter !== "all") result = result.filter((r) => r.status === statusFilter);
@@ -104,7 +107,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
   return (
     <div>
       <AdminFilterBar>
-        <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari donatur/campaign..." />
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Cari kode, donatur, atau campaign..." />
         {showTypeFilter && (
           <AdminFilterSelect value={typeFilter} onChange={setTypeFilter} options={TYPE_OPTIONS} ariaLabel="Filter jenis" />
         )}
@@ -113,19 +116,21 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
         <AdminDateInput value={dateFrom} onChange={setDateFrom} ariaLabel="Dari tanggal" />
         <AdminDateInput value={dateTo} onChange={setDateTo} ariaLabel="Sampai tanggal" />
         <AdminFilterResetButton onClick={resetFilters} />
+      </AdminFilterBar>
+
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <p className="text-xs leading-relaxed text-lazsip-primary-800/50 dark:text-white/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
         <button
           type="button"
           onClick={handleExport}
-          className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-lazsip-primary-900 px-4 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
+          className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-full bg-lazsip-primary-900 px-4 text-xs font-semibold text-white transition-colors hover:bg-lazsip-primary-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lazsip-primary-500 dark:bg-lazsip-primary-700 dark:hover:bg-lazsip-primary-600"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
           </svg>
           Export CSV
         </button>
-      </AdminFilterBar>
-
-      <p className="mb-2 text-xs text-lazsip-primary-800/50 dark:text-white/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
+      </div>
 
       {filtered.length === 0 ? (
         <AdminEmptyState message="Tidak ada transaksi yang cocok dengan filter." />
@@ -136,6 +141,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
               <thead>
                 <tr className="border-b border-lazsip-primary-100 bg-lazsip-primary-50/60 text-[11px] font-semibold uppercase tracking-wider text-lazsip-primary-700/70 dark:border-white/10 dark:bg-white/3 dark:text-white/50">
                   <th className="px-4 py-3.5 font-semibold">No.</th>
+                  <th className="whitespace-nowrap px-4 py-3.5 font-semibold">Kode Pembayaran</th>
                   <th className="px-4 py-3.5 font-semibold">Jenis</th>
                   <th className="px-4 py-3.5 font-semibold">Donatur</th>
                   <th className="px-4 py-3.5 font-semibold">Nominal</th>
@@ -149,6 +155,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
                 {paginated.map((row, index) => (
                   <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                     <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
+                    <td className="whitespace-nowrap px-4 py-3.5 font-mono text-xs text-lazsip-primary-900 dark:text-white/80">{row.trackingCode}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{row.label}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{row.donorName}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatRupiah(row.amount)}</td>
@@ -158,7 +165,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
                       <AdminBadge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</AdminBadge>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      {row.status === "pending" && <TransactionActions id={row.id} source={row.source} />}
+                      {(row.status === "pending" || row.status === "escrow") && <TransactionActions id={row.id} source={row.source} gateway={row.gateway} />}
                     </td>
                   </tr>
                 ))}

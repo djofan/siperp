@@ -8,8 +8,8 @@ import { panelClasses } from "@/components/ui/panel";
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatDateTime = (date: Date) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
 
-const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Success", failed: "Failed" };
-const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger" };
+const STATUS_LABEL: Record<string, string> = { pending: "Pending", paid: "Lunas", failed: "Gagal", escrow: "Sudah dibayar · Escrow" };
+const STATUS_TONE: Record<string, "neutral" | "secondary" | "danger"> = { pending: "neutral", paid: "secondary", failed: "danger", escrow: "neutral" };
 
 export default async function DonorDetailPage({
   params,

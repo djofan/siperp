@@ -1,6 +1,7 @@
 import { listPrograms } from "@/modules/lazsip/api/programs";
 import { ProgramCard } from "@/modules/lazsip/components/ProgramCard";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 import { FilterChips } from "@/modules/lazsip/components/ui/FilterChips";
 
 const TYPE_LABEL: Record<string, string> = {
@@ -21,11 +22,13 @@ export default async function LazsipProgramPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
+      <PageIntroRow>
       <BackLink href="/lazsip#program">Kembali ke Beranda</BackLink>
 
       <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
         Program Pemberdayaan
       </span>
+      </PageIntroRow>
       <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
         Semua Program Pemberdayaan
       </h1>

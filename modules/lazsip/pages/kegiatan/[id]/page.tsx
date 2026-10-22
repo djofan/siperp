@@ -6,6 +6,7 @@ import { Button } from "@/modules/lazsip/components/ui/Button";
 import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { ActivityCard } from "@/modules/lazsip/components/ActivityCard";
 import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 
 export default async function LazsipKegiatanDetailPage({
   params,
@@ -52,6 +53,8 @@ export default async function LazsipKegiatanDetailPage({
           </Button>
         </div>
       </article>
+
+      <CampaignGallery photos={activity.documentationPhotos??[]} title={activity.title} kind="activity"/>
 
       {otherActivities.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">

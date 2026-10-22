@@ -8,6 +8,7 @@ import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { CampaignCard } from "@/modules/lazsip/components/CampaignCard";
 import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 import { CampaignDetailColumns } from "@/modules/lazsip/components/sections/CampaignDetailColumns";
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 
 export default async function LazsipDonasiDetailPage({
   params,
@@ -58,6 +59,8 @@ export default async function LazsipDonasiDetailPage({
           </>
         }
       />
+
+      <CampaignGallery photos={campaign.documentationPhotos??[]} title={campaign.title}/>
 
       {otherCampaigns.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">

@@ -1,7 +1,7 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
 import type { LazsipBeneficiary } from "@/lib/domain";
 type PublicCard = Pick<LazsipBeneficiary, "id" | "name" | "age" | "amountReceived" | "aidType" | "photo" | "isPinned" | "verifierArea" | "verifierName">;
-type PublicDetail = Pick<LazsipBeneficiary, "id" | "name" | "age" | "problemFaced" | "gender" | "photo" | "referralSource" | "needs" | "aidType" | "amountReceived" | "verifierName" | "verifierArea">;
+type PublicDetail = Pick<LazsipBeneficiary, "id" | "name" | "age" | "problemFaced" | "gender" | "photo" | "handoverPhoto" | "certificatePhoto" | "referralSource" | "needs" | "aidType" | "amountReceived" | "verifierName" | "verifierArea">;
 export async function listBeneficiariesForAdmin() { return apiCollection<LazsipBeneficiary>("lazsip/admin/beneficiaries"); }
 export async function getBeneficiaryForAdmin(id: string) {
   try { return await apiRequest<LazsipBeneficiary>(`lazsip/admin/beneficiaries/${encodeURIComponent(id)}`); }

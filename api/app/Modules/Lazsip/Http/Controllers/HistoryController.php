@@ -19,9 +19,14 @@ class HistoryController
 {
     public function publicHistory(Request $request, DonorService $donors, HistoryOtpService $otp, DonorHistoryService $history): JsonResponse
     {
-        $data = $request->validate(['email' => 'required|string|max:191', 'action' => 'required|in:request,verify', 'challengeId' => 'required_if:action,verify|string|max:191', 'code' => 'required_if:action,verify|digits:6']);
+        $data = $request->validate(['email' => 'required|string|max:191', 'action' => 'required|in:email,request,verify', 'challengeId' => 'required_if:action,verify|string|max:191', 'code' => 'required_if:action,verify|digits:6']);
         $email = $donors->normalizeEmail($data['email']);
         abort_unless($email !== null, 422, 'Masukkan alamat email yang valid.');
+        if ($data['action'] === 'email') {
+            app(\App\Modules\Lazsip\Services\HistoryEmailService::class)->send($email, $history);
+
+            return response()->json(['message' => 'Riwayat telah dikirim ke email yang Anda masukkan. Periksa inbox atau folder spam.'])->header('Cache-Control', 'no-store');
+        }
         if ($data['action'] === 'request') {
             $result = $otp->request($email);
             abort_unless(! $result['limited'], 429, 'Tunggu 60 detik sebelum meminta ulang. Maksimal 5 kode per jam.');
@@ -48,16 +53,11 @@ class HistoryController
             return response()->json(['found' => false]);
         }
         $row = PaymentTransaction::where('module_source', 'lazsip')->where('tracking_code', $code)->first();
-        if ($row && $row->status === 'pending' && $row->gateway === 'ipaymu_sandbox') {
-            try {
-                $gateway->sync($row);
-                $row->refresh();
-            } catch (\Throwable) {
-            }
-        }
+        // Public status reads the local projection immediately. Webhooks/workers reconcile it.
+        if ($row) $gateway->enqueueReconciliation($row);
         if ($row) {
             $campaign = $row->sourceType === 'campaign';
-            $result = ['found' => true, 'code' => $row->trackingCode, 'type' => $campaign ? 'donasi' : 'zakat', 'label' => $campaign ? (LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt];
+            $result = ['found' => true, 'code' => $row->trackingCode, 'type' => $campaign ? 'donasi' : 'zakat', 'label' => $campaign ? (LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi') : (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal'), 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status === 'pending' && $row->gatewayState === 'escrow' ? 'escrow' : $row->status, 'createdAt' => $row->createdAt];
             if ($row->status === 'pending') {
                 $result += ['checkoutId' => $row->id, 'gateway' => $row->gateway];
             }

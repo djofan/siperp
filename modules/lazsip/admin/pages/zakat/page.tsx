@@ -9,6 +9,7 @@ export default async function TransaksiZakatPage() {
     ...legacyZakat.map((z) => ({
       source: "zakat" as const,
       id: z.id,
+      trackingCode: z.id,
       type: "zakat" as const,
       label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       donorName: z.donorName,
@@ -20,6 +21,8 @@ export default async function TransaksiZakatPage() {
     ...paymentZakat.map((z) => ({
       source: "payment" as const,
       id: z.id,
+      trackingCode: z.trackingCode,
+      gateway: z.gateway,
       type: "zakat" as const,
       label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       donorName: z.donorName,
