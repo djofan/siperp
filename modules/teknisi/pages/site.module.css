@@ -2,3 +2,18 @@
 .site{background:#0a0d09;color:#e7e9ea;font-family:var(--font-geist-sans),Arial,sans-serif}.site>header{background:#0e130c}.site>footer{background:#0a0d09}.site nav a:hover,.site :global(.text-emerald-600){color:#86c257}.site :global(.bg-white){background:#141a12}.site :global(.bg-slate-50){background:#0a0d09}.site :global(.bg-emerald-600){background:#86c257;color:#0a0d09}
 @media(max-width:480px){.site>header>div{gap:10px;padding:14px 16px}.site nav{gap:16px;font-size:11px}.site>footer{padding:16px;font-size:10px}}
 .site:has(:global(.tech-workspace))>header,.site:has(:global(.tech-workspace))>footer{display:none}.site:has(:global(.tech-workspace))>main{height:100dvh;overflow:hidden}
+.site:has([data-teknisi-landing]){background:#f9fcf6;color:#18271f;color-scheme:light}.site:has([data-teknisi-landing])>header{background:#f9fcf6;color:#213929}.site:has([data-teknisi-landing]) nav{color:#5e7867}.site:has([data-teknisi-landing]) nav a:hover{color:#319952}.site:has([data-teknisi-landing])>footer{background:#f9fcf6;color:#77917b}.site:has([data-teknisi-landing])>header span{color:#319952}
+.navigation{display:flex;justify-content:space-between;align-items:center;gap:20px;max-width:1160px;padding:22px 32px;margin:auto}.brand{font-size:20px;letter-spacing:-.7px;font-weight:650;white-space:nowrap}.brand span{color:#76ad65}.navigation nav{display:flex;align-items:center;gap:24px;font-size:11px}.trackButton{background:#ffffff08;border:0;border-radius:8px;padding:10px 13px;color:inherit;cursor:pointer;font-size:11px;font-weight:500}.site:has([data-teknisi-landing]) .trackButton{background:#e9efe3;color:#355d40}.footer{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1160px;margin:auto;padding:24px 32px 30px;font-size:10px}.footer p{font-size:11px}.footer .brand{font-size:16px}
+@media(max-width:640px){.navigation{padding:18px 20px;gap:14px;flex-wrap:wrap}.navigation nav{gap:14px;flex-wrap:wrap;font-size:10px}.navigation .brand{font-size:19px}.trackButton{font-size:10px;padding:8px 10px}.footer{padding:20px;align-items:flex-start;flex-direction:column;gap:10px}}
+.site:has([data-teknisi-landing]){background:#fff;color:#25351e}
+.site:has([data-teknisi-landing])>header{background:#20380d;padding:18px 24px 0}
+.site:has([data-teknisi-landing]) .navigation{max-width:1104px;background:#fff;border-radius:999px;padding:12px 20px;gap:24px}
+.site:has([data-teknisi-landing]) .navigation nav{color:#60724f;gap:24px}
+.site:has([data-teknisi-landing]) .navigation .brand{color:#20380d;font-weight:750;font-size:21px}
+.site:has([data-teknisi-landing])>header .brand span{color:#73ae43}
+.site:has([data-teknisi-landing]) .trackButton{background:#20380d;color:#fff;border-radius:999px;padding:11px 18px}
+.site:has([data-teknisi-landing]) .trackButton:hover{background:#304d19}
+.site:has([data-teknisi-landing])>footer{max-width:none;background:#20380d;color:#c2d3b2;padding:28px max(24px,calc((100% - 1088px)/2));margin:0}
+.site:has([data-teknisi-landing])>footer .brand{color:#fff}
+.site:has([data-teknisi-landing])>footer .brand span{color:#b6d299}
+@media(max-width:640px){.site:has([data-teknisi-landing])>header{padding:14px 14px 0}.site:has([data-teknisi-landing]) .navigation{padding:14px 16px;border-radius:20px;gap:12px}.site:has([data-teknisi-landing]) .navigation nav{gap:10px 16px;flex:1 1 100%;justify-content:space-between;font-size:10px}.site:has([data-teknisi-landing]) .trackButton{font-size:10px;padding:9px 12px}.site:has([data-teknisi-landing])>footer{padding:24px 20px}}

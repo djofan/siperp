@@ -77,6 +77,21 @@ class OperationController
         return response()->json(['data' => $row]);
     }
 
+    public function editOutlet(Request $request, string $id)
+    {
+        $actor = $this->context->actor($request, true, true);
+        $data = $request->validate(['name' => 'required|string|max:191', 'address' => 'sometimes|required|string|max:1000', 'phone' => 'sometimes|required|string|max:30']);
+        $row = DB::transaction(function () use ($id, $actor, $data) {
+            $row = $this->context->scope(TeknisiOutlet::query(), $actor, 'id')->where('id', $id)->lockForUpdate()->firstOrFail();
+            foreach ($data as $key => $value) {
+                $row->$key = $value;
+            }
+            $row->save();
+            return $row;
+        });
+        return response()->json(['data' => $row]);
+    }
+
     public function createTicket(Request $request)
     {
         $actor = $this->context->actor($request, true);
@@ -139,6 +154,7 @@ class OperationController
         DB::transaction(function () use ($data, $actor) {
             $row = $this->ticket($actor, $data['ticketId']);
             $this->open($row);
+            abort_if($row->workflow()->exists(), 409, 'Gunakan tahapan Kerjakan, Selesai, dan Finish untuk servisan ini.');
             abort_unless($row->status === $data['expectedStatus'] && $row->updatedAt->equalTo(CarbonImmutable::parse($data['expectedVersion'])), 409, 'Tiket telah diperbarui. Muat ulang halaman.');
             abort_unless($row->status === $data['status'] || in_array($data['status'], TeknisiContext::TRANSITIONS[$row->status] ?? [], true), 422, 'Perubahan status tidak sesuai alur servis.');
             abort_if($data['status'] === 'collected' && ! $actor['manager'], 403, 'Pengambilan perangkat harus dicatat admin outlet.');

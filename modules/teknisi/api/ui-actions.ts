@@ -37,3 +37,10 @@ export async function createOutletForm(_:ActionState,form:FormData):Promise<Acti
   try{await apiRequest("teknisi/outlets",{method:"POST",body:form});}catch(error){return errorState(error);}
   refresh();redirect("/admin/teknisi/outlet");
 }
+
+export async function editOutletForm(id:string,_:ActionState,form:FormData):Promise<ActionState>{
+  const user=await requireTechnicianUser();
+  if(!user.canManage)return {error:"Hanya pengelola dapat mengedit outlet."};
+  try{await apiRequest(`teknisi/outlets/${encodeURIComponent(id)}`,{method:"PATCH",body:form});}catch(error){return errorState(error);}
+  return {success:"Outlet berhasil diperbarui.",redirectTo:"/admin/teknisi/outlet"};
+}

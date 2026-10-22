@@ -18,6 +18,8 @@ use App\Modules\Teknisi\Models\TeknisiPart;
 use App\Modules\Teknisi\Models\TeknisiPartUse;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -37,6 +39,7 @@ if (config('database.default') !== 'sqlite' || config('database.connections.sqli
 Artisan::call('migrate', ['--force' => true]);
 config(['payment.gateway' => 'simulation', 'payment.resend.key' => null, 'payment.resend.from' => null]);
 Http::preventStrayRequests();
+Storage::fake('local');
 
 function check(bool $value, string $message): void
 {
@@ -46,7 +49,7 @@ function check(bool $value, string $message): void
     echo 'PASS '.$message.PHP_EOL;
 }
 
-function sendRequest(string $method, string $path, array $body = [], ?string $token = null, array $extraHeaders = []): array
+function sendRequest(string $method, string $path, array $body = [], ?string $token = null, array $extraHeaders = [], array $files = []): array
 {
     Auth::forgetGuards();
     $headers = ['HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json'];
@@ -56,7 +59,10 @@ function sendRequest(string $method, string $path, array $body = [], ?string $to
     foreach ($extraHeaders as $name => $value) {
         $headers['HTTP_'.strtoupper(str_replace('-', '_', $name))] = $value;
     }
-    $request = Request::create('http://localhost:8000/api/v1/'.$path, $method, [], [], [], $headers, json_encode($body, JSON_THROW_ON_ERROR));
+    if ($files) {
+        unset($headers['CONTENT_TYPE']);
+    }
+    $request = Request::create('http://localhost:8000/api/v1/'.$path, $method, $files ? $body : [], [], $files, $headers, $files ? null : json_encode($body, JSON_THROW_ON_ERROR));
     $http = app(Illuminate\Contracts\Http\Kernel::class);
     $response = $http->handle($request);
     $http->terminate($request, $response);
@@ -181,15 +187,15 @@ $techToken = app(TokenIssuer::class)->issue($techUser)->plainTextToken;
 check($status === 200, 'Teknisi viewer resolves legacy camelCase account columns');
 [$status] = sendRequest('POST', 'teknisi/participants', ['name' => 'Second technician', 'address' => 'Test address', 'phone' => '081234567892', 'password' => 'test-password', 'outletId' => $outletId], $adminToken);
 check($status === 409 && User::where('name', 'Second technician')->count() === 0, 'Duplicate outlet assignment rolls the account transaction back');
-[$status, $ticket] = sendRequest('POST', 'teknisi/tickets', ['outletId' => $outletId, 'priority' => 'normal', 'customerName' => 'Private customer', 'customerPhone' => '081200000000', 'device' => 'Test phone', 'complaint' => 'Private issue', 'estimate' => 10000], $techToken);
+[$status, $ticket] = sendRequest('POST', 'teknisi/tickets', ['serviceType' => 'normal', 'outletId' => $outletId, 'priority' => 'normal', 'customerName' => 'Private customer', 'customerPhone' => '081200000000', 'device' => 'Test phone', 'complaint' => 'Private issue', 'estimate' => 10000], $techToken, [], ['beforePhoto' => UploadedFile::fake()->image('before.jpg')]);
 check($status === 201, 'A technician creates a ticket in the assigned outlet');
 $ticket = $ticket['data'];
 [$status, $tracking] = sendRequest('GET', 'teknisi/tracking/'.$ticket['trackingToken']);
 check($status === 200 && ! isset($tracking['data']['customerName'], $tracking['data']['complaint'], $tracking['data']['events'][0]['note']), 'Public tracking excludes customer identity and staff notes');
-$update = ['ticketId' => $ticket['id'], 'status' => 'diagnosis', 'expectedStatus' => 'received', 'expectedVersion' => $ticket['updatedAt'], 'note' => 'Checking device'];
-[$status] = sendRequest('POST', 'teknisi/tickets/update', $update, $techToken);
+$update = ['ticketId' => $ticket['id'], 'operation' => 'start', 'expectedStatus' => 'received', 'expectedVersion' => $ticket['updatedAt']];
+[$status] = sendRequest('POST', 'teknisi/workflow', $update, $techToken);
 check($status === 200, 'Ticket transitions use millisecond version checks');
-[$status] = sendRequest('POST', 'teknisi/tickets/update', $update, $techToken);
+[$status] = sendRequest('POST', 'teknisi/workflow', $update, $techToken);
 check($status === 409, 'A stale ticket version is rejected');
 [$status, $part] = sendRequest('POST', 'teknisi/parts', ['outletId' => $outletId, 'sku' => 'TEST', 'name' => 'Test part', 'stock' => 2, 'minimum' => 1, 'price' => 5000], $techToken);
 check($status === 201, 'Teknisi creates stock and its initial movement');

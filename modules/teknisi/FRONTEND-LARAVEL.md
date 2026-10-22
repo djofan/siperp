@@ -1,5 +1,11 @@
 # Teknisi frontend — Laravel contract adaptation
 
+## Update 20 October 2026
+
+The current workflow extends the Laravel backend. The initial adaptation notes below are historical, not current limitations.
+See [service-workflow.md](service-workflow.md) for Pending → Proses → Ready → Finish, authenticated photos,
+single-payment pickup, warranty child tickets, draft retention, MySQL migration and verification.
+
 This change targets the Laravel backend merged in main (`e08b6af`). Next.js remains a frontend: authenticated server actions forward FormData through `lib/api.ts`; there are no database imports, Prisma schemas/migrations, Next API handlers, or backend changes in this PR.
 
 ## Included
