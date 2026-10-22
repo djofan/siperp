@@ -19,9 +19,14 @@ class HistoryController
 {
     public function publicHistory(Request $request, DonorService $donors, HistoryOtpService $otp, DonorHistoryService $history): JsonResponse
     {
-        $data = $request->validate(['email' => 'required|string|max:191', 'action' => 'required|in:request,verify', 'challengeId' => 'required_if:action,verify|string|max:191', 'code' => 'required_if:action,verify|digits:6']);
+        $data = $request->validate(['email' => 'required|string|max:191', 'action' => 'required|in:email,request,verify', 'challengeId' => 'required_if:action,verify|string|max:191', 'code' => 'required_if:action,verify|digits:6']);
         $email = $donors->normalizeEmail($data['email']);
         abort_unless($email !== null, 422, 'Masukkan alamat email yang valid.');
+        if ($data['action'] === 'email') {
+            app(\App\Modules\Lazsip\Services\HistoryEmailService::class)->send($email, $history);
+
+            return response()->json(['message' => 'Riwayat telah dikirim ke email yang Anda masukkan. Periksa inbox atau folder spam.'])->header('Cache-Control', 'no-store');
+        }
         if ($data['action'] === 'request') {
             $result = $otp->request($email);
             abort_unless(! $result['limited'], 429, 'Tunggu 60 detik sebelum meminta ulang. Maksimal 5 kode per jam.');
