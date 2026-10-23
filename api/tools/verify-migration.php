@@ -136,12 +136,15 @@ $ipaymuId = $ipaymuBody['transactionId'];
 [$status, $session] = sendRequest('POST', 'payment/gateway-session/'.$ipaymuId);
 check($status === 200 && $session['url'] === 'https://sandbox-payment.ipaymu.com/?sid=SMOKE-SESSION', 'Laravel creates a signed iPaymu redirect session');
 $ipaymu = PaymentTransaction::findOrFail($ipaymuId);
+Http::fake(['https://sandbox.ipaymu.com/api/v2/transaction' => Http::response(['Status' => 200, 'Data' => ['TransactionId' => 4719, 'ReferenceId' => $ipaymu->gatewayReferenceId, 'SessionId' => 'SMOKE-SESSION', 'SubTotal' => $ipaymu->amount + $ipaymu->adminFee, 'Status' => 1, 'PaidStatus' => 'paid']])]);
 $callback = ['reference_id' => $ipaymu->gatewayReferenceId, 'sid' => 'SMOKE-SESSION', 'merchant' => '1179000899', 'trx_id' => 4719, 'status_code' => 1, 'transaction_status_code' => 1, 'paid_off' => $ipaymu->amount + $ipaymu->adminFee, 'is_escrow' => false, 'amount' => (string) ($ipaymu->amount + $ipaymu->adminFee), 'additional_info' => []];
 $signedCallback = $callback;
 ksort($signedCallback, SORT_STRING);
 $callbackSignature = hash_hmac('sha256', json_encode($signedCallback, JSON_THROW_ON_ERROR), '1179000899');
 [$status] = sendRequest('POST', 'payment/webhook/ipaymu', $callback, null, ['X-Signature' => $callbackSignature]);
-check($status === 200 && PaymentTransaction::findOrFail($ipaymuId)->status === 'paid', 'A valid signed iPaymu callback finalizes payment once');
+check($status === 200 && PaymentTransaction::findOrFail($ipaymuId)->status === 'pending', 'A valid signed iPaymu callback is accepted for asynchronous verification');
+\Illuminate\Support\Facades\Artisan::call('queue:work', ['connection' => 'payment', '--queue' => 'callbacks', '--once' => true, '--tries' => 1]);
+check(PaymentTransaction::findOrFail($ipaymuId)->status === 'paid', 'The callback worker verifies and finalizes payment once');
 [$status] = sendRequest('POST', 'payment/webhook/ipaymu', [...$callback, 'amount' => '1'], null, ['X-Signature' => $callbackSignature]);
 check($status === 401 && PaymentTransaction::findOrFail($ipaymuId)->status === 'paid', 'A modified iPaymu callback is rejected without changing payment');
 

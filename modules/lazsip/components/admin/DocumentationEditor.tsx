@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { DocumentationPhoto } from "@/lib/domain";
+import type { DocumentationPhoto } from "@/contracts/modules/lazsip";
 import { ImageUploadField } from "./ImageUploadField";
 import { LoadingButton } from "./LoadingButton";
 import { panelClasses } from "@/components/ui/panel";

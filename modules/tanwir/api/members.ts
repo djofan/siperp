@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/tanwir";
 import type { TanwirMemberRole } from "./access";
 export interface AddressInput {
     address: string | null;

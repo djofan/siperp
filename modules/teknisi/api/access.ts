@@ -3,7 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { apiRequest, ApiError } from "@/lib/api";
-import type { TeknisiTechnician } from "@/lib/domain";
+import type { TeknisiTechnician } from "@/contracts/modules/teknisi";
 import { OPERATOR_ROOT } from "./navigation";
 
 export const getTechnicianUser = cache(async () => {

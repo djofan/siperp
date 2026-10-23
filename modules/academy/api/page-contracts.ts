@@ -1,4 +1,4 @@
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/academy";
 export type AcademyPage1 = {
     people: {
         id: string;
@@ -395,13 +395,13 @@ export type AcademyPage12 = {
         quizDate: Date | null;
         timeLimitMinutes: number;
         allowRetake: boolean;
-        kind: import("@/lib/domain").AcademyQuizKind;
+        kind: import("@/contracts/modules/academy").AcademyQuizKind;
         closesAt: Date | null;
         questions: {
             id: string;
             order: number;
             question: string;
-            type: import("@/lib/domain").AcademyQuestionType;
+            type: import("@/contracts/modules/academy").AcademyQuestionType;
             weight: number;
             explanation: string | null;
             options: {
@@ -427,13 +427,13 @@ export type AcademyPage12 = {
         quizDate: Date | null;
         timeLimitMinutes: number;
         allowRetake: boolean;
-        kind: import("@/lib/domain").AcademyQuizKind;
+        kind: import("@/contracts/modules/academy").AcademyQuizKind;
         closesAt: Date | null;
         questions: {
             id: string;
             order: number;
             question: string;
-            type: import("@/lib/domain").AcademyQuestionType;
+            type: import("@/contracts/modules/academy").AcademyQuestionType;
             weight: number;
             explanation: string | null;
             options: {

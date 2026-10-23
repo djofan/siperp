@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { LazsipProgram } from "@/lib/domain";
+import type { LazsipProgram } from "@/contracts/modules/lazsip";
 export async function listPrograms() { return apiCollection<LazsipProgram>("lazsip/programs"); }
 export async function getProgramById(id: string) {
   try { return await apiRequest<LazsipProgram>(`lazsip/programs/${encodeURIComponent(id)}`); }
