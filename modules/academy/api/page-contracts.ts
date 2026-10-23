@@ -1,9 +1,5 @@
-<<<<<<< Updated upstream
 import type * as Domain from "@/contracts/modules/academy";
-=======
 export type AcademyCohort = { id: string; title: string; registrationOpen: boolean; participants_count: number };
-import type * as Domain from "@/lib/domain";
->>>>>>> Stashed changes
 export type AcademyPage1 = {
     cohorts: AcademyCohort[];
     people: {
