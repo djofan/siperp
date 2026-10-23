@@ -2,6 +2,7 @@
 
 namespace App\Modules\Academy\Http\Controllers;
 
+use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment as Enrollment;
 use App\Modules\Academy\Models\ZakatAcademyQuiz as Quiz;
@@ -27,9 +28,9 @@ class CourseController
 
     public function intake()
     {
-        $course = Course::where('is_published', true)->where('is_simulation', false)->where('registration_open', true)->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '>', now()))->withCount('enrollments')->orderBy('order')->orderBy('id')->first();
+        $cohort = Cohort::where('registration_open', true)->withCount('participants')->orderByDesc('created_at')->first();
 
-        return $this->data(['course' => $course ? AcademyDto::make($course) : null, 'filled' => $course ? $course->enrollments_count : 0, 'full' => $course ? $course->enrollments_count >= $course->quota : false]);
+        return $this->data(['cohort' => $cohort, 'filled' => $cohort?->participants_count ?? 0, 'full' => false]);
     }
 
     public function index(Request $request)
@@ -45,8 +46,14 @@ class CourseController
         return $this->data($query->get()->map(fn ($row) => AcademyDto::make($row)));
     }
 
-    public function show(string $slug)
+    public function show(Request $request, string $slug)
     {
+        $lookup = Course::where('slug', $slug)->firstOrFail();
+        if ($lookup->cohortId && ! (auth('sanctum')->user()?->is_superadmin)) {
+            $actor = auth('sanctum')->user();
+            $profile = $actor ? \App\Modules\Academy\Models\ZakatAcademyProfile::where('user_id', $actor->id)->whereNull('deleted_at')->first() : null;
+            abort_unless($profile && app(\App\Modules\Academy\Services\CohortLearning::class)->owns($profile->id, $lookup->cohortId), 404);
+        }
         $course = Course::where('slug', $slug)->where('is_published', true)->select('id', 'slug', 'title', 'short_description', 'description', 'thumbnail_url', 'teacher', 'starts_at', 'quota', 'duration_days', 'is_simulation')->withCount('enrollments')->with(['chapters' => fn ($q) => $q->where('is_published', true)->select('id', 'course_id', 'title', 'description')->orderBy('order')->orderBy('id'), 'chapters.lessons' => fn ($q) => $q->where('is_published', true)->select('id', 'chapter_id', 'title', 'slug', 'release_day')->orderBy('order')->orderBy('id'), 'chapters.quizzes' => fn ($q) => $q->where('is_published', true)->select('id', 'chapter_id', 'title')])->firstOrFail();
 
         return $this->data(AcademyDto::make($course));
@@ -72,6 +79,7 @@ class CourseController
         $profile = $this->context->profile($request);
         $query = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->where('is_published', true)->whereHas('course', fn ($c) => $c->where('is_published', true)->whereHas('enrollments', fn ($e) => $e->where('profile_id', $profile->id))))->withCount('questions')->with(['chapter:id,course_id,title', 'chapter.course:id,starts_at', 'attempts' => fn ($q) => $q->where('profile_id', $profile->id)->select('id', 'quiz_id', 'attempt_number', 'is_completed', 'score', 'passed')->orderByDesc('attempt_number')])->orderByDesc('quiz_date')->orderBy('id');
 
+        if ($request->filled('cohort')) { $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort'))); }
         return $this->data($query->get()->map(fn ($row) => AcademyDto::make($row)));
     }
 
@@ -107,7 +115,7 @@ class CourseController
                 }
             }
             $self = $grades[$profile->id] ?? null;
-            $rows[] = ['courseId' => $enrollment->courseId, 'title' => $enrollment->course->title, 'rank' => $self ? 1 + count(array_filter($grades, fn ($g) => $g['score'] > $self['score'])) : null, 'total' => count($grades), 'score' => $self['score'] ?? 0, 'complete' => $self['complete'] ?? false];
+            $rows[] = ['courseId' => $enrollment->courseId, 'title' => $enrollment->course->title, 'rank' => $self ? 1 + count(array_filter($grades, fn ($g) => $g['score'] > $self['score'])) : null, 'total' => count($grades), 'score' => $self['score'] ?? 0, 'predicate' => $self['predicate'] ?? null, 'complete' => $self['complete'] ?? false];
         }
 
         return $this->data($rows);

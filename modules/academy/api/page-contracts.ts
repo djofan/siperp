@@ -1,7 +1,15 @@
+<<<<<<< Updated upstream
 import type * as Domain from "@/contracts/modules/academy";
+=======
+export type AcademyCohort = { id: string; title: string; registrationOpen: boolean; participants_count: number };
+import type * as Domain from "@/lib/domain";
+>>>>>>> Stashed changes
 export type AcademyPage1 = {
+    cohorts: AcademyCohort[];
     people: {
         id: string;
+        cohortId?: string | null;
+        cohort?: { id: string; title: string } | null;
         nis: string | null;
         phone: string | null;
         address: string | null;
@@ -17,6 +25,8 @@ export type AcademyPage1 = {
         }[];
     }[] | {
         id: string;
+        cohortId?: string | null;
+        cohort?: { id: string; title: string } | null;
         nis: string | null;
         phone: string | null;
         address: string | null;
@@ -140,6 +150,8 @@ export type AcademyPage3 = {
     } & {
         id: string;
         userId: string;
+        cohortId?: string | null;
+        cohort?: { id: string; title: string } | null;
         nis: string | null;
         phone: string | null;
         address: string | null;
@@ -157,6 +169,8 @@ export type AcademyPage3 = {
     } & {
         id: string;
         userId: string;
+        cohortId?: string | null;
+        cohort?: { id: string; title: string } | null;
         nis: string | null;
         phone: string | null;
         address: string | null;
@@ -487,6 +501,7 @@ export type AcademyPage14 = {
                 best: Record<string, number>;
                 means: Record<Domain.AcademyQuizKind, number>;
                 score: number;
+                predicate: string;
                 complete: boolean;
             };
         }[];

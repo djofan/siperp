@@ -38,7 +38,7 @@ export function HeroSection() {
             Mulai Belajar
           </a>
           <a href="#programs" className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5">
-            Lihat Program
+            Lihat Materi
           </a>
         </div>
 
@@ -54,7 +54,7 @@ export function HeroSection() {
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100">
               <GraduationCap className="h-3.5 w-3.5 text-orange-500" />
             </div>
-            <span>Kuis interaktif</span>
+            <span>Ujian interaktif</span>
           </div>
           <div className="hidden h-4 w-px bg-gray-200 sm:block" />
           <div className="flex items-center gap-2 text-sm text-gray-500">

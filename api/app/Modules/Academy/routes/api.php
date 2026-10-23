@@ -1,10 +1,12 @@
 <?php
 
 use App\Modules\Academy\Http\Controllers\CourseController;
+use App\Modules\Academy\Http\Controllers\CohortController;
 use App\Modules\Academy\Http\Controllers\CurriculumController;
 use App\Modules\Academy\Http\Controllers\FileController;
 use App\Modules\Academy\Http\Controllers\IntakeController;
 use App\Modules\Academy\Http\Controllers\LearningController;
+use App\Modules\Academy\Http\Controllers\MaterialController;
 use App\Modules\Academy\Http\Controllers\PageDataController;
 use App\Modules\Academy\Http\Controllers\QuizController;
 use App\Modules\Academy\Http\Controllers\TeacherController;
@@ -15,11 +17,24 @@ Route::middleware('module.public:academy')->group(function () {
     Route::get('settings/learning', [CourseController::class, 'settings']);
     Route::get('intake', [CourseController::class, 'intake']);
     Route::get('courses', [CourseController::class, 'index']);
+    Route::get('materials', [MaterialController::class, 'index']);
+    Route::get('materials/{id}', [MaterialController::class, 'show']);
     Route::get('courses/by-slug/{slug}', [CourseController::class, 'show']);
     Route::get('leaderboard', [CourseController::class, 'leaderboard']);
     Route::post('register', [ParticipantController::class, 'registerAcademy'])->middleware('throttle:login');
 });
 Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
+    Route::get('admin/materials', [MaterialController::class, 'adminIndex']);
+    Route::get('admin/materials/{id}', [MaterialController::class, 'adminShow']);
+    Route::post('admin/materials', [MaterialController::class, 'save']);
+    Route::post('admin/materials/{id}/duplicate', [MaterialController::class, 'duplicate']);
+    Route::get('learning/cohorts', [CohortController::class, 'index']);
+    Route::post('cohorts/{id}/join', [CohortController::class, 'join']);
+    Route::post('admin/material-quizzes', [MaterialController::class, 'createQuiz']);
+    Route::post('admin/exams/{id?}', [MaterialController::class, 'saveExam']);
+    Route::put('admin/materials/{id}', [MaterialController::class, 'save']);
+    Route::delete('admin/materials/{id}', [MaterialController::class, 'destroy']);
+    Route::post('materials/{id}/start', [MaterialController::class, 'start']);
     $pages = PageDataController::class;
     $intake = IntakeController::class;
     Route::get('contacts', [$intake, 'contacts']);
@@ -33,6 +48,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
+    Route::put('admin/cohorts/{id}/registration', [$intake, 'cohortRegistration']);
     Route::post('admin/courses/{courseId}/import', [$intake, 'import']);
     Route::put('admin/courses/{courseId}/registration', [$intake, 'registration']);
     Route::put('admin/courses/{courseId}/schedule', [$intake, 'schedule']);

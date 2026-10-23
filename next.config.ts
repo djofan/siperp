@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+<<<<<<< Updated upstream
   experimental: { serverActions: { bodySizeLimit: '14mb' } },
+=======
+  experimental: { serverActions: { bodySizeLimit: "51mb" } },
+>>>>>>> Stashed changes
   async rewrites() {
     const backend = (process.env.LARAVEL_API_URL ?? "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
     return {

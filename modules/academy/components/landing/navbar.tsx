@@ -64,9 +64,9 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
       {menuOpen && (
         <div className="border-t border-gray-100 bg-white px-4 py-3 sm:hidden">
           <div className="flex flex-col gap-2">
-            <a href="/academy/#programs" className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50" onClick={() => setMenuOpen(false)}>
-              Program
-            </a>
+            <Link href="/academy/materi" className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50" onClick={() => setMenuOpen(false)}>
+              Materi
+            </Link>
             {isLoggedIn ? (
               <a href={dashboardHref} className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                 Dashboard

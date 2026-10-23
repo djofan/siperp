@@ -21,7 +21,8 @@ export async function editAcademyAccount(id: string, _: ActionState, form: FormD
   await requireAcademyAdmin();
   try { await editParticipantAccount("academy", id, form); revalidatePath("/admin/academy", "layout"); revalidatePath("/academy", "layout"); }
   catch (error) { return { error: error instanceof ApiError ? error.message : "Perubahan gagal. Periksa apakah nomor HP sudah digunakan." }; }
-  redirect(`/admin/academy/pendaftaran?disimpan=1&q=${encodeURIComponent(String(form.get("name") ?? "").trim())}`);
+  const destination = "/admin/academy/peserta";
+  redirect(`${destination}?disimpan=1&q=${encodeURIComponent(String(form.get("name") ?? "").trim())}`);
 }
 export async function deleteAcademyAccount(id: string): Promise<ActionState> {
   await requireAcademyAdmin();

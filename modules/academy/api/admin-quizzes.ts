@@ -11,12 +11,15 @@ export type ListAdminQuizzesResult = {
             attempts: number;
         };
         isActive: boolean;
+        kind: Domain.AcademyQuizKind;
+        questions: { id: string; type: Domain.AcademyQuestionType }[];
         chapter: {
             id: string;
             title: string;
             courseId: string;
             course: {
                 title: string;
+                cohort: { id: string; title: string } | null;
             };
         };
     }[] | {
@@ -28,12 +31,15 @@ export type ListAdminQuizzesResult = {
             attempts: number;
         };
         isActive: boolean;
+        kind: Domain.AcademyQuizKind;
+        questions: { id: string; type: Domain.AcademyQuestionType }[];
         chapter: {
             id: string;
             title: string;
             courseId: string;
             course: {
                 title: string;
+                cohort: { id: string; title: string } | null;
             };
         };
     }[];
@@ -41,7 +47,7 @@ export type ListAdminQuizzesResult = {
     pages: number;
     total: number;
 };
-export async function listAdminQuizzes(search: string, requestedPage: number): Promise<ListAdminQuizzesResult> { return await apiRequest<ListAdminQuizzesResult>(`academy/admin/quizzes?search=${encodeURIComponent(search)}&page=${requestedPage}`); }
+export async function listAdminQuizzes(search: string, requestedPage: number, cohort = "", all = false): Promise<ListAdminQuizzesResult> { return await apiRequest<ListAdminQuizzesResult>(`academy/admin/quizzes?search=${encodeURIComponent(search)}&page=${requestedPage}&cohort=${encodeURIComponent(cohort)}${all ? "&all=1" : ""}`); }
 export type GetAdminQuizResult = {
     isPublished: boolean;
     id: string;
@@ -140,6 +146,7 @@ export async function getAdminQuiz(courseId: string, chapterId: string, quizId: 
             }[];
             chapter: {
                 title: string;
+                cohort: { id: string; title: string } | null;
             };
         } | {
             isPublished: boolean;
@@ -172,6 +179,7 @@ export async function getAdminQuiz(courseId: string, chapterId: string, quizId: 
             }[];
             chapter: {
                 title: string;
+                cohort: { id: string; title: string } | null;
             };
         } | null>(`academy/admin/courses/${encodeURIComponent(courseId)}/chapters/${encodeURIComponent(chapterId)}/quizzes/${encodeURIComponent(quizId)}`);
     }

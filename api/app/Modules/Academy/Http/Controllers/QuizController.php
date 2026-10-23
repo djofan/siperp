@@ -52,8 +52,8 @@ class QuizController
             $profile->newQuery()->where('id', $profile->id)->lockForUpdate()->firstOrFail();
             ZakatAcademyQuiz::where('id', $quizId)->lockForUpdate()->firstOrFail();
             $quiz = $this->context->quiz($quizId, $profile->id);
-            abort_unless($this->context->released($quiz->chapter->course->startsAt, $quiz->releaseDay) && $quiz->isActive && (! $quiz->quizDate || ! $quiz->quizDate->isFuture()) && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Kuis belum dibuka atau sudah ditutup.');
-            abort_if(! $quiz->questions->count() || $quiz->questions->contains(fn ($q) => $q->type === 'MULTIPLE' ? ! $q->options->contains('isCorrect', true) : $q->options->where('isCorrect', true)->count() !== 1), 422, 'Soal kuis belum siap.');
+            abort_unless($this->context->released($quiz->chapter->course->startsAt, $quiz->releaseDay) && $quiz->isActive && (! $quiz->quizDate || ! $quiz->quizDate->isFuture()) && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Ujian belum dibuka atau sudah ditutup.');
+            abort_if(! $quiz->questions->count() || $quiz->questions->contains(fn ($q) => $q->type === 'MULTIPLE' ? ! $q->options->contains('isCorrect', true) : $q->options->where('isCorrect', true)->count() !== 1), 422, 'Soal ujian belum siap.');
             $latest = ZakatAcademyQuizAttempt::where('profile_id', $profile->id)->where('quiz_id', $quizId)->orderByDesc('attempt_number')->lockForUpdate()->first();
             if ($latest && ! $latest->isCompleted) {
                 $deadline = $this->deadline($latest);
@@ -64,7 +64,7 @@ class QuizController
 
                 return $latest->id;
             }
-            abort_if($latest && ! $quiz->allowRetake, 409, 'Kuis ini hanya dapat dikerjakan satu kali.');
+            abort_if($latest && ! $quiz->allowRetake, 409, 'Ujian ini hanya dapat dikerjakan satu kali.');
             $row = new ZakatAcademyQuizAttempt;
             $row->profileId = $profile->id;
             $row->quizId = $quizId;
@@ -91,7 +91,7 @@ class QuizController
             $snapshot = $attempt->answers;
             $deadline = $this->deadline($attempt);
             $expired = ! $deadline->isFuture();
-            abort_if(! $expired && ! $quiz->isActive, 403, 'Kuis sedang dinonaktifkan.');
+            abort_if(! $expired && ! $quiz->isActive, 403, 'Ujian sedang dinonaktifkan.');
             if (! $expired && ! empty($data['answer'])) {
                 $answer = $data['answer'];
                 $question = collect($snapshot['questions'])->firstWhere('id', $answer['questionId']);

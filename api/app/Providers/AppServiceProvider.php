@@ -14,6 +14,15 @@ class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        if ($this->app->runningInConsole() && in_array('serve', $_SERVER['argv'] ?? [], true)) {
+            $existing = getenv('PHP_INI_SCAN_DIR');
+            $directories = $existing !== false ? [$existing] : array_unique(array_map('dirname', array_filter(array_map('trim', explode(',', php_ini_scanned_files() ?: '')))));
+            $directories[] = base_path('php.d');
+            $scanPath = implode(PATH_SEPARATOR, $directories);
+            putenv('PHP_INI_SCAN_DIR='.$scanPath);
+            $_ENV['PHP_INI_SCAN_DIR'] = $scanPath;
+            \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables[] = 'PHP_INI_SCAN_DIR';
+        }
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
         $testingSqlite = $this->app->environment('testing') && config('database.default') === 'sqlite' && config('database.connections.sqlite.database') === ':memory:';
         $driver = config('database.default');

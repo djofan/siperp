@@ -34,11 +34,15 @@ class LearningController
             $course = Course::where('id', $courseId)->where('is_published', true)->lockForUpdate()->firstOrFail();
             $profile = Profile::where('user_id', $request->user()->id)->lockForUpdate()->first();
             abort_if($profile?->deletedAt, 403, 'Akun peserta sudah dihapus.');
+            if ($course->cohortId) {
+                abort_unless($profile && app(\App\Modules\Academy\Services\CohortLearning::class)->owns($profile->id, $course->cohortId), 403, 'Daftar ke angkatan ini terlebih dahulu.');
+                app(\App\Modules\Academy\Services\CohortLearning::class)->enrollCourses($profile->id, $course->cohortId);
+                return $course->slug;
+            }
             if ($profile && Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) {
                 return $course->slug;
             }
             abort_unless($course->registrationOpen && (! $course->startsAt || $course->startsAt->isFuture()), 409, 'Pendaftaran angkatan sudah ditutup.');
-            abort_if($course->enrollments()->count() >= $course->quota, 409, 'Kuota program sudah penuh.');
             if (! $profile) {
                 DB::table('participant_sequences')->insertOrIgnore(['module_slug' => 'academy', 'last_number' => 0]);
                 $counter = DB::table('participant_sequences')->where('module_slug', 'academy')->lockForUpdate()->first();

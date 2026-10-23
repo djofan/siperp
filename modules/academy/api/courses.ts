@@ -223,6 +223,7 @@ export type GetLearningOverviewResult = {
             FINAL: number;
         };
         score: number;
+        predicate: string | null;
         complete: boolean;
     };
     completedAt: Date | null;
@@ -246,6 +247,7 @@ export async function getLearningOverview(_profileId: string): Promise<GetLearni
                 FINAL: number;
             };
             score: number;
+            predicate: string | null;
             complete: boolean;
         };
         completedAt: Date | null;
@@ -306,7 +308,7 @@ export type ListParticipantQuizzesResult = {
         isCompleted: boolean;
     }[];
 }[];
-export async function listParticipantQuizzes(_profileId: string): Promise<ListParticipantQuizzesResult> {
+export async function listParticipantQuizzes(_profileId: string, cohort = ""): Promise<ListParticipantQuizzesResult> {
     return await apiRequest<{
         id: string;
         title: string;
@@ -361,7 +363,7 @@ export async function listParticipantQuizzes(_profileId: string): Promise<ListPa
             passed: boolean | null;
             isCompleted: boolean;
         }[];
-    }[]>("academy/learning/quizzes");
+    }[]>(`academy/learning/quizzes?cohort=${encodeURIComponent(cohort)}`);
 }
 export type GetLeaderboardResult = {
     id: string;
@@ -376,6 +378,7 @@ export type GetOwnRankingsResult = {
     rank: number | null;
     total: number;
     score: number;
+    predicate: string | null;
     complete: boolean;
 }[];
 export async function getOwnRankings(_profileId: string): Promise<GetOwnRankingsResult> {
@@ -385,6 +388,7 @@ export async function getOwnRankings(_profileId: string): Promise<GetOwnRankings
         rank: number | null;
         total: number;
         score: number;
+        predicate: string | null;
         complete: boolean;
     }[]>("academy/learning/rankings");
 }

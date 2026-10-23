@@ -10,54 +10,10 @@ export const getLearningSettings = cache(async () => apiRequest<{
     };
 }>("academy/settings/learning"));
 export type GetIntakeResult = {
-    course: {
-        id: string;
-        title: string;
-        teacher: string;
-        quota: number;
-        durationDays: number;
-        startsAt: Date | null;
-        _count: {
-            enrollments: number;
-        };
-    } | {
-        id: string;
-        title: string;
-        teacher: string;
-        quota: number;
-        durationDays: number;
-        startsAt: Date | null;
-        _count: {
-            enrollments: number;
-        };
-    } | null;
+    cohort: { id: string; title: string } | null;
     filled: number;
     full: boolean;
 };
 export async function getIntake(): Promise<GetIntakeResult> {
-    return await apiRequest<{
-        course: {
-            id: string;
-            title: string;
-            teacher: string;
-            quota: number;
-            durationDays: number;
-            startsAt: Date | null;
-            _count: {
-                enrollments: number;
-            };
-        } | {
-            id: string;
-            title: string;
-            teacher: string;
-            quota: number;
-            durationDays: number;
-            startsAt: Date | null;
-            _count: {
-                enrollments: number;
-            };
-        } | null;
-        filled: number;
-        full: boolean;
-    }>("academy/intake");
+    return await apiRequest<GetIntakeResult>("academy/intake");
 }

@@ -8,6 +8,7 @@ use App\Modules\Academy\Models\ZakatAcademyLessonProgress as Progress;
 use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Core\Auth\SessionData;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -57,11 +58,20 @@ class FileController
     {
         $data = $request->validate(['lessonId' => 'required|string', 'file' => 'required|file|max:51200']);
         $this->access($request, $data['lessonId'], true);
-        $file = $request->file('file');
+        $result = $this->storeFile(Lesson::findOrFail($data['lessonId']), $request->file('file'), $request->boolean('audioOnly'));
+        unset($result['storagePath']);
+        return response()->json($result);
+    }
+
+    public function storeFile(Lesson $lesson, UploadedFile $file, bool $audioOnly = false): array
+    {
+        $data = ['lessonId' => $lesson->id];
+        abort_if($file->getSize() > 50 * 1024 * 1024, 422, 'Ukuran audio maksimal 50 MB.');
         $handle = fopen($file->getRealPath(), 'rb');
         $bytes = fread($handle, 32);
         fclose($handle);
         $mime = $this->detect($bytes);
+        abort_if($audioOnly && ! str_starts_with($mime ?? '', 'audio/'), 422, 'Gunakan file audio MP3, WAV, OGG, atau M4A.');
         abort_if(! $mime || $mime === 'application/pdf' && $file->getSize() > 10 * 1024 * 1024, 422, 'Gunakan MP3, WAV, OGG, M4A maksimal 50 MB atau PDF maksimal 10 MB.');
         $id = (string) Str::uuid();
         $url = '/api/academy/files/'.$id;
@@ -97,7 +107,7 @@ class FileController
             throw $error;
         }
 
-        return response()->json(['fileUrl' => $url, 'isAudio' => str_starts_with($mime, 'audio/'), 'message' => 'File berhasil disimpan.']);
+        return ['fileUrl' => $url, 'storagePath' => $path, 'isAudio' => str_starts_with($mime, 'audio/'), 'message' => 'File berhasil disimpan.'];
     }
 
     public function show(Request $request, string $fileId)
@@ -106,7 +116,7 @@ class FileController
         $file = Attachment::findOrFail($fileId);
         abort_unless(isset(self::EXTENSIONS[$file->fileType]), 404);
         $this->access($request, $file->lessonId);
-        $path = 'academy/'.$file->id.'.'.self::EXTENSIONS[$file->fileType];
+        $path = $file->storagePath ?: 'academy/'.$file->id.'.'.self::EXTENSIONS[$file->fileType];
         abort_unless(Storage::disk('local')->exists($path), 404);
 
         // BinaryFileResponse implements Range/206/416 and streams without loading the file.
