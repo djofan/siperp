@@ -138,6 +138,12 @@ class BackupService
             $this->capture(Storage::disk('local')->path('tanwir'), 'tanwir', $snapshot['files'], $size);
             $this->capture(Storage::disk('local')->path('ojol'), 'ojol', $snapshot['files'], $size);
             $this->capture(Storage::disk('public')->path('uploads'), 'public', $snapshot['files'], $size);
+            foreach (config('backup.extra_roots', []) as $label => $path) {
+                if (! preg_match('/^[a-z][a-z0-9_-]{0,40}$/D', $label) || in_array($label, ['academy', 'public', 'tanwir', 'ojol'], true)) {
+                    throw new RuntimeException('Invalid backup contribution root.');
+                }
+                $this->capture($path, $label, $snapshot['files'], $size);
+            }
             $pdo->commit();
             $transaction = false;
 
@@ -198,7 +204,7 @@ class BackupService
             throw new RuntimeException('Snapshot tidak valid.');
         }
         foreach ($snapshot['files'] as $file) {
-            if (! in_array($file['root'], ['academy', 'public', 'tanwir', 'ojol'], true) || ! preg_match('#^[^/\\\\:]+(?:/[^/\\\\:]+)*$#D', $file['path']) || array_intersect(explode('/', $file['path']), ['.', '..'])) {
+            if (! in_array($file['root'], ['academy', 'public', 'tanwir', 'ojol', ...array_keys(config('backup.extra_roots', []))], true) || ! preg_match('#^[^/\\\\:]+(?:/[^/\\\\:]+)*$#D', $file['path']) || array_intersect(explode('/', $file['path']), ['.', '..'])) {
                 throw new RuntimeException('Path file backup tidak valid.');
             }
             $data = base64_decode($file['data'], true);

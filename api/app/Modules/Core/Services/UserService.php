@@ -87,7 +87,13 @@ class UserService
             $modules = DB::table('modules')->whereIn('id', array_column($entries, 'moduleId'))->get()->keyBy('id');
             foreach ($entries as $entry) {
                 $module = $modules->get($entry['moduleId']);
-                $roles = match ($module?->slug) {
+                if ($module && in_array($entry['role'], config('modules.unique_roles.'.$module->slug, []), true)) {
+                    DB::table('modules')->where('id', $module->id)->lockForUpdate()->first();
+                    if (DB::table('module_access')->where('module_id', $module->id)->where('role', $entry['role'])->where('user_id', '!=', $id)->exists()) {
+                        throw ValidationException::withMessages(['entries' => 'Role ini hanya boleh dimiliki satu akun pada modul tersebut.']);
+                    }
+                }
+                $roles = config('modules.roles.'.$module?->slug) ?? match ($module?->slug) {
                     'teknisi' => ['admin', 'manager', 'technician', 'monitoring'],
                     'academy' => ['admin', 'editor', 'teacher'],
                     'tanwir', 'ojol' => ['admin', 'guru', 'peserta'],

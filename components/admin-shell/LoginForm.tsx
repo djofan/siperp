@@ -107,8 +107,10 @@ export function LoginForm() {
       return;
     }
 
-    // Semua login pengelola dimulai dari dashboard Core; modul dipilih setelahnya.
-    router.replace("/admin");
+    const { data: session } = await response.json();
+    const destination = typeof session?.panelRedirect === "string" && /^\/admin\/bantuan\/(screening|review|survei|dana|pencairan)$/.test(session.panelRedirect)
+      ? session.panelRedirect : "/admin";
+    router.replace(destination);
     router.refresh();
   }
 

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/FormField";
 import { Switch } from "@/components/ui/Switch";
+import { bantuanRoles } from "@/contracts/modules/bantuan";
 
 interface ModuleOption {
   id: string;
@@ -36,6 +37,7 @@ export function AksesForm({
     return initial;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleModule(moduleId: string, enabled: boolean) {
     setAccess((prev) => ({ ...prev, [moduleId]: { ...prev[moduleId], enabled } }));
@@ -48,23 +50,36 @@ export function AksesForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     const entries = Object.entries(access)
       .filter(([, state]) => state.enabled)
       .map(([moduleId, state]) => ({ moduleId, role: state.role }));
 
-    await fetch(`/api/super/akun/${userId}/access`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ entries }),
-    });
-
-    router.push("/admin/super/akun");
-    router.refresh();
+    try {
+      const response = await fetch(`/api/super/akun/${userId}/access`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries }),
+      });
+      if (!response.ok) {
+        const body = await response.json();
+        const details = body.error?.details;
+        const first = details && typeof details === "object" ? Object.values(details).flat()[0] : null;
+        throw new Error(typeof first === "string" ? first : body.error?.message ?? "Akses belum dapat disimpan.");
+      }
+      router.push("/admin/super/akun");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Koneksi gagal. Coba kembali.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
       {modules.length === 0 ? (
         <p className="text-sm text-foreground/40">Belum ada modul terdaftar.</p>
       ) : (
@@ -88,7 +103,7 @@ export function AksesForm({
                   className="h-9 w-32"
                 >
                   <option value="admin">Admin</option>
-                  {module.slug === "teknisi" ? <><option value="manager">Manajer</option><option value="technician">Teknisi</option><option value="monitoring">Monitoring (lihat saja)</option></> : <option value="editor">Editor</option>}
+                  {module.slug === "bantuan" ? Object.entries(bantuanRoles).filter(([role]) => role !== "admin").map(([role, label]) => <option key={role} value={role}>{label}</option>) : module.slug === "teknisi" ? <><option value="manager">Manajer</option><option value="technician">Teknisi</option><option value="monitoring">Monitoring (lihat saja)</option></> : <option value="editor">Editor</option>}
                 </Select>
               </div>
             );
