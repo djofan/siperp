@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import type { CampaignDocumentationPhoto } from "@/lib/domain";
+import type { CampaignDocumentationPhoto } from "@/contracts/modules/lazsip";
 import styles from "./CampaignGallery.module.css";
 
 export function CampaignGallery({photos,title,kind="campaign"}:{photos:CampaignDocumentationPhoto[];title:string;kind?:"campaign"|"activity"|"program"}){

@@ -18,7 +18,7 @@ class SessionData
             'isSuperadmin' => $user->is_superadmin,
             'moduleSlugs' => $access->pluck('slug')->all(),
             'moduleRoles' => $access->pluck('role', 'slug')->all(),
-            'panelRedirect' => ! $user->is_superadmin && $access->isNotEmpty() && $access->every(fn ($row) => $row->slug === 'teknisi' && $row->role === 'technician') ? '/teknisi/panel' : null,
+            'panelRedirect' => ! $user->is_superadmin ? app(\App\Support\ModuleSessions::class)->preferredPanel($access->all()) : null,
         ];
     }
 }

@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { LazsipBeneficiary } from "@/lib/domain";
+import type { LazsipBeneficiary } from "@/contracts/modules/lazsip";
 type PublicCard = Pick<LazsipBeneficiary, "id" | "name" | "age" | "amountReceived" | "aidType" | "photo" | "isPinned" | "verifierArea" | "verifierName">;
 type PublicDetail = Pick<LazsipBeneficiary, "id" | "name" | "age" | "problemFaced" | "gender" | "photo" | "handoverPhoto" | "certificatePhoto" | "referralSource" | "needs" | "aidType" | "amountReceived" | "verifierName" | "verifierArea">;
 export async function listBeneficiariesForAdmin() { return apiCollection<LazsipBeneficiary>("lazsip/admin/beneficiaries"); }

@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { LazsipNews } from "@/lib/domain";
+import type { LazsipNews } from "@/contracts/modules/lazsip";
 export async function listNewsForAdmin() { return apiCollection<LazsipNews>("lazsip/admin/news"); }
 export async function listPublishedNews() { return apiCollection<LazsipNews>("lazsip/news"); }
 export async function getNewsById(id: string) {

@@ -1,4 +1,6 @@
-import type { CoreContact, CoreContactSource, CoreExpense, CoreBankLine, PaymentDestinationAccount, ZakatAcademyCourse } from "@/lib/domain";
+import type { CoreContact, CoreContactSource, CoreExpense, CoreBankLine } from "@/contracts/modules/core";
+import type { PaymentDestinationAccount } from "@/contracts/modules/payment";
+import type { ZakatAcademyCourse } from "@/contracts/modules/academy";
 
 export type Contact = CoreContact & { sources: CoreContactSource[] };
 export type ContactsResponse = { contacts: Contact[]; count: number; selected: Contact | null };

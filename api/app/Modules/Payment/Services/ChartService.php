@@ -2,8 +2,6 @@
 
 namespace App\Modules\Payment\Services;
 
-use App\Modules\Lazsip\Models\LazsipDonation;
-use App\Modules\Lazsip\Models\LazsipZakatPayment;
 use App\Modules\Payment\Models\PaymentTransaction;
 use Carbon\CarbonImmutable;
 
@@ -15,12 +13,9 @@ class ChartService
         $since = $now->startOfDay()->subDays(89)->utc();
         $rows = PaymentTransaction::where('module_source', $module)->where(fn ($query) => $query->where('paid_at', '>=', $since)->orWhere(fn ($query) => $query->whereNull('paid_at')->where('created_at', '>=', $since)))->get(['donor_id', 'amount', 'status', 'fund_type', 'created_at', 'paid_at'])
             ->map(fn ($row) => ['donor' => $row->donorId, 'amount' => $row->amount, 'status' => $row->status, 'fund' => $row->fundType, 'date' => $row->paidAt ?? $row->createdAt])->all();
-        if ($module === 'lazsip') {
-            foreach ([LazsipDonation::class => 'infak', LazsipZakatPayment::class => 'zakat'] as $model => $fund) {
-                foreach ($model::where('created_at', '>=', $since)->get(['donor_id', 'amount', 'status', 'created_at']) as $row) {
-                    $rows[] = ['donor' => $row->donorId, 'amount' => $row->amount, 'status' => $row->status, 'fund' => $fund, 'date' => $row->createdAt];
-                }
-            }
+        $adapters = app(\App\Support\PaymentModules::class);
+        if ($adapters->has($module)) {
+            $rows = [...$rows, ...$adapters->for($module)->legacyChartRows($since)];
         }
         $month = $now->format('Y-m');
         $previous = $now->startOfMonth()->subMonth()->format('Y-m');

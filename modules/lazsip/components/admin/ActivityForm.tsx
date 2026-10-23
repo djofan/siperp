@@ -6,7 +6,7 @@ import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadF
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
 import { panelClasses } from "@/components/ui/panel";
-import type { DocumentationPhoto } from "@/lib/domain";
+import type { DocumentationPhoto } from "@/contracts/modules/lazsip";
 import { DocumentationEditor, useDocumentationEditor } from "./DocumentationEditor";
 
 interface ActivityFormValues {

@@ -6,7 +6,7 @@ import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadF
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
 import { panelClasses } from "@/components/ui/panel";
-import type { CampaignDocumentationPhoto } from "@/lib/domain";
+import type { CampaignDocumentationPhoto } from "@/contracts/modules/lazsip";
 
 interface CampaignFormValues {
   documentationPhotos: CampaignDocumentationPhoto[];

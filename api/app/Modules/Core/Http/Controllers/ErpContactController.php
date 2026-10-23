@@ -2,14 +2,10 @@
 
 namespace App\Modules\Core\Http\Controllers;
 
-use App\Modules\Academy\Models\ZakatAcademyProfile;
 use App\Modules\Core\Models\AccessLog;
 use App\Modules\Core\Models\CoreContact as Contact;
 use App\Modules\Core\Models\CoreContactSource as Source;
-use App\Modules\Lazsip\Models\LazsipBeneficiary;
-use App\Modules\Lazsip\Models\LazsipProgramApplicant;
 use App\Modules\Payment\Models\PaymentDonor;
-use App\Modules\Sarsip\Models\SarsipBeneficiary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -107,22 +103,10 @@ class ErpContactController
         foreach (PaymentDonor::select('id', 'name', 'phone', 'email')->cursor() as $row) {
             $records[] = ['id' => $row->id, 'name' => $row->name, 'phone' => $row->phone, 'email' => $row->email, 'source' => 'payment', 'role' => 'Donatur'];
         }
-        foreach (ZakatAcademyProfile::whereNull('deleted_at')->with('user:id,name,email,is_superadmin')->get() as $row) {
-            $teacher = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')->where('user_id', $row->userId)->where('modules.slug', 'academy')->whereIn('role', ['teacher', 'pengajar'])->exists();
-            $records[] = ['id' => $row->id, 'name' => $row->user->name, 'phone' => $row->phone, 'email' => $row->user->email, 'source' => 'academy', 'role' => $row->user->is_superadmin ? 'Superadmin Academy' : ($teacher ? 'Pengajar Academy' : 'Peserta Academy')];
-        }
-        foreach (SarsipBeneficiary::whereNull('archived_at')->select('id', 'name', 'phone')->cursor() as $row) {
-            $records[] = ['id' => $row->id, 'name' => $row->name, 'phone' => $row->phone, 'email' => null, 'source' => 'sarsip', 'role' => 'Penerima bantuan'];
-        }
-        foreach (LazsipProgramApplicant::select('id', 'name', 'contact')->cursor() as $row) {
-            $records[] = ['id' => $row->id, 'name' => $row->name, 'phone' => $this->phone($row->contact), 'email' => $this->email($row->contact), 'source' => 'lazsip-pendaftar', 'role' => 'Pendaftar bantuan'];
-        }
-        foreach (LazsipBeneficiary::select('id', 'name')->cursor() as $row) {
-            $records[] = ['id' => $row->id, 'name' => $row->name, 'phone' => null, 'email' => null, 'source' => 'lazsip-penerima', 'role' => 'Penerima bantuan'];
-        }
+        $records = [...$records, ...app(\App\Support\ModuleContributions::class)->contacts()];
         DB::transaction(function () use ($records, $request) {
             // A single database-owned module row serializes sync with another sync.
-            DB::table('modules')->where('slug', 'sip')->lockForUpdate()->first();
+            DB::table('modules')->orderBy('id')->lockForUpdate()->first();
             foreach ($records as $data) {
                 $phone = $this->phone($data['phone']);
                 $email = $this->email($data['email']);

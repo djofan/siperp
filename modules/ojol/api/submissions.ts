@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/ojol";
 export type ListStudentTasksResult = {
     submission: {
         score: number | null;
