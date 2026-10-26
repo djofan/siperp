@@ -77,9 +77,8 @@ class BantuanController
         $duplicates = Application::where('nik_hash', $row->nik_hash)->where('id', '!=', $row->id)->count();
         $documents = DB::table('bantuan_documents')->where('application_id', $id)->whereNull('deleted_at');
         if (! $access->sensitive($request)) {
-            $documents->whereNotIn('kind', ['ktp', 'sktm', 'face', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_environment', 'survey_other']);
+            $documents->whereNotIn('kind', ['ktp', 'kk', 'supporting', 'sktm', 'face', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_environment', 'survey_other']);
         }
-        $reporter = $access->sensitive($request) ? json_decode(Crypt::decryptString(DB::table('bantuan_reporters')->where('id', $row->reporter_id)->value('details')), true) : null;
         $events = DB::table('bantuan_events')->leftJoin('users', 'users.id', '=', 'bantuan_events.actor_id')->where('application_id', $id)
             ->orderBy('bantuan_events.created_at')->get(['bantuan_events.id', 'action', 'from_status', 'to_status', 'actor_role', 'bantuan_events.created_at', 'users.name as actorName', 'details'])
             ->map(function ($event) use ($access, $request) {
@@ -93,10 +92,10 @@ class BantuanController
                 return $event;
             });
 
-        return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'reporterId' => $row->reporter_id, 'reporter' => $reporter,
+        return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant,
             'bypassReason' => $row->bypass_reason, 'survey' => $access->sensitive($request) ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
-            'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at']), 'events' => $events]]);
+            'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at', 'caption'])->map(function ($doc) { $doc->caption = $doc->caption ? Crypt::decryptString($doc->caption) : null; return $doc; }), 'events' => $events]]);
     }
 
     public function store(Request $request, Intake $intake)
@@ -157,13 +156,13 @@ class BantuanController
     {
         return DB::transaction(function () use ($request, $id, $access, $journal) {
             $row = $access->find($request, $id, true);
-            $data = $request->validate(['kind' => 'required|in:face,ktp,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,return',
-                'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid']);
+            $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,return',
+                'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
             $role = $access->role($request);
             $kind = $data['kind'];
             if ($role !== 'admin') {
                 $allowed = match (true) {
-                    in_array($kind, ['face', 'ktp'], true) => in_array($role, ['call_center', 'verifier'], true) && in_array($row->status, ['draft', 'needs_data', 'screening'], true) && ($role !== 'verifier' || $row->created_by === $request->user()->id),
+                    in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($role, ['call_center', 'verifier'], true) && in_array($row->status, ['draft', 'needs_data', 'screening'], true) && ($role !== 'verifier' || $row->created_by === $request->user()->id),
                     str_starts_with($kind, 'survey_') || $kind === 'sktm' => $role === 'verifier' && $row->verifier_id === $request->user()->id && $row->status === 'survey_assigned',
                     in_array($kind, ['transfer', 'return'], true) => $role === 'treasurer' && in_array($row->status, ['fund_approved', 'disbursed', 'delivery_failed'], true),
                     default => $row->status === 'disbursed' && (($role === 'verifier' && $row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id) || ($role === 'treasurer' && $row->distribution_type === 'direct')),
@@ -181,7 +180,7 @@ class BantuanController
             $written = Storage::disk('local')->put($path, Crypt::encryptString(file_get_contents($data['file']->getRealPath())));
             abort_unless($written, 503, 'Penyimpanan dokumen gagal.');
             DB::table('bantuan_documents')->insert(['id' => $docId, 'application_id' => $id, 'kind' => $kind, 'path' => $path,
-                'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
+                'caption' => isset($data['caption']) ? Crypt::encryptString($data['caption']) : null, 'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
             $journal->record($request, $row, 'upload_document', $row->status, ['documentId' => $docId, 'kind' => $kind]);
 
             return response()->json(['data' => ['id' => $docId, 'kind' => $kind]], 201);
@@ -192,7 +191,7 @@ class BantuanController
     {
         $doc = DB::table('bantuan_documents')->where('id', $id)->whereNull('deleted_at')->firstOrFail();
         $row = $access->find($request, $doc->application_id);
-        if (in_array($doc->kind, ['face', 'ktp', 'sktm'], true) || str_starts_with($doc->kind, 'survey_')) {
+        if (in_array($doc->kind, ['face', 'ktp', 'kk', 'supporting', 'sktm'], true) || str_starts_with($doc->kind, 'survey_')) {
             abort_unless($access->sensitive($request), 403);
         }
         $journal->record($request, $row, 'read_document', $row->status, ['documentId' => $id]);

@@ -18,7 +18,7 @@ class DocumentController
             $role = $access->role($request);
             $kind = $doc->kind;
             $stage = match (true) {
-                in_array($kind, ['face', 'ktp'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true),
+                in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true),
                 str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned',
                 $kind === 'transfer' => $row->status === 'fund_approved',
                 $kind === 'return' => in_array($row->status, ['disbursed', 'delivery_failed'], true),
@@ -28,7 +28,7 @@ class DocumentController
             abort_unless($role === 'admin' || $doc->uploaded_by === $request->user()->id, 403, 'Hanya pengunggah atau Admin dapat menghapus foto.');
             if ($role !== 'admin') {
                 $allowed = match (true) {
-                    in_array($kind, ['face', 'ktp'], true) => $role === 'call_center' || ($role === 'verifier' && $row->created_by === $request->user()->id),
+                    in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => $role === 'call_center' || ($role === 'verifier' && $row->created_by === $request->user()->id),
                     str_starts_with($kind, 'survey_') || $kind === 'sktm' => $role === 'verifier' && $row->verifier_id === $request->user()->id,
                     in_array($kind, ['transfer', 'return'], true) => $role === 'treasurer',
                     default => ($role === 'verifier' && $row->distributor_id === $request->user()->id) || ($role === 'treasurer' && $row->distribution_type === 'direct'),

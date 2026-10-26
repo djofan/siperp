@@ -4,7 +4,7 @@ import { request, RequestError } from "./client";
 
 export interface QueuedPhoto {
   id:string; applicationId:string;kind:string;name:string;mime:string;data:string;status:"queued"|"preparing"|"uploading"|"done"|"error";
-  progress:number;attempts:number;nextTry:number;error?:string;prepared?:boolean;
+  progress:number;attempts:number;nextTry:number;error?:string;prepared?:boolean;caption?:string;
 }
 type Bucket={items:QueuedPhoto[];listeners:Set<()=>void>;initialized:boolean;pumping:boolean};
 const buckets=new Map<string,Bucket>();
@@ -26,6 +26,7 @@ function asFile(p:QueuedPhoto):File{
 async function upload(photo:QueuedPhoto,onProgress:(n:number)=>void):Promise<void>{
   return new Promise((resolve,reject)=>{
     const xhr=new XMLHttpRequest(),body=new FormData();body.set("kind",photo.kind);body.set("file",asFile(photo));body.set("clientId",photo.id);
+    if(photo.caption)body.set("caption",photo.caption);
     xhr.open("POST",`/api/bantuan/applications/${photo.applicationId}/documents`);xhr.setRequestHeader("Accept","application/json");xhr.timeout=90000;
     xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(Math.round(e.loaded/e.total*100));};
     xhr.onerror=()=>reject(new Error("Koneksi terputus. Foto menunggu dicoba ulang."));
@@ -49,10 +50,10 @@ export async function startPhotos(owner:string,app:string){
   }
   void pumpPhotos(owner,app);
 }
-export async function addPhotos(owner:string,app:string,kind:string,files:File[]){
+export async function addPhotos(owner:string,app:string,kind:string,files:File[],captions:string[]=[]){
   for(const file of files){
     if(file.size>30*1024*1024)throw new Error("Foto asli maksimal 30 MB.");
-    const photo:QueuedPhoto={id:crypto.randomUUID(),applicationId:app,kind,name:file.name,mime:file.type,data:await dataUrl(file),status:"queued",progress:0,attempts:0,nextTry:0};
+    const photo:QueuedPhoto={id:crypto.randomUUID(),applicationId:app,kind,caption:captions[files.indexOf(file)]??"",name:file.name,mime:file.type,data:await dataUrl(file),status:"queued",progress:0,attempts:0,nextTry:0};
     await putDraft(owner,storageKey(photo),photo);
     const b=bucket(owner,app);b.items=[...b.items,photo];emit(b);
   }void pumpPhotos(owner,app);

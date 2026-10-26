@@ -6,6 +6,9 @@ use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -29,7 +32,7 @@ function bantuanInput(): array
             'gender' => 'laki_laki', 'maritalStatus' => 'Menikah', 'street' => 'Alamat uji', 'rtRw' => '01/02', 'village' => 'Desa',
             'district' => 'Kecamatan', 'city' => 'Bandung', 'housing' => 'Menumpang', 'job' => 'Buruh', 'income' => 1000000,
             'incomePeriod' => 'bulan', 'dependentCount' => 2, 'phone' => '08123456789', 'prayer' => 'Ya', 'smoking' => 'Tidak',
-            'previousAid' => false, 'publicationConsent' => false, 'willingSktm' => true, 'informationSource' => 'Tetangga', 'problem' => 'Memerlukan biaya pengobatan'],
+            'previousAid' => false, 'publicationConsent' => false, 'hasSktm' => false, 'willingSktm' => true, 'informationSource' => 'Tetangga', 'problem' => 'Memerlukan biaya pengobatan'],
         'reporter' => ['name' => 'Pelapor Uji', 'date' => now()->toDateString(), 'maritalStatus' => 'Menikah', 'type' => 'Perorangan', 'phone' => '08123456700', 'address' => 'Alamat pelapor']];
 }
 
@@ -72,7 +75,7 @@ it('encrypts personal information and detects duplicate NIK without blocking int
 });
 
 it('requires private documents before submission and protects encrypted file downloads', function () {
-    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->json('data.id');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', [...bantuanInput(), 'source' => 'walk_in'])->json('data.id');
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertUnprocessable();
     $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
     $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'ktp', 'file' => UploadedFile::fake()->createWithContent('ktp.png', $png)], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
@@ -80,6 +83,120 @@ it('requires private documents before submission and protects encrypted file dow
     expect(Storage::disk('local')->get($path))->not->toBe($png);
     $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertContent($png)->assertHeader('Cache-Control', 'no-store, private');
     $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/documents/'.$doc)->assertNotFound();
+});
+
+it('creates updates and submits a complete application without an assignment region', function () {
+    $input = bantuanInput();
+    unset($input['region']);
+    $created = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)
+        ->assertCreated()->assertJsonPath('data.region', '');
+    $id = $created->json('data.id');
+    $updated = $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'version' => 1])
+        ->assertOk()->assertJsonPath('data.region', '');
+    foreach (['face', 'ktp'] as $kind) bantuanDoc($id, $kind);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => $updated->json('data.version')])
+        ->assertOk()->assertJsonPath('data.status', 'review1');
+});
+
+it('creates edits and submits without collecting reporter information', function () {
+    $input = bantuanInput();
+    unset($input['reporter'], $input['region']);
+    $created = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated();
+    $id = $created->json('data.id');
+    $updated = $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'version' => 1])->assertOk();
+    foreach (['face', 'ktp'] as $kind) bantuanDoc($id, $kind);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => $updated->json('data.version')])
+        ->assertOk()->assertJsonPath('data.status', 'review1');
+});
+
+it('does not expose removed reporter information when editing an application', function () {
+    $input = bantuanInput();
+    $created = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated();
+    $id = $created->json('data.id');
+    unset($input['reporter']);
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'version' => 1])->assertOk();
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonMissingPath('data.reporter');
+});
+
+it('allows WhatsApp submission without photos and stores multiple private supporting captions', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
+    foreach (['kk', 'supporting', 'supporting'] as $i => $kind) {
+        $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => $kind, 'caption' => 'Catatan foto '.$i, 'file' => UploadedFile::fake()->createWithContent('foto.png', $png)], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+        expect(DB::table('bantuan_documents')->where('id', $doc)->value('caption'))->not->toContain('Catatan foto');
+    }
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonCount(3, 'data.documents');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'review1');
+    $empty = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$empty.'/actions/submit', ['version' => 1])->assertOk();
+});
+
+it('changes WhatsApp and walk in sources in a draft without losing documents and rechecks requirements', function () {
+    $input = bantuanInput();
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $kk = bantuanDoc($id, 'kk');
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'source' => 'walk_in', 'draft' => true, 'version' => 1])->assertOk()->assertJsonPath('data.source', 'walk_in');
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertJsonPath('data.applicant.name', $input['applicant']['name'])->assertJsonPath('data.documents.0.id', $kk);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 2])->assertUnprocessable();
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'draft' => true, 'version' => 2])->assertOk()->assertJsonPath('data.source', 'online');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 3])->assertOk();
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'source' => 'walk_in', 'version' => 4])->assertUnprocessable();
+});
+
+it('keeps walk in screening and prevents assigning a verifier before approver approval', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', [...bantuanInput(), 'source' => 'walk_in'])->assertCreated()->json('data.id');
+    bantuanDoc($id, 'ktp');
+    bantuanDoc($id, 'face');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'screening');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertOk()->assertJsonPath('data.status', 'review1');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version' => 3, 'verifierId' => $this->verifier->id])->assertConflict();
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 3])->assertOk()->assertJsonPath('data.status', 'survey_assignment');
+});
+
+it('removes legacy reporter storage without deleting applicants evidence or other audit details', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $doc = bantuanDoc($id, 'ktp');
+    Schema::create('bantuan_reporters', function (Blueprint $table) { $table->uuid('id')->primary(); $table->text('details'); });
+    Schema::table('bantuan_applications', fn (Blueprint $table) => $table->uuid('reporter_id')->nullable());
+    $reporter = (string) Str::uuid();
+    DB::table('bantuan_reporters')->insert(['id' => $reporter, 'details' => Crypt::encryptString('legacy reporter')]);
+    DB::table('bantuan_applications')->where('id', $id)->update(['reporter_id' => $reporter]);
+    DB::table('bantuan_events')->where('application_id', $id)->update(['details' => Crypt::encryptString(json_encode(['reporter' => ['name' => 'Old reporter'], 'nested' => ['reporterId' => $reporter, 'keep' => true], 'reason' => 'Keep this audit note']))]);
+    $migration = require database_path('migrations/2026_10_26_000000_remove_bantuan_reporter_data.php');
+    $migration->up();
+    expect(Schema::hasTable('bantuan_reporters'))->toBeFalse();
+    expect(Schema::hasColumn('bantuan_applications', 'reporter_id'))->toBeFalse();
+    expect(Application::findOrFail($id)->applicant['name'])->toBe('Pemohon Uji');
+    expect(DB::table('bantuan_documents')->where('id', $doc)->exists())->toBeTrue();
+    $details = json_decode(Crypt::decryptString(DB::table('bantuan_events')->where('application_id', $id)->value('details')), true);
+    expect($details)->not->toHaveKey('reporter');
+    expect($details['nested'])->toBe(['keep' => true]);
+    expect($details['reason'])->toBe('Keep this audit note');
+});
+
+it('saves dependent gender and validates its choices', function () {
+    $input = bantuanInput();
+    $input['applicant']['dependentCount'] = 1;
+    $input['applicant']['dependents'] = [['name' => 'Anak Uji', 'relationship' => 'Anak', 'gender' => 'perempuan', 'age' => 12, 'status' => 'Sekolah']];
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonPath('data.applicant.dependents.0.gender', 'perempuan');
+    $input['applicant']['dependents'][0]['gender'] = 'invalid';
+    $this->postJson('/api/v1/bantuan/applications', $input)->assertUnprocessable()->assertJsonValidationErrors('applicant.dependents.0.gender', 'error.details');
+    $input['applicant']['dependents'][0]['gender'] = '';
+    $this->postJson('/api/v1/bantuan/applications', $input)->assertUnprocessable()->assertJsonValidationErrors('applicant.dependents.0.gender', 'error.details');
+});
+
+it('only requires willingness to arrange SKTM when the applicant does not have one', function () {
+    $input = bantuanInput();
+    unset($input['applicant']['willingSktm']);
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)
+        ->assertUnprocessable()->assertJsonValidationErrors('applicant.willingSktm', 'error.details');
+    $input['applicant']['hasSktm'] = true;
+    $id = $this->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    expect(Application::findOrFail($id)->applicant)->not->toHaveKey('willingSktm');
+    $input['applicant']['hasSktm'] = false;
+    $input['applicant']['willingSktm'] = false;
+    $this->postJson('/api/v1/bantuan/applications', $input)->assertCreated();
 });
 
 it('completes the normal workflow only after the approved funding and mandatory evidence', function () {
@@ -94,8 +211,7 @@ it('completes the normal workflow only after the approved funding and mandatory 
 
         return $result;
     };
-    $action($this->cc, 'submit')->assertJsonPath('data.status', 'screening');
-    $action($this->cc, 'screen_pass');
+    $action($this->cc, 'submit')->assertJsonPath('data.status', 'review1');
     $action($this->approver, 'review1_approve');
     $action($this->cc, 'assign_survey', ['verifierId' => $this->verifier->id]);
     $survey = ['date' => now()->toDateString(), 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus', 'background' => 'Latar belakang',
@@ -230,13 +346,9 @@ it('validates grouped transfers and atomically records every recipient for the s
     }
     $payload = ['action' => 'disburse', 'items' => $items, 'totalAmount' => 100, 'transferDate' => now()->toDateString(), 'account' => 'Bank uji'];
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/batch', $payload)->assertUnprocessable();
-    foreach ($items as $item) {
-        expect(Application::find($item['id'])->status)->toBe('fund_approved');
-    }
+    foreach ($items as $item) expect(Application::find($item['id'])->status)->toBe('fund_approved');
     $this->postJson('/api/v1/bantuan/batch', [...$payload, 'totalAmount' => 3000000])->assertOk()->assertJsonCount(2, 'data');
-    foreach ($items as $item) {
-        expect(Application::find($item['id'])->status)->toBe('disbursed');
-    }
+    foreach ($items as $item) expect(Application::find($item['id'])->status)->toBe('disbursed');
 });
 
 it('permits draft surveys without photos but does not submit incomplete surveys', function () {
