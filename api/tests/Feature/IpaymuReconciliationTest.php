@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    config(['payment.ipaymu.api_key' => 'test-key', 'payment.ipaymu.va' => 'testVA', 'payment.ipaymu.base_url' => 'https://sandbox.ipaymu.com/api/v2', 'payment.public_url' => 'http://localhost:3000', 'payment.api_url' => 'http://localhost:8000/api/v1', 'payment.resend.key' => null]);
+    config(['payment.gateway' => 'ipaymu_sandbox', 'payment.ipaymu.api_key' => 'test-key', 'payment.ipaymu.va' => 'testVA', 'payment.ipaymu.base_url' => 'https://sandbox.ipaymu.com/api/v2', 'payment.public_url' => 'http://localhost:3000', 'payment.api_url' => 'http://localhost:8000/api/v1', 'payment.resend.key' => null]);
     DB::table('payment_donors')->insert(['id' => 'donor-test', 'name' => 'Test']);
     DB::table('payment_destination_accounts')->insert(['id' => 'account-test', 'module_source' => 'lazsip', 'fund_type' => 'infak', 'bank_name' => 'Test', 'account_number' => '123', 'account_name' => 'Test']);
     $this->row = new PaymentTransaction;

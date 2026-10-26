@@ -22,7 +22,8 @@ function apiErrorMessage(data: unknown, fallback: string) {
 }
 
 export function CheckoutForm({ transaction }: { transaction: { id: string; trackingCode: string; status: string; moduleSource: string; gateway?: string } }) {
-  const isIpaymu = transaction.gateway === "ipaymu_sandbox";
+  const isIpaymu = transaction.gateway === "ipaymu" || transaction.gateway === "ipaymu_sandbox";
+  const isSandbox = transaction.gateway === "ipaymu_sandbox";
   const [starting, setStarting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   async function startIpaymu() {
@@ -122,14 +123,14 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
 
   const current = isIpaymu ? {
     escrow: STATUS.escrow,
-    pending: { title: "Menunggu pembayaran test", description: "Lanjutkan ke iPaymu Sandbox untuk memilih metode pembayaran. Status diperbarui otomatis setelah callback iPaymu." },
-    paid: { title: "Pembayaran test berhasil", description: "iPaymu telah mengonfirmasi pembayaran test ini." },
-    failed: { title: "Sesi pembayaran berakhir", description: "Sesi test kedaluwarsa. Pembayaran ini tidak dihitung sebagai dana masuk." },
+    pending: { title: isSandbox ? "Menunggu pembayaran test" : "Menunggu pembayaran", description: `Lanjutkan ke iPaymu${isSandbox ? " Sandbox" : ""} untuk memilih metode pembayaran. Status diperbarui otomatis setelah callback iPaymu.` },
+    paid: { title: isSandbox ? "Pembayaran test berhasil" : "Pembayaran berhasil", description: `iPaymu telah mengonfirmasi pembayaran${isSandbox ? " test" : ""} ini.` },
+    failed: { title: "Sesi pembayaran berakhir", description: `Sesi ${isSandbox ? "test " : ""}kedaluwarsa atau gagal. Pembayaran ini tidak dihitung sebagai dana masuk.` },
   }[status] : STATUS[status];
   return (
     <div className="mt-6 space-y-5">
       {trackingCodeCard}
-      {isIpaymu && status === "pending" && <button type="button" disabled={starting} onClick={startIpaymu} className="w-full rounded-full bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{starting ? "Menyiapkan pembayaran…" : "Lanjut ke iPaymu (sandbox)"}</button>}
+      {isIpaymu && status === "pending" && <button type="button" disabled={starting} onClick={startIpaymu} className="w-full rounded-full bg-indigo-700 px-5 py-3 font-semibold text-white disabled:opacity-50">{starting ? "Menyiapkan pembayaran…" : `Lanjut ke iPaymu${isSandbox ? " (sandbox)" : ""}`}</button>}
       {checkoutError && <p role="alert" className="text-sm text-red-700">{checkoutError}</p>}
       {isIpaymu && status === "pending" && <button type="button" disabled={checking} onClick={refreshIpaymu} className="w-full rounded-full border border-indigo-700 px-5 py-3 font-semibold text-indigo-700 disabled:opacity-50">{checking ? "Memeriksa…" : "Cek status ke iPaymu"}</button>}
       <div role="status" aria-live="polite" className={`rounded-2xl border p-5 ${status === "paid" ? "border-emerald-200 bg-emerald-50" : status === "failed" ? "border-red-200 bg-red-50" : "border-amber-200 bg-amber-50"}`}>

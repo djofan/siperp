@@ -230,9 +230,13 @@ it('validates grouped transfers and atomically records every recipient for the s
     }
     $payload = ['action' => 'disburse', 'items' => $items, 'totalAmount' => 100, 'transferDate' => now()->toDateString(), 'account' => 'Bank uji'];
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/batch', $payload)->assertUnprocessable();
-    foreach ($items as $item) expect(Application::find($item['id'])->status)->toBe('fund_approved');
+    foreach ($items as $item) {
+        expect(Application::find($item['id'])->status)->toBe('fund_approved');
+    }
     $this->postJson('/api/v1/bantuan/batch', [...$payload, 'totalAmount' => 3000000])->assertOk()->assertJsonCount(2, 'data');
-    foreach ($items as $item) expect(Application::find($item['id'])->status)->toBe('disbursed');
+    foreach ($items as $item) {
+        expect(Application::find($item['id'])->status)->toBe('disbursed');
+    }
 });
 
 it('permits draft surveys without photos but does not submit incomplete surveys', function () {
@@ -241,4 +245,46 @@ it('permits draft surveys without photos but does not submit incomplete surveys'
     $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_save',
         ['version' => 1, 'survey' => ['background' => 'Catatan kunjungan sementara']])->assertOk()->assertJsonPath('data.status', 'survey_assigned');
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 2, 'survey' => []])->assertUnprocessable();
+});
+
+it('records routine and non-routine santunan from transfer through volunteer report', function () {
+    $volunteer = bantuanUser('volunteer');
+    $otherVolunteer = bantuanUser('volunteer');
+    $payload = ['frequency' => 'routine', 'category' => 'widow', 'period' => now()->format('Y-m'),
+        'recipientName' => 'Penerima Santunan', 'volunteerId' => $volunteer->id, 'amount' => 300000];
+
+    $id = $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', $payload)
+        ->assertCreated()->assertJsonPath('data.transferStatus', 'pending')->json('data.id');
+    $this->actingAs($volunteer, 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertJsonCount(1, 'data');
+    $this->actingAs($otherVolunteer, 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertJsonCount(0, 'data');
+    $this->getJson('/api/v1/bantuan/applications')->assertJsonCount(0, 'data');
+    $this->actingAs($volunteer, 'sanctum')->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', [
+        'version' => 1, 'distributionDate' => now()->toDateString(), 'location' => 'Bandung',
+        'recipient' => 'Penerima Santunan', 'description' => 'Santunan telah diserahkan.',
+    ])->assertStatus(409);
+
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan/'.$id.'/transferred', [
+        'version' => 1, 'transferredAt' => now()->toDateString(),
+    ])->assertOk()->assertJsonPath('data.transferStatus', 'transferred');
+
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
+    $this->actingAs($volunteer, 'sanctum')->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
+        'kind' => 'aid_paper', 'file' => UploadedFile::fake()->createWithContent('kertas.png', $png),
+    ], ['Accept' => 'application/json'])->assertCreated();
+    $this->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', [
+        'version' => 2, 'distributionDate' => now()->toDateString(), 'location' => 'Bandung',
+        'recipient' => 'Penerima Santunan', 'description' => 'Santunan telah diserahkan.',
+    ])->assertUnprocessable();
+    $photoId = $this->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
+        'kind' => 'recipient_photo', 'file' => UploadedFile::fake()->createWithContent('bersama.png', $png),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', [
+        'version' => 2, 'distributionDate' => now()->toDateString(), 'location' => 'Bandung',
+        'recipient' => 'Penerima Santunan', 'description' => 'Santunan telah diserahkan.',
+    ])->assertOk()->assertJsonPath('data.distributionStatus', 'completed');
+    $this->get('/api/v1/bantuan/santunan-documents/'.$photoId)->assertOk()->assertContent($png);
+
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', [
+        ...$payload, 'frequency' => 'non_routine', 'category' => 'widow', 'recipientName' => 'Penerima Lain',
+    ])->assertUnprocessable();
 });

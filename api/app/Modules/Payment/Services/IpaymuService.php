@@ -10,7 +10,7 @@ class IpaymuService
 {
     public function enqueueReconciliation(PaymentTransaction $row): void
     {
-        if ($row->status !== 'pending' || $row->gateway !== 'ipaymu_sandbox' || ! $row->gatewaySessionId) return;
+        if ($row->status !== 'pending' || ! in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) || $row->gateway !== config('payment.gateway') || ! $row->gatewaySessionId) return;
         $key = 'ipaymu-reconcile:'.$row->id;
         if (! \Illuminate\Support\Facades\Cache::add($key, true, 60)) return;
         try {
@@ -47,27 +47,31 @@ class IpaymuService
 
     public function configuration(): array
     {
+        $gateway = config('payment.gateway');
+        $sandbox = $gateway === 'ipaymu_sandbox';
         $apiKey = config('payment.ipaymu.api_key');
         $va = config('payment.ipaymu.va');
         $baseUrl = rtrim((string) config('payment.ipaymu.base_url'), '/');
-        $publicUrl = $this->safeOrigin(config('payment.public_url'));
-        $apiUrl = $this->safeOrigin(config('payment.api_url'));
+        $publicUrl = $this->safeOrigin(config('payment.public_url'), $sandbox);
+        $apiUrl = $this->safeOrigin(config('payment.api_url'), $sandbox);
         $parsed = parse_url($baseUrl);
         abort_unless(
-            is_string($apiKey) && $apiKey !== '' && is_string($va) && preg_match('/^[A-Za-z0-9]+$/D', $va)
-            && $parsed && ($parsed['scheme'] ?? '') === 'https' && ($parsed['host'] ?? '') === 'sandbox.ipaymu.com'
+            in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)
+            && is_string($apiKey) && $apiKey !== '' && is_string($va) && preg_match('/^[A-Za-z0-9]+$/D', $va)
+            && $parsed && ($parsed['scheme'] ?? '') === 'https'
+            && ($parsed['host'] ?? '') === ($sandbox ? 'sandbox.ipaymu.com' : 'my.ipaymu.com')
             && ($parsed['path'] ?? '') === '/api/v2' && ! isset($parsed['user']) && ! isset($parsed['pass']),
             503,
-            'Konfigurasi iPaymu sandbox belum lengkap.'
+            'Konfigurasi iPaymu belum lengkap atau tidak sesuai mode.'
         );
 
-        return compact('apiKey', 'va', 'baseUrl', 'publicUrl', 'apiUrl');
+        return compact('gateway', 'sandbox', 'apiKey', 'va', 'baseUrl', 'publicUrl', 'apiUrl');
     }
 
-    private function safeOrigin(mixed $origin): string
+    private function safeOrigin(mixed $origin, bool $allowLocal): string
     {
         $url = is_string($origin) ? parse_url($origin) : false;
-        abort_unless($url && ! isset($url['user']) && ! isset($url['pass']) && isset($url['host']) && (($url['scheme'] ?? '') === 'https' || (($url['scheme'] ?? '') === 'http' && in_array($url['host'], ['localhost', '127.0.0.1'], true))), 503, 'URL publik pembayaran tidak valid.');
+        abort_unless($url && ! isset($url['user']) && ! isset($url['pass']) && isset($url['host']) && (($url['scheme'] ?? '') === 'https' || ($allowLocal && ($url['scheme'] ?? '') === 'http' && in_array($url['host'], ['localhost', '127.0.0.1'], true))), 503, 'URL publik pembayaran tidak valid.');
 
         return $url['scheme'].'://'.$url['host'].(isset($url['port']) ? ':'.$url['port'] : '').rtrim($url['path'] ?? '', '/');
     }
@@ -83,8 +87,14 @@ class IpaymuService
         $host = strtolower($parsed['host'] ?? '');
         $path = $parsed['path'] ?? '';
 
-        return ($host === 'sandbox.ipaymu.com' && str_starts_with($path, '/payment/'))
-            || ($host === 'sandbox-payment.ipaymu.com' && $path === '/');
+        if (config('payment.gateway') === 'ipaymu_sandbox') {
+            return ($host === 'sandbox.ipaymu.com' && str_starts_with($path, '/payment/'))
+                || ($host === 'sandbox-payment.ipaymu.com' && $path === '/');
+        }
+
+        return config('payment.gateway') === 'ipaymu'
+            && $host === 'my.ipaymu.com'
+            && str_starts_with($path, '/payment/');
     }
 
     public function createSession(PaymentTransaction $row): array
@@ -136,7 +146,7 @@ class IpaymuService
     {
         $reference = $payload['reference_id'] ?? $payload['referenceId'] ?? null;
         abort_unless(is_string($reference) && $reference !== '', 422, 'Referensi transaksi iPaymu tidak tersedia.');
-        $row = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->where('gateway_reference_id', $reference)->firstOrFail();
+        $row = PaymentTransaction::where('gateway', $this->configuration()['gateway'])->where('gateway_reference_id', $reference)->firstOrFail();
         $config = $this->configuration();
         abort_unless($row->gatewayAccountId === $config['va'], 422, 'Akun iPaymu tidak sesuai.');
         if (isset($payload['merchant'])) {
@@ -153,8 +163,8 @@ class IpaymuService
 
     public function sync(PaymentTransaction $row, ?string $candidateId = null): PaymentTransaction
     {
-        abort_unless($row->gateway === 'ipaymu_sandbox', 409);
         $config = $this->configuration();
+        abort_unless($row->gateway === $config['gateway'], 409);
         abort_unless($row->gatewayAccountId === $config['va'], 409, 'Akun transaksi berbeda dari konfigurasi iPaymu saat ini.');
         $transactionId = $candidateId ?? $row->gatewayTransactionId ?? $this->discoverTransactionId($row);
         abort_unless(is_string($transactionId) && preg_match('/^[1-9][0-9]*$/D', $transactionId), 409, 'ID iPaymu belum diterima. Callback belum masuk; hubungi admin untuk rekonsiliasi.');

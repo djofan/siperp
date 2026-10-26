@@ -3,7 +3,6 @@
 namespace App\Modules\Payment\Services;
 
 use App\Modules\Payment\Models\PaymentDonor;
-use Illuminate\Validation\ValidationException;
 
 class DonorService
 {
@@ -33,10 +32,9 @@ class DonorService
         $byPhone = $phone ? PaymentDonor::where('phone', $phone)->lockForUpdate()->first() : null;
         $byEmail = $email ? PaymentDonor::where('email', $email)->lockForUpdate()->first() : null;
         if ($byPhone) {
-            if ($byEmail && $byEmail->id !== $byPhone->id) {
-                throw ValidationException::withMessages(['donorEmail' => 'Nomor WhatsApp dan email tidak cocok dengan satu data donatur.']);
-            }
-            if ($email && $byPhone->email !== $email) {
+            // A public donation is not an account login. Never merge two existing
+            // donor identities merely because a visitor submitted both contacts.
+            if ($email && ! $byPhone->email && ! $byEmail) {
                 $byPhone->email = $email;
                 $byPhone->save();
             }
@@ -44,7 +42,7 @@ class DonorService
             return $byPhone;
         }
         if ($byEmail) {
-            if ($phone) {
+            if ($phone && ! $byEmail->phone && ! $byPhone) {
                 $byEmail->phone = $phone;
                 $byEmail->save();
             }

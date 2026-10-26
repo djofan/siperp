@@ -6,8 +6,10 @@ use App\Modules\Payment\Services\IpaymuService;
 use App\Modules\Payment\Services\ReceiptService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
+    config()->set('payment.gateway', 'ipaymu_sandbox');
     config()->set('payment.public_url', 'http://localhost:3000');
     config()->set('payment.api_url', 'http://localhost:8000/api/v1');
     config()->set('payment.ipaymu.api_key', 'ipaymu-contract-api-key');
@@ -17,6 +19,60 @@ beforeEach(function () {
     config()->set('payment.resend.from', 'Siperp <noreply@example.test>');
     Http::preventStrayRequests();
 });
+
+it('creates an iPaymu production session only with production origins and checkout URLs', function () {
+    config()->set('payment.gateway', 'ipaymu');
+    config()->set('payment.public_url', 'https://donasi.example.org');
+    config()->set('payment.api_url', 'https://api.example.org/api/v1');
+    config()->set('payment.ipaymu.base_url', 'https://my.ipaymu.com/api/v2');
+    Http::fake([
+        'https://my.ipaymu.com/api/v2/payment' => Http::response([
+            'Status' => 200,
+            'Message' => 'success',
+            'Data' => [
+                'SessionID' => 'production-session-id',
+                'Url' => 'https://my.ipaymu.com/payment/production-session-id',
+            ],
+        ]),
+    ]);
+
+    $donor = new PaymentDonor;
+    $donor->forceFill(['name' => 'Pembayar', 'email' => 'payer@example.test', 'phone' => '628123456789']);
+    $transaction = new PaymentTransaction;
+    $transaction->forceFill([
+        'id' => 'production-payment-contract-test',
+        'trackingCode' => 'TRACK-PRODUCTION-001',
+        'moduleSource' => 'lazsip',
+        'sourceType' => 'zakat',
+        'gatewayReferenceId' => 'SIPERP-PRODUCTION-001',
+        'gatewayAccountId' => '1179000899',
+        'amount' => 250000,
+        'adminFee' => 0,
+    ]);
+    $transaction->setRelation('donor', $donor);
+
+    expect(app(IpaymuService::class)->createSession($transaction))->toBe([
+        'sessionId' => 'production-session-id',
+        'url' => 'https://my.ipaymu.com/payment/production-session-id',
+    ]);
+
+    $gateway = app(IpaymuService::class);
+    expect($gateway->safeUrl('https://my.ipaymu.com/payment/production-session-id'))->toBeTrue()
+        ->and($gateway->safeUrl('https://sandbox.ipaymu.com/payment/sandbox-session'))->toBeFalse()
+        ->and($gateway->safeUrl('https://my.ipaymu.com.evil.test/payment/fake'))->toBeFalse();
+
+    Http::assertSent(fn (Request $request) => $request->url() === 'https://my.ipaymu.com/api/v2/payment'
+        && $request['notifyUrl'] === 'https://api.example.org/api/v1/payment/webhook/ipaymu'
+        && $request['returnUrl'] === 'https://donasi.example.org/payment/checkout/production-payment-contract-test'
+    );
+});
+
+it('rejects local callback and frontend origins in production mode', function () {
+    config()->set('payment.gateway', 'ipaymu');
+    config()->set('payment.ipaymu.base_url', 'https://my.ipaymu.com/api/v2');
+
+    app(IpaymuService::class)->configuration();
+})->throws(HttpException::class, 'URL publik pembayaran tidak valid.');
 
 it('creates an iPaymu sandbox session with the expected signed contract', function () {
     Http::fake([

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class Access
 {
-    public const ROLES = ['admin', 'call_center', 'approver', 'verifier', 'fund_requester', 'treasurer', 'chair'];
+    public const ROLES = ['admin', 'call_center', 'approver', 'verifier', 'volunteer', 'fund_requester', 'treasurer', 'chair'];
 
     public function role(Request $request): string
     {
@@ -28,6 +28,10 @@ class Access
         $role = $this->role($request);
         if ($role === 'verifier') {
             $query->where(fn ($q) => $q->where('created_by', $request->user()->id)->orWhere('verifier_id', $request->user()->id)->orWhere('distributor_id', $request->user()->id));
+        }
+        if ($role === 'volunteer') {
+            // Relawan santunan tidak mendapat akses ke data pengajuan bantuan.
+            $query->whereRaw('1 = 0');
         }
         if (in_array($role, ['fund_requester', 'treasurer'], true)) {
             $query->whereNotNull('amount');

@@ -29,6 +29,10 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
   beralasan. Gagal salur dan pengembalian dana tercatat.
 - Dashboard dasar, ekspor ringkasan CSV yang bisa dibuka di Excel, audit
   hanya-baca, notifikasi internal, master data, dan pengingat tenggat.
+- Pelaporan santunan rutin (janda dhuafa, anak yatim, anak asuh) dan tidak
+  rutin (anak yatim). Bendahara/pengirim menandai dana sudah ditransfer,
+  lalu Relawan yang ditugaskan mengisi tanggal, lokasi, penerima, deskripsi,
+  foto kertas bantuan, dan foto bersama penerima sebelum status menjadi selesai.
 - Foto di atas 2 MB dikompresi pada browser; server tetap memvalidasi
   format gambar dan maksimum 2 MB.
 
