@@ -1,6 +1,6 @@
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
-  fund_requester: "Pengaju Dana", treasurer: "Bendahara LAZSIP", chair: "Ketua Yayasan",
+  volunteer: "Relawan", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan",
 };
 export const bantuanActionLabels: Record<string, string> = {
   create: "Pengajuan dibuat", edit_intake: "Data pengajuan diperbarui", submit: "Pengajuan dikirim",
@@ -51,3 +51,11 @@ export interface AidDashboard {
   tickets: { distributor_id: string | null; distribution_type: string; total: number; amount: number }[];
 }
 export interface AidNotification { id: string; application_id: string; message: string; read_at: string | null; created_at: string }
+export interface SantunanRecord {
+  id: string; number: string; frequency: "routine"|"non_routine"; category: "widow"|"orphan"|"foster_child";
+  period: string; recipientName: string; volunteerId: string; amount: number;
+  transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
+  transferredAt: string|null; completedAt: string|null; version: number;
+  report: { distributionDate:string; location:string; recipient:string; description:string }|null;
+  documents: { id:string; kind:"aid_paper"|"recipient_photo"; created_at:string }[];
+}

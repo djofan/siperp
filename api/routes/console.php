@@ -27,7 +27,10 @@ Artisan::command('payment:receipts-retry', function (): void {
 })->purpose('Retry queued payment receipts with their original idempotency key');
 
 Artisan::command('payment:sync-pending', function (): void {
-    $rows = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->whereNotNull('gateway_session_id')->orderBy('created_at')->limit(50)->get();
+    $gateway = config('payment.gateway');
+    $rows = in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)
+        ? PaymentTransaction::where('gateway', $gateway)->where('status', 'pending')->whereNotNull('gateway_session_id')->orderBy('created_at')->limit(50)->get()
+        : collect();
     foreach ($rows as $row) {
         try {
             app(IpaymuService::class)->enqueueReconciliation($row);
@@ -35,7 +38,7 @@ Artisan::command('payment:sync-pending', function (): void {
             $this->warn('Gateway sync deferred for '.$row->id);
         }
     }
-})->purpose('Refresh pending sandbox payments from the trusted gateway');
+})->purpose('Refresh pending iPaymu payments from the trusted gateway');
 
 Schedule::command('payment:sync-pending')->everyMinute()->withoutOverlapping();
 Schedule::command('payment:receipts-retry')->everyMinute()->withoutOverlapping();

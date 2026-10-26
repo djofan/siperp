@@ -215,7 +215,10 @@ class ContentController
 
     public function checkoutMethods(): JsonResponse
     {
-        $data = config('payment.gateway') === 'ipaymu_sandbox' ? [['id' => 'ipaymu-sandbox', 'method' => 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]] : LazsipPaymentFeeRef::orderBy('method')->get();
+        $gateway = config('payment.gateway');
+        $data = in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)
+            ? [['id' => $gateway, 'method' => $gateway === 'ipaymu' ? 'iPaymu' : 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0]]
+            : LazsipPaymentFeeRef::orderBy('method')->get();
 
         return response()->json(['data' => $data]);
     }

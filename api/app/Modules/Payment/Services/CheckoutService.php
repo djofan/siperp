@@ -71,8 +71,10 @@ class CheckoutService
         $fund = $prepared['fund'];
         $amount = $prepared['amount'];
         $sourceId = $prepared['sourceId'];
-        $methodData = config('payment.gateway') === 'ipaymu_sandbox'
-            ? ($input['paymentMethod'] === 'iPaymu Sandbox' ? ['method' => 'iPaymu Sandbox', 'feeAmount' => 0, 'feePercentage' => 0] : null)
+        $gateway = config('payment.gateway');
+        $ipaymuMethod = $gateway === 'ipaymu_sandbox' ? 'iPaymu Sandbox' : 'iPaymu';
+        $methodData = in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)
+            ? ($input['paymentMethod'] === $ipaymuMethod ? ['method' => $ipaymuMethod, 'feeAmount' => 0, 'feePercentage' => 0] : null)
             : $adapter->paymentMethod($input['paymentMethod']);
         abort_unless($methodData !== null, 422, 'Metode pembayaran tidak tersedia.');
         $method = (object) $methodData;

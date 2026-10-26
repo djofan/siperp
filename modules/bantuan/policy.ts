@@ -2,7 +2,7 @@ import type { BantuanViewer } from "@/contracts/modules/bantuan";
 
 export const homeByRole: Record<string, string> = {
   admin: "", call_center: "screening", approver: "review", chair: "review",
-  verifier: "survei", fund_requester: "dana", treasurer: "pencairan",
+  verifier: "survei", volunteer: "santunan", fund_requester: "dana", treasurer: "pencairan",
 };
 export const href = (view = "") => `/admin/bantuan${view ? "/"+view : ""}`;
 export const finalStates = ["completed","rejected_screening","rejected_t1","rejected_t2","rejected_bypass","cancelled","returned"];
@@ -15,16 +15,17 @@ const history = entry("riwayat","Riwayat","history",finalStates);
 export function navigation(viewer: Pick<BantuanViewer,"role"|"canBypass">):NavEntry[] {
   const role=viewer.role;
   const items:Record<string,NavEntry[]>={
-    admin:[overview,all,entry("penugasan","Penugasan","users",["survey_assignment","approved"]),entry("dana","Dana bantuan","wallet",["fund_ready","fund_submitted","fund_approved"]),reports,
+    admin:[overview,all,entry("penugasan","Penugasan","users",["survey_assignment","approved"]),entry("dana","Dana bantuan","wallet",["fund_ready","fund_submitted","fund_approved"]),entry("santunan","Santunan","hand"),reports,
       {key:"tim",label:"Pengguna & izin",icon:"users",group:"Pengaturan"},{key:"pengaturan",label:"Master data",icon:"settings",group:"Pengaturan"},{key:"audit",label:"Audit log",icon:"shield",group:"Pengaturan"}],
     call_center:[overview,entry("pengajuan/baru","Pengajuan baru","plus"),entry("screening","Antrean screening","inbox",["draft","screening","needs_data"]),
       entry("penugasan","Penugasan petugas","users",["survey_assignment","approved"]),all],
     approver:[overview,entry("review","Perlu keputusan","check",["review1","survey_submitted","review2","bypass_review"]),all,reports],
-    chair:[overview,entry("review","Perlu keputusan","check",["review1","survey_submitted","review2","bypass_review"]),all,reports,
+    chair:[overview,entry("review","Perlu keputusan","check",["review1","survey_submitted","review2","bypass_review"]),all,entry("santunan","Laporan santunan","hand"),reports,
       {key:"audit",label:"Audit log",icon:"shield",group:"Pengawasan"}],
     verifier:[entry("survei","Tugas survei","clipboard",["survey_assigned"]),entry("penyaluran","Siap disalurkan","hand",["disbursed"]),history],
     fund_requester:[entry("dana","Perlu diajukan dananya","wallet",["fund_ready"]),entry("diajukan","Sudah diajukan","clock",["fund_submitted"]),history],
-    treasurer:[entry("pencairan","Tiket pencairan","wallet",["fund_approved"]),entry("rekonsiliasi","Rekonsiliasi","check",["disbursed","delivery_failed"]),history],
+    treasurer:[entry("pencairan","Tiket pencairan","wallet",["fund_approved"]),entry("rekonsiliasi","Rekonsiliasi","check",["disbursed","delivery_failed"]),entry("santunan","Santunan","hand"),history],
+    volunteer:[entry("santunan","Santunan saya","hand")],
   };
   const result=[...(items[role]??[])];
   if(viewer.canBypass&&["call_center","verifier"].includes(role))result.push(entry("pengajuan/langsung","Ajukan langsung","plus"));

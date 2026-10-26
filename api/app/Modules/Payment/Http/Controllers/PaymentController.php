@@ -8,8 +8,10 @@ use App\Modules\Payment\Services\ChartService;
 use App\Modules\Payment\Services\CheckoutService;
 use App\Modules\Payment\Services\IpaymuService;
 use App\Modules\Payment\Services\TransactionService;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class PaymentController
@@ -62,27 +64,44 @@ class PaymentController
     public function session(string $id, IpaymuService $gateway): JsonResponse
     {
         $row = PaymentTransaction::findOrFail($id);
-        abort_unless($row->gateway === 'ipaymu_sandbox' && $row->status === 'pending', 409);
+        abort_unless(in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) && $row->status === 'pending', 409);
+        abort_unless($row->gateway === config('payment.gateway'), 409, 'Transaksi ini dibuat untuk mode iPaymu yang berbeda. Buat transaksi baru setelah mengganti konfigurasi gateway.');
         if ($gateway->safeUrl($row->gatewayCheckoutUrl)) {
             return response()->json(['url' => $row->gatewayCheckoutUrl]);
         }
         $gateway->configuration();
-        $claimed = PaymentTransaction::whereKey($id)->where('gateway', 'ipaymu_sandbox')->where('status', 'pending')->where('gateway_state', 'not_started')->update(['gateway_state' => 'creating']);
+        $claimed = PaymentTransaction::whereKey($id)->where('gateway', config('payment.gateway'))->where('status', 'pending')->where('gateway_state', 'not_started')->update(['gateway_state' => 'creating']);
         abort_unless($claimed === 1, 409, 'Sesi sedang diproses atau perlu diperiksa admin. Jangan membuat transaksi ulang.');
         try {
             $session = $gateway->createSession($row);
             PaymentTransaction::whereKey($id)->where('status', 'pending')->where('gateway_state', 'creating')->update(['gateway_session_id' => $session['sessionId'], 'gateway_checkout_url' => $session['url'], 'gateway_state' => 'ready']);
 
             return response()->json(['url' => $session['url']]);
-        } catch (\Throwable) {
+        } catch (RequestException $error) {
+            $status = $error->response->status();
+            if ($status >= 400 && $status < 500) {
+                PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'not_started']);
+            } else {
+                PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'needs_review']);
+            }
+            Log::warning('iPaymu session request rejected.', ['transaction_id' => $id, 'gateway' => $row->gateway, 'provider_status' => $status]);
+            $message = in_array($status, [401, 403], true)
+                ? 'Kredensial iPaymu ditolak. Pastikan VA dan API key berasal dari mode yang sama.'
+                : ($status >= 400 && $status < 500
+                    ? 'Permintaan ditolak iPaymu. Periksa domain, IP server, dan konfigurasi pembayaran.'
+                    : 'Sesi belum dapat dipastikan. Hubungi admin; jangan membuat pembayaran ulang.');
+            abort(502, $message);
+        } catch (\Throwable $error) {
             PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'needs_review']);
+            Log::error('iPaymu session result is uncertain.', ['transaction_id' => $id, 'gateway' => $row->gateway, 'exception' => $error::class]);
             abort(502, 'Sesi belum dapat dipastikan. Hubungi admin; jangan membuat pembayaran ulang.');
         }
     }
 
     public function sync(string $id, IpaymuService $gateway, TransactionService $transactions): JsonResponse
     {
-        $row = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->findOrFail($id);
+        $row = PaymentTransaction::whereIn('gateway', ['ipaymu', 'ipaymu_sandbox'])->findOrFail($id);
+        abort_unless($row->gateway === config('payment.gateway'), 409, 'Transaksi ini dibuat untuk mode iPaymu yang berbeda.');
         try {
             $row = $gateway->sync($row);
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) {

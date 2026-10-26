@@ -10,6 +10,7 @@ import { preparePhoto } from "../api/photos";
 import { IntakeForm } from "./IntakeForm";
 import { ActionPanel, DocumentUpload } from "./ActionPanel";
 import { Management } from "./Management";
+import { Santunan } from "./Santunan";
 import s from "./Workspace.module.css";
 
 export function Icon({ name }: { name: string }) {
@@ -27,6 +28,7 @@ const links=[
   {key:"survei",label:"Tugas lapangan",icon:"users",roles:["admin","verifier","call_center"]},
   {key:"dana",label:"Pengajuan dana",icon:"wallet",roles:["admin","fund_requester"]},
   {key:"pencairan",label:"Pencairan & penyaluran",icon:"wallet",roles:["admin","treasurer","fund_requester","verifier"]},
+  {key:"santunan",label:"Santunan",icon:"users",roles:["admin","treasurer","volunteer","chair"]},
   {key:"laporan",label:"Laporan",icon:"chart",roles:[]},
   {key:"tim",label:"Tim & akses",icon:"users",roles:["admin"]},
   {key:"pengaturan",label:"Pengaturan",icon:"settings",roles:["admin"]},
@@ -73,7 +75,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   return <div className={s.app}>
     {mobile&&<button className={s.mobileOverlay} aria-label="Tutup navigasi" onClick={()=>setMobile(false)}/>}
     <aside className={s.sidebar} data-open={mobile}><Link href="/admin/bantuan" className={s.brand}><span className={s.mark}>✳</span><div><strong>Pengajuan Bantuan</strong><div className={s.eyebrow} style={{fontSize:9,marginTop:3}}>LAZSIP · SIP PLATFORM</div></div></Link>
-      <nav className={s.nav} aria-label="Navigasi modul">{links.map((link,i)=>(!link.roles.length||viewer&&link.roles.includes(viewer.role))&&<div key={link.key}>{i===6&&<div className={s.navLabel}>PENGELOLAAN</div>}<Link href={`/admin/bantuan${link.key?"/"+link.key:""}`} data-active={tab===link.key} onClick={()=>setMobile(false)}><Icon name={link.icon}/>{link.label}</Link></div>)}</nav>
+      <nav className={s.nav} aria-label="Navigasi modul">{links.map((link,i)=>(link.roles.length?viewer&&link.roles.includes(viewer.role):viewer?.role!=="volunteer")&&<div key={link.key}>{i===6&&<div className={s.navLabel}>PENGELOLAAN</div>}<Link href={`/admin/bantuan${link.key?"/"+link.key:""}`} data-active={tab===link.key} onClick={()=>setMobile(false)}><Icon name={link.icon}/>{link.label}</Link></div>)}</nav>
       <div style={{marginTop:"auto",padding:"25px 12px 15px"}}><span className={s.pill}>● Sistem internal</span><p className={s.tiny} style={{marginTop:12}}>Satu proses, bantuan lebih tepat.</p><Link className={s.link} href="/admin">← Kembali ke platform</Link></div>
       <div className={s.sidebarFooter}><span className={s.avatar}>{viewer?.name.slice(0,2).toUpperCase()??"…"}</span><div style={{minWidth:0}}><strong style={{fontSize:12}}>{viewer?.name??"Memuat akun…"}</strong><div className={s.tiny}>{bantuanRoles[viewer?.role??""]??""}</div></div></div>
     </aside>
@@ -83,6 +85,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
       {!viewer?<div className={s.skeleton}>{loading?"Memuat workspace…":<><p>Akses modul belum tersedia. Pastikan Anda mendapat izin dari superadmin.</p><Link className={s.button} href="/admin">Kembali ke platform</Link></>}</div>:
       tab==="pengajuan"&&route[1]==="baru"?canCreate?<IntakeForm viewer={viewer}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
       isDetail?loading?<div className={s.skeleton}>Memuat pengajuan…</div>:detail?isEdit?<IntakeForm viewer={viewer} initial={detail}/>:<Detail row={detail} viewer={viewer} staff={staff} reload={reload}/>:null:
+      tab==="santunan"?<Santunan viewer={viewer} staff={staff}/>:
       ["tim","pengaturan","audit"].includes(tab)?<Management tab={tab} viewer={viewer} staff={staff} reload={reload}/>:
       <><div className={s.heading}><div><div className={s.eyebrow}>{tab?"OPERASIONAL BANTUAN":"SELAMAT DATANG KEMBALI"}</div><h1>{tab?listTitle[tab]??"Pengajuan bantuan":`Ringkasan bantuan`}</h1><p>{tab==="dana"?"Penanda manual dari web pengajuan dana. Tidak ada transfer otomatis.":tab==="pencairan"?"Pantau dana siap cair dan bukti penyerahan yang belum lengkap.":"Pantau setiap tahap, pastikan bantuan sampai kepada yang membutuhkan."}</p></div><div className={s.actions}>{tab==="laporan"&&["admin","approver","chair","fund_requester","treasurer"].includes(viewer.role)&&<a className={`${s.button} ${s.secondary}`} href="/api/bantuan/export">↓ Ekspor CSV</a>}{canCreate&&<Link className={s.button} href="/admin/bantuan/pengajuan/baru"><Icon name="plus"/>Pengajuan baru</Link>}</div></div>
       {dashboard&&<><div className={s.stats}>{[

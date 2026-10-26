@@ -2,6 +2,7 @@
 
 namespace App\Modules\Payment\Services;
 
+use App\Modules\Payment\Jobs\DeliverPaymentEmail;
 use App\Modules\Payment\Models\PaymentDestinationAccount;
 use App\Modules\Payment\Models\PaymentTransaction;
 use Illuminate\Support\Facades\DB;
@@ -11,13 +12,13 @@ class TransactionService
 {
     public function create(array $input): PaymentTransaction
     {
-        $account = PaymentDestinationAccount::where('module_source', $input['moduleSource'])->where('fund_type', $input['fundType'])->orderBy('id')->lockForUpdate()->first();
-        abort_unless($account !== null, 503, 'Rekening tujuan belum tersedia.');
         $gateway = config('payment.gateway');
-        abort_unless(in_array($gateway, ['simulation', 'ipaymu_sandbox'], true), 503, 'Gateway belum dikonfigurasi.');
-        if ($gateway === 'ipaymu_sandbox') {
-            app(IpaymuService::class)->configuration();
+        abort_unless(in_array($gateway, ['simulation', 'ipaymu', 'ipaymu_sandbox'], true), 503, 'Gateway belum dikonfigurasi.');
+        $gatewayConfig = null;
+        if (in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)) {
+            $gatewayConfig = app(IpaymuService::class)->configuration();
         }
+        $account = $this->destinationAccount($input['moduleSource'], $input['fundType'], $gatewayConfig);
         $input['adminFee'] ??= 0;
         $recent = PaymentTransaction::where('donor_id', $input['donorId'])->where('module_source', $input['moduleSource'])
             ->where('fund_type', $input['fundType'])->where('source_type', $input['sourceType'])
@@ -32,13 +33,37 @@ class TransactionService
         $row->forceFill([
             ...$input, 'trackingCode' => $this->trackingCode($input['moduleSource']), 'destinationAccountId' => $account->id,
             'isAnonymous' => $input['isAnonymous'] ?? false, 'status' => 'pending', 'gateway' => $gateway,
-            'gatewayState' => 'not_started', 'gatewayAccountId' => $gateway === 'ipaymu_sandbox' ? config('payment.ipaymu.va') : null,
-            'gatewayReferenceId' => $gateway === 'ipaymu_sandbox' ? 'SIP-'.Str::uuid() : null,
+            'gatewayState' => 'not_started', 'gatewayAccountId' => in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true) ? config('payment.ipaymu.va') : null,
+            'gatewayReferenceId' => in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true) ? 'SIP-'.Str::uuid() : null,
         ])->save();
         $row->refresh();
-        DB::afterCommit(fn () => \App\Modules\Payment\Jobs\DeliverPaymentEmail::dispatch($row->id, true));
+        DB::afterCommit(fn () => DeliverPaymentEmail::dispatch($row->id, true));
 
         return $row;
+    }
+
+    private function destinationAccount(string $module, string $fund, ?array $gatewayConfig): PaymentDestinationAccount
+    {
+        $account = PaymentDestinationAccount::where('module_source', $module)->where('fund_type', $fund)->orderBy('id')->lockForUpdate()->first();
+        if ($account || $gatewayConfig === null) {
+            abort_unless($account !== null, 503, 'Rekening tujuan belum tersedia.');
+
+            return $account;
+        }
+
+        // iPaymu receives the payment through its merchant VA. Keep a clearing
+        // account in the ledger so checkout does not depend on a manually entered bank account.
+        $id = 'ipaymu-'.substr(hash('sha256', $module.'|'.$fund.'|'.$gatewayConfig['va']), 0, 32);
+        DB::table('payment_destination_accounts')->insertOrIgnore([
+            'id' => $id,
+            'module_source' => $module,
+            'fund_type' => $fund,
+            'bank_name' => 'iPaymu',
+            'account_number' => $gatewayConfig['va'],
+            'account_name' => strtoupper($module).' via iPaymu',
+        ]);
+
+        return PaymentDestinationAccount::whereKey($id)->lockForUpdate()->firstOrFail();
     }
 
     public function finalize(string $id, string $status): PaymentTransaction
@@ -58,7 +83,7 @@ class TransactionService
             return $row;
         }, 5);
         if ($row->status === 'paid') {
-            \App\Modules\Payment\Jobs\DeliverPaymentEmail::dispatch($row->id);
+            DeliverPaymentEmail::dispatch($row->id);
         }
 
         return $row;
