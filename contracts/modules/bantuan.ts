@@ -24,7 +24,7 @@ export const bantuanStatuses: Record<string, string> = {
   rejected_bypass: "Ditolak langsung", cancelled: "Dibatalkan",
 };
 export const documentLabels: Record<string, string> = {
-  face: "Foto wajah", ktp: "Foto KTP", survey_recipient: "Penerima saat survei", survey_front: "Tampak depan rumah",
+  face: "Foto wajah", ktp: "Foto KTP", kk: "Foto KK", supporting: "Foto pendukung", survey_recipient: "Penerima saat survei", survey_front: "Tampak depan rumah",
   survey_inside: "Ruangan dalam (minimal 2)", survey_environment: "Rumah & lingkungan", survey_other: "Foto survei lainnya",
   sktm: "Foto SKTM", transfer: "Bukti transfer Bendahara", handover: "Foto penyerahan", certificate: "Foto sertifikat",
   receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
@@ -37,11 +37,13 @@ export interface AidApplication {
   amount: number | null; verifierId: string | null; distributorId: string | null; distributionType: string | null;
   version: number; createdAt: string; updatedAt: string; disbursedAt: string | null; completedAt: string | null;
 }
+export interface AidDependent { name:string; relationship:string; gender:string; age:number|""; status:string }
+export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
 export interface AidDetail extends AidApplication {
-  applicant: Record<string, string | number | boolean | null>; reporter: Record<string, string> | null;
-  reporterId: string; survey: Record<string, unknown> | null; handover: Record<string, unknown> | null;
+  applicant: AidValues;
+  survey: Record<string, unknown> | null; handover: Record<string, unknown> | null;
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
-  documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null }[];
+  documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null }[];
   events: { id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number }

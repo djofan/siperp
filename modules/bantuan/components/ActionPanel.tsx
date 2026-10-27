@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import type { AidDetail, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
 import { documentLabels } from "@/contracts/modules/bantuan";
 import { request } from "../api/client";
 import { preparePhoto } from "../api/photos";
-import { applicantFields, Fields } from "./IntakeForm";
+import { applicantFields, Fields, type Values } from "./IntakeForm";
+import { PhotoReview } from "./PhotoReview";
+import { ProcessSuccess } from "./ProcessSuccess";
+import { PhotoSlots, surveyPhotos } from "./PhotoSlots";
 import s from "./Workspace.module.css";
 
 type Action = { key: string; label: string; states: string[]; roles: string[]; danger?: boolean };
@@ -37,33 +40,33 @@ const today=()=>new Date().toLocaleDateString("en-CA");
 const surveyFields=[
   {key:"date",label:"Tanggal verifikasi",type:"date"},
   {key:"hasSktm",label:"Sudah memiliki SKTM?",type:"boolean"},
-  {key:"sktmExplanation",label:"Penjelasan jika belum memiliki SKTM",type:"textarea",optional:true,wide:true},
-  {key:"background",label:"Latar belakang",type:"textarea",wide:true},
-  {key:"currentCondition",label:"Kondisi saat ini",type:"textarea",wide:true},
-  {key:"needs",label:"Kebutuhan bantuan",type:"textarea",wide:true},
-  {key:"efforts",label:"Usaha dan upaya yang sudah dilakukan",type:"textarea",wide:true},
-  {key:"homeObservation",label:"Pengamatan rumah & perabotan",type:"textarea",wide:true},
+  {key:"sktmExplanation",label:"Penjelasan jika belum memiliki SKTM",type:"textarea",optional:true},
+  {key:"background",label:"Latar belakang",type:"textarea"},
+  {key:"currentCondition",label:"Kondisi saat ini",type:"textarea"},
+  {key:"needs",label:"Kebutuhan bantuan",type:"textarea"},
+  {key:"efforts",label:"Usaha dan upaya yang sudah dilakukan",type:"textarea"},
+  {key:"homeObservation",label:"Pengamatan rumah & perabotan",type:"textarea"},
   {key:"stayDuration",label:"Lama tinggal",type:"number"}, {key:"stayUnit",label:"Satuan",options:["bulan","tahun"]},
-  {key:"socialRecord",label:"Track record dan kondisi sosial",type:"textarea",wide:true},
+  {key:"socialRecord",label:"Track record dan kondisi sosial",type:"textarea"},
   {key:"recommendation",label:"Rekomendasi Verifikator",options:["layak","tidak_layak"]},
-  {key:"suggestions",label:"Kritik dan saran",type:"textarea",optional:true,wide:true},
-  {key:"notes",label:"Catatan tambahan",type:"textarea",optional:true,wide:true},
+  {key:"suggestions",label:"Kritik dan saran",type:"textarea",optional:true},
+  {key:"notes",label:"Catatan tambahan",type:"textarea",optional:true},
 ];
 
 export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer: BantuanViewer; reload: () => void }) {
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const role=viewer.role;
   const kinds=Object.keys(documentLabels).filter(k=>{
+    if(k.startsWith("survey_")||k==="sktm")return false;
     if(["completed","returned"].includes(row.status))return false;
     if(role==="admin")return true;
-    if(["face","ktp"].includes(k))return ["call_center","verifier"].includes(role)&&["draft","needs_data","screening"].includes(row.status);
-    if(k.startsWith("survey_")||k==="sktm")return role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned";
+    if(["face","ktp","kk","supporting"].includes(k))return ["call_center","verifier"].includes(role)&&["draft","needs_data","screening"].includes(row.status);
     if(["transfer","return"].includes(k))return role==="treasurer"&&["fund_approved","disbursed","delivery_failed"].includes(row.status);
     return row.status==="disbursed"&&(role==="verifier"&&row.distributorId===viewer.id||role==="treasurer"&&row.distributionType==="direct");
   });
   async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const prepared=await preparePhoto(file);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);await request(`applications/${row.id}/documents`,{method:"POST",body});}reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
   return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · JPG, PNG, WEBP · maks. 2 MB</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
-    {row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:row.documents.map(doc=><div className={s.document} key={doc.id}><div><strong style={{fontSize:12}}>{documentLabels[doc.kind]??doc.kind}</strong><div className={s.tiny}>Tersimpan privat</div></div><a className={s.link} href={`/api/bantuan/documents/${doc.id}`} target="_blank" rel="noreferrer">Lihat ↗</a></div>)}
+    {row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
     {kinds.length>0&&<form onSubmit={upload} style={{display:"grid",gap:12,marginTop:20}}>
       <label className={s.field}>Jenis dokumen<select className={s.input} value={kind||kinds[0]} onChange={e=>setKind(e.target.value)}>{kinds.map(k=><option key={k} value={k}>{documentLabels[k]}</option>)}</select></label>
       <label className={s.upload}>Pilih foto<input name="files" type="file" accept="image/jpeg,image/png,image/webp" multiple required/></label>
@@ -73,8 +76,11 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
 }
 
 export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; viewer: BantuanViewer; staff: BantuanStaff[]; reload:()=>void }) {
-  const [active,setActive]=useState<string|null>(null),[busy,setBusy]=useState(false),[error,setError]=useState("");
-  const [survey,setSurvey]=useState<Record<string,string|number|boolean|null>>(()=>{
+  const [success,setSuccess]=useState(""),[savedNotice,setSavedNotice]=useState("");
+  const [surveyPhotosReady,setSurveyPhotosReady]=useState(false),[missingSurveyPhotos,setMissingSurveyPhotos]=useState<string[]>([]);
+  const onSurveyPhotosReady=useCallback((ready:boolean,missing:string[])=>{setSurveyPhotosReady(ready);setMissingSurveyPhotos(missing);},[]);
+  const [active,setActive]=useState<string|null>(()=>viewer.role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned"?"survey_submit":null),[busy,setBusy]=useState(false),[error,setError]=useState("");
+  const [survey,setSurvey]=useState<Values>(()=>{
     const values:Record<string,string|number|boolean|null>={date:today(),stayUnit:"tahun"};
     for(const [key,value] of Object.entries(row.survey??{})) if(value===null||typeof value==="string"||typeof value==="number"||typeof value==="boolean")values[key]=value;
     return values;
@@ -87,16 +93,27 @@ export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; vi
     .filter(a=>viewer.role==="admin"||!(a.key==="survey_submit"&&row.verifierId!==viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
-  async function perform(e:FormEvent<HTMLFormElement>, key=active){e.preventDefault();if(!key)return;setBusy(true);setError("");const form=new FormData(e.currentTarget);const values:Record<string,unknown>=Object.fromEntries(form);for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);if(key==="survey_submit"||key==="survey_save"){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),differenceReason:form.get("differenceReason"),notes:form.get("notes")};
-    try{await request(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});setActive(null);reload();}catch(err){setError(err instanceof Error?err.message:"Tindakan gagal.");}finally{setBusy(false);}}
-  return <section className={s.card}><div className={s.cardHeader}><div><h2>Tindakan pengajuan</h2><p>Keputusan dicatat beserta petugas dan waktunya.</p></div></div><div className={s.cardBody}>
-    {!active?<><div className={s.actions}>{allowed.map(a=><button key={a.key} className={`${s.button} ${a.danger?s.danger:s.secondary}`} onClick={()=>{setError("");setActive(a.key);}}>{a.label}</button>)}<button className={`${s.button} ${s.secondary}`} onClick={()=>setActive("comment")}>+ Komentar internal</button></div>{allowed.length===0&&<p className={s.tiny} style={{marginTop:14}}>Tidak ada tindakan tahap ini untuk peran Anda.</p>}</>:<form onSubmit={perform}>
+  async function perform(e:FormEvent<HTMLFormElement>, key=active){e.preventDefault();if(!key||busy)return;if(key==="survey_submit"&&!surveyPhotosReady){setError("Lengkapi foto hasil survei terlebih dahulu: "+missingSurveyPhotos.join(", "));return;}setBusy(true);setError("");const form=new FormData(e.currentTarget);const values:Record<string,unknown>=Object.fromEntries(form);for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);if(key==="survey_submit"||key==="survey_save"){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),differenceReason:form.get("differenceReason"),notes:form.get("notes")};
+    try{await request(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});
+      if(key==="comment"){
+        setSavedNotice("Komentar berhasil ditambahkan.");
+        setActive(null);
+        reload();
+      }else setSuccess(key==="survey_save"?"Draft survei tersimpan":actions.find(action=>action.key===key)?.label??"Proses selesai");
+    }catch(err){setError(err instanceof Error?err.message:"Tindakan gagal.");}finally{setBusy(false);}}
+  if(success)return <ProcessSuccess title="Berhasil disimpan" description={`${success}. Perubahan pengajuan ${row.number} sudah tersimpan.`}/>;
+  return <section className={s.card}><div className={s.cardHeader}><div><h2>{viewer.role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned"?"Hasil survei":"Tindakan pengajuan"}</h2><p>Keputusan dicatat beserta petugas dan waktunya.</p></div></div><div className={s.cardBody}>
+    {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}
+    {!active?<><div className={s.actions}>{allowed.map(a=><button key={a.key} className={`${s.button} ${a.danger?s.danger:s.secondary}`} onClick={()=>{setError("");setSavedNotice("");setActive(a.key);}}>{a.label}</button>)}<button className={`${s.button} ${s.secondary}`} onClick={()=>setActive("comment")}>+ Komentar internal</button></div>{allowed.length===0&&<p className={s.tiny} style={{marginTop:14}}>Tidak ada tindakan tahap ini untuk peran Anda.</p>}</>:<form onSubmit={perform} className={active==="survey_submit"?s.surveyForm:undefined}>
       <div style={{display:"flex",justifyContent:"space-between",gap:12,marginBottom:22}}><h3 className={s.sectionTitle}>{actions.find(a=>a.key===active)?.label??"Komentar internal"}</h3><button type="button" className={s.link} onClick={()=>setActive(null)}>Batal</button></div>
       {active==="survey_submit"?<><Fields fields={surveyFields} values={survey} set={(k,v)=>setSurvey(p=>({...p,[k]:v}))}/>
         <h3 className={s.sectionTitle} style={{margin:"22px 0 14px"}}>Kerabat / tetangga yang dapat dihubungi</h3>{contacts.map((c,i)=><div className={s.formGrid} key={i} style={{marginBottom:14}}>{(["name","relationship","phone"] as const).map((k,j)=><label key={k} className={s.field}>{["Nama","Hubungan","No. HP"][j]}<input className={s.input} required value={c[k]} onChange={e=>setContacts(v=>v.map((r,n)=>n===i?{...r,[k]:e.target.value}:r))}/></label>)}<button type="button" className={s.link} onClick={()=>setContacts(v=>v.filter((_,n)=>n!==i))}>Hapus kontak</button></div>)}
         <div className={s.actions}><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>setContacts(v=>[...v,{name:"",relationship:"",phone:""}])}>+ Tambah kontak</button><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>navigator.geolocation?.getCurrentPosition(p=>setGeo({latitude:p.coords.latitude,longitude:p.coords.longitude}),()=>setError("Lokasi tidak diizinkan. Survei tetap dapat disimpan."))}>{geo?"✓ Lokasi tercatat":"Catat lokasi (opsional)"}</button></div>
         <label className={s.field} style={{margin:"25px 0 15px",flexDirection:"row"}}><input className={s.check} type="checkbox" checked={correct} onChange={e=>setCorrect(e.target.checked)}/> Koreksi data pemohon sesuai hasil kunjungan</label>{correct&&<Fields fields={applicantFields} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/>}
-        <div className={s.notice} style={{marginTop:20}}>Unggah foto penerima, depan rumah, minimal 2 ruangan dalam, serta lingkungan sebelum mengirim survei. Foto SKTM wajib jika sudah memiliki.</div>
+        <section className={s.surveyEvidence} aria-label="Foto hasil survei"><h3 className={s.sectionTitle}>Foto penerima & kondisi rumah</h3><p>Ambil foto langsung atau pilih dari galeri. Beri keterangan untuk setiap foto; hasilnya otomatis tampil juga di Dokumen pendukung.</p>
+          <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotos.map(slot=>slot.kind==="sktm"?{...slot,minimum:survey.hasSktm===true?1:0}:slot)} minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
+          {!surveyPhotosReady&&<small className={s.tiny}>Sebelum konfirmasi: {missingSurveyPhotos.join(", ")||"memeriksa kelengkapan foto…"}. Draft tetap bisa disimpan.</small>}
+        </section>
       </>:<div className={s.formGrid}>
         {reasons.includes(active)&&<label className={`${s.field} ${s.wide}`}>Alasan / catatan *<textarea className={s.input} name="reason" required minLength={5} maxLength={5000}/></label>}
         {active==="approve"&&<label className={s.field}>Nominal bantuan (Rp) *<input className={s.input} type="number" name="amount" min={1} max={9000000000000} required defaultValue={row.amount??undefined}/></label>}

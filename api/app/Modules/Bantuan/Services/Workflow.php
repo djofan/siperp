@@ -4,9 +4,7 @@ namespace App\Modules\Bantuan\Services;
 
 use App\Modules\Bantuan\Models\Application;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class Workflow
@@ -66,14 +64,14 @@ class Workflow
                 $complete = clone $request;
                 $complete->merge(['applicant' => $row->applicant]);
                 app(Intake::class)->validateApplicant($complete);
-                $reporter = json_decode(Crypt::decryptString(DB::table('bantuan_reporters')->where('id', $row->reporter_id)->value('details')), true);
-                Validator::make($reporter, ['name' => 'required|string', 'date' => 'required|date|before_or_equal:today',
-                    'maritalStatus' => 'required|string', 'type' => 'required|in:Yayasan,Lembaga,Perorangan', 'address' => 'required|string', 'phone' => 'required|string'])->validate();
-                abort_if(trim($row->region) === '', 422, 'Wilayah pengajuan wajib dilengkapi.');
                 abort_if($role === 'verifier' && ($row->source !== 'bypass' || $row->created_by !== $request->user()->id), 403);
-                $this->requiredDocuments($row, ['face' => 1, 'ktp' => 1]);
+                if ($row->source !== 'online') {
+                    $this->requiredDocuments($row, ['face' => 1, 'ktp' => 1]);
+                }
                 if ($row->source === 'bypass') {
                     $next = 'bypass_review';
+                } elseif ($row->source === 'online') {
+                    $next = 'review1';
                 }
             }
             if ($action === 'assign_survey') {
@@ -125,6 +123,9 @@ class Workflow
             }
             if ($action === 'review_reject' && $from === 'bypass_review') {
                 $next = 'rejected_bypass';
+            }
+            if ($action === 'reopen' && $row->source === 'online') {
+                $next = 'review1';
             }
             if ($action === 'reopen' && $row->source === 'bypass') {
                 $next = 'bypass_review';
