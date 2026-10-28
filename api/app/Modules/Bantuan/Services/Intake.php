@@ -18,6 +18,7 @@ class Intake
     {
         $rules = [
             'applicant' => 'required|array', 'applicant.name' => 'required|string|max:191', 'applicant.nik' => 'required|digits:16',
+            'applicant.intakeType' => 'nullable|in:new,returning',
             'applicant.birthPlace' => 'required|string|max:191', 'applicant.birthDate' => 'required|date|before_or_equal:today',
             'applicant.gender' => 'required|in:laki_laki,perempuan', 'applicant.maritalStatus' => 'required|in:Menikah,Duda,Janda,Janda mati,Belum menikah',
             'applicant.street' => 'required|string|max:500', 'applicant.rtRw' => 'required|string|max:30',

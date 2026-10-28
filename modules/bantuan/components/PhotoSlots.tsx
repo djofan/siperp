@@ -11,7 +11,7 @@ export interface PhotoRequirement {kind:string;minimum:number;hint?:string}
 export const intakePhotos=(source:string):PhotoRequirement[]=>[{kind:"face",minimum:source==="online"?0:1,hint:"Wajah jelas, tanpa penutup."},{kind:"ktp",minimum:source==="online"?0:1,hint:"Seluruh kartu dan tulisan dapat dibaca."},{kind:"kk",minimum:0,hint:"Kartu keluarga, jika tersedia."},{kind:"supporting",minimum:0,hint:"Bisa beberapa foto, masing-masing dengan keterangan."}];
 export const surveyPhotos:PhotoRequirement[]=[
   {kind:"survey_recipient",minimum:1},{kind:"survey_front",minimum:1},{kind:"survey_inside",minimum:2,hint:"Ambil dua sudut ruangan yang berbeda."},
-  {kind:"survey_environment",minimum:1},{kind:"sktm",minimum:0},{kind:"survey_other",minimum:0},
+  {kind:"survey_environment",minimum:1},{kind:"sktm",minimum:0,hint:"Jika tersedia. Tidak wajib untuk mengirim hasil survei."},{kind:"survey_other",minimum:0},
 ];
 export const handoverPhotos:PhotoRequirement[]=[{kind:"handover",minimum:1},{kind:"certificate",minimum:1,hint:"Foto sertifikat kertas yang telah diserahkan."},{kind:"receipt",minimum:0}];
 export function PhotoSlots({owner,applicationId,documents=[],requirements,editable=true,onReady,onUploaded,minimumTotal=0}:

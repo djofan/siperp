@@ -31,7 +31,7 @@ class Workflow
         'delivery_fail' => [['disbursed'], ['verifier', 'treasurer'], 'delivery_failed'],
         'return_funds' => [['delivery_failed'], ['treasurer'], 'returned'],
         'reopen' => [['rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass', 'cancelled', 'returned'], ['approver', 'chair'], 'screening'],
-        'cancel' => [['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_submitted', 'bypass_review', 'approved', 'fund_ready'], ['call_center'], 'cancelled'],
+        'cancel' => [['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_submitted', 'bypass_review', 'approved', 'fund_ready'], ['call_center', 'verifier'], 'cancelled'],
         'comment' => [[], ['call_center', 'approver', 'chair', 'verifier', 'fund_requester', 'treasurer'], null],
     ];
 
@@ -49,6 +49,9 @@ class Workflow
             abort_unless(! $states || in_array($row->status, $states, true), 409, 'Tindakan tidak sesuai tahap pengajuan.');
             $from = $row->status;
             $role = $access->role($request);
+            if ($action === 'cancel' && $role === 'verifier') {
+                abort_unless($row->created_by === $request->user()->id && in_array($row->status, ['draft', 'needs_data'], true), 403, 'Hanya draft pengajuan sendiri yang dapat dibatalkan.');
+            }
             $reason = null;
             if (in_array($action, ['screen_reject', 'request_data', 'review1_reject', 'review_reject', 'survey_again', 'fund_reject', 'delivery_fail', 'cancel', 'reopen', 'comment'], true)) {
                 $reason = $request->validate(['reason' => 'required|string|min:5|max:5000'])['reason'];
@@ -106,9 +109,6 @@ class Workflow
                     $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
                     abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->count() < ($settings['minimumSurveyPhotos'] ?? 5), 422, 'Jumlah foto survei baru belum memenuhi minimum.');
                     DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->update(['used_at' => now()]);
-                    if ($survey['hasSktm']) {
-                        $this->requiredDocuments($row, ['sktm' => 1]);
-                    }
                 }
                 $row->survey = $survey;
                 if ($request->has('applicant')) {
@@ -167,7 +167,9 @@ class Workflow
             if ($action === 'disburse') {
                 $transfer = $request->validate(['transferDate' => 'required|date|before_or_equal:today', 'transferAmount' => 'required|integer|min:1', 'account' => 'required|string|max:191']);
                 abort_unless((int) $transfer['transferAmount'] === $row->amount, 422, 'Nominal pencairan harus sama dengan nominal ditetapkan.');
-                $this->consumeEvidence($row, 'transfer');
+                if (DB::table('bantuan_documents')->where('application_id', $row->id)->where('kind', 'transfer')->whereNull('deleted_at')->whereNull('used_at')->exists()) {
+                    $this->consumeEvidence($row, 'transfer');
+                }
                 $row->disbursed_at = $transfer['transferDate'];
             }
             if (in_array($action, ['handover', 'delivery_fail'], true)) {
@@ -183,7 +185,6 @@ class Workflow
                 $handover = $request->validate(['handover' => 'required|array', 'handover.method' => 'required|in:tunai,transfer',
                     'handover.date' => 'required|date|before_or_equal:today', 'handover.amount' => 'required|integer|min:1',
                     'handover.differenceReason' => 'nullable|string|max:5000', 'handover.notes' => 'nullable|string|max:5000'])['handover'];
-                abort_if((int) $handover['amount'] !== $row->amount && empty($handover['differenceReason']), 422, 'Selisih nominal wajib disertai alasan.');
                 $this->requiredDocuments($row, ['handover' => 1, 'certificate' => 1]);
                 $row->handover = $handover;
                 $row->completed_at = $handover['date'];
