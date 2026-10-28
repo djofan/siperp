@@ -39,10 +39,12 @@ export interface AidApplication {
 }
 export interface AidDependent { name:string; relationship:string; gender:string; age:number|""; status:string }
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
+export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
 export interface AidDetail extends AidApplication {
   applicant: AidValues;
   survey: Record<string, unknown> | null; handover: Record<string, unknown> | null;
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
+  duplicateApplications: AidApplicantHistory[];
   documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null }[];
   events: { id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }

@@ -19,7 +19,8 @@ export async function request<T>(path: string, init: RequestInit = {}, unwrap = 
   if (!response.ok) {
     const details = body.error?.details;
     const first = details && typeof details === "object" ? Object.values(details).flat()[0] : null;
-    throw new RequestError(typeof first === "string" ? fieldMessage(first) : typeof body.error === "string" ? body.error : body.error?.message ?? "Permintaan gagal. Silakan coba lagi.",response.status,details??{});
+    const message=typeof first === "string" ? fieldMessage(first) : typeof body.error === "string" ? body.error : body.error?.message;
+    throw new RequestError(!message||message==="An unexpected error occurred."?"Server belum dapat memproses permintaan. Silakan coba lagi.":message,response.status,details??{});
   }
   return (unwrap ? body.data : body) as T;
 }

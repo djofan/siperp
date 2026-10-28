@@ -36,6 +36,15 @@ class BantuanController
             'disbursedAt' => $row->disbursed_at?->toDateString(), 'completedAt' => $row->completed_at?->toDateString()];
     }
 
+    private function applicantHistory(Request $request, Access $access, string $nikHash, ?string $excludeId = null)
+    {
+        return $access->scope(Application::query(), $request)->where('nik_hash', $nikHash)
+            ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
+            ->latest('created_at')->orderBy('id')->get(['id', 'number', 'program', 'status', 'amount', 'created_at'])
+            ->map(fn ($item) => ['id' => $item->id, 'number' => $item->number, 'program' => $item->program,
+                'status' => $item->status, 'amount' => $item->amount, 'createdAt' => $item->created_at->toIso8601String()]);
+    }
+
     public function index(Request $request, Access $access)
     {
         $data = $request->validate(['status' => 'nullable|string|max:50', 'search' => 'nullable|string|max:191',
@@ -95,6 +104,7 @@ class BantuanController
         return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant,
             'bypassReason' => $row->bypass_reason, 'survey' => $access->sensitive($request) ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
+            'duplicateApplications' => $this->applicantHistory($request, $access, $row->nik_hash, $row->id),
             'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at', 'caption'])->map(function ($doc) { $doc->caption = $doc->caption ? Crypt::decryptString($doc->caption) : null; return $doc; }), 'events' => $events]]);
     }
 
@@ -113,6 +123,23 @@ class BantuanController
     public function action(Request $request, string $id, string $action, Workflow $workflow)
     {
         return response()->json(['data' => $this->summary($workflow->perform($request, $id, $action))]);
+    }
+
+    public function destroy(Request $request, string $id, Access $access, \App\Modules\Bantuan\Services\ApplicationDeletion $deletion)
+    {
+        $access->allow($request, ['call_center', 'verifier']);
+        $input = $request->validate(['version' => 'required|integer|min:1']);
+        $paths = DB::transaction(function () use ($request, $id, $access, $input, $deletion) {
+            $row = $access->find($request, $id, true);
+            abort_unless($access->role($request) === 'admin' || $row->created_by === $request->user()->id, 403, 'Hanya draft sendiri yang dapat dihapus.');
+            abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang terlebih dahulu.');
+            abort_unless($row->status === 'draft', 409, 'Pengajuan sudah dikirim. Gunakan Batalkan pengajuan, bukan hapus.');
+
+            return $deletion->records([$row->id]);
+        });
+        $deletion->files($paths);
+
+        return response()->json(['ok' => true]);
     }
 
     public function batch(Request $request, Workflow $workflow)
@@ -147,9 +174,27 @@ class BantuanController
     public function duplicate(Request $request, Access $access, Intake $intake)
     {
         $access->allow($request, ['call_center', 'verifier']);
-        $nik = $request->validate(['nik' => 'required|digits:16'])['nik'];
+        $data = $request->validate(['nik' => 'required|digits:16', 'excludeId' => 'nullable|uuid']);
+        $hash = $intake->nikHash($data['nik']);
+        return response()->json(['data' => ['count' => Application::where('nik_hash', $hash)
+            ->when($data['excludeId'] ?? null, fn ($query, $id) => $query->where('id', '!=', $id))->count(),
+            'applications' => $this->applicantHistory($request, $access, $hash, $data['excludeId'] ?? null)]]);
+    }
 
-        return response()->json(['data' => ['count' => Application::where('nik_hash', $intake->nikHash($nik))->count()]]);
+    public function searchApplicants(Request $request, Access $access, Intake $intake)
+    {
+        $access->allow($request, ['call_center', 'verifier']);
+        $data = $request->validate(['query' => 'required|string|min:2|max:191', 'excludeId' => 'nullable|uuid']);
+        $term = trim($data['query']);
+        if (strlen($term) < 2 || (ctype_digit($term) && strlen($term) !== 16)) return response()->json(['data' => []]);
+        $query = $access->scope(Application::query(), $request)
+            ->when($data['excludeId'] ?? null, fn ($q, $id) => $q->where('id', '!=', $id));
+        if (ctype_digit($term)) $query->where('nik_hash', $intake->nikHash($term));
+        else $query->where('name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%');
+        $people = $query->latest('created_at')->orderBy('id')->limit(100)->get()->unique('nik_hash')->take(12);
+        return response()->json(['data' => $people->map(fn ($row) => ['id' => $row->id, 'name' => $row->name,
+            'nikLabel' => substr($row->applicant['nik'], 0, 6).'••••••'.substr($row->applicant['nik'], -4),
+            'program' => $row->program, 'createdAt' => $row->created_at->toIso8601String()])->values()]);
     }
 
     public function document(Request $request, string $id, Access $access, Journal $journal)

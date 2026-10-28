@@ -27,7 +27,7 @@ export const processMenus:ProcessEntry[]=[
   process("penugasan-penyalur","Tentukan penyalur","04 · Dana bantuan",["approved"],["call_center"],"Pilih petugas penyalur agar bantuan dapat diajukan dananya.","users"),
   process("dana-siap","Perlu diajukan dananya","04 · Dana bantuan",["fund_ready"],["fund_requester"],"Ajukan di web dana terpisah, lalu tandai Dana diajukan di detail pengajuan.","wallet"),
   process("dana-diajukan","Menunggu keputusan dana","04 · Dana bantuan",["fund_submitted"],["fund_requester"],"Setelah ada keputusan di web dana, tandai Dana disetujui atau Dana ditolak di sini.","clock"),
-  process("pencairan","Siap dicairkan","05 · Pencairan & penyerahan",["fund_approved"],["treasurer","fund_requester"],"Bendahara melakukan transfer manual, unggah bukti, lalu catat pencairan.","wallet"),
+  process("pencairan","Siap dicairkan","05 · Pencairan & penyerahan",["fund_approved"],["treasurer","fund_requester"],"Bendahara melakukan transfer manual lalu catat pencairan. Bukti transfer dapat dilampirkan di form dan bersifat opsional.","wallet"),
   process("penyaluran","Siap diserahkan","05 · Pencairan & penyerahan",["disbursed"],["verifier","treasurer","call_center"],"Penyalur menyerahkan bantuan, unggah foto dan sertifikat, lalu laporkan penyerahan.","hand","distribution"),
   process("gagal-salur","Gagal disalurkan","05 · Pencairan & penyerahan",["delivery_failed"],["verifier","treasurer","call_center"],"Periksa alasan gagal salur dan koordinasikan pengembalian dana ke Bendahara.","history","distribution"),
   process("selesai","Bantuan selesai","06 · Arsip",["completed"],["call_center","approver","chair","verifier","fund_requester","treasurer"],"Bantuan sudah diserahkan dan bukti lengkap. Buka detail untuk melihat hasilnya.","check"),

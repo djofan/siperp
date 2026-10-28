@@ -8,7 +8,9 @@ import { preparePhoto } from "../api/photos";
 import { applicantFields, Fields, type Values } from "./IntakeForm";
 import { PhotoReview } from "./PhotoReview";
 import { ProcessSuccess } from "./ProcessSuccess";
-import { PhotoSlots, surveyPhotos } from "./PhotoSlots";
+import { ApprovalAmount } from "./ApprovalAmount";
+import { HandoverFields } from "./HandoverFields";
+import { PhotoSlots, surveyPhotos, handoverPhotos } from "./PhotoSlots";
 import s from "./Workspace.module.css";
 
 type Action = { key: string; label: string; states: string[]; roles: string[]; danger?: boolean };
@@ -57,7 +59,7 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const role=viewer.role;
   const kinds=Object.keys(documentLabels).filter(k=>{
-    if(k.startsWith("survey_")||k==="sktm")return false;
+    if(k.startsWith("survey_")||k==="sktm"||k==="transfer"||["handover","certificate","receipt"].includes(k))return false;
     if(["completed","returned"].includes(row.status))return false;
     if(role==="admin")return true;
     if(["face","ktp","kk","supporting"].includes(k))return ["call_center","verifier"].includes(role)&&["draft","needs_data","screening"].includes(row.status);
@@ -78,6 +80,10 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
 export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; viewer: BantuanViewer; staff: BantuanStaff[]; reload:()=>void }) {
   const [success,setSuccess]=useState(""),[savedNotice,setSavedNotice]=useState("");
   const [surveyPhotosReady,setSurveyPhotosReady]=useState(false),[missingSurveyPhotos,setMissingSurveyPhotos]=useState<string[]>([]);
+  const [handoverPhotosReady,setHandoverPhotosReady]=useState(false),[missingHandoverPhotos,setMissingHandoverPhotos]=useState<string[]>([]);
+  const onHandoverPhotosReady=useCallback((ready:boolean,missing:string[])=>{setHandoverPhotosReady(ready);setMissingHandoverPhotos(missing);},[]);
+  const [transferPhotosReady,setTransferPhotosReady]=useState(true);
+  const onTransferPhotosReady=useCallback((ready:boolean)=>setTransferPhotosReady(ready),[]);
   const onSurveyPhotosReady=useCallback((ready:boolean,missing:string[])=>{setSurveyPhotosReady(ready);setMissingSurveyPhotos(missing);},[]);
   const [active,setActive]=useState<string|null>(()=>viewer.role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned"?"survey_submit":null),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const [survey,setSurvey]=useState<Values>(()=>{
@@ -93,7 +99,7 @@ export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; vi
     .filter(a=>viewer.role==="admin"||!(a.key==="survey_submit"&&row.verifierId!==viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
-  async function perform(e:FormEvent<HTMLFormElement>, key=active){e.preventDefault();if(!key||busy)return;if(key==="survey_submit"&&!surveyPhotosReady){setError("Lengkapi foto hasil survei terlebih dahulu: "+missingSurveyPhotos.join(", "));return;}setBusy(true);setError("");const form=new FormData(e.currentTarget);const values:Record<string,unknown>=Object.fromEntries(form);for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);if(key==="survey_submit"||key==="survey_save"){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),differenceReason:form.get("differenceReason"),notes:form.get("notes")};
+  async function perform(e:FormEvent<HTMLFormElement>, key=active){e.preventDefault();if(!key||busy)return;if(key==="handover"&&!handoverPhotosReady){setError("Lengkapi foto penyaluran terlebih dahulu: "+(missingHandoverPhotos.join(", ")||"memeriksa unggahan…"));return;}if(key==="disburse"&&!transferPhotosReady){setError("Tunggu bukti transfer selesai diunggah atau hapus unggahan yang gagal. Bukti transfer bersifat opsional.");return;}if(key==="survey_submit"&&!surveyPhotosReady){setError("Lengkapi foto hasil survei terlebih dahulu: "+missingSurveyPhotos.join(", "));return;}setBusy(true);setError("");const form=new FormData(e.currentTarget);const values:Record<string,unknown>=Object.fromEntries(form);for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);if(key==="survey_submit"||key==="survey_save"){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),notes:form.get("notes")};
     try{await request(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});
       if(key==="comment"){
         setSavedNotice("Komentar berhasil ditambahkan.");
@@ -111,12 +117,12 @@ export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; vi
         <div className={s.actions}><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>setContacts(v=>[...v,{name:"",relationship:"",phone:""}])}>+ Tambah kontak</button><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>navigator.geolocation?.getCurrentPosition(p=>setGeo({latitude:p.coords.latitude,longitude:p.coords.longitude}),()=>setError("Lokasi tidak diizinkan. Survei tetap dapat disimpan."))}>{geo?"✓ Lokasi tercatat":"Catat lokasi (opsional)"}</button></div>
         <label className={s.field} style={{margin:"25px 0 15px",flexDirection:"row"}}><input className={s.check} type="checkbox" checked={correct} onChange={e=>setCorrect(e.target.checked)}/> Koreksi data pemohon sesuai hasil kunjungan</label>{correct&&<Fields fields={applicantFields} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/>}
         <section className={s.surveyEvidence} aria-label="Foto hasil survei"><h3 className={s.sectionTitle}>Foto penerima & kondisi rumah</h3><p>Ambil foto langsung atau pilih dari galeri. Beri keterangan untuk setiap foto; hasilnya otomatis tampil juga di Dokumen pendukung.</p>
-          <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotos.map(slot=>slot.kind==="sktm"?{...slot,minimum:survey.hasSktm===true?1:0}:slot)} minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
+          <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotos} minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
           {!surveyPhotosReady&&<small className={s.tiny}>Sebelum konfirmasi: {missingSurveyPhotos.join(", ")||"memeriksa kelengkapan foto…"}. Draft tetap bisa disimpan.</small>}
         </section>
       </>:<div className={s.formGrid}>
         {reasons.includes(active)&&<label className={`${s.field} ${s.wide}`}>Alasan / catatan *<textarea className={s.input} name="reason" required minLength={5} maxLength={5000}/></label>}
-        {active==="approve"&&<label className={s.field}>Nominal bantuan (Rp) *<input className={s.input} type="number" name="amount" min={1} max={9000000000000} required defaultValue={row.amount??undefined}/></label>}
+        {active==="approve"&&<ApprovalAmount row={row}/>}
         {["assign_survey","assign_distributor"].includes(active)&&<>
           {active==="assign_distributor"&&<label className={s.field}>Jenis penyalur<select className={s.input} name="distributionType" value={distributionType} onChange={e=>setDistributionType(e.target.value)}><option value="verifier">Verifikator</option>{row.source==="bypass"&&<option value="direct">Bendahara langsung ke penerima</option>}</select></label>}
           {(active==="assign_survey"||distributionType==="verifier")&&<label className={s.field}>Verifikator *<select className={s.input} name={active==="assign_survey"?"verifierId":"distributorId"} required defaultValue={active==="assign_survey"?row.verifierId??"":row.distributorId??""}><option value="">Pilih petugas</option>{staff.filter(p=>p.role==="verifier"&&p.active).map(p=><option key={p.id} value={p.id}>{p.name}{p.region?` · ${p.region}`:""}</option>)}</select></label>}
@@ -124,8 +130,8 @@ export function ActionPanel({ row, viewer, staff, reload }: { row: AidDetail; vi
         </>}
         {active==="fund_submit"&&<label className={s.field}>Referensi web dana (opsional)<input className={s.input} name="reference" maxLength={191}/></label>}
         {active==="fund_approve"&&<div className={`${s.notice} ${s.wide}`}>Pastikan persetujuan sudah diberikan di web pengajuan dana. Penanda ini akan menerbitkan rincian pencairan.</div>}
-        {active==="disburse"&&<><label className={s.field}>Tanggal transfer *<input className={s.input} name="transferDate" type="date" defaultValue={today()} required max={today()}/></label><label className={s.field}>Nominal transfer (Rp) *<input className={s.input} name="transferAmount" type="number" min={1} defaultValue={row.amount??undefined} required/></label><label className={`${s.field} ${s.wide}`}>Rekening tujuan *<input className={s.input} name="account" required maxLength={191}/><small>Unggah bukti transfer terlebih dahulu pada bagian dokumen.</small></label></>}
-        {active==="handover"&&<><label className={s.field}>Metode penyerahan<select className={s.input} name="method"><option value="tunai">Tunai</option><option value="transfer">Transfer</option></select></label><label className={s.field}>Tanggal penyerahan *<input className={s.input} type="date" name="date" defaultValue={today()} max={today()} required/></label><label className={s.field}>Nominal diserahkan (Rp) *<input className={s.input} type="number" name="handoverAmount" min={1} defaultValue={row.amount??undefined} required/></label><label className={s.field}>Alasan jika nominal berbeda<input className={s.input} name="differenceReason" maxLength={5000}/></label><label className={`${s.field} ${s.wide}`}>Catatan<textarea className={s.input} name="notes" maxLength={5000}/><small>Foto penyerahan dan sertifikat wajib diunggah sebelum menyelesaikan pengajuan.</small></label></>}
+        {active==="disburse"&&<><label className={s.field}>Tanggal transfer *<input className={s.input} name="transferDate" type="date" defaultValue={today()} required max={today()}/></label><label className={s.field}>Nominal transfer (Rp) *<input className={s.input} name="transferAmount" type="number" min={1} defaultValue={row.amount??undefined} required/></label><label className={`${s.field} ${s.wide}`}>Rekening tujuan *<input className={s.input} name="account" required maxLength={191}/></label><div className={s.wide}><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={[{kind:"transfer",minimum:0,hint:"Opsional. Pencairan tetap dapat dicatat tanpa bukti transfer."}]} onReady={onTransferPhotosReady} onUploaded={reload}/></div></>}
+        {active==="handover"&&<><HandoverFields row={row} today={today()}/><section className={`${s.surveyEvidence} ${s.wide}`} aria-label="Foto penyaluran"><h3 className={s.sectionTitle}>Foto & bukti penyaluran</h3><p>Foto penyerahan dan sertifikat wajib dilengkapi. Kuitansi opsional. Semua foto tersimpan juga di Dokumen pendukung.</p><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={handoverPhotos} onReady={onHandoverPhotosReady} onUploaded={reload}/></section></>}
       </div>}
       {error&&<div className={`${s.notice} ${s.error}`} style={{marginTop:18}} role="alert">{error}</div>}
       <div className={s.actions} style={{marginTop:22}}><button className={s.button} disabled={busy}>{busy?"Menyimpan…":"Konfirmasi & simpan"}</button>{active==="survey_submit"&&<button type="button" className={`${s.button} ${s.secondary}`} disabled={busy} onClick={e=>{const form=e.currentTarget.closest("form")!;void perform({preventDefault:()=>{},currentTarget:form} as FormEvent<HTMLFormElement>,"survey_save");}}>Simpan draft survei</button>}</div>

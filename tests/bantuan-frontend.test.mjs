@@ -2,6 +2,50 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync } from "node:fs";
 import test from "node:test";
 
+test("returning applicants can be searched and reused without copying old workflow state or photos",()=>{
+  const intake=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
+  const picker=readFileSync("modules/bantuan/components/ReturningApplicantPicker.tsx","utf8");
+  assert.match(picker,/role="combobox"/);
+  assert.match(picker,/role="listbox"/);
+  assert.match(picker,/applicants\/search/);
+  assert.match(picker,/Isi otomatis dari data terakhir/);
+  assert.match(picker,/Isi ulang, gunakan nama & NIK/);
+  assert.match(intake,/problem:"",intakeType:"returning"/);
+  assert.match(intake,/name:detail.applicant.name,nik:detail.applicant.nik/);
+  assert.match(intake,/if\(hasInput\)setReuse/);
+  const apply=intake.match(/function applyPrevious\([\s\S]*?\n  \}/)[0];
+  assert.doesNotMatch(apply,/setDocuments|setSaved|detail\.status|detail\.amount|detail\.documents/);
+});
+
+test("transfer proof is optional and uploaded within the disbursement form",()=>{
+  const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
+  const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
+  assert.match(actions,/kind:"transfer",minimum:0/);
+  assert.match(actions,/key==="disburse"&&!transferPhotosReady/);
+  assert.doesNotMatch(actions,/Unggah bukti transfer terlebih dahulu pada bagian dokumen/);
+  assert.match(workspace,/Bukti transfer \(opsional\)/);
+  assert.doesNotMatch(workspace,/Unggah bukti transfer untuk pencairan massal/);
+});
+
+test("failed draft saves leave saving state and keep the form available for retry",()=>{
+  const intake=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
+  const client=readFileSync("modules/bantuan/api/client.ts","utf8");
+  assert.match(intake,/then\(job\)\.catch\(error=>\{setSaveState\("local"\);throw error;\}\)/);
+  assert.match(client,/Server belum dapat memproses permintaan/);
+});
+
+test("same applicant history lists previous programs dates statuses and amounts without blocking intake",()=>{
+  const history=readFileSync("modules/bantuan/components/ApplicantHistory.tsx","utf8");
+  const intake=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
+  const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
+  for(const field of ["item.program","item.createdAt","item.status","item.amount","item.number"])assert.ok(history.includes(field));
+  assert.match(history,/Pengajuan baru tetap dapat dilanjutkan/);
+  assert.match(history,/target="_blank"/);
+  assert.match(intake,/excludeId:saved\?\.id\?\?initial\?\.id/);
+  assert.match(intake,/duplicate.nik===String\(form.applicant.nik/);
+  assert.match(workspace,/<ApplicantHistory count=\{row.duplicateCount\}/);
+});
+
 test("santunan uses compact cards without changing its transfer and two evidence workflow",()=>{
   const page=readFileSync("modules/bantuan/components/Santunan.tsx","utf8");
   const policy=readFileSync("modules/bantuan/policy.ts","utf8");
@@ -19,9 +63,9 @@ test("santunan uses compact cards without changing its transfer and two evidence
 test("survey evidence uploads inside survey entry and remains visible in the document gallery",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const documentUpload=actions.slice(actions.indexOf("export function DocumentUpload"),actions.indexOf("export function ActionPanel"));
-  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\)return false/);
+  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\|\|k==="transfer"\|\|\["handover","certificate","receipt"\].includes\(k\)\)return false/);
   assert.match(actions,/aria-label="Foto hasil survei"/);
-  assert.match(actions,/<PhotoSlots owner=\{viewer.id\} applicationId=\{row.id\} documents=\{row.documents\} requirements=\{surveyPhotos.map/);
+  assert.match(actions,/<PhotoSlots owner=\{viewer.id\} applicationId=\{row.id\} documents=\{row.documents\} requirements=\{surveyPhotos\}/);
   assert.match(actions,/minimumTotal=\{viewer.settings.minimumSurveyPhotos\}/);
   assert.match(actions,/onUploaded=\{reload\}/);
   assert.match(actions,/key==="survey_submit"&&!surveyPhotosReady/);

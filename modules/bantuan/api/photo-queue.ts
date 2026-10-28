@@ -6,7 +6,7 @@ export interface QueuedPhoto {
   id:string; applicationId:string;kind:string;name:string;mime:string;data:string;status:"queued"|"preparing"|"uploading"|"done"|"error";
   progress:number;attempts:number;nextTry:number;error?:string;prepared?:boolean;caption?:string;
 }
-type Bucket={items:QueuedPhoto[];listeners:Set<()=>void>;initialized:boolean;pumping:boolean};
+type Bucket={items:QueuedPhoto[];listeners:Set<()=>void>;initialized:boolean;pumping:boolean;paused?:boolean};
 const buckets=new Map<string,Bucket>();
 const EMPTY:QueuedPhoto[]=[];
 function bucket(owner:string,applicationId:string):Bucket{
@@ -38,6 +38,13 @@ async function upload(photo:QueuedPhoto,onProgress:(n:number)=>void):Promise<voi
 export function subscribePhotos(owner:string,app:string,listener:()=>void){const b=bucket(owner,app);b.listeners.add(listener);return()=>{b.listeners.delete(listener);};}
 export function photoSnapshot(owner:string,app:string){return bucket(owner,app).items;}
 export function emptyPhotos(){return EMPTY;}
+export function pausePhotos(owner:string,app:string,paused:boolean){bucket(owner,app).paused=paused;}
+export async function discardLocalPhotos(owner:string,app:string){
+  const b=bucket(owner,app);
+  b.paused=true;
+  for(const photo of b.items)await removeDraft(owner,storageKey(photo));
+  b.items=[];emit(b);
+}
 export async function startPhotos(owner:string,app:string){
   const b=bucket(owner,app);
   if(!b.initialized){
@@ -71,11 +78,11 @@ export async function removePhoto(owner:string,app:string,id:string,server=false
   const b=bucket(owner,app);b.items=b.items.filter(p=>p.id!==id);emit(b);
 }
 export async function pumpPhotos(owner:string,app:string){
-  const b=bucket(owner,app);if(b.pumping||!navigator.onLine)return;b.pumping=true;
+  const b=bucket(owner,app);if(b.paused||b.pumping||!navigator.onLine)return;b.pumping=true;
   try{
     while(true){
       let item=b.items.find(p=>(p.status==="queued"||p.status==="error"&&p.attempts<3)&&p.nextTry<=Date.now());
-      if(!item||!navigator.onLine)break;
+      if(b.paused||!item||!navigator.onLine)break;
       item=update(owner,app,item.id,{attempts:item.attempts+1});
       try{
         if(!item.prepared){

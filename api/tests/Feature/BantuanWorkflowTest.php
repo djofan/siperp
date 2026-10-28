@@ -54,6 +54,53 @@ beforeEach(function () {
     $this->treasurer = bantuanUser('treasurer');
 });
 
+it('deletes only owned drafts and removes related evidence and notifications', function () {
+    $input = [...bantuanInput(), 'draft' => true];
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $doc = bantuanDoc($id, 'face');
+    $path = 'bantuan/'.$id.'/'.$doc.'.enc';
+    DB::table('bantuan_documents')->where('id', $doc)->update(['path' => $path]);
+    Storage::disk('local')->put($path, 'test evidence');
+    $this->deleteJson('/api/v1/bantuan/applications/'.$id, ['version' => 9])->assertConflict();
+    $this->actingAs($this->approver, 'sanctum')->deleteJson('/api/v1/bantuan/applications/'.$id, ['version' => 1])->assertForbidden();
+    $this->actingAs($this->cc, 'sanctum')->deleteJson('/api/v1/bantuan/applications/'.$id, ['version' => 1])->assertOk();
+    $this->assertDatabaseMissing('bantuan_applications', ['id' => $id]);
+    $this->assertDatabaseMissing('bantuan_documents', ['application_id' => $id]);
+    $this->assertDatabaseMissing('bantuan_events', ['application_id' => $id]);
+    Storage::disk('local')->assertMissing($path);
+    $sent = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$sent.'/actions/submit', ['version' => 1])->assertOk();
+    $this->deleteJson('/api/v1/bantuan/applications/'.$sent, ['version' => 2])->assertConflict();
+    expect(Application::findOrFail($sent))->not->toBeNull();
+});
+
+it('records the actual handover amount without a separate difference reason', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'disbursed', 'distribution_type' => 'direct', 'amount' => 1000000])->save();
+    bantuanDoc($id, 'handover');
+    bantuanDoc($id, 'certificate');
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/handover', [
+        'version' => 1, 'handover' => ['method' => 'tunai', 'date' => now()->toDateString(), 'amount' => 900000],
+    ])->assertOk()->assertJsonPath('data.status', 'completed');
+    expect(Application::findOrFail($id)->handover['amount'])->toBe(900000);
+});
+
+it('cancels an intake draft and prevents autosave from reviving it', function () {
+    $input = [...bantuanInput(), 'draft' => true];
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 1, 'reason' => 'Tidak jadi mengajukan bantuan.'])->assertOk()->assertJsonPath('data.status', 'cancelled');
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'version' => 2])->assertConflict();
+    expect(Application::findOrFail($id)->status)->toBe('cancelled');
+});
+
+it('lets verifiers cancel only their own drafts', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', [...bantuanInput(), 'draft' => true])->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['created_by' => $this->verifier->id])->save();
+    $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 1, 'reason' => 'Tidak jadi mengajukan bantuan.'])->assertOk();
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 2, 'reason' => 'Tidak jadi mengajukan bantuan.'])->assertForbidden();
+});
+
 it('requires login and explicit module access, including direct API access', function () {
     $this->getJson('/api/v1/bantuan/applications')->assertUnauthorized();
     $user = new User;
@@ -72,6 +119,54 @@ it('encrypts personal information and detects duplicate NIK without blocking int
     $this->getJson('/api/v1/bantuan/applications/'.$id)->assertJsonPath('data.duplicateCount', 1);
     $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertNotFound();
     $this->getJson('/api/v1/bantuan/applications')->assertJsonCount(0, 'data');
+});
+
+it('shows same NIK application history without blocking new applications or leaking unassigned records', function () {
+    $input = bantuanInput();
+    $first = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $second = $this->postJson('/api/v1/bantuan/applications', [...$input, 'program' => 'Kesehatan'])->assertCreated()->json('data.id');
+    $other = bantuanInput(); $other['applicant']['nik'] = '3271051234567891';
+    $this->postJson('/api/v1/bantuan/applications', $other)->assertCreated();
+    $this->postJson('/api/v1/bantuan/duplicate-check', ['nik' => $input['applicant']['nik'], 'excludeId' => $second])
+        ->assertOk()->assertJsonPath('data.count', 1)->assertJsonCount(1, 'data.applications')->assertJsonPath('data.applications.0.id', $first);
+    $this->getJson('/api/v1/bantuan/applications/'.$second)->assertOk()->assertJsonPath('data.duplicateCount', 1)->assertJsonCount(1, 'data.duplicateApplications');
+    $history = $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/duplicate-check', ['nik' => $input['applicant']['nik']])
+        ->assertOk()->assertJsonPath('data.count', 2)->assertJsonCount(0, 'data.applications');
+    expect($history->json('data'))->not->toHaveKey('nik');
+    Application::findOrFail($second)->forceFill(['verifier_id' => $this->verifier->id])->save();
+    $this->getJson('/api/v1/bantuan/applications/'.$second)->assertOk()->assertJsonCount(0, 'data.duplicateApplications');
+});
+
+it('allows a completed survey without a SKTM photo even when the applicant already has SKTM', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    $survey = ['date' => now()->toDateString(), 'hasSktm' => true, 'background' => 'Latar belakang',
+        'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan', 'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana',
+        'stayDuration' => 5, 'stayUnit' => 'tahun', 'socialRecord' => 'Baik', 'recommendation' => 'layak'];
+    $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 1, 'survey' => $survey])->assertUnprocessable();
+    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 1, 'survey' => $survey])->assertOk()->assertJsonPath('data.status', 'survey_submitted');
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'sktm')->count())->toBe(0);
+});
+
+it('finds returning applicants by name or exact NIK and creates a separate application', function () {
+    $input = bantuanInput();
+    $first = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applicants/search', ['query' => 'Pemohon'])->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $first);
+    $this->postJson('/api/v1/bantuan/applicants/search', ['query' => '327105'])->assertOk()->assertJsonCount(0, 'data');
+    $match = $this->postJson('/api/v1/bantuan/applicants/search', ['query' => $input['applicant']['nik']])->assertOk()->assertJsonPath('data.0.id', $first);
+    expect($match->json('data.0'))->not->toHaveKey('applicant');
+    expect($match->json('data.0.nikLabel'))->not->toBe($input['applicant']['nik']);
+    $this->postJson('/api/v1/bantuan/applicants/search', ['query' => 'Pemohon', 'excludeId' => $first])->assertOk()->assertJsonCount(0, 'data');
+    $input['applicant']['intakeType'] = 'returning';
+    $input['applicant']['problem'] = 'Kebutuhan baru kali ini';
+    $second = $this->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    expect($second)->not->toBe($first);
+    expect(Application::findOrFail($first)->applicant['problem'])->toBe('Memerlukan biaya pengobatan');
+    expect(Application::findOrFail($second)->applicant['intakeType'])->toBe('returning');
+    $this->postJson('/api/v1/bantuan/applicants/search', ['query' => 'Pemohon'])->assertOk()->assertJsonCount(1, 'data');
+    $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applicants/search', ['query' => 'Pemohon'])->assertOk()->assertJsonCount(0, 'data');
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/applicants/search', ['query' => 'Pemohon'])->assertForbidden();
 });
 
 it('requires private documents before submission and protects encrypted file downloads', function () {
@@ -295,7 +390,16 @@ it('keeps an existing bypass valid after permission is revoked and prevents chan
     $this->actingAs($this->cc, 'sanctum')->putJson('/api/v1/bantuan/applications/'.$id, [...$input, 'source' => 'online', 'version' => 2])->assertUnprocessable();
 });
 
-it('keeps reasons mandatory and blocks reuse of an old transfer receipt', function () {
+it('records disbursement without an optional receipt but still validates the amount', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'fund_approved', 'amount' => 1000000])->save();
+    $data = ['version' => 1, 'transferDate' => now()->toDateString(), 'transferAmount' => 500000, 'account' => 'Rekening uji'];
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/disburse', $data)->assertUnprocessable();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/disburse', [...$data, 'transferAmount' => 1000000])->assertOk()->assertJsonPath('data.status', 'disbursed');
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'transfer')->count())->toBe(0);
+});
+
+it('keeps reasons mandatory and never consumes an already used optional transfer receipt again', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->json('data.id');
     $row = Application::find($id);
     $row->forceFill(['status' => 'screening'])->save();
@@ -304,9 +408,11 @@ it('keeps reasons mandatory and blocks reuse of an old transfer receipt', functi
     $this->getJson('/api/v1/bantuan/applications/'.$id)->assertJsonPath('data.events.1.reason', 'Tidak memenuhi kriteria');
     $row->refresh()->forceFill(['status' => 'fund_approved', 'amount' => 1000000])->save();
     $doc = bantuanDoc($id, 'transfer');
-    DB::table('bantuan_documents')->where('id', $doc)->update(['used_at' => now()]);
+    $usedAt = now()->subDay()->format('Y-m-d H:i:s');
+    DB::table('bantuan_documents')->where('id', $doc)->update(['used_at' => $usedAt]);
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/disburse',
-        ['version' => 2, 'transferDate' => now()->toDateString(), 'transferAmount' => 1000000, 'account' => 'Rekening uji'])->assertUnprocessable();
+        ['version' => 2, 'transferDate' => now()->toDateString(), 'transferAmount' => 1000000, 'account' => 'Rekening uji'])->assertOk();
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('used_at'))->toBe($usedAt);
 });
 
 it('sends deadline reminders at most once per recipient per day', function () {
