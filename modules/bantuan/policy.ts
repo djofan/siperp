@@ -1,8 +1,8 @@
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
 
 export const homeByRole: Record<string, string> = {
-  admin: "", call_center: "screening", approver: "review", chair: "review",
-  verifier: "survei", volunteer:"santunan", fund_requester: "dana", treasurer: "pencairan",
+  admin: "", call_center: "", approver: "", chair: "",
+  verifier: "", volunteer:"santunan", fund_requester: "", treasurer: "",
 };
 export const href = (view = "") => `/admin/bantuan${view ? "/"+view : ""}`;
 export const finalStates = ["completed","rejected_screening","rejected_t1","rejected_t2","rejected_bypass","cancelled","returned"];
@@ -41,7 +41,7 @@ export function navigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEnt
   const items:NavEntry[]=[
     {key:"",label:"Dashboard",icon:"layout",group:"Umum"},
     {key:"pengajuan",label:"Semua pengajuan",icon:"files",group:"Umum"},
-    {key:"proses",label:"Proses bantuan",icon:"inbox",group:"Umum"},
+    {key:"proses",label:"Pekerjaan saya",icon:"inbox",group:"Umum"},
   ];
   if(["admin","call_center"].includes(viewer.role))items.push({key:"pengajuan/baru",label:"Pengajuan baru",icon:"plus",group:"01 · Pengajuan"});
   if(viewer.canBypass&&["admin","call_center","verifier"].includes(viewer.role))items.push({key:"pengajuan/langsung",label:"Pengajuan langsung",icon:"plus",group:"01 · Pengajuan"});
@@ -55,8 +55,13 @@ export function navigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEnt
   return items;
 }
 export function sidebarNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntry[]{
-  if(viewer.role==="volunteer")return navigation(viewer);
-  return navigation(viewer).filter(item=>["","pengajuan","proses","laporan","tim","pengaturan","audit"].includes(item.key));
+  const main=["","pengajuan","proses","laporan","santunan","tim","pengaturan","audit"];
+  const priorities:Record<string,string[]>={
+    call_center:["draft","penugasan-survei","penugasan-penyalur"],
+    verifier:["survei","penyaluran"],approver:["review-tahap-1","review-tahap-2"],chair:["review-tahap-1","review-tahap-2"],
+    fund_requester:["dana-siap","dana-diajukan"],treasurer:["pencairan","penyaluran"],
+  };
+  return navigation(viewer).filter(item=>main.includes(item.key)||(priorities[viewer.role]??[]).includes(item.key));
 }
 export function processInfo(view:string):NavEntry|undefined {
   if(view==="review")return {key:view,label:"Antrean persetujuan",icon:"check",group:"02 · Persetujuan",states:["review1","survey_submitted","review2","bypass_review"],description:"Pilih pengajuan untuk meninjau dan mencatat keputusan."};
@@ -88,7 +93,7 @@ export function inboxStates(role:string):string[]{
 }
 export function nextStep(status:string, source="online"): { title:string; description:string; owner:string } {
   const values:Record<string,[string,string,string]>={
-    draft:["Lengkapi lalu kirim pengajuan","Draft belum masuk antrean petugas. Lengkapi data dan kedua foto sebelum dikirim.","Pembuat pengajuan"],
+    draft:["Lengkapi lalu kirim pengajuan",source==="online"?"Draft belum masuk proses. Lengkapi data; foto WhatsApp opsional, lalu kirim ke penyetuju.":"Draft belum masuk proses. Lengkapi data, foto wajah dan KTP, lalu kirim pengajuan.","Pembuat pengajuan"],
     needs_data:["Lengkapi data yang diminta","Baca alasan pengembalian, perbarui data, lalu kirim kembali.","Call Center"],
     screening:["Menunggu screening","Pengajuan sudah masuk antrean screening. Call Center menilai kelayakan awal.","Call Center"],
     review1:["Menunggu keputusan tahap 1","Penyetuju akan menentukan apakah pengajuan dilanjutkan ke survei.","Approver / Ketua Yayasan"],

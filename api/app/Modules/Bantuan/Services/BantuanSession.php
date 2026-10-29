@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class BantuanSession implements ModuleSession
 {
-    private const HOME = ['call_center' => 'screening', 'approver' => 'review', 'chair' => 'review', 'verifier' => 'survei', 'volunteer' => 'santunan', 'fund_requester' => 'dana', 'treasurer' => 'pencairan'];
+    private const HOME = ['call_center' => '', 'approver' => '', 'chair' => '', 'verifier' => '', 'volunteer' => 'santunan', 'fund_requester' => '', 'treasurer' => ''];
 
     public function credentialField(): string
     {
@@ -28,7 +28,8 @@ class BantuanSession implements ModuleSession
 
     public function redirect(array $session, ?object $membership): string
     {
-        return '/admin/bantuan/'.(self::HOME[$session['moduleRoles']['bantuan'] ?? ''] ?? '');
+        $home = self::HOME[$session['moduleRoles']['bantuan'] ?? ''] ?? '';
+        return '/admin/bantuan'.($home !== '' ? '/'.$home : '');
     }
 
     public function available(): bool
@@ -44,6 +45,7 @@ class BantuanSession implements ModuleSession
         }
         $membership = collect($access)->first(fn ($row) => $row->slug === 'bantuan');
 
-        return isset(self::HOME[$membership?->role ?? '']) ? '/admin/bantuan/'.self::HOME[$membership->role] : null;
+        $home = self::HOME[$membership?->role ?? ''] ?? null;
+        return $home !== null ? '/admin/bantuan'.($home !== '' ? '/'.$home : '') : null;
     }
 }

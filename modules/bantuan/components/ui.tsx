@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Bell, Camera, Check, CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, Clock3, FileText, Files, HandHeart, History, Inbox, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, ShieldCheck, Upload, UsersRound, Wallet, X } from "lucide-react";
 import { bantuanStatuses } from "@/contracts/modules/bantuan";
+import { lockPageScroll } from "../scroll-lock";
 import s from "./Workspace.module.css";
 
 export function Icon({name,className}:{name:string;className?:string}){
@@ -33,9 +34,14 @@ export function Toast({message,onClose}:{message:string;onClose:()=>void}){
 }
 export function Dialog({title,description,children,onClose,wide=false}:{title:string;description?:string;children:ReactNode;onClose:()=>void;wide?:boolean}){
   const ref=useRef<HTMLDialogElement>(null),id=useId();
-  useEffect(()=>{const element=ref.current;element?.showModal();return()=>element?.close();},[]);
-  return <dialog ref={ref} className={`${s.dialog} ${wide?s.wideDialog:""}`} aria-labelledby={id} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-    <div className={s.dialogHeader}><div><h2 id={id}>{title}</h2>{description&&<p>{description}</p>}</div><button aria-label="Tutup dialog" className={s.iconButton} onClick={onClose} type="button"><X size={18}/></button></div>
+  useEffect(()=>{
+    const element=ref.current;if(!element)return;
+    const unlock=lockPageScroll(element.ownerDocument);
+    try{element.showModal();}catch(error){unlock();throw error;}
+    return()=>{try{element.close();}finally{unlock();}};
+  },[]);
+  return <dialog ref={ref} className={`${s.dialog} ${wide?s.wideDialog:""}`} aria-labelledby={id} aria-describedby={description?id+"-description":undefined} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+    <div className={s.dialogHeader}><div><h2 id={id}>{title}</h2>{description&&<p id={id+"-description"}>{description}</p>}</div><button aria-label="Tutup dialog" className={s.iconButton} onClick={onClose} type="button"><X size={18}/></button></div>
     <div className={s.dialogBody}>{children}</div>
   </dialog>;
 }

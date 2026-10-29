@@ -7,6 +7,7 @@ use App\Modules\Bantuan\Http\Controllers\StaffController as S;
 use Illuminate\Support\Facades\Route;
 
 Route::get('viewer', [C::class, 'viewer']);
+Route::put('active-role', [C::class, 'switchRole']);
 Route::get('dashboard', [C::class, 'dashboard']);
 Route::get('export', [C::class, 'export']);
 Route::get('applications', [C::class, 'index']);
@@ -28,6 +29,7 @@ Route::match(['GET', 'PUT'], 'settings', [C::class, 'master']);
 Route::get('staff', [S::class, 'index']);
 Route::post('staff', [S::class, 'store']);
 Route::put('staff/{id}', [S::class, 'update']);
+Route::delete('staff/{id}', [S::class, 'destroy']);
 Route::get('santunan', [SantunanController::class, 'index']);
 Route::post('santunan', [SantunanController::class, 'store']);
 Route::post('santunan/{id}/transferred', [SantunanController::class, 'transferred']);

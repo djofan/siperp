@@ -4,6 +4,7 @@ namespace App\Modules\Bantuan\Http\Controllers;
 
 use App\Modules\Bantuan\Models\Application;
 use App\Modules\Bantuan\Services\Access;
+use App\Modules\Bantuan\Services\ApplicationQuery;
 use App\Modules\Bantuan\Services\Intake;
 use App\Modules\Bantuan\Services\Journal;
 use App\Modules\Bantuan\Services\Workflow;
@@ -23,7 +24,17 @@ class BantuanController
     public function viewer(Request $request, Access $access)
     {
         return response()->json(['data' => ['id' => $request->user()->id, 'name' => $request->user()->name,
-            'role' => $access->role($request), 'canBypass' => $access->bypass($request), 'settings' => $this->settings()]]);
+            'role' => $access->role($request), 'roles' => $access->roles($request), 'canBypass' => $access->bypass($request), 'settings' => $this->settings()]]);
+    }
+
+    public function switchRole(Request $request, Access $access, Journal $journal)
+    {
+        $role = $request->validate(['role' => 'required|string|max:50'])['role'];
+        abort_unless(in_array($role, $access->roles($request), true), 403, 'Peran ini tidak diberikan kepada akun Anda.');
+        DB::table('bantuan_active_roles')->updateOrInsert(['session_key' => $access->sessionKey($request)], ['user_id' => $request->user()->id, 'role' => $role]);
+        $request->attributes->set('bantuan_active_role', $role);
+        $journal->record($request, null, 'switch_role', null, ['role' => $role]);
+        return response()->json(['data' => ['role' => $role]]);
     }
 
     private function summary(Application $row): array
@@ -45,30 +56,23 @@ class BantuanController
                 'status' => $item->status, 'amount' => $item->amount, 'createdAt' => $item->created_at->toIso8601String()]);
     }
 
-    public function index(Request $request, Access $access)
+    public function index(Request $request, Access $access, ApplicationQuery $listing)
     {
-        $data = $request->validate(['status' => 'nullable|string|max:50', 'search' => 'nullable|string|max:191',
-            'program' => 'nullable|string|max:191', 'region' => 'nullable|string|max:191', 'source' => 'nullable|in:online,walk_in,bypass', 'page' => 'nullable|integer|min:1',
-            'states' => 'nullable|string|max:500', 'task' => 'nullable|in:survey,distribution', 'from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from']);
-        $q = $access->scope(Application::query(), $request);
-        if (! empty($data['states']) && empty($data['status'])) $q->whereIn('status', explode(',', $data['states']));
-        if (! empty($data['from'])) $q->whereDate('created_at', '>=', $data['from']);
-        if (! empty($data['to'])) $q->whereDate('created_at', '<=', $data['to']);
-        if ($access->role($request) === 'verifier' && ! empty($data['task'])) $q->where($data['task'] === 'survey' ? 'verifier_id' : 'distributor_id', $request->user()->id);
-        foreach (['status', 'program', 'region', 'source'] as $field) {
-            if (! empty($data[$field])) {
-                $q->where($field, $data[$field]);
-            }
-        }
-        if (! empty($data['search'])) {
-            $q->where(function ($q) use ($data, $access, $request) {
-                $q->where('name', 'like', '%'.$data['search'].'%')->orWhere('number', 'like', '%'.$data['search'].'%');
-                if ($access->sensitive($request) && preg_match('/^[0-9]{16}$/D', $data['search'])) $q->orWhere('nik_hash', app(Intake::class)->nikHash($data['search']));
-            });
-        }
-        $rows = $q->latest()->paginate(20);
+        $data = $listing->filters($request);
+        $query = $listing->build($request, $access, $data);
+        $rows = $listing->ordered(clone $query, $data)->paginate($data['perPage'] ?? 20);
+        $scope = $access->scope(Application::query(), $request);
+        $options = ['programs' => (clone $scope)->whereNotNull('program')->distinct()->orderBy('program')->pluck('program'),
+            'regions' => (clone $scope)->whereNotNull('region')->where('region', '!=', '')->distinct()->orderBy('region')->pluck('region')];
 
-        return response()->json(['data' => $rows->getCollection()->map(fn ($row) => $this->summary($row)), 'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'total' => $rows->total()]);
+        $summary = ! empty($data['summary']) ? [
+            'total' => $rows->total(), 'byStatus' => (clone $query)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+            'approvedAmount' => (int) (clone $query)->whereNotIn('status', ['cancelled', 'rejected_t2', 'rejected_bypass', 'returned'])->sum('amount'),
+            'disbursedAmount' => (int) (clone $query)->whereIn('status', ['disbursed', 'completed', 'delivery_failed'])->sum('amount'),
+            'completedAmount' => (int) (clone $query)->where('status', 'completed')->cursor()->sum(fn ($row) => $row->handover['amount'] ?? $row->amount),
+            'overdue' => (clone $query)->where('status', 'disbursed')->where('disbursed_at', '<', now()->subDays($this->settings()['distributionDays']))->count(),
+        ] : null;
+        return response()->json(['data' => $rows->getCollection()->map(fn ($row) => $this->summary($row)), 'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'total' => $rows->total(), 'per_page' => $rows->perPage(), 'filterOptions' => $options, 'summary' => $summary]);
     }
 
     public function show(Request $request, string $id, Access $access)
@@ -214,7 +218,7 @@ class BantuanController
                 };
                 abort_unless($allowed, 403, 'Dokumen ini tidak dapat diunggah pada tahap/peran Anda.');
             }
-            abort_if(in_array($row->status, ['completed', 'returned'], true), 409, 'Bukti final terkunci.');
+            abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true), 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
             $docId = $data['clientId'] ?? (string) Str::uuid();
             $existing = DB::table('bantuan_documents')->where('id', $docId)->first();
             if ($existing) {
@@ -246,13 +250,17 @@ class BantuanController
             'Content-Disposition' => 'inline; filename="'.$doc->kind.'.jpg"', 'X-Content-Type-Options' => 'nosniff']);
     }
 
-    public function dashboard(Request $request, Access $access)
+    public function dashboard(Request $request, Access $access, ApplicationQuery $listing)
     {
-        $q = $access->scope(Application::query(), $request);
+        $q = $listing->build($request, $access, $listing->filters($request));
         $days = $this->settings()['distributionDays'];
 
         return response()->json(['data' => [
             'total' => (clone $q)->count(), 'byStatus' => (clone $q)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+            'taskCounts' => [
+                'survey' => (clone $q)->where('verifier_id', $request->user()->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+                'distribution' => (clone $q)->where('distributor_id', $request->user()->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+            ],
             'byProgram' => (clone $q)->selectRaw('program, COUNT(*) as total')->groupBy('program')->pluck('total', 'program'),
             'bySource' => (clone $q)->selectRaw('source, COUNT(*) as total')->groupBy('source')->pluck('total', 'source'),
             'approvedAmount' => (int) (clone $q)->whereNotIn('status', ['cancelled', 'rejected_t2', 'rejected_bypass', 'returned'])->sum('amount'),
@@ -268,16 +276,17 @@ class BantuanController
         return response()->json(['data' => DB::table('bantuan_notifications')->where('user_id', $request->user()->id)->latest('created_at')->limit(50)->get()]);
     }
 
-    public function export(Request $request, Access $access)
+    public function export(Request $request, Access $access, ApplicationQuery $listing)
     {
         $access->allow($request, ['approver', 'chair', 'fund_requester', 'treasurer']);
+        $filters = $listing->filters($request);
         app(Journal::class)->record($request, null, 'export_summary', null);
 
-        return response()->streamDownload(function () use ($request, $access) {
+        return response()->streamDownload(function () use ($request, $access, $listing, $filters) {
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, ['Nomor', 'Nama', 'Program', 'Wilayah', 'Jalur', 'Status', 'Nominal', 'Tanggal'], ',', '"', '');
-            foreach ($access->scope(Application::query(), $request)->orderBy('created_at')->cursor() as $row) {
+            foreach ($listing->ordered($listing->build($request, $access, $filters), $filters)->cursor() as $row) {
                 $values = [$row->number, $row->name, $row->program, $row->region, $row->source, $row->status, $row->amount, $row->created_at->toDateString()];
                 fputcsv($out, array_map(fn ($v) => preg_match('/^[=+@\\-\\t\\r]/u', (string) $v) ? "'".$v : $v, $values), ',', '"', '');
             }
@@ -295,7 +304,17 @@ class BantuanController
     public function audit(Request $request, Access $access)
     {
         $access->allow($request, ['chair']);
-        $rows = DB::table('bantuan_events')->orderByDesc('created_at')->paginate(30);
+        $filters = $request->validate(['search' => 'nullable|string|max:191', 'role' => 'nullable|string|max:50', 'action' => 'nullable|string|max:100',
+            'from' => 'nullable|date_format:Y-m-d', 'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])]]);
+        $query = DB::table('bantuan_events')->leftJoin('users', 'users.id', '=', 'bantuan_events.actor_id')
+            ->leftJoin('bantuan_applications', 'bantuan_applications.id', '=', 'bantuan_events.application_id')
+            ->select(['bantuan_events.*', 'users.name as actorName', 'bantuan_applications.number as applicationNumber']);
+        if (! empty($filters['role'])) $query->where('actor_role', $filters['role']);
+        if (! empty($filters['action'])) $query->where('action', $filters['action']);
+        if (! empty($filters['from'])) $query->whereDate('bantuan_events.created_at', '>=', $filters['from']);
+        if (! empty($filters['to'])) $query->whereDate('bantuan_events.created_at', '<=', $filters['to']);
+        if (! empty($filters['search'])) $query->where(fn ($q) => $q->where('users.name', 'like', '%'.$filters['search'].'%')->orWhere('bantuan_applications.number', 'like', '%'.$filters['search'].'%'));
+        $rows = $query->orderByDesc('bantuan_events.created_at')->orderBy('bantuan_events.id')->paginate(30);
         $rows->setCollection($rows->getCollection()->map(function ($event) {
             $event->details = json_decode(Crypt::decryptString($event->details), true);
 

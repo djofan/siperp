@@ -15,8 +15,11 @@ import { ProcessSuccess } from "./ProcessSuccess";
 import { PhotoSlots, intakePhotos } from "./PhotoSlots";
 import { PhotoReview } from "./PhotoReview";
 import { ApplicantHistory } from "./ApplicantHistory";
+import { PageGuide } from "./PageGuide";
+import { LoadingState } from "./LoadingState";
 import s from "./Workspace.module.css";
 import controls from "./IntakeActions.module.css";
+import { canRestoreIntake, submitIntake } from "../intake-lifecycle";
 import { DependentsEditor } from "./Dependents";
 import { dependentErrors } from "../dependents";
 
@@ -93,7 +96,8 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
   const [photoReady,setPhotoReady]=useState(false),[missingPhotos,setMissingPhotos]=useState<string[]>([]),[result,setResult]=useState<AidApplication|null>(null),[toast,setToast]=useState("");
   const [olderDraft,setOlderDraft]=useState<LocalDraft|null>(null);
   const [manualDraft,setManualDraft]=useState<AidApplication|null>(null);
-  const stopping=useRef(false);
+  const stopping=useRef(false),operation=useRef<"idle"|"save"|"advance"|"submit"|"cancel"|"done">("idle");
+  const localSerial=useRef<Promise<void>>(Promise.resolve());
   const [leaveOpen,setLeaveOpen]=useState(false),[cancelled,setCancelled]=useState(false),[deleted,setDeleted]=useState(false);
   const [reuse,setReuse]=useState<{detail:AidDetail;mode:"auto"|"manual"}|null>(null);
   const serial=useRef<Promise<unknown>>(Promise.resolve()),lastPayload=useRef(""),formRef=useRef<HTMLFormElement>(null);
@@ -101,10 +105,21 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
   // Initial props can refresh after an upload. Hydrate drafts only on mount,
   // never overwrite the active form with a refreshed server snapshot.
   const initialSnapshot=useRef(initial);
+  const writeLocal=useCallback((snapshot:IntakeState,row:AidApplication|null)=>{
+    const pending=localSerial.current.catch(()=>undefined).then(async()=>{
+      if(stopping.current||operation.current==="done")return;
+      await putDraft(viewer.id,vaultKey,{form:snapshot,saved:row,updatedAt:new Date().toISOString()});
+    });
+    localSerial.current=pending;return pending;
+  },[viewer.id,vaultKey]);
+  const clearLocal=useCallback(async()=>{
+    await localSerial.current.catch(()=>undefined);
+    await removeDraft(viewer.id,vaultKey);
+  },[viewer.id,vaultKey]);
   const persist=useCallback((snapshot:IntakeState,final=false):Promise<AidApplication>=>{
     const job=async()=>{
-      if(stopping.current)throw new Error("Penyimpanan dihentikan karena pengajuan sedang dibatalkan.");
-      const payload={...snapshot,applicant:{...snapshot.applicant,intakeType:snapshot.applicant.intakeType??"new"},draft:!final&&(!savedRef.current||["draft","needs_data"].includes(savedRef.current.status))};
+      if(stopping.current&&!final)throw new Error("Penyimpanan dihentikan karena pengajuan sedang dibatalkan.");
+      const payload={source:snapshot.source,program:snapshot.program,region:snapshot.region,bypassReason:snapshot.bypassReason,draftKey:snapshot.draftKey,applicant:{...snapshot.applicant,intakeType:snapshot.applicant.intakeType??"new"},draft:!final&&(!savedRef.current||["draft","needs_data"].includes(savedRef.current.status))};
       const hash=JSON.stringify(payload);
       if(!final&&lastPayload.current===hash&&savedRef.current)return savedRef.current;
       setSaveState("saving");
@@ -116,11 +131,11 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
       // Updates serialize behind any in-flight save; upload never navigates or unmounts the form.
       row=await request<AidApplication>(`applications/${row.id}`,{method:"PUT",body:JSON.stringify({...payload,version:row.version})});
       savedRef.current=row;lastPayload.current=hash;setSaved(row);setSaveState("saved");
-      await putDraft(viewer.id,vaultKey,{form:snapshot,saved:row,updatedAt:new Date().toISOString()});
+      if(!final)await writeLocal(snapshot,row).catch(()=>setToast("Data server tersimpan, tetapi salinan draft perangkat belum diperbarui."));
       return row;
     };
     const pending=serial.current.catch(()=>undefined).then(job).catch(error=>{setSaveState("local");throw error;});serial.current=pending;return pending;
-  },[viewer.id,vaultKey]);
+  },[writeLocal]);
   const refreshDocuments=useCallback(async()=>{
     const row=savedRef.current;if(!row)return;
     const latest=await request<AidDetail>(`applications/${row.id}`);
@@ -140,7 +155,14 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
           if(stored.saved){
             savedRef.current=stored.saved;setSaved(stored.saved);
             const row=await request<AidDetail>(`applications/${stored.saved.id}`);
-            if(!["draft","needs_data","screening"].includes(row.status)){if(live)setResult(row);return;}
+            if(!canRestoreIntake(row.status,!!initial)){
+              await removeDraft(viewer.id,vaultKey);
+              if(!live)return;
+              if(initial){stopping.current=true;router.replace(`/admin/bantuan/pengajuan/${row.id}`);return;}
+              savedRef.current=null;lastPayload.current="";setSaved(null);setDocuments([]);
+              setForm(current=>({...current,applicant:{incomePeriod:"bulan"},step:0,draftKey:crypto.randomUUID()}));
+              setToast("Draft sebelumnya sudah diproses. Form baru siap diisi.");return;
+            }
             if(!live)return;savedRef.current=row;setSaved(row);setDocuments(row.documents);
           }
         }
@@ -154,20 +176,20 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
       }else if(live)setError(e.message);
     }).finally(()=>{if(live)setLoaded(true);});
     return()=>{live=false;};
-  },[viewer.id,vaultKey]);
+  },[viewer.id,vaultKey,router]);
   useEffect(()=>{
-    if(!loaded||result||manualDraft||cancelled||stopping.current)return;
+    if(!loaded||busy||result||manualDraft||cancelled||stopping.current||operation.current!=="idle")return;
     const timer=setTimeout(()=>{
-      if(stopping.current)return;
-      void putDraft(viewer.id,vaultKey,{form,saved:savedRef.current,updatedAt:new Date().toISOString()}).then(()=>{
-        if(stopping.current){void removeDraft(viewer.id,vaultKey);return;}
+      if(stopping.current||operation.current!=="idle")return;
+      void writeLocal(form,savedRef.current).then(()=>{
+        if(stopping.current||operation.current!=="idle")return;
         if(String(form.applicant.name??"").trim()&&/^[0-9]{16}$/.test(String(form.applicant.nik??""))&&(form.source!=="bypass"||form.bypassReason.trim().length>=5)){
           void persist(form).catch(e=>{setSaveState("local");if(e instanceof RequestError&&e.status===409)setError(e.message);});
         }else setSaveState("local");
       }).catch(()=>{setError("Draft lokal belum tersimpan. Periksa ruang perangkat dan gunakan Simpan Draft ke server.");});
     },1000);
     return()=>clearTimeout(timer);
-  },[form,loaded,result,manualDraft,cancelled,viewer.id,vaultKey,persist]);
+  },[form,loaded,busy,result,manualDraft,cancelled,writeLocal,persist]);
   useEffect(()=>{
     const nik=String(form.applicant.nik??"");if(!/^[0-9]{16}$/.test(nik))return;
     const controller=new AbortController(),timer=setTimeout(()=>{void request<{count:number;applications:AidApplicantHistory[]}>("duplicate-check",{method:"POST",signal:controller.signal,body:JSON.stringify({nik,excludeId:saved?.id??initial?.id})}).then(value=>setDuplicate({...value,nik})).catch(()=>undefined);},500);
@@ -187,12 +209,12 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
     if(hasInput)setReuse({detail,mode});else applyPrevious(detail,mode);
   }
   async function cancelIntake(remove=false){
-    if(busy)return;
+    if(operation.current!=="idle")return;
     const current=savedRef.current;
     if(current&&photoSnapshot(viewer.id,current.id).some(photo=>["uploading","preparing"].includes(photo.status))){
       setError("Tunggu unggahan foto selesai, lalu batalkan pengajuan.");setLeaveOpen(false);return;
     }
-    stopping.current=true;setBusy(true);setError("");
+    operation.current="cancel";stopping.current=true;setBusy(true);setError("");
     if(current)pausePhotos(viewer.id,current.id,true);
     try{
       await serial.current.catch(()=>undefined);
@@ -204,22 +226,22 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
           if(latest.status!=="draft")throw new Error("Pengajuan sudah dikirim dan hanya dapat dibatalkan.");
           await request(`applications/${row.id}`,{method:"DELETE",body:JSON.stringify({version:latest.version})});
         }else await request(`applications/${row.id}/actions/cancel`,{method:"POST",body:JSON.stringify({version:latest.version,reason:"Dibatalkan saat pengisian oleh pembuat pengajuan."})});
-        await discardLocalPhotos(viewer.id,row.id);
       }
-      await removeDraft(viewer.id,vaultKey);
-      setDeleted(remove);setCancelled(true);setLeaveOpen(false);
+      operation.current="done";setDeleted(remove);setCancelled(true);setLeaveOpen(false);
+      if(row)await discardLocalPhotos(viewer.id,row.id).catch(()=>undefined);
+      await clearLocal().catch(()=>undefined);
     }catch(e){
-      stopping.current=false;if(savedRef.current)pausePhotos(viewer.id,savedRef.current.id,false);
+      operation.current="idle";stopping.current=false;if(savedRef.current)pausePhotos(viewer.id,savedRef.current.id,false);
       setError(e instanceof Error?e.message:"Pengajuan belum berhasil dibatalkan.");setLeaveOpen(false);
     }finally{setBusy(false);}
   }
   async function saveDraft(exit=false){
-    setBusy(true);setError("");
+    if(operation.current!=="idle"||!loaded)return;
+    operation.current="save";setBusy(true);setError("");
     try{
-      await putDraft(viewer.id,vaultKey,{form,saved:savedRef.current,updatedAt:new Date().toISOString()});
-      if(form.applicant.name&&/^[0-9]{16}$/.test(String(form.applicant.nik??""))){const draft=await persist(form);setManualDraft(draft);}
-      else{setSaveState("local");if(exit)router.push(href(homeByRole[viewer.role]));else setToast("Draft disimpan pada perangkat. Lengkapi nama dan NIK agar tersimpan ke server.");}
-    }catch(e){setError(e instanceof Error?e.message:"Draft belum tersimpan.");}finally{setBusy(false);}
+      if(form.applicant.name&&/^[0-9]{16}$/.test(String(form.applicant.nik??""))){const draft=await persist(form);stopping.current=true;operation.current="done";setManualDraft(draft);}
+      else{await writeLocal(form,savedRef.current);setSaveState("local");if(exit){stopping.current=true;operation.current="done";router.push(href(homeByRole[viewer.role]));}else setToast("Draft disimpan pada perangkat. Lengkapi nama dan NIK agar tersimpan ke server.");}
+    }catch(e){setError(e instanceof Error?e.message:"Draft belum tersimpan.");}finally{if(operation.current==="save")operation.current="idle";setBusy(false);}
   }
   function validateStep(step:number):boolean{
     let current:Record<string,string[]>={};
@@ -228,35 +250,49 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
     setErrors(current);if(Object.keys(current).length){setError("Periksa kolom yang ditandai sebelum melanjutkan.");return false;}return true;
   }
   async function next(e:FormEvent<HTMLFormElement>){
-    e.preventDefault();setError("");
+    e.preventDefault();if(operation.current!=="idle"||!loaded)return;setError("");
     if(!validateStep(form.step))return;
     if(form.step===2&&!photoReady){setError("Foto belum lengkap atau masih mengunggah: "+missingPhotos.join(", "));return;}
     if(form.step<3){
-      if(form.step===1){setBusy(true);try{await persist(form);}catch(e){setError(e instanceof Error?e.message:"Draft belum tersimpan.");setBusy(false);return;}setBusy(false);}
+      if(form.step===1){operation.current="advance";setBusy(true);try{await persist(form);}catch(e){setError(e instanceof Error?e.message:"Draft belum tersimpan.");return;}finally{operation.current="idle";setBusy(false);}}
       update("step",form.step+1);window.scrollTo({top:0,behavior:"smooth"});return;
     }
-    setBusy(true);
+    operation.current="submit";stopping.current=true;setBusy(true);
     try{
       for(let step=0;step<2;step++)if(!validateStep(step)){update("step",step);return;}
       if(!photoReady)throw new Error("Tunggu sampai seluruh foto wajib berhasil tersimpan.");
-      const row=await persist(form,true),submitted=row.status==="screening"?row:await request<AidApplication>(`applications/${row.id}/actions/submit`,{method:"POST",body:JSON.stringify({version:row.version})});
-      savedRef.current=submitted;await removeDraft(viewer.id,vaultKey);setResult(submitted);window.scrollTo({top:0,behavior:"smooth"});
+      await submitIntake({
+        save:()=>persist(form,true),
+        submit:row=>request<AidApplication>(`applications/${row.id}/actions/submit`,{method:"POST",body:JSON.stringify({version:row.version})}),
+        committed:submitted=>{savedRef.current=submitted;operation.current="done";setResult(submitted);},
+        cleanup:clearLocal,
+      });
+      window.scrollTo({top:0,behavior:"smooth"});
     }catch(e){if(e instanceof RequestError)setErrors(e.fields);setError(e instanceof Error?e.message:"Pengajuan belum berhasil dikirim. Isian tetap tersimpan.");}
-    finally{setBusy(false);}
+    finally{if(String(operation.current)!=="done"){operation.current="idle";stopping.current=false;}setBusy(false);}
   }
+  useEffect(()=>{
+    if(!Object.keys(errors).length)return;
+    const frame=requestAnimationFrame(()=>{
+      const invalid=[...formRef.current?.querySelectorAll<HTMLElement>('[aria-invalid="true"]')??[]].find(element=>element.getClientRects().length);
+      invalid?.focus({preventScroll:true});invalid?.scrollIntoView({behavior:"smooth",block:"center"});
+    });
+    return()=>cancelAnimationFrame(frame);
+  },[errors,form.step]);
   const closeToast=useCallback(()=>setToast(""),[]);
   if(cancelled)return <ProcessSuccess title={deleted?"Draft dihapus":"Pengajuan dibatalkan"} description={deleted?"Draft beserta foto dan isian lokal sudah dihapus. Anda bisa membuat pengajuan baru.":"Pengisian dihentikan dan draft lokal dibersihkan. Catatan server menjadi Dibatalkan dan tidak diteruskan ke proses bantuan."}/>;
-  if(manualDraft)return <ProcessSuccess title="Draft berhasil disimpan" description={`${manualDraft.number}. Anda bisa membuka draft ini lagi dari daftar pengajuan untuk melanjutkan pengisian.`}/>;
-  if(result)return <ProcessSuccess title="Pengajuan berhasil dikirim" description={`${result.number} · ${String(form.applicant.name)}. Data dan dokumen sudah tersimpan untuk proses berikutnya.`}/>;
+  if(manualDraft)return <ProcessSuccess title={manualDraft.status==="screening"?"Perubahan berhasil disimpan":"Draft berhasil disimpan"} description={`${manualDraft.number}. Data tersimpan dan dapat dibuka kembali dari daftar pengajuan.`}/>;
+  if(result)return <ProcessSuccess title={initial?.status==="screening"?"Perubahan berhasil disimpan":"Pengajuan berhasil dikirim"} description={`${result.number} · ${String(form.applicant.name)}. Data dan dokumen sudah tersimpan untuk proses berikutnya.`}/>;
   return <>
-    <div className={s.heading}><div><Link className={s.backLink} href={href(homeByRole[viewer.role])} onClick={e=>{e.preventDefault();if(!busy)setLeaveOpen(true);}}><ChevronLeft size={15}/>Kembali ke antrean</Link><h1>{initial?"Lengkapi pengajuan":direct?"Ajukan langsung":"Pengajuan bantuan baru"}</h1><p>Isian otomatis disimpan sebagai draft. Pilih Batalkan pengajuan jika tidak jadi melanjutkan.</p></div><span className={s.draftIndicator}>{saveState==="saving"?<LoaderCircle className={s.spin} size={15}/>:<CloudCheck size={16}/>} {saveState==="saving"?"Menyimpan…":saveState==="saved"?"Draft tersimpan":"Draft pada perangkat"}</span></div>
+    <div className={s.heading}><div><Link className={s.backLink} href={href(homeByRole[viewer.role])} onClick={e=>{e.preventDefault();if(!busy)setLeaveOpen(true);}}><ChevronLeft size={15}/>Kembali ke antrean</Link><h1>{initial?"Lengkapi pengajuan":direct?"Ajukan langsung":"Pengajuan bantuan baru"}</h1><p>Isian otomatis disimpan sebagai draft. Pilih Batalkan pengajuan jika tidak jadi melanjutkan.</p></div><span className={s.draftIndicator}>{saveState==="saving"?<LoaderCircle className={s.spin} size={15}/>:<CloudCheck size={16}/>} {!loaded?"Menyiapkan draft…":saveState==="saving"?"Menyimpan…":saveState==="saved"?"Draft tersimpan":"Draft pada perangkat"}</span></div>
+    <PageGuide title="Cara membuat pengajuan" steps={["Isi empat langkah: data pemohon, kondisi, foto, lalu periksa kembali.","Klik Lanjut untuk berpindah langkah. Simpan draft jika ingin berhenti dan melanjutkan nanti.","Pengajuan baru masuk proses setelah Anda menekan Kirim pengajuan pada langkah terakhir."]}/>
     {error&&<div className={`${s.notice} ${s.error}`} role="alert">{error}</div>}
     {olderDraft&&<div className={s.notice}><span>Ada draft lokal lebih lama. Data server terbaru tetap digunakan.</span><button className={s.textButton} onClick={()=>{setForm({...olderDraft.form,step:0,formVersion:2});setOlderDraft(null);}}>Pulihkan isian lokal</button></div>}
     {duplicate&&duplicate.nik===String(form.applicant.nik??"")&&<ApplicantHistory count={duplicate.count} applications={duplicate.applications}/>}
-    <div className={`${s.wizardLayout} ${controls.layout}`}><aside className={`${s.wizardSteps} ${controls.sidebar}`}><p className={s.eyebrow}>LANGKAH PENGAJUAN</p>{labels.map((label,i)=><button key={label} type="button" disabled={i>form.step} onClick={()=>update("step",i)} data-active={i===form.step}><span>{i<form.step?"✓":i+1}</span><div><strong>{label}</strong><small>{i===form.step?"Sedang diisi":i<form.step?"Sudah dilewati":"Belum diisi"}</small></div></button>)}<div className={controls.actions}><div className={s.actions}>{(!saved||saved.status==="draft")&&<Button variant="ghost" type="button" disabled={busy||!loaded} onClick={()=>setLeaveOpen(true)}>Hapus draft</Button>}<Button variant="ghost" type="button" disabled={busy||!loaded} onClick={()=>setLeaveOpen(true)}>Batalkan pengajuan</Button><Button variant="secondary" type="button" disabled={busy} onClick={()=>void saveDraft()}><Save size={16}/>Simpan draft</Button></div><div className={s.actions}>{form.step>0&&<Button variant="ghost" type="button" disabled={busy} onClick={()=>update("step",form.step-1)}><ChevronLeft size={16}/>Kembali</Button>}<Button type="submit" form={formId} disabled={busy||!loaded||form.step>=2&&!photoReady}>{busy?<LoaderCircle className={s.spin} size={16}/>:null}{busy?"Menyimpan…":form.step===3?"Kirim pengajuan":form.step===2?"Periksa pengajuan":"Lanjut"}{!busy&&<ChevronRight size={16}/>}</Button></div></div><p className={s.privacyNote}>Data dan dokumen hanya dapat dilihat petugas berwenang.</p></aside>
+    <div className={`${s.wizardLayout} ${controls.layout}`}><aside className={`${s.wizardSteps} ${controls.sidebar}`}><p className={s.eyebrow}>LANGKAH PENGAJUAN</p>{labels.map((label,i)=><button key={label} type="button" disabled={busy||!loaded||i>form.step} onClick={()=>update("step",i)} data-active={i===form.step}><span>{i<form.step?"✓":i+1}</span><div><strong>{label}</strong><small>{i===form.step?"Sedang diisi":i<form.step?"Sudah dilewati":"Belum diisi"}</small></div></button>)}<div className={controls.actions}><div className={s.actions}><Button variant="secondary" type="button" disabled={busy} onClick={()=>void saveDraft()}><Save size={16}/>Simpan draft & keluar</Button><details className={controls.more}><summary>Batal atau hapus pengajuan</summary>{(!saved||saved.status==="draft")&&<Button variant="ghost" type="button" disabled={busy||!loaded} onClick={()=>setLeaveOpen(true)}>Hapus draft</Button>}<Button variant="ghost" type="button" disabled={busy||!loaded} onClick={()=>setLeaveOpen(true)}>Batalkan pengajuan</Button></details><p className={controls.hint}>{form.step===3?"Periksa data sebelum mengirim.":"Langkah berikutnya: "+labels[form.step+1]}</p></div><div className={s.actions}>{form.step>0&&<Button variant="ghost" type="button" disabled={busy} onClick={()=>update("step",form.step-1)}><ChevronLeft size={16}/>Kembali</Button>}<Button type="submit" form={formId} disabled={busy||!loaded||form.step>=2&&!photoReady}>{busy?<LoaderCircle className={s.spin} size={16}/>:null}{busy?"Menyimpan…":form.step===3?"Kirim pengajuan":form.step===2?"Periksa pengajuan":"Lanjut"}{!busy&&<ChevronRight size={16}/>}</Button></div></div><p className={s.privacyNote}>Data dan dokumen hanya dapat dilihat petugas berwenang.</p></aside>
     <form id={formId} onSubmit={next} noValidate ref={formRef} className={s.wizardForm}>
       <div className={s.mobileProgress}><span>Langkah {form.step+1} dari 4</span><strong>{labels[form.step]}</strong><div><span style={{width:((form.step+1)/4*100)+"%"}}/></div></div>
-      <div className={s.card}><div className={s.cardHeader}><div><h2>{labels[form.step]}</h2><p>{["Data identitas dan alamat calon penerima.","Ceritakan kondisi dan bantuan yang dibutuhkan.","Lampirkan foto sesuai sumber pengajuan.","Pastikan seluruh informasi sudah sesuai sebelum dikirim."][form.step]}</p></div><span className={s.stepCount}>{String(form.step+1).padStart(2,"0")} / 04</span></div><div className={s.cardBody}>
+      {!loaded&&<LoadingState variant="detail" label="Menyiapkan form dan draft…"/>}<fieldset disabled={busy||!loaded} hidden={!loaded} className={s.intakeFields}><div className={s.card}><div className={s.cardHeader}><div><h2>{labels[form.step]}</h2><p>{["Data identitas dan alamat calon penerima.","Ceritakan kondisi dan bantuan yang dibutuhkan.","Lampirkan foto sesuai sumber pengajuan.","Pastikan seluruh informasi sudah sesuai sebelum dikirim."][form.step]}</p></div><span className={s.stepCount}>{String(form.step+1).padStart(2,"0")} / 04</span></div><div className={s.cardBody}>
       {form.step===0&&<><div className={s.applicantType}><span>Jenis pengajuan</span><div role="radiogroup" aria-label="Jenis pengajuan"><button type="button" role="radio" aria-checked={form.applicant.intakeType!=="returning"} onClick={()=>setValues("applicant")("intakeType","new")}>Pemohon baru</button><button type="button" role="radio" aria-checked={form.applicant.intakeType==="returning"} onClick={()=>setValues("applicant")("intakeType","returning")}>Pemohon pernah mengajukan</button></div><small>Mengganti pilihan ini tidak menghapus isian yang sudah ada.</small></div>{form.applicant.intakeType==="returning"&&<ReturningApplicantPicker excludeId={saved?.id??initial?.id} onApply={selectPrevious}/>}<div className={s.formGrid}>
         <label className={s.field}><span>Sumber pengajuan <em>*</em></span><select className={s.input} value={form.source} disabled={direct||!!saved&&(saved.source==="bypass"||!["draft","needs_data"].includes(saved.status))} onChange={e=>update("source",e.target.value)}>{viewer.role!=="verifier"&&<><option value="online">Online / WhatsApp</option><option value="walk_in">Walk-in / datang langsung</option></>}{(viewer.canBypass||initial?.source==="bypass")&&<option value="bypass" disabled={!!saved&&saved.source!=="bypass"}>Ajukan langsung</option>}</select></label>
         <label className={s.field}><span>Program bantuan <em>*</em></span><select className={s.input} value={form.program} onChange={e=>update("program",e.target.value)}>{viewer.settings.programs.map(p=><option key={p}>{p}</option>)}</select></label>
@@ -268,7 +304,7 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
         ["Data pemohon",[["Jenis pengajuan",form.applicant.intakeType==="returning"?"Pemohon pernah mengajukan":"Pemohon baru"],["Nama",form.applicant.name],["NIK",form.applicant.nik],["Alamat",[form.applicant.street,form.applicant.village,form.applicant.district,form.applicant.city].filter(Boolean).join(", ")],["Program",form.program]]],
         ["Kondisi & kebutuhan",[["Pekerjaan",form.applicant.job],["Penghasilan","Rp "+Number(form.applicant.income??0).toLocaleString("id-ID")+" / "+form.applicant.incomePeriod],["Tanggungan",form.applicant.dependentCount],["Masalah",form.applicant.problem]]],
       ].map(([title,rows],i)=><section className={s.reviewBlock} key={String(title)}><div><h3>{String(title)}</h3><button type="button" className={s.textButton} onClick={()=>update("step",i)}>Ubah</button></div><dl>{(rows as unknown as [string,unknown][]).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{String(value??"—")}</dd></div>)}</dl></section>)}<section className={s.reviewBlock}><div><h3>Foto & dokumen</h3><button type="button" className={s.textButton} onClick={()=>update("step",2)}>Periksa foto</button></div><p>{photoReady?"✓ Kelengkapan foto sesuai sumber pengajuan sudah terpenuhi.":"Foto belum lengkap atau masih mengunggah."}</p>{saved&&<PhotoReview owner={viewer.id} applicationId={saved.id} documents={documents}/>}</section></div>}
-      </div></div>
+      </div></div></fieldset>
 
     </form></div>{leaveOpen&&<Dialog title="Keluar dari pengisian?" description="Kembali saja tetap menyimpan draft. Jika pengajuan tidak jadi, pilih Batalkan pengajuan. Draft yang belum dikirim bisa dihapus permanen. Setelah dikirim, pengajuan hanya dapat dibatalkan." onClose={()=>!busy&&setLeaveOpen(false)}><div className={s.actions}><Button type="button" variant="secondary" disabled={busy} onClick={()=>setLeaveOpen(false)}>Lanjut isi</Button><Button type="button" variant="secondary" disabled={busy} onClick={()=>{setLeaveOpen(false);void saveDraft(true);}}>Simpan draft & keluar</Button>{(!saved||saved.status==="draft")&&<Button type="button" variant="danger" disabled={busy} onClick={()=>void cancelIntake(true)}>Hapus draft permanen</Button>}<Button type="button" variant="danger" disabled={busy} onClick={()=>void cancelIntake()}>{busy?"Membatalkan…":"Batalkan pengajuan"}</Button></div></Dialog>}{reuse&&<Dialog title="Gunakan data pemohon ini?" description="Isian pemohon yang sudah terisi akan diganti. Pengajuan lama tidak diubah. Foto yang sudah diunggah pada draft ini tetap ada; periksa agar sesuai pemohon yang dipilih." onClose={()=>setReuse(null)}><div className={s.actions}><Button type="button" variant="secondary" onClick={()=>setReuse(null)}>Batal</Button><Button type="button" onClick={()=>applyPrevious(reuse.detail,reuse.mode)}>Ya, gunakan data ini</Button></div></Dialog>}{toast&&<Toast message={toast} onClose={closeToast}/>}
   </>;
