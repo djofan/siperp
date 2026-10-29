@@ -12,10 +12,36 @@ class Access
 
     public function role(Request $request): string
     {
-        $role = $request->user()->is_superadmin ? 'admin' : (string) $request->attributes->get('module_role');
-        abort_unless(in_array($role, self::ROLES, true), 403, 'Peran modul tidak valid. Hubungi superadmin.');
+        if ($request->attributes->has('bantuan_active_role')) return $request->attributes->get('bantuan_active_role');
+        $roles = $this->roles($request);
+        $active = DB::table('bantuan_active_roles')->where('session_key', $this->sessionKey($request))->where('user_id', $request->user()->id)->value('role');
+        $role = in_array($active, $roles, true) ? $active : $roles[0];
+        $request->attributes->set('bantuan_active_role', $role);
 
         return $role;
+    }
+
+    public static function expandRoles(string $primary, ?string $stored): array
+    {
+        $roles = $stored ? json_decode($stored, true) : null;
+        // A Core role replacement invalidates older module-specific grants.
+        if (! is_array($roles) || ($roles[0] ?? null) !== $primary) $roles = [$primary];
+        return array_values(array_intersect(array_unique($roles), self::ROLES));
+    }
+
+    public function roles(Request $request): array
+    {
+        if ($request->user()->is_superadmin) return ['admin'];
+        $primary = (string) $request->attributes->get('module_role');
+        $roles = self::expandRoles($primary, DB::table('bantuan_staff')->where('user_id', $request->user()->id)->value('roles'));
+        abort_unless($roles, 403, 'Peran modul tidak valid. Hubungi superadmin.');
+        return $roles;
+    }
+
+    public function sessionKey(Request $request): string
+    {
+        $id = $request->user()->currentAccessToken()?->id ?? null;
+        return $id ? 'token:'.$id : 'user:'.$request->user()->id;
     }
 
     public function allow(Request $request, array $roles): void
@@ -54,9 +80,11 @@ class Access
 
     public function assigned(string $userId, string $role): bool
     {
-        return DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
+        $member = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
+            ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'module_access.user_id')
             ->join('users', 'users.id', '=', 'module_access.user_id')->where('modules.slug', 'bantuan')
-            ->where('module_access.user_id', $userId)->where('module_access.role', $role)->where('users.is_active', true)->exists();
+            ->where('module_access.user_id', $userId)->where('users.is_active', true)->first(['module_access.role', 'bantuan_staff.roles']);
+        return $member && in_array($role, self::expandRoles($member->role, $member->roles), true);
     }
 
     public function bypass(Request $request): bool

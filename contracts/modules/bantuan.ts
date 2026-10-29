@@ -13,6 +13,7 @@ export const bantuanActionLabels: Record<string, string> = {
   delivery_fail: "Gagal disalurkan", return_funds: "Dana dikembalikan", reopen: "Pengajuan dibuka kembali",
   cancel: "Pengajuan dibatalkan", comment: "Komentar internal", upload_document: "Dokumen diunggah",
   read_document: "Dokumen dilihat", update_settings: "Pengaturan diperbarui", create_staff: "Anggota ditambahkan", update_staff: "Akses anggota diperbarui",
+  delete_staff: "Akses anggota dicabut", switch_role: "Peran aktif diganti", export_summary: "Laporan diekspor",
 };
 export const bantuanStatuses: Record<string, string> = {
   draft: "Draft", screening: "Screening", needs_data: "Perlu dilengkapi", review1: "Review tahap 1",
@@ -30,8 +31,8 @@ export const documentLabels: Record<string, string> = {
   receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
 };
 export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; closingText: string }
-export interface BantuanViewer { id: string; name: string; role: string; canBypass: boolean; settings: BantuanSettings }
-export interface BantuanStaff { id: string; name: string; role: string; region?: string; active: boolean; email?: string; canBypass?: boolean }
+export interface BantuanViewer { id: string; name: string; role: string; roles?: string[]; canBypass: boolean; settings: BantuanSettings }
+export interface BantuanStaff { id: string; name: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface AidApplication {
   id: string; number: string; name: string; status: string; program: string; region: string; source: string; createdBy: string;
   amount: number | null; verifierId: string | null; distributorId: string | null; distributionType: string | null;
@@ -48,8 +49,9 @@ export interface AidDetail extends AidApplication {
   documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null }[];
   events: { id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
-export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number }
+export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {
+  taskCounts?: { survey: Record<string, number>; distribution: Record<string, number> };
   total: number; byStatus: Record<string, number>; byProgram: Record<string, number>; bySource: Record<string, number>;
   approvedAmount: number; disbursedAmount: number; completedAmount: number; overdue: number;
   tickets: { distributor_id: string | null; distribution_type: string; total: number; amount: number }[];
