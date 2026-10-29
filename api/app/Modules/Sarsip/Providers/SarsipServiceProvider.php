@@ -15,6 +15,7 @@ class SarsipServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.sarsip' => ['roles' => ['editor' => 'Editor SARSIP'], 'links' => []]]);
         Route::middleware('api')->prefix('api/v1/sarsip')->group(__DIR__.'/../routes/api.php');
     }
 }

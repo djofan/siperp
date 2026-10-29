@@ -9,10 +9,12 @@ export function EditAkunForm({
   userId,
   initialName,
   initialEmail,
+  code,
 }: {
   userId: string;
   initialName: string;
   initialEmail: string;
+  code: string;
 }) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
@@ -49,15 +51,17 @@ export function EditAkunForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <FormField label="Kode akun" htmlFor="account-code" hint="Gunakan kode ini dan password untuk masuk ke modul yang diizinkan.">
+        <Input id="account-code" value={code} readOnly className="font-mono" />
+      </FormField>
       <FormField label="Nama" htmlFor="edit-name">
         <Input id="edit-name" required value={name} onChange={(e) => setName(e.target.value)} />
       </FormField>
 
-      <FormField label="Email" htmlFor="edit-email">
+      <FormField label="Email kontak (opsional)" htmlFor="edit-email">
         <Input
           id="edit-email"
           type="email"
-          required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />

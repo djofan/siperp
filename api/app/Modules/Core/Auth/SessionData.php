@@ -14,7 +14,7 @@ class SessionData
             ->get(['modules.slug', 'module_access.role']);
 
         return [
-            'userId' => $user->id, 'name' => $user->name,
+            'userId' => $user->id, 'name' => $user->name, 'code' => $user->code,
             'isSuperadmin' => $user->is_superadmin,
             'moduleSlugs' => $access->pluck('slug')->all(),
             'moduleRoles' => $access->pluck('role', 'slug')->all(),

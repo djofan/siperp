@@ -15,6 +15,7 @@ class OjolServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.ojol' => ['roles' => [], 'links' => [['label' => 'Daftarkan guru', 'href' => '/admin/ojol/guru/baru'], ['label' => 'Daftarkan peserta', 'href' => '/admin/ojol/peserta/baru']]]]);
         Route::middleware('api')->prefix('api/v1/ojol')->group(__DIR__.'/../routes/api.php');
     }
 }

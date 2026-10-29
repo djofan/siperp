@@ -458,13 +458,13 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "operationId": "loginPlaceholder",
+        "operationId": "loginWithAccountCode",
         "tags": [
           "Foundation"
         ],
         "security": [],
-        "summary": "Login placeholder; does not issue tokens yet",
-        "description": "Explicit POST action exception. Five attempts per minute per normalized email/IP. Returns 501 after valid input.",
+        "summary": "Login with account code and password",
+        "description": "Issues an HttpOnly Sanctum session cookie. Five attempts per minute per normalized code/IP. Email login is not supported.",
         "requestBody": {
           "required": true,
           "content": {
@@ -472,18 +472,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
+                  "code": {
                     "type": "string",
-                    "format": "email",
-                    "maxLength": 191
+                    "minLength": 3,
+                    "maxLength": 32,
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$"
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "maxLength": 72
                   }
                 },
                 "required": [
-                  "email",
+                  "code",
                   "password"
                 ],
                 "additionalProperties": true
@@ -492,8 +494,21 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Authenticated; data contains userId, name, code, isSuperadmin, moduleSlugs and moduleRoles. Set-Cookie issues the HttpOnly session."
+          },
           "400": {
             "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect account code or password, or inactive account",
             "content": {
               "application/json": {
                 "schema": {
@@ -532,16 +547,6 @@
           },
           "500": {
             "description": "Internal error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Not implemented; internal details omitted",
             "content": {
               "application/json": {
                 "schema": {

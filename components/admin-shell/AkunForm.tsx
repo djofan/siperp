@@ -17,7 +17,6 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
   const [moduleIds, setModuleIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +33,7 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
     const response = await fetch("/api/super/akun", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, isSuperadmin, moduleIds }),
+      body: JSON.stringify({ name, email, password, moduleIds }),
     });
 
     if (!response.ok) {
@@ -44,7 +43,8 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
       return;
     }
 
-    router.push("/admin/super/akun");
+    const { data: account } = await response.json();
+    router.push(`/admin/super/akun/${encodeURIComponent(account.id)}`);
     router.refresh();
   }
 
@@ -53,18 +53,17 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className={panelClasses("p-6")}>
           <h2 className="text-sm font-semibold text-foreground">Informasi Dasar</h2>
-          <p className="mt-1 text-sm text-foreground/50">Nama, email, dan password untuk login.</p>
+          <p className="mt-1 text-sm text-foreground/50">Kode admin AMSIP dibuat otomatis saat akun disimpan. Admin lalu dapat membuat akun operasional pada modul yang diizinkan.</p>
 
           <div className="mt-5 flex flex-col gap-4">
             <FormField label="Nama" htmlFor="name">
               <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
             </FormField>
 
-            <FormField label="Email" htmlFor="email">
+            <FormField label="Email kontak (opsional)" htmlFor="email" hint="Untuk kontak. Masuk menggunakan kode akun.">
               <Input
                 id="email"
                 type="email"
-                required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -85,17 +84,7 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
 
         <div className={panelClasses("p-6")}>
           <h2 className="text-sm font-semibold text-foreground">Hak Akses</h2>
-          <p className="mt-1 text-sm text-foreground/50">Tentukan level akses akun ini.</p>
-
-          <label className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-surface-muted px-4 py-3.5">
-            <div>
-              <p className="text-sm font-medium text-foreground">Superadmin</p>
-              <p className="text-xs text-foreground/50">Otomatis akses semua modul.</p>
-            </div>
-            <Switch checked={isSuperadmin} onChange={setIsSuperadmin} aria-label="Jadikan superadmin" />
-          </label>
-
-          {!isSuperadmin && (
+          <p className="mt-1 text-sm text-foreground/50">Pilih modul yang boleh dikelola admin ini. Superadmin hanya satu: SASIP01.</p>
             <div className="mt-4 flex flex-col gap-2">
               <span className="px-1 text-xs font-semibold tracking-wide text-foreground/40 uppercase">
                 Akses Modul
@@ -120,7 +109,6 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
                 </div>
               )}
             </div>
-          )}
         </div>
       </div>
 

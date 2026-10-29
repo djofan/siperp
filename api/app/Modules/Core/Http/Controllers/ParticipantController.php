@@ -63,6 +63,7 @@ class ParticipantController
             [$prefix, $width] = $adapter->codeFormat();
             $nip = $prefix.str_pad((string) $number, $width, '0', STR_PAD_LEFT);
             $user = new User;
+            $user->code = $nip;
             $user->name = $data['name'];
             $user->email = $data['email'] ?? strtolower($nip).'@peserta.sip.invalid';
             $user->password_hash = Hash::make($data['password']);

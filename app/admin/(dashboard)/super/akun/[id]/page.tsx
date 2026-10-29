@@ -36,16 +36,16 @@ export default async function DetailAkunPage({
         >
           ← Kembali ke Kelola Akun
         </Link>
-        <PageHeader title={`Detail Akun — ${user.name}`} description={user.email} />
+        <PageHeader title={`Detail Akun — ${user.name}`} description={`Kode login: ${user.code}`} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Informasi Akun</CardTitle>
-            <CardDescription>Nama, email, dan password login akun ini.</CardDescription>
+            <CardDescription>Kode akun untuk login, identitas, dan pengaturan password.</CardDescription>
           </CardHeader>
-          <EditAkunForm userId={user.id} initialName={user.name} initialEmail={user.email} />
+          <EditAkunForm userId={user.id} code={user.code} initialName={user.name} initialEmail={user.email} />
         </Card>
 
         <Card>

@@ -3,22 +3,19 @@
 namespace App\Modules\Academy\Services;
 
 use App\Contracts\Modules\ModuleSession;
-use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AcademySession implements ModuleSession
 {
-    public function credentialField(): string { return 'nip'; }
+    public function credentialField(): string { return 'code'; }
     public function resolveLogin(string $identifier): array
     {
-        $membership = DB::table('zakat_academy_profiles')->where('nis', strtoupper($identifier))->whereNull('deleted_at')->first();
-        $user = $membership ? User::find($membership->user_id) : User::where('email', strtolower($identifier))->first();
-        if ($user && ! $membership && ! $user->is_superadmin) {
-            $profile = DB::table('zakat_academy_profiles')->where('user_id', $user->id)->whereNull('deleted_at')->exists();
-            $teacher = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')->where('user_id', $user->id)->where('modules.slug', 'academy')->where('role', 'teacher')->exists();
-            if (! $profile && ! $teacher) $user = null;
-        }
+        $user = AccountCodes::find($identifier);
+        $membership = $user ? DB::table('zakat_academy_profiles')->where('user_id', $user->id)->whereNull('deleted_at')->first() : null;
+        $manager = $user && ($user->is_superadmin || DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')->where('user_id', $user->id)->where('modules.slug', 'academy')->whereIn('role', ['admin', 'editor', 'teacher'])->exists());
+        if (! $membership && ! $manager) $user = null;
         return ['userId' => $user?->id, 'membership' => $membership];
     }
     public function viewer(Request $request, array $session): array

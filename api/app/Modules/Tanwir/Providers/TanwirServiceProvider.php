@@ -15,6 +15,7 @@ class TanwirServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.tanwir' => ['roles' => [], 'links' => [['label' => 'Daftarkan guru', 'href' => '/admin/tanwir/guru/baru'], ['label' => 'Daftarkan peserta', 'href' => '/admin/tanwir/peserta/baru']]]]);
         Route::middleware('api')->prefix('api/v1/tanwir')->group(__DIR__.'/../routes/api.php');
     }
 }

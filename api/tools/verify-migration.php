@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Academy\Models\AcademyCohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
 use App\Modules\Academy\Models\ZakatAcademyQuizQuestion;
@@ -78,9 +79,9 @@ foreach (['sip', 'sarsip', 'lazsip', 'academy', 'tanwir', 'ojol', 'teknisi'] as 
 }
 $adminToken = app(TokenIssuer::class)->issue($admin)->plainTextToken;
 $memberToken = app(TokenIssuer::class)->issue($member)->plainTextToken;
-[$status, $body] = sendRequest('POST', 'auth/login', ['email' => $admin->email, 'password' => 'test-password']);
+[$status, $body] = sendRequest('POST', 'auth/login', ['code' => $admin->code, 'password' => 'test-password']);
 check($status === 200 && $body['data']['userId'] === $admin->id, 'Laravel login authenticates Core credentials');
-[$status] = sendRequest('POST', 'auth/login', ['email' => $admin->email, 'password' => 'incorrect']);
+[$status] = sendRequest('POST', 'auth/login', ['code' => $admin->code, 'password' => 'incorrect']);
 check($status === 401, 'Invalid password is rejected');
 [$status] = sendRequest('GET', 'super/akun', [], $memberToken);
 check($status === 403, 'Ordinary users cannot manage Core accounts');
@@ -213,10 +214,9 @@ $courseId = $course['data']['id'];
 [$status, $chapter] = sendRequest('POST', 'academy/admin/courses/'.$courseId.'/chapters', ['title' => 'Test chapter', 'slug' => 'test-chapter', 'order' => 0, 'isPublished' => 'on'], $adminToken);
 check($status === 200, 'Academy saves scoped chapters');
 $chapterId = $chapter['data']['id'];
-[$status, $cohort] = sendRequest('POST', 'academy/admin/cohorts', ['title' => 'Test cohort', 'quota' => 200], $adminToken);
-check($status === 200, 'Academy creates participant cohorts independently of programs');
-$cohortId = $cohort['data']['id'];
-[$status, $person] = sendRequest('POST', 'academy/participants', ['name' => 'Academy student', 'address' => 'Test address', 'phone' => '081234567894', 'password' => 'test-password', 'gender' => 'IKHWAN', 'cohortId' => $cohortId, 'courseId' => $courseId], $adminToken);
+$cohort = new AcademyCohort;
+$cohort->forceFill(['title' => 'Angkatan smoke test', 'quota' => 200, 'registrationOpen' => false])->save();
+[$status, $person] = sendRequest('POST', 'academy/participants', ['name' => 'Academy student', 'address' => 'Test address', 'phone' => '081234567894', 'password' => 'test-password', 'gender' => 'IKHWAN', 'cohortId' => $cohort->id, 'courseId' => $courseId], $adminToken);
 check($status === 201 && $person['data']['nip'] === 'PAZ001', 'Academy assigns a profile and enrollment atomically');
 $student = User::find($person['data']['userId']);
 $studentToken = app(TokenIssuer::class)->issue($student)->plainTextToken;

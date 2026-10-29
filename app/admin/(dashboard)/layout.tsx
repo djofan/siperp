@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { listAccessibleModules, listModules, accountPanelRedirect } from "@/modules/core/modules";
+import { accountPanelRedirect } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
 import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
 
@@ -17,24 +17,9 @@ export default async function DashboardLayout({
   const destination = await accountPanelRedirect(session);
   if (destination) redirect(destination);
 
-  // Superadmin juga melihat modul nonaktif (ditandai) supaya modul yang masih dikembangkan
-  // tetap bisa dibuka & dites dari sidebar; admin biasa hanya melihat modul aktif yang diizinkan.
-  const accessibleModules = session.isSuperadmin ? await listModules() : await listAccessibleModules(session);
-
   const groups: NavGroup[] = [
-    { items: [{ href: "/admin", label: "Dashboard" }] },
+    { items: [{ href: "/admin", label: "Dashboard" }, { href: "/admin/modul", label: "Modul" }] },
   ];
-
-  if (accessibleModules.length > 0) {
-    groups.push({
-      heading: "Modul",
-      collapsible: true,
-      items: accessibleModules.map((module) => ({
-        href: `/admin/${module.slug}`,
-        label: module.isActive ? module.name : `${module.name} (nonaktif)`,
-      })),
-    });
-  }
 
   if (session.isSuperadmin) {
     groups.push({
@@ -49,6 +34,9 @@ export default async function DashboardLayout({
         { href: "/admin/super/rekening-payment", label: "Rekening Pembayaran" },
       ],
     });
+  }
+  if (session.isSuperadmin || Object.values(session.moduleRoles ?? {}).includes('admin')) {
+    groups.push({heading: 'Pengelolaan', items: [{href: '/admin/akun-modul', label: 'Akun modul'}]});
   }
 
   return (

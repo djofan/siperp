@@ -28,7 +28,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/admin?error=forbidden", request.url));
   }
 
-  const isModuleSection = section && section !== "super";
+  if (section === "akun-modul" && !session.isSuperadmin && !Object.values(session.moduleRoles ?? {}).includes("admin")) {
+    return NextResponse.redirect(new URL("/admin?error=forbidden", request.url));
+  }
+  const isModuleSection = section && !["super", "modul", "akun-modul"].includes(section);
   if (isModuleSection && !session.isSuperadmin && !session.moduleSlugs.includes(section)) {
     return NextResponse.redirect(new URL("/admin?error=forbidden", request.url));
   }

@@ -4,11 +4,11 @@ import { useState, type FormEvent, type SVGProps } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-function MailIcon(props: SVGProps<SVGSVGElement>) {
+function AccountIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect x="3" y="5" width="18" height="14" rx="2" />
-      <path d="m3 7 9 6 9-6" />
+      <circle cx="8" cy="11" r="2" /><path d="M5 16c0-3 6-3 6 0M14 10h4M14 14h4" />
     </svg>
   );
 }
@@ -63,13 +63,13 @@ const inputBaseClasses =
   "[&:-webkit-autofill]:[-webkit-text-fill-color:#fff]! [&:-webkit-autofill]:[caret-color:#fff]! [&:-webkit-autofill]:[transition:background-color_9999s_ease-in-out_0s]! [&:-webkit-autofill]:[box-shadow:0_0_0px_1000px_rgba(255,255,255,0.06)_inset]!";
 
 interface FieldErrors {
-  email?: string;
+  code?: string;
   password?: string;
 }
 
 export function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -80,8 +80,8 @@ export function LoginForm() {
 
   function validate(): boolean {
     const errors: FieldErrors = {};
-    if (!email) errors.email = "Email wajib diisi.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Format email tidak valid.";
+    if (!code.trim()) errors.code = "Kode akun wajib diisi.";
+    else if (!/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$/.test(code.trim())) errors.code = "Masukkan kode akun yang diberikan pengelola.";
     if (!password) errors.password = "Password wajib diisi.";
 
     setFieldErrors(errors);
@@ -90,28 +90,34 @@ export function LoginForm() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
     setError(null);
     if (!validate()) return;
 
     setIsSubmitting(true);
+    try {
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ code: code.trim().toUpperCase(), password }),
     });
-    setIsSubmitting(false);
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Email atau password salah.");
+      setError((data?.error?.message ?? data?.error) ?? "Kode akun atau password salah.");
       return;
     }
 
     const { data: session } = await response.json();
-    const destination = typeof session?.panelRedirect === "string" && /^\/admin\/bantuan\/(screening|review|survei|dana|pencairan)$/.test(session.panelRedirect)
+    const destination = typeof session?.panelRedirect === "string" && /^\/[a-zA-Z0-9/_-]+$/.test(session.panelRedirect)
       ? session.panelRedirect : "/admin";
     router.replace(destination);
     router.refresh();
+    } catch {
+      setError("Tidak dapat masuk. Periksa koneksi lalu coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -119,36 +125,45 @@ export function LoginForm() {
       <div>
         <p className="text-xs font-semibold tracking-[0.2em] text-[#73AE43] uppercase">Masuk ke Dashboard</p>
         <h1 className="mt-3 text-3xl font-bold text-white sm:text-4xl">Selamat datang kembali.</h1>
+        <p className="mt-3 text-sm text-[#B8BCC4]">Gunakan kode akun dan password dari pengelola.</p>
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         <div>
+          <label htmlFor="code" className="mb-2 block text-sm text-[#B8BCC4]">Kode akun</label>
           <div className="relative">
-            <MailIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4.5 w-4.5 -translate-y-1/2 text-[#B8BCC4]" />
+            <AccountIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4.5 w-4.5 -translate-y-1/2 text-[#B8BCC4]" />
             <input
-              id="email"
-              type="email"
+              id="code"
+              name="code"
+              type="text"
+              maxLength={32}
+              autoCapitalize="characters"
+              spellCheck={false}
               autoComplete="username"
-              placeholder="nama@email.com"
-              value={email}
+              placeholder="Contoh: AMSIP0001 atau SASIP01"
+              value={code}
               onChange={(event) => {
-                setEmail(event.target.value);
-                if (fieldErrors.email) setFieldErrors((f) => ({ ...f, email: undefined }));
+                setCode(event.target.value.toUpperCase());
+                if (fieldErrors.code) setFieldErrors((f) => ({ ...f, code: undefined }));
               }}
               className={cn(
                 inputBaseClasses,
-                fieldErrors.email ? "border-[#E5484D] focus:border-[#E5484D]" : "border-white/15 focus:border-[#73AE43]"
+                fieldErrors.code ? "border-[#E5484D] focus:border-[#E5484D]" : "border-white/15 focus:border-[#73AE43]"
               )}
             />
           </div>
-          {fieldErrors.email && <p className="mt-1.5 text-xs text-[#E5484D]">{fieldErrors.email}</p>}
+          {fieldErrors.code && <p className="mt-1.5 text-xs text-[#E5484D]">{fieldErrors.code}</p>}
         </div>
 
         <div>
           <div className="relative">
+            <label htmlFor="password" className="sr-only">Password</label>
             <LockIcon className="pointer-events-none absolute top-1/2 left-3.5 h-4.5 w-4.5 -translate-y-1/2 text-[#B8BCC4]" />
             <input
               id="password"
+              name="password"
+              maxLength={72}
               type={showPassword ? "text" : "password"}
               autoComplete="current-password"
               placeholder="••••••••"

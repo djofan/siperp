@@ -17,7 +17,7 @@ class UserController
             ->get(['module_access.id', 'module_access.role', 'modules.id as module_id', 'modules.name', 'modules.slug'])
             ->map(fn ($row) => ['id' => $row->id, 'role' => $row->role, 'module' => ['id' => $row->module_id, 'name' => $row->name, 'slug' => $row->slug]])->all();
 
-        return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'isSuperadmin' => $user->is_superadmin, 'isActive' => $user->is_active, 'createdAt' => $user->created_at, 'moduleAccess' => $access];
+        return ['id' => $user->id, 'name' => $user->name, 'code' => $user->code, 'email' => str_ends_with($user->email, '.invalid') ? '' : $user->email, 'isSuperadmin' => $user->is_superadmin, 'isActive' => $user->is_active, 'createdAt' => $user->created_at, 'moduleAccess' => $access];
     }
 
     public function index(): JsonResponse
@@ -32,14 +32,15 @@ class UserController
 
     public function store(Request $request, UserService $users): JsonResponse
     {
-        $input = $request->validate(['name' => 'required|string|max:191', 'email' => 'required|email|max:191|unique:users,email', 'password' => 'required|string|min:8|max:72', 'isSuperadmin' => 'sometimes|boolean', 'moduleIds' => 'sometimes|array', 'moduleIds.*' => 'string|distinct|exists:modules,id']);
+        $input = $request->validate(['name' => 'required|string|max:191', 'email' => 'nullable|email|max:191|unique:users,email', 'password' => 'required|string|min:8|max:72', 'isSuperadmin' => 'sometimes|boolean', 'moduleIds' => 'sometimes|array', 'moduleIds.*' => 'string|distinct|exists:modules,id']);
+        abort_if($input['isSuperadmin'] ?? false, 422, 'Superadmin hanya satu, yaitu SASIP01. Halaman ini hanya membuat admin biasa.');
 
         return response()->json(['ok' => true, 'data' => $this->representation($users->create($input))], 201);
     }
 
     public function update(Request $request, string $id, UserService $users): JsonResponse
     {
-        $input = $request->validate(['name' => 'required|string|max:191', 'email' => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)], 'password' => 'sometimes|nullable|string|min:8|max:72']);
+        $input = $request->validate(['name' => 'required|string|max:191', 'email' => ['nullable', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)], 'password' => 'sometimes|nullable|string|min:8|max:72']);
 
         return response()->json(['ok' => true, 'data' => $this->representation($users->update($id, $input))]);
     }

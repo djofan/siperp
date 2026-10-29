@@ -3,6 +3,7 @@ import { apiRequest, ApiError } from "@/lib/api";
 export interface CoreUser {
   id: string;
   name: string;
+  code: string;
   email: string;
   isSuperadmin: boolean;
   isActive: boolean;
@@ -18,7 +19,7 @@ export async function getUserWithAccess(id: string) {
   try { return await apiRequest<CoreUser>(`super/akun/${encodeURIComponent(id)}`); }
   catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-export async function createUserWithAccess(input: { name: string; email: string; password: string; isSuperadmin: boolean; moduleIds: string[] }) {
+export async function createUserWithAccess(input: { name: string; email?: string; password: string; isSuperadmin: boolean; moduleIds: string[] }) {
   return apiRequest<CoreUser>("super/akun", { method: "POST", body: JSON.stringify(input) });
 }
 export async function updateUser(id: string, input: { name: string; email: string; password?: string }) {
