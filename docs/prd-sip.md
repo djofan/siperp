@@ -1,5 +1,7 @@
 # PRD — Modul SIP (Portal Induk)
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 **Bagian dari:** Platform Modular SIP (lihat `PRD.md` untuk arsitektur & roadmap keseluruhan)
 **Fase:** 2
 **Stack modul ini:** Next.js (App Router), Prisma, MySQL — backend saat ini masih di Next.js, **belum dimigrasikan ke Laravel** (lihat `arsitektur.md` §7); tanpa backend terpisah per modul; mengikuti struktur `modules/sip/` (lihat `CLAUDE.md` §4)

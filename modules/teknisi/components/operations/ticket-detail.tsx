@@ -1,27 +1,43 @@
 import Link from "next/link";
-import type { TechnicianUser } from "@/modules/teknisi/api/access";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { Card, CardTitle } from "@/components/ui/Card";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { ticketScope } from "@/modules/teknisi/api/access";
-import { currency, dateTime } from "@/modules/teknisi/api/queries";
-import { statuses, isStatus, nextStatuses, terminalStatuses } from "@/modules/teknisi/api/policy";
-import { changeTicket, consumePart, addPartNeed } from "@/modules/teknisi/api/actions";
-import { ActionForm } from "@/modules/teknisi/components/ActionForm";
-import { Field, Choice } from "@/modules/teknisi/components/Fields";
-import { StatusBadge } from "@/modules/teknisi/components/StatusBadge";
-import { TrackingLink } from "@/modules/teknisi/components/TrackingLink";
-export async function TicketDetailView({ user, params, rootHref }: { user: TechnicianUser; params: Promise<{ id: string }>; rootHref: string }) {
-  const { id } = await params;
-  const ticket = await prisma.teknisiTicket.findFirst({ where: { id, ...ticketScope(user) }, include: { outlet: true, technician: true, events: { orderBy: { createdAt: "desc" } }, partUses: { include: { part: true } } } });
-  if (!ticket) notFound();
-  const [technicians, parts] = await Promise.all([prisma.teknisiTechnician.findMany({ where: { outletId: ticket.outletId, isActive: true } }), prisma.teknisiPart.findMany({ where: { outletId: ticket.outletId } })]);
-  const partTotal = ticket.partUses.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const closed = terminalStatuses.includes(ticket.status);
-  return <div className="space-y-6"><Link href={`${rootHref}/tiket`} className="inline-block text-sm text-accent">← Tiket Servis</Link><PageHeader title={ticket.number} description={`${ticket.device} · Diterima ${dateTime(ticket.createdAt)}`} actions={<StatusBadge status={ticket.status} />} /><div className="grid gap-6 xl:grid-cols-3"><div className="space-y-6 xl:col-span-2"><Card><CardTitle>Detail servis</CardTitle><dl className="mt-5 grid gap-5 sm:grid-cols-2">{[["Pelanggan", ticket.customerName], ["WhatsApp / telepon", ticket.customerPhone], ["Outlet", ticket.outlet.name], ["Teknisi", ticket.technician?.name ?? "Belum ditugaskan"], ["IMEI / nomor seri", ticket.imei ?? "Tidak dicatat"], ["Prioritas", ticket.priority === "urgent" ? "Mendesak" : "Normal"], ["Target selesai", ticket.dueAt ? dateTime(ticket.dueAt) : "Belum ditentukan"], ["Kondisi dan kelengkapan", ticket.accessories ?? "Tidak dicatat"]].map(([label, value]) => <div key={label}><dt className="text-xs text-foreground/50">{label}</dt><dd className="mt-1 text-sm">{value}</dd></div>)}</dl><p className="mt-5 text-xs text-foreground/50">Keluhan</p><p className="mt-1 whitespace-pre-wrap text-sm">{ticket.complaint}</p></Card>
-    {user.canWrite && !closed && <Card><CardTitle>Perbarui pengerjaan</CardTitle><ActionForm action={changeTicket} className="mt-4" submit="Simpan Perkembangan"><input type="hidden" name="ticketId" value={ticket.id} /><input type="hidden" name="expectedStatus" value={ticket.status} /><input type="hidden" name="expectedVersion" value={ticket.updatedAt.toISOString()} /><div className="grid gap-4 sm:grid-cols-2"><Choice name="status" label="Status pengerjaan" value={ticket.status}>{[ticket.status, ...nextStatuses(ticket.status)].filter(status => user.canManage || status !== "collected").map(status => <option key={status} value={status}>{isStatus(status) ? statuses[status] : status}</option>)}</Choice>{user.canManage && <Choice name="technicianId" label="Teknisi penanggung jawab" value={ticket.technicianId ?? ""}><option value="">Belum ditugaskan</option>{technicians.map(tech => <option key={tech.id} value={tech.id}>{tech.name}</option>)}</Choice>}{user.canManage && <><Field name="estimate" label="Estimasi biaya (Rp)" type="number" value={ticket.estimate} min={0} /><Field name="serviceCost" label="Biaya jasa final (Rp)" type="number" value={ticket.serviceCost} min={0} /></>}</div><Field name="note" label="Catatan pengerjaan / persetujuan pelanggan" maxLength={3000} /></ActionForm></Card>}
-    <Card><CardTitle>Kebutuhan sparepart</CardTitle><p className="mt-2 text-sm text-foreground/60">Catat sparepart yang diperlukan, termasuk yang stoknya kosong atau belum terdaftar. Stok berkurang setelah pemakaian dicatat.</p><div className="mt-4 space-y-3">{ticket.events.filter(event => event.note.startsWith("Kebutuhan sparepart:")).map(event => <div key={event.id} className="rounded-lg bg-surface-muted p-3"><p className="whitespace-pre-wrap text-sm">{event.note}</p><p className="mt-2 text-xs text-foreground/50">{event.actorName} · {dateTime(event.createdAt)}</p></div>)}</div>{user.canWrite && !closed && <ActionForm action={addPartNeed} className="mt-5" submit="Tambah Kebutuhan Sparepart"><input type="hidden" name="ticketId" value={ticket.id} /><Choice name="partId" label="Sparepart yang diperlukan"><option value="">Belum terdaftar — tulis nama pada keterangan</option>{parts.map(part => <option key={part.id} value={part.id}>{part.name} · {part.sku} · Stok {part.stock}</option>)}</Choice><Field name="quantity" label="Jumlah diperlukan" type="number" min={1} value={1} /><Field name="note" label="Keterangan kebutuhan / tipe HP" maxLength={2000} /></ActionForm>}<Link href={`${rootHref}/sparepart`} className="mt-4 inline-block text-sm text-accent">Buka panel sparepart →</Link></Card>
-    <Card><CardTitle>Sparepart yang digunakan</CardTitle><div className="mt-4 space-y-3">{ticket.partUses.map(use => <div key={use.id} className="flex justify-between gap-4 text-sm"><span>{use.part.name} × {use.quantity}</span><span>{currency(use.quantity * use.unitPrice)}</span></div>)}{!ticket.partUses.length && <p className="text-sm text-foreground/50">Belum ada pemakaian sparepart.</p>}</div>{user.canWrite && ["diagnosis", "repairing", "waiting_parts"].includes(ticket.status) && <ActionForm action={consumePart} className="mt-6" submit="Catat Pemakaian"><input type="hidden" name="ticketId" value={ticket.id} /><div className="grid gap-4 sm:grid-cols-2"><Choice name="partId" label="Sparepart" required><option value="">Pilih sparepart</option>{parts.filter(part => part.stock > 0).map(part => <option key={part.id} value={part.id}>{part.name} · Stok {part.stock}</option>)}</Choice><Field name="quantity" label="Jumlah" type="number" value={1} min={1} /></div></ActionForm>}</Card></div>
-    <div className="space-y-6"><Card><CardTitle>Ringkasan biaya</CardTitle><dl className="mt-5 space-y-3 text-sm"><div className="flex justify-between"><dt>Estimasi</dt><dd>{currency(ticket.estimate)}</dd></div><div className="flex justify-between"><dt>Jasa servis</dt><dd>{currency(ticket.serviceCost)}</dd></div><div className="flex justify-between"><dt>Sparepart</dt><dd>{currency(partTotal)}</dd></div><div className="flex justify-between border-t border-border pt-3 font-semibold"><dt>Total biaya</dt><dd>{currency(ticket.serviceCost + partTotal)}</dd></div></dl></Card><Card><CardTitle>Cek status pelanggan</CardTitle><p className="my-3 text-sm text-foreground/60">Bagikan tautan ini kepada pelanggan. Catatan pengerjaan dan data pribadi hanya tersedia bagi staf outlet.</p><TrackingLink token={ticket.trackingToken} /></Card><Card><CardTitle>Riwayat pengerjaan</CardTitle><ol className="mt-5 space-y-5">{ticket.events.map(event => <li key={event.id} className="border-l-2 border-accent/40 pl-4"><StatusBadge status={event.status} /><p className="mt-2 whitespace-pre-wrap text-sm">{event.note}</p><p className="mt-2 text-xs text-foreground/50">{event.actorName} · {dateTime(event.createdAt)}</p></li>)}</ol></Card></div></div></div>;
+import type { TechnicianUser } from "../../api/access";
+import { ticketData } from "../../api/view-data";
+import { currency,dateTime } from "../../api/queries";
+import { isStatus,statuses } from "../../api/policy";
+import { ticketOperation,activeWarranty,pendingStatuses } from "../../api/workflow";
+import { TrackingLink } from "../TrackingLink";
+import { PrintButton } from "../PrintButton";
+import { ServicePhotos } from "../ServicePhotos";
+import { ServiceTimer } from "../ServiceTimer";
+import { WarrantyComparison } from "../WarrantyComparison";
+export async function TicketDetailView({user,params,rootHref}:{user:TechnicianUser;params:Promise<{id:string}>;rootHref:string}) {
+  const {id}=await params, data=await ticketData(id); if(!data?.ticket)notFound();
+  const {ticket}=data, workflow=ticket.workflow, action=ticketOperation(ticket);
+  const backStatus=pendingStatuses.includes(ticket.status)?"received":ticket.status;
+  return <>
+    <Link href={`${rootHref}/tiket?status=${backStatus}`}>← Kembali ke {isStatus(ticket.status)?statuses[ticket.status]:"servisan"}</Link>
+    <header className="tech-dash-heading"><div><span className="tech-eyebrow">{isStatus(ticket.status)?statuses[ticket.status]:ticket.status} · {workflow?.serviceType==="warranty"?"Garansi":"Normal"}</span><h1>{ticket.number}</h1><p>{ticket.device} · {ticket.customerName}</p></div><div className="tech-dash-actions">
+      {user.canWrite&&action&&<Link prefetch={false} className="tech-btn" href={`${rootHref}/tiket/${id}/${action.operation}?status=${backStatus}`}>{action.label}</Link>}
+      {user.canWrite&&activeWarranty(ticket)&&<Link prefetch={false} className="tech-btn" href={`${rootHref}/tiket/baru?warranty=${id}`}>Kerjakan ulang · garansi</Link>}
+      {user.canWrite&&!["collected","cancelled"].includes(ticket.status)&&<Link className="tech-btn secondary" href={`${rootHref}/tiket/${id}/cancel?status=${backStatus}`}>Batal servis</Link>}<PrintButton/>
+    </div></header>
+    {ticket.status==="repairing"&&<ServiceTimer startedAt={workflow?.startedAt}/>}
+    <WarrantyComparison ticket={ticket} root={rootHref}/>
+    <div className="tech-detail-grid"><div>
+      <section className="tech-box"><h2>Detail penerimaan</h2><dl className="tech-intake">{[
+        ["Pelanggan",ticket.customerName],["No. HP",ticket.customerPhone],["Outlet",ticket.outlet.name],
+        ["Teknisi",ticket.technician?.name??"Belum ditugaskan"],["Diterima",dateTime(ticket.createdAt)],
+        ["Target",ticket.dueAt?dateTime(ticket.dueAt):"Belum ditentukan"],["Keluhan awal",ticket.complaint],
+        ["Kondisi / kelengkapan",ticket.accessories??"Tidak dicatat"],
+      ].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+      </dl>{workflow?.warrantyParentId&&<p className="tech-note">Klaim dari <Link href={`${rootHref}/tiket/${workflow.warrantyParentId}`}>tiket servis sebelumnya →</Link></p>}<ServicePhotos media={ticket.media??[]} stage="before"/></section>
+      {workflow?.readyAt&&<section className="tech-box"><h2>Hasil perbaikan</h2><dl className="tech-intake"><div><dt>Kerusakan</dt><dd>{workflow.diagnosis}</dd></div><div><dt>Tindakan</dt><dd>{workflow.treatment}</dd></div><div><dt>Part dibeli / diganti</dt><dd>{workflow.replacedParts??"Tidak dicatat"}</dd></div><div><dt>Mulai pengerjaan</dt><dd>{workflow.startedAt?dateTime(workflow.startedAt):"Tidak tercatat"}</dd></div><div><dt>Siap diambil</dt><dd>{dateTime(workflow.readyAt)}</dd></div></dl><ServicePhotos media={ticket.media??[]} stage="after"/></section>}
+      {workflow?.collectedAt&&<section className="tech-box"><h2>Pengambilan & pembayaran</h2><dl className="tech-intake"><div><dt>Nama penerima</dt><dd>{workflow.receiverName}</dd></div><div><dt>No. HP penerima</dt><dd>{workflow.receiverPhone}</dd></div><div><dt>Waktu pengambilan</dt><dd>{dateTime(workflow.collectedAt)}</dd></div><div><dt>Metode pembayaran</dt><dd>{workflow.paymentMethod}</dd></div></dl><ServicePhotos media={(ticket.media??[]).filter(photo=>["payment","handover"].includes(photo.stage))}/></section>}
+      <section className="tech-box"><h2>Riwayat pengerjaan</h2><ol className="tech-history">{ticket.events.map(event=><li key={event.id}><span>{isStatus(event.status)?statuses[event.status]:event.status}</span><p>{event.note}</p><small>{event.actorName} · {dateTime(event.createdAt)}</small></li>)}</ol></section>
+    </div><div>
+      <section className="tech-box"><h2>Ringkasan biaya</h2><div className="tech-cost-row"><span>Estimasi awal</span><strong>{currency(ticket.estimate)}</strong></div><div className="tech-cost-row"><span>Modal</span><strong>{workflow?.capital!=null?currency(workflow.capital):"Belum dicatat"}</strong></div><div className="tech-cost-row total"><span>Harga final</span><strong>{workflow?.finalPrice!=null?currency(workflow.finalPrice):"Belum ditentukan"}</strong></div><p className="tech-note">{workflow?.collectedAt?"Pembayaran telah dicatat saat serah terima.":"Belum ada pembayaran; dicatat satu kali saat pengambilan."}</p></section>
+      <section className="tech-box"><h2>Garansi</h2><p>{workflow?.warrantyDays?workflow.collectedAt?`${workflow.warrantyDays} hari · sampai ${workflow.warrantyUntil?dateTime(workflow.warrantyUntil):"—"}`:`${workflow.warrantyDays} hari sejak pengambilan.`:"Tanpa garansi / belum ditentukan."}</p>{workflow?.warrantyUntil&&<p>{activeWarranty(ticket)?"Garansi masih aktif.":"Masa garansi sudah berakhir."}</p>}</section>
+      <section className="tech-box"><h2>Pelacakan pelanggan</h2><p className="mb-4">Tautan hanya menampilkan status; foto, pembayaran, dan catatan internal tidak dibuka ke publik.</p><TrackingLink token={ticket.trackingToken}/></section>
+    </div></div>
+  </>;
 }

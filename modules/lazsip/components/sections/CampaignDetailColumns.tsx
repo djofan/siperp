@@ -26,6 +26,7 @@ const MIN_HISTORY_HEIGHT = 64;
 export function CampaignDetailColumns({
   articleTop,
   history,
+  historyUnavailable = false,
   campaignId,
   uniqueCode,
   feeRefs,
@@ -33,6 +34,7 @@ export function CampaignDetailColumns({
 }: {
   articleTop: ReactNode;
   history: CampaignHistoryEntry[];
+  historyUnavailable?: boolean;
   campaignId: string;
   uniqueCode: string;
   feeRefs: FeeRef[];
@@ -76,7 +78,6 @@ export function CampaignDetailColumns({
       observer.disconnect();
       window.removeEventListener("resize", recompute);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [history.length]);
 
   return (
@@ -119,7 +120,7 @@ export function CampaignDetailColumns({
                 );
               })}
             </ul>
-          ) : <p className="mt-3 text-sm text-lazsip-primary-800/70">Belum ada donasi yang terkonfirmasi.</p>}
+          ) : <p className="mt-3 text-sm text-lazsip-primary-800/70">{historyUnavailable ? "Riwayat dana belum tersedia untuk tampilan publik." : "Belum ada donasi yang terkonfirmasi."}</p>}
         </section>
       </article>
 

@@ -1,13 +1,10 @@
 "use client";
 
-import { Textarea } from "../ui/textarea";
-
-import { useActionState, useId, useState } from "react";
+import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
-
 import { AudioUploadField } from "../AudioUploadField";
 
 type Values = {
@@ -20,13 +17,17 @@ type Values = {
 
 type Field = { name: keyof Values; label: string; required?: boolean; long?: boolean; number?: boolean; hint?: string };
 
-export function ContentForm({ kind, action, initial = {} }: {
+export function ContentForm({ kind, action, initial = {}, flat = false, contextField, uploadAudio = false, existingAudio }: {
   kind: "course" | "chapter" | "lesson" | "attachment";
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   initial?: Values;
+  flat?: boolean;
+  contextField?: ReactNode;
+  uploadAudio?: boolean;
+  existingAudio?: { url: string | null; title?: string };
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
-  const [values, setValues] = useState<Values>({ order: 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
+  const [values, setValues] = useState<Values>({ order: kind === "lesson" ? 1 : 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
   const prefix = useId();
   const fields: Field[] = [{ name: "title", label: "Judul", required: true }];
   if (kind !== "attachment") fields.push(
@@ -41,7 +42,7 @@ export function ContentForm({ kind, action, initial = {} }: {
   if (kind === "course") fields.push({ name: "materialUrl", label: "URL bahan belajar", hint: "Hanya dapat dibuka peserta yang mengikuti program." });
   if (kind === "lesson") fields.push(
     { name: "videoUrl", label: "URL audio / materi", required: values.videoProvider !== "AUDIO", hint: "Materi boleh berisi teks, audio, atau keduanya. Gunakan URL HTTPS atau path audio lokal." },
-    { name: "releaseDay", label: "Hari rilis (1–30)", required: true, number: true, hint: "Hari pembelajaran dihitung dari tanggal mulai program." },
+    ...(!flat ? [{ name: "releaseDay" as const, label: "Hari rilis (1–30)", required: true, number: true, hint: "Hari pembelajaran dihitung dari tanggal mulai program." }] : []),
     { name: "contentSummary", label: "Teks materi", long: true },
   );
   if (kind === "attachment") fields.push(
@@ -50,11 +51,18 @@ export function ContentForm({ kind, action, initial = {} }: {
     { name: "fileSize", label: "Ukuran file (byte)", number: true },
   );
 
+  if (flat && kind === "lesson") {
+    const retained = new Set(["title", "order", "shortDescription"]);
+    fields.splice(0, fields.length, ...fields.filter(field => retained.has(field.name)));
+  }
+
   return <form action={formAction} className={panelClasses("space-y-5 p-5 sm:p-6")}>
+    {contextField}
+    {flat && <input type="hidden" name="releaseDay" value={values.releaseDay ?? 1} />}
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
     {kind === "lesson" && <FormField label="Jenis materi" htmlFor={`${prefix}-provider`}>
-      <Select id={`${prefix}-provider`} name="videoProvider" value={values.videoProvider} onChange={(event) => setValues({ ...values, videoProvider: event.target.value })}>
-        <option value="AUDIO">Audio — Ustadz Irham</option><option value="YOUTUBE">YouTube (arsip)</option><option value="VIMEO">Vimeo (arsip)</option><option value="BUNNY">Bunny (arsip)</option>
+      <Select id={`${prefix}-provider`} name="videoProvider" value={flat ? "AUDIO" : values.videoProvider} onChange={(event) => setValues({ ...values, videoProvider: event.target.value })}>
+        <option value="AUDIO">Audio</option>{!flat && <><option value="YOUTUBE">YouTube (arsip)</option><option value="VIMEO">Vimeo (arsip)</option><option value="BUNNY">Bunny (arsip)</option></>}
       </Select>
     </FormField>}
     {fields.map((field) => {
@@ -62,20 +70,31 @@ export function ContentForm({ kind, action, initial = {} }: {
       const value = String(values[field.name] ?? "");
       const maxLength = field.name === "slug" ? 160 : field.long ? (field.name === "shortDescription" ? 2000 : 30_000) : field.name.endsWith("Url") ? 2048 : 191;
       return <FormField key={field.name} label={`${field.label}${field.required ? " *" : ""}`} htmlFor={id} hint={field.hint}>
-        {field.long ? <Textarea id={id} name={field.name} required={field.required} maxLength={maxLength} rows={5}
+        {field.long ? <textarea id={id} name={field.name} required={field.required} maxLength={maxLength} rows={5}
           value={value} onChange={(event) => setValues({ ...values, [field.name]: event.target.value })}
           className="w-full rounded-xl border border-border bg-surface px-3 py-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft" />
-          : <Input id={id} name={field.name} type={field.number ? "number" : "text"} min={field.number ? 0 : undefined} max={field.number ? 2147483647 : undefined} step={field.number ? 1 : undefined}
+          : <Input id={id} name={field.name} type={field.number ? "number" : "text"} min={field.number ? (field.name === "order" && kind === "lesson" ? 1 : 0) : undefined} max={field.number ? 2147483647 : undefined} step={field.number ? 1 : undefined}
             required={field.required} maxLength={maxLength} value={value}
             onChange={(event) => setValues({ ...values, [field.name]: event.target.value })} />}
       </FormField>;
     })}
-    {kind !== "attachment" && <label className="flex items-center gap-3 text-sm font-medium text-foreground">
+    {uploadAudio && <AudioUploadField required />}
+    {flat && kind === "lesson" && !uploadAudio && <FormField label="Status" htmlFor={`${prefix}-status`}>
+      <Select id={`${prefix}-status`} name="isPublished" value={values.isPublished ? "1" : "0"} onChange={event => setValues({ ...values, isPublished: event.target.value === "1" })}>
+        <option value="0">Draft</option>
+        <option value="1">Terpublikasi</option>
+      </Select>
+    </FormField>}
+    {(!flat || uploadAudio) && kind !== "attachment" && <label className="flex items-center gap-3 text-sm font-medium text-foreground">
       <input type="checkbox" name="isPublished" checked={values.isPublished ?? false} onChange={(event) => setValues({ ...values, isPublished: event.target.checked })} className="size-4 accent-accent" />
       Publikasikan {kind === "course" ? "program" : kind === "chapter" ? "bab" : "materi"}
     </label>}
-    {kind !== "course" && kind !== "attachment" && <p className="text-xs text-foreground/60">Konten tampil kepada peserta hanya jika induknya juga dipublikasikan.</p>}
-    {kind === "lesson" && values.videoProvider === "AUDIO" && <AudioUploadField />}
-    <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : "Simpan perubahan"}</Button>
+    {!flat && kind !== "course" && kind !== "attachment" && <p className="text-xs text-foreground/60">Konten tampil kepada peserta hanya jika induknya juga dipublikasikan.</p>}
+    {existingAudio && <section className="space-y-3 border-t border-gray-100 pt-5">
+      <h2 className="font-semibold">File audio</h2>
+      {existingAudio.url ? <>{existingAudio.title && <p className="text-sm text-gray-500">{existingAudio.title}</p>}<audio controls preload="metadata" src={existingAudio.url} className="w-full" aria-label={values.title ?? "Audio materi"} /></> : <p className="text-sm text-gray-500">Belum ada audio.</p>}
+      <AudioUploadField label={existingAudio.url ? "Ganti file audio" : "Upload file audio"} />
+    </section>}
+    <Button type="submit" disabled={pending}>{pending ? uploadAudio ? "Mengunggah & menyimpan…" : "Menyimpan…" : uploadAudio ? "Simpan materi" : "Simpan perubahan"}</Button>
   </form>;
 }

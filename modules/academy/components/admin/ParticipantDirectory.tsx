@@ -17,7 +17,7 @@ export async function ParticipantDirectory({ certificates, query }: {
     ? await listAdminCompletions(search, program, adminPage(query.page))
     : await listAdminEnrollments(search, program, adminPage(query.page));
   return <><AdminHeading title={certificates ? "Catatan kelulusan & sertifikat" : "Peserta & progres"}
-    description={certificates ? "Status saat ini dihitung ulang dari kurikulum dan progres. Buat catatan dari detail peserta." : "Satu baris per keikutsertaan peserta pada program. Progres mencakup materi dan kuis terpublikasi."}
+    description={certificates ? "Status saat ini dihitung ulang dari kurikulum dan progres. Buat catatan dari detail peserta." : "Satu baris per keikutsertaan peserta pada program. Progres mencakup materi dan ujian terpublikasi."}
     action={certificates ? <AddLink href="/admin/academy/peserta">Pilih peserta</AddLink> : undefined} />
     <form action={base} className="mb-6 flex flex-wrap gap-3">
       <Input name="q" aria-label="Cari nama atau NIP" placeholder="Nama atau NIP…" defaultValue={search} maxLength={100} className="max-w-sm" />

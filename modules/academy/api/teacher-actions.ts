@@ -1,62 +1,29 @@
 "use server";
-import { randomUUID } from "node:crypto";
-import { redirect } from "next/navigation";
+import { apiRequest, ApiError } from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
-import { requireAcademyTeacher } from "./access";
-import { lessonInput } from "./admin-validation";
-import { saveAdminQuiz, saveAdminQuestion } from "./admin-quizzes";
-import { AcademyError } from "./errors";
+import { redirect } from "next/navigation";
 import type { ActionState } from "./actions";
-import { prepareAudioUpload } from "./audio-upload";
-function failure(error: unknown): ActionState {
-  return { error: error instanceof AcademyError ? error.message : "Data belum dapat disimpan. Coba kembali." };
+export async function saveTeacherMaterial(id: string | null, _: ActionState, form: FormData): Promise<ActionState> { let result: ActionState & {
+    id?: string;
+}; try {
+    result = await apiRequest<typeof result>(id ? `academy/teacher/materials/${encodeURIComponent(id)}` : "academy/teacher/materials", { method: "POST", body: form });
 }
-export async function saveTeacherMaterial(id: string | null, _: ActionState, form: FormData): Promise<ActionState> {
-  await requireAcademyTeacher();
-  try {
-    const chapterId = String(form.get("chapterId") ?? "");
-    if (!await prisma.zakatAcademyChapter.findUnique({ where: { id: chapterId }, select: { id: true } })) throw new AcademyError("Pilih bab materi.");
-    form.set("videoProvider", "AUDIO");
-    if (id) {
-      const existing = await prisma.zakatAcademyLesson.findUnique({ where: { id }, select: { slug: true, chapterId: true } });
-      if (!existing || existing.chapterId !== chapterId) throw new AcademyError("Materi tidak ditemukan dalam bab ini.");
-      form.set("slug", existing.slug);
-    } else form.set("slug", `materi-${randomUUID()}`);
-    const audio = await prepareAudioUpload(form);
-    try {
-      if (audio) form.set("videoUrl", audio.fileUrl);
-      const data = lessonInput(form);
-      await prisma.$transaction(async tx => {
-        const lessonData = { ...data, ...(audio ? { videoUrl: audio.fileUrl } : {}) };
-        const lesson = id ? await tx.zakatAcademyLesson.update({ where: { id }, data: lessonData })
-          : await tx.zakatAcademyLesson.create({ data: { ...lessonData, chapterId } });
-        if (audio) await tx.zakatAcademyLessonAttachment.create({ data: { ...audio.attachment, lessonId: lesson.id } });
-      });
-    } catch (error) { await audio?.cleanup(); throw error; }
-  } catch (error) { return failure(error); }
-  revalidatePath("/academy", "layout");
-  return { error: "", message: "Materi tersimpan." };
+catch (error) {
+    return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); return { ...result, error: "", message: result.message ?? "Data berhasil disimpan." }; }
+export async function saveTeacherQuiz(id: string | null, _: ActionState, form: FormData): Promise<ActionState> { let result: ActionState & {
+    id?: string;
+}; try {
+    result = await apiRequest<typeof result>(id ? `academy/teacher/quizzes/${encodeURIComponent(id)}` : "academy/teacher/quizzes", { method: "POST", body: form });
 }
-export async function saveTeacherQuiz(id: string | null, _: ActionState, form: FormData): Promise<ActionState> {
-  await requireAcademyTeacher();
-  let saved: { id: string };
-  try {
-    const chapterId = String(form.get("chapterId") ?? "");
-    const chapter = await prisma.zakatAcademyChapter.findUnique({ where: { id: chapterId }, select: { courseId: true } });
-    if (!chapter) throw new AcademyError("Pilih bab ujian.");
-    saved = await saveAdminQuiz(chapter.courseId, chapterId, id, form);
-  } catch (error) { return failure(error); }
-  revalidatePath("/academy", "layout");
-  redirect(`/academy/pengajar/ujian/${saved.id}`);
+catch (error) {
+    return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); redirect(`/academy/pengajar/ujian/${result.id}`); }
+export async function saveTeacherQuestion(quizId: string, questionId: string | null, _: ActionState, form: FormData): Promise<ActionState> { let result: ActionState & {
+    id?: string;
+}; try {
+    result = await apiRequest<typeof result>(questionId ? `academy/teacher/quizzes/${encodeURIComponent(quizId)}/questions/${encodeURIComponent(questionId)}` : `academy/teacher/quizzes/${encodeURIComponent(quizId)}/questions`, { method: "POST", body: form });
 }
-export async function saveTeacherQuestion(quizId: string, questionId: string | null, _: ActionState, form: FormData): Promise<ActionState> {
-  await requireAcademyTeacher();
-  try {
-    const quiz = await prisma.zakatAcademyQuiz.findUnique({ where: { id: quizId }, select: { chapterId: true, chapter: { select: { courseId: true } } } });
-    if (!quiz) throw new AcademyError("Ujian tidak ditemukan.");
-    await saveAdminQuestion(quiz.chapter.courseId, quiz.chapterId, quizId, questionId, form);
-  } catch (error) { return failure(error); }
-  revalidatePath(`/academy/pengajar/ujian/${quizId}`);
-  return { error: "", message: "Soal tersimpan." };
-}
+catch (error) {
+    return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); return { ...result, error: "", message: result.message ?? "Data berhasil disimpan." }; }

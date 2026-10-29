@@ -1,4 +1,10 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
+
+/* Scan frontend sources only; Laravel storage contains private runtime files. */
+@source "./";
+@source "../components";
+@source "../modules";
+@source "../lib";
 
 /*
  * Semua shell admin (Core/LAZSIP/SARSIP/SIP) sekarang permanen gelap — tidak ada

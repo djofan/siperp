@@ -1,8 +1,7 @@
-import { paymentGateway, sandboxMethod } from "@/modules/payment/api/midtrans";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { listPaymentMethods } from "@/modules/sarsip/api/data";
 import { getEntry, isEntryKind, listPublicDonations, money } from "@/modules/sarsip/api/data";
 import { DonationForm } from "@/modules/sarsip/components/DonationForm";
 import { RelatedEntries } from "@/modules/sarsip/components/RelatedEntries";
@@ -14,7 +13,7 @@ export default async function DetailPage({ params }: { params: Promise<{ kind: s
   if (!entry) notFound();
   const isCampaign = kind === "campaign";
   const donors = isCampaign ? await listPublicDonations(id) : [];
-  const methods = isCampaign ? (paymentGateway() === "midtrans_sandbox" ? [sandboxMethod] : await prisma.sarsipPaymentMethod.findMany({ orderBy: { method: "asc" } })) : [];
+  const methods = isCampaign ? await listPaymentMethods() : [];
   return <ContentBackdrop><div className="mx-auto max-w-7xl px-4 py-10 sm:px-8 sm:py-14"><Link href={`/sarsip/${kind}`} className="inline-flex rounded-full border border-white/20 bg-slate-950/40 px-4 py-2 text-sm font-semibold text-orange-200 hover:bg-slate-950/70">← Semua {kind}</Link><div className={`mt-8 grid items-start gap-6 lg:gap-8 ${isCampaign ? "lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]" : "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"}`}>
     <article className="min-w-0 break-words rounded-3xl border border-white/60 bg-[#faf9f6] p-5 shadow-xl sm:p-8"><p className="text-xs font-semibold uppercase tracking-widest text-orange-700">{kind} · {entry.status === "completed" ? "Selesai" : "SARSIP"}</p><h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{entry.title}</h1><div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-500">{entry.location && <span>{entry.location}</span>}{entry.eventDate && <time dateTime={entry.eventDate.toISOString()}>{entry.eventDate.toLocaleDateString("id-ID", { dateStyle: "long", timeZone: "Asia/Jakarta" })}</time>}</div>
       {entry.image && <div className="relative mt-8 aspect-video overflow-hidden rounded-2xl"><Image unoptimized fill sizes="(max-width: 1024px) 100vw, 60vw" src={entry.image} alt={entry.title} className="object-cover"/></div>}

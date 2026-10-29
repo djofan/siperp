@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { teacherSummary } from "@/modules/tanwir/api/dashboard";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { AppShell } from "@/modules/tanwir/components/app/AppShell";
 import { photoUrl } from "@/modules/tanwir/components/app/media";
@@ -7,9 +7,7 @@ export const metadata = { title: "Guru", robots: { index: false, follow: false }
 
 export default async function GuruLayout({ children }: { children: React.ReactNode }) {
   const viewer = await requireTanwirMember("guru");
-  const pending = await prisma.tanwirSubmission.count({
-    where: { status: "pending", task: { teacherId: viewer.member.id, type: { not: "quiz" } } },
-  });
+  const pending = (await teacherSummary(viewer.member.id)).pending;
   return (
     <AppShell
       root="/tanwir/guru"

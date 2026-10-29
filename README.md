@@ -1,96 +1,112 @@
 # SIP Modular
 
-Platform digital terpadu Solidaritas Insan Peduli (SIP) — **frontend Next.js (App Router) + backend Laravel (API REST) + MySQL**, satu repo, satu database, satu sistem login.
+Lihat [arsitektur aktif](docs/arsitektur.md) untuk batas frontend/backend dan [alur kerja Git](ALUR.md) untuk kolaborasi tim.
 
-> **Status transisi:** fondasi Laravel API (`api/`) sudah ada, tetapi belum ada modul bisnis yang dimigrasikan. Selama sebuah modul belum dimigrasikan, backend modul itu masih berjalan di Next.js (Prisma). Status per modul ada di [`docs/arsitektur.md`](docs/arsitektur.md) §7.
+Platform SIP memakai satu repositori dengan dua aplikasi yang terpisah:
 
-Mulai dari sini:
+- Next.js di root hanya menangani halaman, komponen, dan server action tipis yang memanggil API.
+- Laravel di `api/` menangani autentikasi, otorisasi, validasi, database, pembayaran, upload, backup, queue, dan seluruh aturan bisnis.
+- Folder `modules/<modul>` tetap menjadi batas modul frontend. Backend memakai batas yang sama di `api/app/Modules/<Modul>`.
 
-- [`CLAUDE.md`](CLAUDE.md) — aturan kerja & arsitektur (dibaca otomatis oleh Claude Code).
-- [`docs/arsitektur.md`](docs/arsitektur.md) — arsitektur Next.js + Laravel, alur auth, strategi migrasi, keputusan terbuka.
-- [`docs/PRD.md`](docs/PRD.md) dan `docs/prd-<modul>.md` — spesifikasi produk.
-- [`api/README.md`](api/README.md) dan [`api/docs/CONVENTIONS.md`](api/docs/CONVENTIONS.md) — sisi Laravel.
-- [`ALUR.md`](ALUR.md) — alur kerja Git tim.
+Browser tetap memanggil `/api/*` pada origin Next.js. Rewrite di `next.config.ts` meneruskannya ke `LARAVEL_API_URL`, sehingga cookie HttpOnly dan URL formulir lama tetap bekerja.
 
-## Kebutuhan
+## Menjalankan lokal
 
-| Sisi | Kebutuhan |
-|---|---|
-| Frontend | Node.js + npm |
-| Backend | PHP ≥ 8.4.1 (syarat lockfile saat ini; Laravel sendiri ^8.3), Composer 2.x, ekstensi PDO MySQL |
-| Database | MySQL |
+Persyaratan: Node.js 24+, PHP 8.3+, Composer, dan MySQL/MariaDB.
 
-## Setup lokal — Frontend (Next.js)
+1. Siapkan frontend:
 
-1. Salin `.env.example` menjadi `.env`, sesuaikan `DATABASE_URL` dan isi `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD` untuk seed akun pertama.
-2. Install dependency:
    ```bash
    npm install
    ```
-3. Jalankan migration (schema Prisma multi-file: `prisma/schema/core.prisma` + `modules/<modul>/schema.prisma`):
-   ```bash
-   npm run db:migrate
+
+   Buat `.env.local` bila Laravel tidak memakai URL default:
+
+   ```env
+   LARAVEL_API_URL=http://127.0.0.1:8000/api/v1
    ```
-4. Seed akun superadmin pertama (idempotent, aman dijalankan ulang):
+
+2. Siapkan backend:
+
    ```bash
-   npm run db:seed
+   cd api
+   composer install
+   cp .env.example .env
+   php artisan key:generate
    ```
-5. Jalankan dev server:
+
+   Isi koneksi MySQL pada `api/.env`. Dalam mode `local`, nama database wajib `sipmodular_laravel_dev` agar perintah pengembangan tidak salah menyentuh database lain.
+
+3. Buat tabel dan registri modul:
+
    ```bash
+   php artisan migrate
+   php artisan db:seed
+   ```
+
+   Migration memakai tabel lama bila sudah ada dan hanya membuat tabel yang belum ada. Simpan backup sebelum mengarahkannya ke salinan database lama.
+
+4. Jalankan dua proses:
+
+   ```bash
+   # terminal backend, dari api/
+   php artisan serve
+
+   # terminal frontend, dari root
    npm run dev
    ```
-6. Buka <http://localhost:3000/admin/login> dan masuk dengan akun superadmin.
 
-## Setup lokal — Backend (Laravel, folder `api/`)
-
-Laravel **tidak boleh** diarahkan ke `sipmodular_db`. Development memakai salinan terisolasi `sipmodular_laravel_dev`; langkah membuat salinan dan mengisi `.env` ada di [`api/README.md`](api/README.md) (bagian *Isolated development database*). Ringkasnya, setelah salinan database siap:
+Untuk membuat superadmin pertama, gunakan Tinker agar password tidak tercatat di riwayat shell:
 
 ```bash
 cd api
-copy .env.example .env      # Windows cmd; di macOS/Linux: cp .env.example .env
-composer install
-php artisan key:generate
-php artisan serve --host=127.0.0.1 --port=8000
+php artisan tinker
 ```
 
-Jangan pernah commit `api/.env` yang terisi — repo ini publik.
-
-## Struktur folder
-
-```
-app/                    Next.js App Router — hanya file "jembatan" satu baris ke modules/
-modules/<modul>/        frontend modul (pages, admin/pages, components, schema.prisma);
-                        api/ hanya ada di modul yang belum dimigrasikan ke Laravel
-components/             komponen UI bersama dan shell admin
-prisma/                 core.prisma, migrations, seed
-api/                    backend Laravel
-  app/Modules/<Modul>/    controller, request, resource, model, policy, routes per modul
-  config/modules.php      daftar provider modul
-  docs/                   CONVENTIONS.md dan openapi.json
-docs/                   PRD dan dokumentasi arsitektur
+```php
+app(\App\Modules\Core\Services\UserService::class)->create([
+    'name' => 'Administrator',
+    'email' => 'admin@example.com',
+    'password' => 'ganti-dengan-password-kuat',
+    'isSuperadmin' => true,
+    'moduleIds' => [],
+]);
 ```
 
-Penjelasan lengkap: `CLAUDE.md` §4 dan `docs/arsitektur.md` §4. Modul `core` (auth, users, module registry) dipakai bersama semua modul lain.
+## Pemeriksaan
 
-## Skrip yang tersedia
+```bash
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run api:test
+cd api && composer lint
+```
 
-**Frontend (root):**
+Test backend menggunakan SQLite `:memory:` dan tidak mengakses database lokal/produksi.
 
-- `npm run dev` — dev server (Turbopack).
-- `npm run build` / `npm run start` — build & jalankan production build.
-- `npm run lint` — ESLint.
-- `npm test` — unit test (`tsx --test`). Skrip lain (seed konten demo, backup ERP, setup Teknisi, retry email) ada di `package.json`.
-- `npm run db:migrate` — buat & jalankan migration baru dari perubahan schema Prisma.
-- `npm run db:seed` — jalankan `prisma/seed.ts`.
-- `npm run db:studio` — buka Prisma Studio untuk lihat/edit data langsung.
+## Data runtime
 
-**Backend (`api/`):**
+Upload Laravel berada di `api/storage/app/private` dan `api/storage/app/public/uploads`. Backup terenkripsi berada di `api/storage/app/backups`. Folder upload dan backup lama di root sudah disalin ke lokasi tersebut untuk kompatibilitas data yang ada.
 
-- `composer test` (atau `php artisan test`) — test Pest. Jalankan berurutan, jangan memakai `RefreshDatabase`.
-- `composer analyse` — Larastan.
-- `composer lint` — Pint (cek format).
-- `composer docs` — ekspor kontrak OpenAPI; `composer docs:check` — deteksi selisih kontrak.
+Worker queue dan scheduler wajib aktif di deployment:
+
+```bash
+php artisan queue:work
+php artisan schedule:work
+```
+
+Atur `PAYMENT_GATEWAY`, kredensial iPaymu (`IPAYMU_API_KEY` dan `IPAYMU_VA`), `PAYMENT_API_URL`, Resend, `ERP_BACKUP_KEY`, dan `CORS_ALLOWED_ORIGINS` di `api/.env`. Gunakan `PAYMENT_GATEWAY=ipaymu_sandbox` untuk sandbox, `PAYMENT_GATEWAY=ipaymu` untuk transaksi produksi, atau `simulation` untuk simulasi lokal. Konfigurasi produksi dijelaskan di [`docs/ipaymu-production.md`](docs/ipaymu-production.md). Restore backup hanya tersedia lewat CLI dan memerlukan database serta folder target kosong:
+
+```bash
+php artisan erp:backup list
+php artisan erp:backup verify <file.sipbak>
+php artisan erp:backup restore <file.sipbak> --confirm-empty-target --files-dir=/path/kosong
+```
 
 ## Deployment
 
-Belum dikonfigurasi — perlu keputusan hosting (VPS/PaaS), database production, strategi penamaan domain per modul, dan cara menjalankan **dua proses** (Next.js dan Laravel) sebelum go-live pertama.
+Deploy frontend dan backend sebagai dua proses. Arahkan `LARAVEL_API_URL` frontend ke endpoint Laravel yang berakhiran `/api/v1`. Proxy publik perlu meneruskan `/api/*` ke Laravel atau mempertahankan rewrite Next.js. Laravel memerlukan storage persisten, HTTPS, queue worker, scheduler, dan batas upload PHP minimal 50 MB untuk materi Academy.
+
+Schema Prisma serta migration SQL lama disimpan hanya sebagai referensi di `api/database/legacy`; keduanya bukan runtime dan tidak boleh dijalankan.

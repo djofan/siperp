@@ -3,9 +3,9 @@
 
 **Versi:** 1.1 — diperbarui 14 Oktober 2026 (arsitektur frontend Next.js + backend Laravel)
 **Status:** Berjalan; fondasi Laravel selesai, migrasi modul bertahap
-**Stack:** Frontend Next.js (App Router, TypeScript); backend Laravel 13 (API REST, `api/`) yang dimigrasikan bertahap per modul; MySQL satu database bersama; satu repo
+**Stack:** Frontend Next.js (App Router, TypeScript); backend Laravel 13 (API REST, `api/`) untuk seluruh modul bisnis aktif; MySQL satu database bersama; satu repo
 
-> **Pembaruan arsitektur (14 Oktober 2026):** dokumen ini semula menulis "Next.js full-stack, satu aplikasi". Arah sekarang: **frontend Next.js + backend Laravel**. Rincian arsitektur, alur auth, batas tanggung jawab, strategi migrasi, dan status per modul ada di **[`docs/arsitektur.md`](arsitektur.md)** — sumber kebenaran tunggal. Bagian PRD ini yang masih menyebut "native di Next.js" atau "Next.js full-stack" menggambarkan kondisi sebelum migrasi backend dan tetap berlaku untuk modul yang **belum** dimigrasikan.
+> **Status implementasi 29 Oktober 2026:** frontend Next.js dan seluruh backend bisnis aktif Laravel. Migration aktif berada di `api/database/migrations`; Prisma legacy hanya referensi. Penyebutan backend Next.js, Prisma, atau tahapan migrasi di uraian historis di bawah bukan instruksi runtime/deployment. Lihat [arsitektur aktif](arsitektur.md) dan README untuk alur saat ini.
 
 ---
 

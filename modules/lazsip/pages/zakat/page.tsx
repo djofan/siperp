@@ -3,6 +3,7 @@ import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { ZakatPaymentForm } from "@/modules/lazsip/components/sections/ZakatPaymentForm";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 
 export default async function LazsipZakatPage({
   searchParams,
@@ -20,12 +21,13 @@ export default async function LazsipZakatPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
-      <BackLink href="/lazsip">Kembali ke Beranda</BackLink>
-
-      <div className="mb-8 mt-6 flex flex-col gap-2">
+      <PageIntroRow>
+        <BackLink href="/lazsip">Kembali ke Beranda</BackLink>
         <span className="inline-flex w-fit items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
           Bayar Zakat
         </span>
+      </PageIntroRow>
+      <div className="mb-8">
         <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           Tunaikan Zakat Anda
         </h1>

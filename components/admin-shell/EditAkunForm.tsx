@@ -38,7 +38,7 @@ export function EditAkunForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal memperbarui akun.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal memperbarui akun.");
       return;
     }
 

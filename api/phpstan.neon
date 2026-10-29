@@ -2,8 +2,11 @@ includes:
     - vendor/larastan/larastan/extension.neon
 parameters:
     level: 5
+    checkModelProperties: false
+    treatPhpDocTypesAsCertain: false
+    universalObjectCratesClasses:
+        - App\Support\DomainModel
     paths:
         - app
         - bootstrap/app.php
         - routes
-        - tests/Fixtures/Rest

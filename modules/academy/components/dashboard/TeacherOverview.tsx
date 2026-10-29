@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, ClipboardList, MessageCircle, Users } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { academyPage } from "../../api/page-data";
+import type { AcademyPage9 } from "../../api/page-contracts";
 import { requireAcademyTeacher } from "../../api/access";
 import { PageHeading } from "../ui";
 import { ParticipantSupport } from "../ParticipantSupport";
@@ -9,11 +10,7 @@ import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 export default async function TeacherOverview() {
   const user = await requireAcademyTeacher();
-  const [materials, exams, questions, participants] = await Promise.all([
-    prisma.zakatAcademyLesson.count(), prisma.zakatAcademyQuiz.count(),
-    prisma.academyDiscussion.count({ where: { answer: null } }),
-    prisma.zakatAcademyProfile.count({ where: { enrollments: { some: {} }, user: { isActive: true } } }),
-  ]);
+  const { materials, exams, questions, participants } = await academyPage<AcademyPage9>("academy/teacher/stats");
   const cards = [
     { href: "materi", title: "Materi teks & audio", detail: "Tulis materi, unggah audio, dan atur hari rilis.", icon: BookOpen },
     { href: "ujian", title: "Soal & ujian", detail: "Buat soal dan kunci jawaban, lalu jadwalkan evaluasi.", icon: ClipboardList },

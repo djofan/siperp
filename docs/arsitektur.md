@@ -1,155 +1,55 @@
-# Arsitektur Platform SIP — Next.js + Laravel
+# Arsitektur SIPERP
 
-**Status:** berlaku mulai 14 Oktober 2026 · **Pemilik dokumen:** tim siperp
-**Fungsi:** sumber kebenaran tunggal untuk arsitektur. Dokumen lain (`CLAUDE.md`, `README.md`, `PRD.md`, `prd-*.md`, `ALUR.md`) merujuk ke sini dan tidak mengulang isinya. Bila ada yang bertentangan, dokumen ini yang benar — lalu perbaiki dokumen yang lain.
+Status implementasi: 29 Oktober 2026. Dokumen ini menjelaskan runtime saat ini; PRD modul tetap menjadi acuan kebutuhan produk.
 
-## 1. Ringkasan
+## 1. Komponen runtime
 
-Platform terpadu Solidaritas Insan Peduli: **satu repo, satu database MySQL, satu sistem login**, terdiri dari dua aplikasi.
+- Frontend Next.js App Router di root repository menangani halaman, komponen, dan server action tipis.
+- Backend Laravel di `api/` menangani autentikasi, otorisasi, database, validasi, pembayaran, upload, backup, queue, dan scheduler.
+- Satu database MySQL bersama, dengan tabel dan layanan yang dibatasi per modul.
+- Core, SIP, LAZSIP, SARSIP, Academy, Tanwir, Ojol, Teknisi, Bantuan, dan Payment menggunakan Laravel. Kode Prisma lama di `api/database/legacy` hanya referensi, bukan runtime atau perintah deployment.
 
-```
- Browser
-    │  HTTPS
-    ▼
-┌──────────────────────────────┐        Authorization: Bearer <token>        ┌─────────────────────────────┐
-│  Next.js (frontend)          │ ──────────────────────────────────────────▶ │  Laravel (backend, api/)    │
-│  App Router, TypeScript      │   hanya dari server Next (Server Components │  REST /api/v1/<modul>       │
-│  modules/<modul>/…           │   & Actions), bukan dari browser            │  app/Modules/<Modul>/…      │
-└──────────────┬───────────────┘                                             └──────────────┬──────────────┘
-               │  Prisma                                                                    │ Eloquent
-               │  (SEMENTARA: modul yang belum dimigrasikan)                                │
-               └─────────────────────────────┐        ┌─────────────────────────────────────┘
-                                             ▼        ▼
-                                      ┌───────────────────┐
-                                      │  MySQL (satu DB)  │
-                                      └───────────────────┘
-```
+## 2. Alur request dan autentikasi
 
-Garis Prisma dari Next.js langsung ke database **sementara**: ia dipakai oleh modul yang belum dimigrasikan. Setelah sebuah modul dimigrasikan, frontend modul itu hanya memanggil API Laravel.
+Browser mengakses frontend melalui HTTPS. Rewrite `next.config.ts` meneruskan `/api/*` ke `${LARAVEL_API_URL}/*`; nilai backend berakhir `/api/v1`.
 
-## 2. Pembagian tanggung jawab
+Server Components dan Actions memakai `lib/api.ts`. Cookie sesi HttpOnly diteruskan sebagai Bearer token ke Laravel. Middleware Laravel juga menerima cookie pada request browser melalui rewrite dan memeriksa Origin untuk request perubahan data.
 
-| | Next.js (frontend) | Laravel (backend, `api/`) |
-|---|---|---|
-| Tugas | Tampilan, routing halaman, SSR, interaksi pengguna | Aturan bisnis, validasi, otorisasi, akses data, integrasi eksternal |
-| Bahasa | TypeScript | PHP |
-| Akses database | Prisma — **hanya** untuk modul yang belum dimigrasikan | Eloquent — untuk modul yang sudah dimigrasikan |
-| Bentuk modul | `modules/<modul>/{pages, admin/pages, components}` | `api/app/Modules/<Modul>/{Http, Models, Policies, Events, Listeners, Providers, routes}` |
-| Kualitas | ESLint, `next build` | Pint, Larastan, Pest, kontrak OpenAPI |
-| Yang tidak boleh | Menaruh logic backend baru untuk modul yang sedang/sudah dimigrasikan; menyimpan token di sisi browser | Membaca sesi cookie; mengakses `sipmodular_db` saat development; mengubah tabel bisnis lewat migration Laravel (lihat §6) |
+Sanctum dan Core mengelola akun, status aktif, serta akses modul. API key, Bearer token, password, dan kunci backup tidak boleh masuk props publik, log, atau JavaScript browser. Endpoint admin tidak boleh dibuka hanya untuk mengatasi error halaman publik.
 
-Prinsip yang tidak berubah: **modular monolith** (bukan microservices), modul **flat/sejajar**, tidak ada backend per modul, kerja lintas modul lewat service/event yang eksplisit.
+`FRONTEND_ORIGINS` dan `CORS_ALLOWED_ORIGINS` harus sesuai origin frontend, termasuk skema HTTPS. `SESSION_SECURE_COOKIE=true` digunakan pada deployment HTTPS.
 
-## 3. Alur request dan autentikasi
+## 3. Batas modul
 
-Hanya **Sanctum personal access token** yang dipakai. Tidak ada sesi cookie di sisi Laravel, tidak ada `statefulApi`, tidak ada route `csrf-cookie`.
+Frontend berada di `modules/<modul>/`; `app/` berisi jembatan routing dan konfigurasi segmen yang diperlukan Next.js. Backend berada di `api/app/Modules/<Modul>/`. Folder `modules/<modul>/api/` berisi klien API dan server action, bukan query database atau penulisan upload lokal.
 
-1. Pengguna login di Next.js. *(Integrasi login/logout dengan Laravel **belum** dibuat — menunggu migrasi Core. Saat ini `POST /api/v1/auth/login` hanya placeholder dengan balasan 501; sesi Next.js masih JWT dalam cookie.)*
-2. Laravel menerbitkan token (`Core/Auth/TokenIssuer`) dengan kedaluwarsa **absolut 7 hari**; hanya hash SHA-256 token yang disimpan. Pemakaian token tidak memperpanjang masa berlakunya.
-3. Next.js menyimpan token mentah di **cookie HttpOnly miliknya sendiri**.
-4. Server Components/Actions membaca cookie itu di server dan memanggil Laravel dengan `Authorization: Bearer <token>` dan `Accept: application/json`. **Browser tidak memanggil Laravel langsung.**
-5. Rute terlindungi memakai `auth:sanctum` lalu `module.access:<slug>`. Otorisasi modul **dibaca dari database di setiap request** (`users.is_active`, `modules.is_active`, `module_access`, kebijakan bypass superadmin), bukan dari klaim/ability token dan tidak di-cache sebagai sumber kebenaran.
-6. Saat ini `module.access` **gagal tertutup (501)** sampai Core dimigrasikan; tidak ada endpoint bisnis terlindungi yang terbuka.
+Komunikasi lintas modul memakai kontrak dan service eksplisit. Business logic dan pemeriksaan hak akses tetap di Laravel walaupun frontend menyembunyikan tombol tertentu.
 
-Token tidak boleh terbuka ke JavaScript browser, log, atau props komponen yang diserialisasi. Logout kelak menghapus token dan membersihkan cookie Next. Login memakai limiter 5 percobaan per menit per email (dinormalisasi) dan IP; konfigurasikan *trusted proxies* dengan sengaja sebelum production.
+## 4. Database dan migration
 
-**Kompatibilitas selama transisi:** hash password bcrypt dapat diverifikasi dua arah antara Next.js (bcryptjs) dan Laravel; Laravel tidak menulis ulang hash saat login (`hashing.rehash_on_login=false`); ID memakai CUID v1 lewat trait `HasPrismaCuid` (key string, `incrementing=false`); timezone UTC di kedua sisi.
+Migration aktif berada di `api/database/migrations`. Gunakan `php artisan migrate:status` untuk memeriksa migration yang belum dijalankan, dan backup database sebelum perubahan skema production. Jangan menjalankan migration Prisma lama di VPS.
 
-## 4. Struktur repo
+Development lokal memakai database terisolasi `sipmodular_laravel_dev`. Test backend memakai SQLite dalam memori sesuai `api/phpunit.xml`; `RefreshDatabase` hanya boleh digunakan pada lingkungan test tersebut. Jangan menjalankan `migrate:fresh`, `migrate:refresh`, atau `db:wipe` pada database berisi data pengguna.
 
-```
-siperp/
-├── app/                       Next.js — hanya file "jembatan" satu baris ke modules/ (+ route segment config literal)
-├── modules/<modul>/           frontend modul: pages, admin/pages, components, schema.prisma
-│   └── api/                   HANYA modul yang belum dimigrasikan (logic & route handler Next.js)
-├── components/                komponen UI bersama dan shell admin
-├── prisma/                    core.prisma, migrations, seed
-├── api/                       Laravel
-│   ├── app/Modules/<Modul>/   kode backend per modul (provider, routes, controller, resource, model, policy)
-│   ├── app/Http/ …            komponen bersama (CollectionRequest, ErrorResource, middleware)
-│   ├── app/Support/           HasPrismaCuid dan helper lain
-│   ├── config/modules.php     daftar provider modul
-│   ├── docs/CONVENTIONS.md    konvensi REST
-│   ├── docs/openapi.json      kontrak API
-│   └── tests/                 Pest
-└── docs/                      PRD dan dokumen ini
-```
+## 5. File dan background jobs
 
-Rincian pola file jembatan Next.js: `CLAUDE.md` §4.1. Rincian sisi Laravel: `CLAUDE.md` §4.2 dan `api/README.md`.
+Upload dan backup disimpan Laravel di `api/storage`, terpisah dari kode frontend. Storage dan `bootstrap/cache` memerlukan izin tulis untuk proses PHP dan worker. Jangan membuka folder privat lewat web server.
 
-## 5. Kontrak API
+Tailwind memindai folder frontend secara eksplisit di `app/globals.css`, sehingga build tidak mencoba membaca upload privat Laravel.
 
-- Satu-satunya kontrak antara frontend dan backend: **`api/docs/openapi.json`**. Perubahan API wajib memperbaruinya (`composer docs`) dan lulus `composer docs:check` **sebelum** frontend memakainya.
-- Prefix `/api/v1/<modul>` dipasang otomatis oleh provider modul. Perubahan yang merusak kompatibilitas memakai `/api/v2`.
-- Respons sukses dibungkus `{"data": …}`; koleksi wajib paginasi (`data`, `meta`, `links`); error memakai `{"error":{"code","message","details"}}`; error 5xx berpesan umum tanpa detail internal.
-- Respons selalu lewat **API Resource dengan field dipilih eksplisit** — dilarang `$model->toArray()` atau hanya mengandalkan `$hidden`. Field privat (lihat `CLAUDE.md` §7) tidak boleh muncul.
-- GET/HEAD tidak mengubah data bisnis. Endpoint pembuatan pembayaran wajib menerima header `Idempotency-Key`; penyimpanan idempotensi production **belum** diimplementasikan (menunggu migrasi Payment).
-- Detail status HTTP dan konvensi penamaan: `api/docs/CONVENTIONS.md`.
+Queue pembayaran memakai koneksi `payment` dan antrean `callbacks,receipts`. Scheduler menjalankan tugas yang terdaftar dalam `api/routes/console.php`. Keduanya harus dikelola service manager atau cron, bukan bergantung pada terminal SSH yang terbuka.
 
-## 6. Database dan migration
+## 6. Deployment
 
-- **Satu database MySQL bersama.** Tabel dan migration yang ada saat ini **dimiliki Prisma (Next.js)**. Laravel hanya menambah migration `personal_access_tokens`.
-- Development Laravel memakai salinan terisolasi **`sipmodular_laravel_dev`**; jangan pernah mengarahkan Laravel ke `sipmodular_db`. Dilarang `migrate:fresh`, `migrate:refresh`, `db:wipe`, dan `RefreshDatabase`.
-- Schema Prisma ada di `modules/<modul>/schema.prisma` dan `prisma/schema/core.prisma`; `prisma.config.ts` memakai scope yang tidak membaca `api/vendor`.
-- Model Eloquent untuk tabel milik Prisma: trait `HasPrismaCuid`, key string, `incrementing=false`; nama tabel/kolom lama tidak diubah.
+Frontend dan PHP-FPM berjalan sebagai layanan terpisah di belakang Nginx. Backend internal hanya mendengarkan localhost. MySQL juga dibatasi ke localhost bila tidak ada kebutuhan akses lintas server.
 
-> **Keputusan terbuka — kepemilikan migration jangka panjang: Prisma atau Laravel?**
-> Dua sistem migration yang menulis ke database yang sama mudah bentrok. Keputusan harus diambil dan dicatat di sini **sebelum modul bisnis pertama dimigrasikan**. Sampai ada keputusan, berlaku aturan di atas (Prisma pemilik; Laravel tidak mengubah tabel bisnis).
+URL publik pembayaran memakai domain HTTPS yang dapat diakses penyedia pembayaran. Mode, endpoint, VA, dan API key iPaymu harus sesuai lingkungan sandbox atau production. Kredensial hanya disimpan di environment VPS; `.env` tidak di-commit.
 
-## 7. Strategi migrasi (strangler, bertahap)
+Merge GitHub tidak otomatis memperbarui VPS tanpa pipeline deployment. Setelah mengambil kode terbaru, perbarui dependensi yang berubah, jalankan migration yang telah direview jika diperlukan, build frontend, serta restart frontend dan worker. Muat ulang konfigurasi Laravel bila environment berubah. Jangan membuat ulang APP_KEY pada update rutin.
 
-Backend dipindah dari Next.js ke Laravel **satu modul per kali**. Modul yang belum dipindah tetap berjalan penuh di Next.js.
+## 7. Pemeriksaan
 
-**Urutan yang direncanakan:**
-
-1. Fondasi Laravel — **selesai** (branch `feature/laravel-api`).
-2. **Core** (login, logout, otorisasi `module_access`) — langkah berikutnya, karena semua modul bergantung padanya. Tercakup: integrasi token di Next.js, login kode akun Tanwir/Ojol, keputusan kepemilikan migration (§6).
-3. Modul bisnis satu per satu. Urutan modul mengikuti prioritas yang disepakati tim (usulan awal: LAZSIP dahulu karena progresnya paling jauh; Payment membutuhkan kebijakan idempotensi dan retensi sebelum dimigrasikan).
-
-**Langkah per modul** (satu modul per PR, atau backend dulu lalu frontend):
-
-1. Tulis ulang aturan bisnis di Laravel (service/controller), API Resource dengan field eksplisit, test Pest.
-2. Perbarui `openapi.json`; lulus `composer test`, `composer analyse`, `composer lint`, `composer docs:check`.
-3. Ganti pemanggilan logic Next.js dengan pemanggilan API Laravel dari server; hapus `modules/<modul>/api/` dan `app/api/<modul>/` setelah tidak dipakai.
-4. Perbarui tabel status di bawah dan di `CLAUDE.md` §2.
-
-> Bentuk klien API di Next.js (lokasi folder dan helper pemanggil) **belum ditetapkan**; ditetapkan saat Core dimigrasikan dan dicatat di sini.
-
-**Status per modul (14 Oktober 2026):**
-
-| Modul | Backend saat ini | Laravel (`api/app/Modules/`) | Status migrasi |
-|---|---|---|---|
-| Core | Next.js | Kerangka + auth placeholder | **Berikutnya** |
-| Payment | Next.js | Kerangka kosong | Belum |
-| Lazsip | Next.js | Kerangka kosong | Belum |
-| Sip | Next.js | Kerangka kosong | Belum |
-| Academy | Next.js | Kerangka kosong | Belum |
-| Sarsip | Next.js | Kerangka kosong | Belum |
-| Tanwir | Next.js | Kerangka kosong | Belum |
-| Ojol | Next.js | Kerangka kosong | Belum |
-| Teknisi | Next.js | Kerangka kosong | Belum |
-
-## 8. Daftar keputusan
-
-| Hal | Keputusan | Status |
-|---|---|---|
-| Stack | Frontend Next.js, backend Laravel 13, MySQL | Diputuskan |
-| Gaya arsitektur | Modular monolith, modul flat, tanpa backend per modul | Diputuskan |
-| Pola migrasi | Bertahap per modul (strangler) | Diputuskan |
-| Autentikasi API | Sanctum Bearer, kedaluwarsa absolut 7 hari, token di cookie HttpOnly Next.js | Diputuskan (integrasi menunggu Core) |
-| Otorisasi modul | Dibaca dari database di setiap request | Diputuskan |
-| Kontrak API | OpenAPI + konvensi REST `/api/v1` | Diputuskan |
-| Kepemilikan migration (Prisma vs Laravel) | — | **Belum diputuskan** |
-| Bentuk klien API di Next.js | — | **Belum diputuskan** |
-| Penanganan unggahan besar & streaming (Tanwir/Ojol/Academy) setelah migrasi | — | **Belum diputuskan** |
-| Idempotensi & retensi untuk Payment | — | **Belum diputuskan** |
-| Payment gateway final | — | **Belum diputuskan** |
-| Deployment dua proses (Next.js + Laravel, PHP ≥ 8.4.1) | — | **Belum diputuskan** |
-
-## 9. Dokumen terkait
-
-- `CLAUDE.md` — aturan kerja & struktur folder (dibaca otomatis oleh Claude Code); `AGENTS.md` — aturan untuk agent lain.
-- `README.md` — setup lokal dan skrip.
-- `ALUR.md` — alur kerja Git dan checklist PR.
-- `docs/PRD.md`, `docs/prd-<modul>.md` — spesifikasi produk dan aturan bisnis.
-- `api/README.md`, `api/docs/CONVENTIONS.md`, `api/docs/openapi.json`, `api/VERIFICATION.md` — sisi Laravel; `VERIFICATION.md` adalah *snapshot* hasil verifikasi pada tanggal tertentu, bukan dokumen yang selalu mutakhir.
+- Frontend: `npm run typecheck`, `npm run lint`, `npm test`, dan `npm run build`.
+- Backend: tes melalui konfigurasi `api/phpunit.xml`; jalankan pemeriksaan Composer yang sesuai jika backend berubah.
+- Perubahan kontrak API memperbarui `api/docs/openapi.json` melalui tooling proyek dan pengujian kontrak.
+- Perubahan UI tidak boleh mengembalikan dependensi Prisma atau akses database langsung dari Next.js.

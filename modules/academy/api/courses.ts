@@ -1,121 +1,394 @@
 import "server-only";
-import { prisma } from "@/lib/prisma";
-import { isCourseComplete, weightedGrade } from "./policy";
-import { getLearningSettings } from "./learning";
-
-export async function listPublicCourses(search = "", take?: number) {
-  return prisma.zakatAcademyCourse.findMany({
-    where: { isPublished: true, ...(search ? { title: { contains: search.slice(0, 100) } } : {}) },
-    orderBy: [{ order: "asc" }, { id: "asc" }], take,
-    select: {
-      id: true, title: true, slug: true, shortDescription: true, thumbnailUrl: true,
-      chapters: { where: { isPublished: true }, select: { _count: { select: { lessons: { where: { isPublished: true } } } } } },
-    },
-  });
+import { apiRequest, ApiError } from "@/lib/api";
+import type * as Domain from "@/contracts/modules/academy";
+export type ListPublicCoursesResult = {
+    id: string;
+    title: string;
+    slug: string;
+    shortDescription: string;
+    thumbnailUrl: string | null;
+    chapters: {
+        _count: {
+            lessons: number;
+        };
+    }[];
+}[] | {
+    id: string;
+    title: string;
+    slug: string;
+    shortDescription: string;
+    thumbnailUrl: string | null;
+    chapters: {
+        _count: {
+            lessons: number;
+        };
+    }[];
+}[];
+export async function listPublicCourses(search = "", take?: number): Promise<ListPublicCoursesResult> {
+    return await apiRequest<{
+        id: string;
+        title: string;
+        slug: string;
+        shortDescription: string;
+        thumbnailUrl: string | null;
+        chapters: {
+            _count: {
+                lessons: number;
+            };
+        }[];
+    }[] | {
+        id: string;
+        title: string;
+        slug: string;
+        shortDescription: string;
+        thumbnailUrl: string | null;
+        chapters: {
+            _count: {
+                lessons: number;
+            };
+        }[];
+    }[]>(`academy/courses?search=${encodeURIComponent(search)}${take ? "&take=" + take : ""}`);
 }
-
-export async function getPublicCourse(slug: string) {
-  return prisma.zakatAcademyCourse.findFirst({
-    where: { slug, isPublished: true },
-    select: {
-      id: true, slug: true, title: true, shortDescription: true, description: true, thumbnailUrl: true, teacher: true, startsAt: true, quota: true, durationDays: true, isSimulation: true, _count: { select: { enrollments: true } },
-      chapters: {
-        where: { isPublished: true }, orderBy: [{ order: "asc" }, { id: "asc" }],
-        select: { id: true, title: true, description: true,
-          lessons: { where: { isPublished: true }, orderBy: [{ order: "asc" }, { id: "asc" }], select: { id: true, title: true, slug: true, releaseDay: true } },
-          quizzes: { where: { isPublished: true }, select: { id: true, title: true } },
-        },
-      },
-    },
-  });
-}
-
-export async function getEnrollment(profileId: string | undefined, courseId: string) {
-  if (!profileId) return null;
-  return prisma.zakatAcademyEnrollment.findUnique({ where: { profileId_courseId: { profileId, courseId } } });
-}
-
-export async function getLearningOverview(profileId: string) {
-  const { weights } = await getLearningSettings();
-  const [enrollments, progress, attempts] = await Promise.all([
-    prisma.zakatAcademyEnrollment.findMany({
-      where: { profileId, course: { isPublished: true } }, orderBy: { createdAt: "desc" },
-      select: { createdAt: true, course: { select: { id: true, slug: true, title: true,
-        chapters: { where: { isPublished: true }, select: {
-          lessons: { where: { isPublished: true }, select: { id: true } },
-          quizzes: { where: { isPublished: true }, select: { id: true, kind: true } },
-        } },
-      } } },
-    }),
-    prisma.zakatAcademyLessonProgress.findMany({ where: { profileId, completed: true }, select: { lessonId: true, completedAt: true } }),
-    prisma.zakatAcademyQuizAttempt.findMany({ where: { profileId, isCompleted: true }, select: { quizId: true, passed: true, score: true, submittedAt: true } }),
-  ]);
-  const completed = new Set(progress.map((item) => item.lessonId));
-  const passed = new Set(attempts.filter((item) => item.passed).map((item) => item.quizId));
-  return enrollments.map(({ course, createdAt }) => {
-    const lessons = course.chapters.flatMap((chapter) => chapter.lessons);
-    const quizzes = course.chapters.flatMap((chapter) => chapter.quizzes);
-    const completedLessons = lessons.filter((lesson) => completed.has(lesson.id)).length;
-    const passedQuizzes = quizzes.filter((quiz) => passed.has(quiz.id)).length;
-    const grading = weightedGrade(quizzes, attempts.map(attempt => ({ quizId: attempt.quizId, score: Number(attempt.score ?? 0) })), weights);
-    const dates = [
-      ...progress.filter((item) => lessons.some((lesson) => lesson.id === item.lessonId)).map((item) => item.completedAt),
-      ...quizzes.map((quiz) => attempts.filter((item) => item.quizId === quiz.id && item.passed && item.submittedAt).sort((a, b) => a.submittedAt!.getTime() - b.submittedAt!.getTime())[0]?.submittedAt),
-    ].filter((date): date is Date => !!date);
-    return { id: course.id, title: course.title, slug: course.slug, enrolledAt: createdAt,
-      totalLessons: lessons.length, completedLessons, totalQuizzes: quizzes.length, passedQuizzes,
-      percent: lessons.length ? Math.round(completedLessons / lessons.length * 100) : 0,
-      isEligible: isCourseComplete(lessons.length, completedLessons, quizzes.length, passedQuizzes) && grading.complete && grading.score >= 70,
-      grading,
-      completedAt: dates.length ? new Date(Math.max(...dates.map((date) => date.getTime()))) : null,
+export type GetPublicCourseResult = {
+    id: string;
+    title: string;
+    slug: string;
+    shortDescription: string;
+    description: string | null;
+    thumbnailUrl: string | null;
+    teacher: string;
+    quota: number;
+    durationDays: number;
+    startsAt: Date | null;
+    isSimulation: boolean;
+    chapters: {
+        id: string;
+        title: string;
+        description: string | null;
+        lessons: {
+            id: string;
+            title: string;
+            slug: string;
+            releaseDay: number;
+        }[];
+        quizzes: {
+            id: string;
+            title: string;
+        }[];
+    }[];
+    _count: {
+        enrollments: number;
     };
-  });
+} | {
+    id: string;
+    title: string;
+    slug: string;
+    shortDescription: string;
+    description: string | null;
+    thumbnailUrl: string | null;
+    teacher: string;
+    quota: number;
+    durationDays: number;
+    startsAt: Date | null;
+    isSimulation: boolean;
+    chapters: {
+        id: string;
+        title: string;
+        description: string | null;
+        lessons: {
+            id: string;
+            title: string;
+            slug: string;
+            releaseDay: number;
+        }[];
+        quizzes: {
+            id: string;
+            title: string;
+        }[];
+    }[];
+    _count: {
+        enrollments: number;
+    };
+} | null;
+export async function getPublicCourse(slug: string): Promise<GetPublicCourseResult> {
+    try {
+        return await apiRequest<{
+            id: string;
+            title: string;
+            slug: string;
+            shortDescription: string;
+            description: string | null;
+            thumbnailUrl: string | null;
+            teacher: string;
+            quota: number;
+            durationDays: number;
+            startsAt: Date | null;
+            isSimulation: boolean;
+            chapters: {
+                id: string;
+                title: string;
+                description: string | null;
+                lessons: {
+                    id: string;
+                    title: string;
+                    slug: string;
+                    releaseDay: number;
+                }[];
+                quizzes: {
+                    id: string;
+                    title: string;
+                }[];
+            }[];
+            _count: {
+                enrollments: number;
+            };
+        } | {
+            id: string;
+            title: string;
+            slug: string;
+            shortDescription: string;
+            description: string | null;
+            thumbnailUrl: string | null;
+            teacher: string;
+            quota: number;
+            durationDays: number;
+            startsAt: Date | null;
+            isSimulation: boolean;
+            chapters: {
+                id: string;
+                title: string;
+                description: string | null;
+                lessons: {
+                    id: string;
+                    title: string;
+                    slug: string;
+                    releaseDay: number;
+                }[];
+                quizzes: {
+                    id: string;
+                    title: string;
+                }[];
+            }[];
+            _count: {
+                enrollments: number;
+            };
+        } | null>(`academy/courses/by-slug/${encodeURIComponent(slug)}`);
+    }
+    catch (error) {
+        if (error instanceof ApiError && error.status === 404)
+            return null;
+        throw error;
+    }
 }
-
-export async function listParticipantQuizzes(profileId: string) {
-  return prisma.zakatAcademyQuiz.findMany({
-    where: { isPublished: true, chapter: { isPublished: true, course: { isPublished: true, enrollments: { some: { profileId } } } } },
-    select: { id: true, title: true, isActive: true, quizDate: true, closesAt: true, kind: true, releaseDay: true, timeLimitMinutes: true, passingScore: true, allowRetake: true,
-      chapter: { select: { title: true, course: { select: { startsAt: true } } } }, _count: { select: { questions: true } },
-      attempts: { where: { profileId }, orderBy: { attemptNumber: "desc" }, select: { id: true, attemptNumber: true, isCompleted: true, score: true, passed: true } },
-    }, orderBy: [{ quizDate: "desc" }, { id: "asc" }],
-  });
+export type GetEnrollmentResult = {
+    id: string;
+    createdAt: Date;
+    courseId: string;
+    profileId: string;
+    groupJoinedAt: Date | null;
+} | null;
+export async function getEnrollment(profileId: string | undefined, courseId: string): Promise<GetEnrollmentResult> {
+    if (!profileId)
+        return null;
+    try {
+        return await apiRequest<{
+            id: string;
+            createdAt: Date;
+            courseId: string;
+            profileId: string;
+            groupJoinedAt: Date | null;
+        } | null>(`academy/enrollments/course/${encodeURIComponent(courseId)}`);
+    }
+    catch (error) {
+        if (error instanceof ApiError && error.status === 404)
+            return null;
+        throw error;
+    }
 }
-
-export async function getLeaderboard() {
-  const attempts = await prisma.zakatAcademyQuizAttempt.findMany({
-    where: { isCompleted: true, profile: { user: { isActive: true } }, quiz: { isPublished: true, chapter: { isPublished: true, course: { isPublished: true } } } },
-    select: { profileId: true, quizId: true, score: true, profile: { select: { user: { select: { name: true } } } } },
-  });
-  const people = new Map<string, { id: string; name: string; scores: Map<string, number> }>();
-  for (const attempt of attempts) {
-    const person = people.get(attempt.profileId) ?? { id: attempt.profileId, name: attempt.profile.user.name, scores: new Map<string, number>() };
-    person.scores.set(attempt.quizId, Math.max(person.scores.get(attempt.quizId) ?? 0, Number(attempt.score ?? 0)));
-    people.set(person.id, person);
-  }
-  return Array.from(people.values()).map((person) => ({ id: person.id, name: person.name, total: person.scores.size,
-    average: [...person.scores.values()].reduce((sum, score) => sum + score, 0) / person.scores.size,
-  })).sort((a, b) => b.average - a.average || b.total - a.total || a.id.localeCompare(b.id));
+export type GetLearningOverviewResult = {
+    id: string;
+    title: string;
+    slug: string;
+    enrolledAt: Date;
+    totalLessons: number;
+    completedLessons: number;
+    totalQuizzes: number;
+    passedQuizzes: number;
+    percent: number;
+    isEligible: boolean;
+    grading: {
+        means: {
+            DAILY: number;
+            WEEKLY: number;
+            FINAL: number;
+        };
+        score: number;
+        predicate: string | null;
+        complete: boolean;
+    };
+    completedAt: Date | null;
+}[];
+export async function getLearningOverview(_profileId: string): Promise<GetLearningOverviewResult> {
+    return await apiRequest<{
+        id: string;
+        title: string;
+        slug: string;
+        enrolledAt: Date;
+        totalLessons: number;
+        completedLessons: number;
+        totalQuizzes: number;
+        passedQuizzes: number;
+        percent: number;
+        isEligible: boolean;
+        grading: {
+            means: {
+                DAILY: number;
+                WEEKLY: number;
+                FINAL: number;
+            };
+            score: number;
+            predicate: string | null;
+            complete: boolean;
+        };
+        completedAt: Date | null;
+    }[]>("academy/learning/overview");
 }
-
-export async function getOwnRankings(profileId: string) {
-  const own = await prisma.zakatAcademyEnrollment.findMany({ where: { profileId, course: { isPublished: true } }, select: { course: { select: { id: true, title: true, chapters: { where: { isPublished: true }, select: { quizzes: { where: { isPublished: true }, select: { id: true, kind: true } } } } } } } });
-  const courseIds = own.map(item => item.course.id);
-  const [participants, attempts, { weights }] = await Promise.all([
-    prisma.zakatAcademyEnrollment.findMany({ where: { courseId: { in: courseIds }, profile: { user: { isActive: true } } }, select: { profileId: true, courseId: true } }),
-    prisma.zakatAcademyQuizAttempt.findMany({ where: { isCompleted: true, quiz: { chapter: { courseId: { in: courseIds } } } }, select: { profileId: true, quizId: true, score: true } }),
-    getLearningSettings(),
-  ]);
-  const byProfile = new Map<string, { quizId: string; score: number }[]>();
-  for (const attempt of attempts) { const values = byProfile.get(attempt.profileId) ?? []; values.push({ quizId: attempt.quizId, score: Number(attempt.score ?? 0) }); byProfile.set(attempt.profileId, values); }
-  return own.map(({ course }) => {
-    const quizzes = course.chapters.flatMap(chapter => chapter.quizzes);
-    const quizIds = new Set(quizzes.map(quiz => quiz.id));
-    const ranked = participants.filter(person => person.courseId === course.id).map(person => {
-      const values = (byProfile.get(person.profileId) ?? []).filter(value => quizIds.has(value.quizId));
-      return { id: person.profileId, attempted: new Set(values.map(value => value.quizId)).size, grade: weightedGrade(quizzes, values, weights) };
-    }).filter(person => person.attempted > 0);
-    const self = ranked.find(person => person.id === profileId);
-    return { courseId: course.id, title: course.title, rank: self ? 1 + ranked.filter(person => person.grade.score > self.grade.score).length : null, total: ranked.length, score: self?.grade.score ?? 0, complete: self?.grade.complete ?? false };
-  });
+export type ListParticipantQuizzesResult = {
+    id: string;
+    title: string;
+    _count: {
+        questions: number;
+    };
+    releaseDay: number;
+    isActive: boolean;
+    passingScore: number;
+    quizDate: Date | null;
+    timeLimitMinutes: number;
+    allowRetake: boolean;
+    kind: Domain.AcademyQuizKind;
+    closesAt: Date | null;
+    chapter: {
+        title: string;
+        course: {
+            startsAt: Date | null;
+        };
+    };
+    attempts: {
+        id: string;
+        score: number | null;
+        attemptNumber: number;
+        passed: boolean | null;
+        isCompleted: boolean;
+    }[];
+}[] | {
+    id: string;
+    title: string;
+    _count: {
+        questions: number;
+    };
+    releaseDay: number;
+    isActive: boolean;
+    passingScore: number;
+    quizDate: Date | null;
+    timeLimitMinutes: number;
+    allowRetake: boolean;
+    kind: Domain.AcademyQuizKind;
+    closesAt: Date | null;
+    chapter: {
+        title: string;
+        course: {
+            startsAt: Date | null;
+        };
+    };
+    attempts: {
+        id: string;
+        score: number | null;
+        attemptNumber: number;
+        passed: boolean | null;
+        isCompleted: boolean;
+    }[];
+}[];
+export async function listParticipantQuizzes(_profileId: string, cohort = ""): Promise<ListParticipantQuizzesResult> {
+    return await apiRequest<{
+        id: string;
+        title: string;
+        _count: {
+            questions: number;
+        };
+        releaseDay: number;
+        isActive: boolean;
+        passingScore: number;
+        quizDate: Date | null;
+        timeLimitMinutes: number;
+        allowRetake: boolean;
+        kind: Domain.AcademyQuizKind;
+        closesAt: Date | null;
+        chapter: {
+            title: string;
+            course: {
+                startsAt: Date | null;
+            };
+        };
+        attempts: {
+            id: string;
+            score: number | null;
+            attemptNumber: number;
+            passed: boolean | null;
+            isCompleted: boolean;
+        }[];
+    }[] | {
+        id: string;
+        title: string;
+        _count: {
+            questions: number;
+        };
+        releaseDay: number;
+        isActive: boolean;
+        passingScore: number;
+        quizDate: Date | null;
+        timeLimitMinutes: number;
+        allowRetake: boolean;
+        kind: Domain.AcademyQuizKind;
+        closesAt: Date | null;
+        chapter: {
+            title: string;
+            course: {
+                startsAt: Date | null;
+            };
+        };
+        attempts: {
+            id: string;
+            score: number | null;
+            attemptNumber: number;
+            passed: boolean | null;
+            isCompleted: boolean;
+        }[];
+    }[]>(`academy/learning/quizzes?cohort=${encodeURIComponent(cohort)}`);
+}
+export type GetLeaderboardResult = {
+    id: string;
+    name: string;
+    total: number;
+    average: number;
+}[];
+export async function getLeaderboard(): Promise<GetLeaderboardResult> { return await apiRequest<GetLeaderboardResult>("academy/leaderboard"); }
+export type GetOwnRankingsResult = {
+    courseId: string;
+    title: string;
+    rank: number | null;
+    total: number;
+    score: number;
+    predicate: string | null;
+    complete: boolean;
+}[];
+export async function getOwnRankings(_profileId: string): Promise<GetOwnRankingsResult> {
+    return await apiRequest<{
+        courseId: string;
+        title: string;
+        rank: number | null;
+        total: number;
+        score: number;
+        predicate: string | null;
+        complete: boolean;
+    }[]>("academy/learning/rankings");
 }

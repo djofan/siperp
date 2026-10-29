@@ -10,11 +10,13 @@ export function ImageUploadField({
   onChange,
   label = "Gambar",
   required = false,
+  onUploadingChange,
 }: {
   initialUrl?: string | null;
   onChange: (url: string | null) => void;
   label?: string;
   required?: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
 }) {
   const [preview, setPreview] = useState<string | null>(initialUrl ?? null);
   const [uploading, setUploading] = useState(false);
@@ -34,25 +36,30 @@ export function ImageUploadField({
     }
 
     const objectUrl = URL.createObjectURL(file);
+    const previousPreview = preview;
     setPreview(objectUrl);
     setUploading(true);
+    onUploadingChange?.(true);
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("/api/lazsip/upload", { method: "POST", body: formData });
-    setUploading(false);
-
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/lazsip/upload", { method: "POST", body: formData });
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengunggah gambar.");
-      setPreview(initialUrl ?? null);
-      return;
+      if (!response.ok || !data?.url) {
+        throw new Error(typeof data?.error === "string" ? data.error : data?.error?.message ?? "Gagal mengunggah gambar.");
+      }
+      setPreview(data.url);
+      onChange(data.url);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal mengunggah gambar. Silakan coba lagi.");
+      setPreview(previousPreview);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setUploading(false);
+      onUploadingChange?.(false);
     }
-
-    const data = await response.json();
-    setPreview(data.url);
-    onChange(data.url);
   }
 
   return (
@@ -88,7 +95,8 @@ export function ImageUploadField({
               accept="image/jpeg,image/png,image/webp"
               className="hidden"
               disabled={uploading}
-              onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+              aria-label={label}
+              onChange={(e) => { void handleFile(e.target.files?.[0] ?? null); e.target.value = ""; }}
             />
           </label>
           <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>

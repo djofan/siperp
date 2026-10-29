@@ -4,11 +4,11 @@ import {
   getRecentTransactions,
   getDashboardCounts,
 } from "@/modules/sarsip/api/dashboard";
-import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHeader";
-import { DashboardStatCard } from "@/modules/lazsip/components/admin/DashboardStatCard";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { DashboardStatCard } from "@/components/admin/DashboardStatCard";
 import { DashboardCharts } from "@/modules/payment/components/admin/DashboardCharts";
 import { getDashboardCharts } from "@/modules/payment/api/dashboardCharts";
-import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
+import { AdminBadge } from "@/components/admin/AdminBadge";
 import { panelClasses } from "@/components/ui/panel";
 
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;

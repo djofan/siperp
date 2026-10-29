@@ -1,5 +1,7 @@
 # PRD — Modul Ojol Mengaji
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 > Status: **sudah dibangun & diuji** (7 Oktober 2026) — lihat `docs/ojol-demo.md` untuk data demo & pengujian.
 > Disusun dari pembedahan kode aplikasi lama `djofan/ojol-mengaji` (Laravel 12 + Filament).
 > Aplikasi lama ini adalah "saudara" Tanwir Qurani (± 85% kodenya sama), jadi PRD ini **hanya mencatat

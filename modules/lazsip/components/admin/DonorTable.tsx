@@ -96,11 +96,13 @@ export function DonorTable({ donors, showSegmentFilter = true, storageKey = "don
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.phone ? `+${donor.phone}` : "Belum tercatat"}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.email ?? "Belum tercatat"}</td>
                     <td className="px-4 py-3.5">
+                      <div className="flex min-w-28 flex-wrap items-center gap-2 [&>span]:whitespace-nowrap">
                       {donor.types.map((type) => (
                         <AdminBadge key={type} tone={type === "zakat" ? "primary" : "secondary"}>
                           {type === "zakat" ? "Muzakki" : "Donatur"}
                         </AdminBadge>
                       ))}
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.contributionCount}x</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{formatRupiah(donor.totalContribution)}</td>

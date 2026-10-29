@@ -11,8 +11,8 @@ export default async function RegisterPage() {
   if (await getAcademyUser()) redirect(await getAcademyAvailability() ? "/academy/belajar" : "/academy");
   const [intake, settings] = await Promise.all([getIntake(), getLearningSettings()]);
   return <div className="mx-auto w-full max-w-sm"><div className="mb-8 text-center"><h1 className="text-2xl font-semibold tracking-tight">Daftar Insan Academy</h1><p className="mt-1 text-sm text-gray-500">Buat akun untuk mulai belajar zakat</p></div>
-    <p className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-800">{intake.course ? `${intake.course.title} · ${intake.filled}/${intake.course.quota} peserta · 1 bulan` : "Pendaftaran segera dibuka."}</p>
-    {intake.full || !intake.course ? <p role="status" className="rounded-xl border p-5 text-sm">{intake.full ? "Pendaftaran angkatan ini sudah ditutup." : "Program sedang dipersiapkan."} Hubungi CS untuk informasi angkatan berikutnya.</p> : <ActionForm action={registerParticipant} label="Daftar & buat akun">
+    <p className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-800">{intake.cohort ? `${intake.cohort.title} · ${intake.filled} peserta` : "Pendaftaran segera dibuka."}</p>
+    {intake.full || !intake.cohort ? <p role="status" className="rounded-xl border p-5 text-sm">{intake.full ? "Pendaftaran angkatan ini sudah ditutup." : "Angkatan sedang dipersiapkan."} Hubungi CS untuk informasi angkatan berikutnya.</p> : <ActionForm action={registerParticipant} label="Daftar & buat akun"><label className="block text-sm font-medium">Angkatan<input readOnly value={intake.cohort.title} className={inputClass} /></label>
       <label className="block text-sm font-medium">Nama lengkap<input name="name" required minLength={2} maxLength={100} autoComplete="name" className={inputClass} /></label>
       <label className="block text-sm font-medium">Email<input name="email" type="email" required maxLength={191} autoComplete="email" className={inputClass} /></label>
       <label className="block text-sm font-medium">Alamat<textarea name="address" required maxLength={2000} rows={3} autoComplete="street-address" className={inputClass} /></label>

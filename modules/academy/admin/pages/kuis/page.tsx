@@ -2,27 +2,17 @@ import Link from "next/link";
 import { requireAcademyAdmin } from "@/modules/academy/api/admin-access";
 import { listAdminQuizzes } from "@/modules/academy/api/admin-quizzes";
 import { AdminHeading, AddLink, AdminEmpty, PublishBadge } from "@/modules/academy/components/admin/AdminUi";
-import { Input } from "@/modules/academy/components/ui/FieldCompat";
-import { Button } from "@/modules/academy/components/ui/ButtonCompat";
-export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+import { academyPage } from "../../../api/page-data";
+import type { AcademyCohort } from "../../../api/page-contracts";
+export default async function Page() {
   await requireAcademyAdmin();
-  const query = await searchParams;
-  const search = typeof query.q === "string" ? query.q.slice(0, 100) : "";
-  const page = Number(query.page);
-  const result = await listAdminQuizzes(search, Number.isSafeInteger(page) && page > 0 ? page : 1);
-  const href = (page: number) => "/admin/academy/kuis?" + new URLSearchParams({ q: search, page: String(page) });
-  return <><AdminHeading title="Kuis" description="Tambahkan kuis dari bab pada program belajar. Pertanyaan dan jawaban hanya tersedia bagi admin academy." action={<AddLink href="/admin/academy/program">Pilih program & bab</AddLink>} />
-    <form action="/admin/academy/kuis" className="mb-6 flex gap-3"><Input name="q" aria-label="Cari judul kuis" placeholder="Cari judul kuis…" defaultValue={search} maxLength={100} className="max-w-sm" /><Button type="submit">Cari</Button></form>
-    {result.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full text-left text-sm">
-      <thead><tr>{["Kuis", "Program / Bab", "Status", "Pertanyaan", "Percobaan", "Aksi"].map(label => <th key={label} className="p-3 text-foreground/60">{label}</th>)}</tr></thead>
-      <tbody>{result.items.map(quiz => <tr key={quiz.id} className="border-t border-border text-foreground">
-        <td className="p-3 font-semibold">{quiz.title}</td><td className="p-3">{quiz.chapter.course.title}<br />{quiz.chapter.title}</td>
-        <td className="p-3"><PublishBadge published={quiz.isPublished} /><p className="mt-2 text-xs">{quiz.isActive ? "Pengerjaan aktif" : "Pengerjaan nonaktif"}</p></td>
-        <td className="p-3">{quiz._count.questions}</td><td className="p-3">{quiz._count.attempts}</td>
-        <td className="p-3"><Link className="text-accent hover:underline" href={`/admin/academy/program/${quiz.chapter.courseId}/bab/${quiz.chapter.id}/kuis/${quiz.id}`}>Kelola<span className="sr-only"> {quiz.title}</span></Link></td>
-      </tr>)}</tbody>
-    </table></div> : <AdminEmpty>Belum ada kuis yang cocok. Tambahkan kuis dari halaman bab.</AdminEmpty>}
-    <nav aria-label="Halaman kuis" className="mt-5 flex flex-wrap gap-4 text-sm text-foreground"><span>{result.total} kuis · Halaman {result.page} dari {result.pages}</span>{result.page > 1 && <Link className="text-accent" href={href(result.page - 1)}>Sebelumnya</Link>}{result.page < result.pages && <Link className="text-accent" href={href(result.page + 1)}>Berikutnya</Link>}</nav>
+  const [cohorts, result] = await Promise.all([academyPage<AcademyCohort[]>("academy/admin/cohorts"), listAdminQuizzes("", 1, "", true)]);
+  const groups = cohorts.map(cohort => ({ id: cohort.id, title: cohort.title, items: result.items.filter(quiz => quiz.chapter.course.cohort?.id === cohort.id) }));
+  const archive = result.items.filter(quiz => !quiz.chapter.course.cohort);
+  if (archive.length) groups.push({ id: "unassigned", title: "Arsip belum memiliki angkatan", items: archive });
+  return <><AdminHeading title="Ujian" description="Seluruh ujian dan pertanyaannya dikelola per angkatan." action={<AddLink href="/admin/academy/kuis/baru">Tambah ujian</AddLink>} />
+    <div className="space-y-6">{groups.map(group => <section key={group.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 p-5"><div><h2 className="font-semibold">{group.title}</h2><p className="mt-1 text-xs text-gray-500">{group.items.length} ujian</p></div>{group.id !== "unassigned" && <Link href={`/admin/academy/kuis/baru?cohort=${encodeURIComponent(group.id)}`} className="text-sm font-medium text-green-700">Tambah ujian →</Link>}</div>
+      {group.items.length ? <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr>{["No.", "Ujian", "Jenis Soal", "Status", "Aksi"].map(label => <th key={label} className="p-4 text-gray-500">{label}</th>)}</tr></thead><tbody>{group.items.map((quiz, index) => <tr key={quiz.id} className="border-t border-gray-100"><td className="p-4">{index + 1}</td><td className="p-4 font-semibold">{quiz.title}</td><td className="p-4">{quiz.questions.length ? [...new Set(quiz.questions.map(question => question.type === "TRUE_FALSE" ? "Benar / Salah" : question.type === "MULTIPLE" ? "Pilihan ganda (beberapa jawaban)" : "Pilihan ganda (satu jawaban)"))].join(", ") : "Belum ada soal"}</td><td className="p-4"><PublishBadge published={quiz.isPublished} /></td><td className="p-4"><Link className="text-green-700 hover:underline" href={`/admin/academy/program/${quiz.chapter.courseId}/bab/${quiz.chapter.id}/kuis/${quiz.id}`}>Edit ujian</Link></td></tr>)}</tbody></table></div> : <p className="p-6 text-sm text-gray-500">Belum ada ujian pada angkatan ini.</p>}
+    </section>)}</div>{!groups.length && <AdminEmpty>Belum ada angkatan atau ujian.</AdminEmpty>}<p className="mt-5 text-sm text-gray-500">{result.total} ujian ditampilkan seluruhnya.</p>
   </>;
 }
-

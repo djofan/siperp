@@ -1,5 +1,7 @@
 # PRD — Modul Tanwir Qurani
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 > Status: **sedang dikerjakan** (Fase 5). Dokumen ini disusun dari pembedahan kode aplikasi lama
 > `djofan/tanwir-qurani` (Laravel 12 + Filament) dan keputusan tim per 7 Oktober 2026.
 > Semua aturan bisnis di §6 diambil dari perilaku aplikasi lama — jangan diubah tanpa diskusi.

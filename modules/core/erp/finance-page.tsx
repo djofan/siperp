@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { apiRequest } from "@/lib/api";
+import type { FinanceResponse } from "./contracts";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { requireSuperadmin } from "./access";
 import { ActionForm } from "./ActionForm";
@@ -7,7 +8,6 @@ import { createExpense, importBankLines, matchBankLine, unmatchBankLine } from "
 import { bankDate } from "./policy";
 const input = "w-full rounded-lg border border-border bg-surface p-2 text-sm";
 const rp = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
-type PaymentCandidate = { id: string; trackingCode: string; amount: number; adminFee: number; destinationAccountId: string; paidAt: Date | null };
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ account?: string; from?: string; to?: string; page?: string; status?: string }> }) {
   await requireSuperadmin();
   const params = await searchParams;
@@ -17,28 +17,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   let start: Date, end: Date;
   try { start = bankDate(from); end = new Date(bankDate(to).getTime()+86400000); if (end <= start) throw new Error(); }
   catch { return <div><PageHeader title="Keuangan" description="Rentang tanggal tidak valid." /><Link href="/admin/super/keuangan">Reset filter</Link></div>; }
-  const accounts = await prisma.paymentDestinationAccount.findMany({ orderBy: [{ moduleSource: "asc" }, { fundType: "asc" }] });
-  const accountFilter = params.account ? { accountId: params.account } : {};
-  const paymentFilter = params.account ? { destinationAccountId: params.account } : {};
-  const lineWhere = { ...accountFilter, bookedAt: { gte: start, lt: end }, ...(params.status === "unmatched" ? { paymentId: null, expenseId: null } : {}) };
-  const [income, expenseSum, lines, count, expenses] = await Promise.all([
-    prisma.paymentTransaction.groupBy({ by: ["destinationAccountId", "moduleSource", "fundType"], where: { ...paymentFilter, status: "paid", gateway: { notIn: ["simulation", "midtrans_sandbox"] }, paidAt: { gte: start, lt: end } }, _sum: { amount: true, adminFee: true } }),
-    prisma.coreExpense.groupBy({ by: ["accountId", "moduleSource", "fundType"], where: { ...accountFilter, spentAt: { gte: start, lt: end } }, _sum: { amount: true } }),
-    prisma.coreBankLine.findMany({ where: lineWhere, orderBy: [{ bookedAt: "desc" }, { id: "asc" }], skip: (page-1)*20, take: 20 }),
-    prisma.coreBankLine.count({ where: lineWhere }),
-    prisma.coreExpense.findMany({ where: { ...accountFilter, spentAt: { gte: start, lt: end } }, orderBy: { spentAt: "desc" }, take: 30 }),
-  ]);
-  const [paymentGroups, candidatesExpenses] = await Promise.all([
-    Promise.all(lines.filter(l => l.direction === "masuk" && !l.paymentId).map(l => prisma.$queryRaw<PaymentCandidate[]>`
-      SELECT p.id, p.tracking_code AS trackingCode, p.amount, p.admin_fee AS adminFee, p.destination_account_id AS destinationAccountId, p.paid_at AS paidAt
-      FROM payment_transactions p WHERE p.status='paid' AND p.gateway NOT IN ('simulation','midtrans_sandbox')
-      AND p.destination_account_id=${l.accountId} AND p.amount+p.admin_fee=${l.amount}
-      AND NOT EXISTS (SELECT 1 FROM core_bank_lines b WHERE b.payment_id=p.id)
-      ORDER BY ABS(TIMESTAMPDIFF(DAY,p.paid_at,${l.bookedAt})), p.id LIMIT 100`)),
-    prisma.coreExpense.findMany({ where: { bankLine: null, OR: lines.filter(l => l.direction === "keluar" && !l.expenseId).map(l => ({ accountId: l.accountId, amount: l.amount })) }, take: 1000 }),
-  ]);
-  const payments = [...new Map(paymentGroups.flat().map(p => [p.id, p])).values()];
-  const summary = accounts.filter(a => !params.account || a.id === params.account).map(a => { const i = income.find(v => v.destinationAccountId === a.id), e = expenseSum.find(v => v.accountId === a.id); return { account: a, income: i?._sum.amount ?? 0, fees: i?._sum.adminFee ?? 0, expense: e?._sum.amount ?? 0 }; });
+  const {accounts, summary, lines, count, expenses, payments, candidatesExpenses} = await apiRequest<FinanceResponse>(`super/erp/finance?${new URLSearchParams({from,to,account:params.account ?? "",status:params.status ?? "",page:String(page)})}`);
   const selector = <select required name="accountId" className={input}><option value="">Pilih rekening</option>{accounts.map(a => <option key={a.id} value={a.id}>{a.moduleSource} / {a.fundType} · {a.bankName} {a.accountNumber}</option>)}</select>;
   const query = new URLSearchParams({ account: params.account ?? "", from, to, status: params.status ?? "" });
   return <div className="space-y-6"><PageHeader title="Keuangan & Rekonsiliasi" description="Penerimaan nyata dan pengeluaran ERP per rekening serta jenis dana. Pembayaran simulasi dan sandbox tidak dihitung." />

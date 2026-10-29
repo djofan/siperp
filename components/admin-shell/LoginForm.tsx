@@ -103,12 +103,14 @@ export function LoginForm() {
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Email atau password salah.");
+      setError((data?.error?.message ?? data?.error) ?? "Email atau password salah.");
       return;
     }
 
-    // Semua login pengelola dimulai dari dashboard Core; modul dipilih setelahnya.
-    router.replace("/admin");
+    const { data: session } = await response.json();
+    const destination = typeof session?.panelRedirect === "string" && /^\/admin\/bantuan\/(screening|review|survei|dana|pencairan)$/.test(session.panelRedirect)
+      ? session.panelRedirect : "/admin";
+    router.replace(destination);
     router.refresh();
   }
 

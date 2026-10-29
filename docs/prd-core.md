@@ -1,9 +1,11 @@
 # PRD — Core (Auth, Superadmin, Akses Modul)
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 **Bagian dari:** Platform Modular SIP (lihat `PRD.md` untuk arsitektur & roadmap keseluruhan)
 **Fase:** 0 (Fondasi — dikerjakan paralel dengan Fase 1/LAZSIP)
-**Stack:** Next.js (App Router), Prisma, MySQL (backend saat ini). **Target backend: Laravel (`api/`)** — Core adalah modul pertama yang akan dimigrasikan.
-**Status:** Berjalan di Next.js; migrasi ke Laravel direncanakan sebagai langkah berikutnya
+**Stack aktif:** Next.js App Router untuk frontend, Laravel di `api/` untuk autentikasi dan otorisasi, MySQL untuk penyimpanan.
+**Status:** Berjalan melalui Core Laravel dan Sanctum.
 
 > **Catatan arsitektur (14 Oktober 2026):** Core adalah dasar dari semua modul lain, sehingga migrasinya ke Laravel (login, logout, otorisasi `module_access`) harus selesai lebih dulu sebelum modul bisnis dimigrasikan. Rincian alur auth dan strategi migrasi ada di [`arsitektur.md`](arsitektur.md) §3 dan §7. Bagian di bawah yang menyebut `app/api/...` dan `getSession()` menggambarkan implementasi Next.js saat ini; kontrak endpoint Laravel untuk Core dibuat saat migrasi Core dimulai. Login **kode akun** Tanwir/Ojol (`/tanwir/masuk`, `/ojol/masuk`) yang menerbitkan sesi Core juga harus diakomodasi saat Core dimigrasikan.
 

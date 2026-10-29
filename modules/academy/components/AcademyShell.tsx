@@ -7,7 +7,9 @@ import { publicNavigation } from "./public-navigation";
 import { DashboardChrome } from "./DashboardChrome";
 const links = [
   { path: "belajar", label: "Dashboard", icon: "Dashboard" },
-  { path: "program", label: "Materi Belajar", icon: "BookOpen" },
+  { path: "angkatan", label: "Angkatan Saya", icon: "Users" },
+  { path: "materi", label: "Materi", icon: "BookOpen" },
+  { path: "progres", label: "Kemajuan Saya", icon: "Progress" },
   { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
   { path: "pengingat", label: "Pengingat Ujian", icon: "Quiz" },
   { path: "peringkat", label: "Peringkat Saya", icon: "Trophy" },
@@ -37,7 +39,7 @@ export function AcademyShell({ user, children, admin = false, csPhone = "6281111
   const pathname = usePathname();
   const auth = pathname === "/academy/masuk" || pathname === "/academy/daftar";
   const publicPage = publicNavigation.some(item => item.href !== "/academy/program" && pathname === item.href);
-  const dashboard = admin || (!publicPage && (!auth && pathname !== "/academy" && pathname !== "/academy/pemeliharaan" && (!!user || links.some(({ path }) => path !== "program" && pathname.startsWith(`/academy/${path}`)))));
+  const dashboard = admin || (!publicPage && (!auth && pathname !== "/academy" && pathname !== "/academy/pemeliharaan" && (!!user || links.some(({ path }) => path !== "materi" && pathname.startsWith(`/academy/${path}`)))));
   const navigation: { href: string; label: string; icon: "Dashboard" | "BookOpen" | "Progress" | "Quiz" | "Trophy" | "GraduationCap" | "Users" | "Settings" }[] = admin ? adminLinks.map(item => ({ ...item, href: `/admin/academy${item.path}` })) : links.map(item => ({ ...item, href: `/academy/${item.path}` }));
   if (!admin && (user?.isTeacher || user?.isSuperadmin)) navigation.splice(0, navigation.length, ...teacherLinks.map(item => ({ ...item, href: `/academy/pengajar${item.path}` })));
   if (auth) return <div className={`academy-public flex min-h-dvh items-center justify-center bg-gray-50 px-4 ${pathname === "/academy/masuk" ? "py-6" : "py-12"}`}><main id="academy-content" className="w-full">{children}</main></div>;

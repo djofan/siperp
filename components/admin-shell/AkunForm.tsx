@@ -39,7 +39,7 @@ export function AkunForm({ modules }: { modules: ModuleOption[] }) {
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal membuat akun.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal membuat akun.");
       setIsSubmitting(false);
       return;
     }

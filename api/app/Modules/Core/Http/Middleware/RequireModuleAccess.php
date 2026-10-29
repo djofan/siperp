@@ -4,15 +4,26 @@ namespace App\Modules\Core\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class RequireModuleAccess
 {
     public function handle(Request $request, Closure $next, string $module): Response
     {
-        // Fail closed until Core migration implements per-request DB authorization.
-        // Read users.is_active/is_superadmin, modules.is_active and module_access;
-        // never authorize using token claims or abilities as module membership.
-        abort(501, 'Module authorization is not implemented.');
+        $user = $request->user();
+        abort_unless($user && $user->is_active, 401, 'Account is inactive.');
+        $registered = DB::table('modules')->where('slug', $module)->first();
+        abort_unless($registered !== null, 404);
+        if (! $user->is_superadmin) {
+            abort_unless($registered->is_active, 403, 'Module is inactive.');
+            $role = DB::table('module_access')->where('user_id', $user->id)->where('module_id', $registered->id)->value('role');
+            abort_unless($role !== null, 403, 'Tidak diizinkan.');
+            $request->attributes->set('module_role', $role);
+        } else {
+            $request->attributes->set('module_role', 'superadmin');
+        }
+
+        return $next($request);
     }
 }

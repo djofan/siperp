@@ -3,7 +3,7 @@
   "info": {
     "title": "Siperp API",
     "version": "1.0.0",
-    "description": "Foundation only. The checked-in contract is authoritative for frontend/backend integration."
+    "description": "Partial API contract. Includes Core foundation and Academy participant registration; other runtime endpoints are defined by their module routes and tests."
   },
   "servers": [
     {
@@ -256,6 +256,160 @@
           "links"
         ],
         "additionalProperties": false
+      },
+      "AcademyParticipantCreate": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "password",
+          "gender",
+          "cohortId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "cohortId": {
+            "type": "string",
+            "description": "Existing cohort ID; required for admin creation."
+          },
+          "courseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional existing course; if cohort-bound it must belong to the chosen cohort."
+          }
+        }
+      },
+      "AcademyPublicRegistration": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "password",
+          "gender",
+          "email",
+          "confirmPassword"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 191
+          },
+          "confirmPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "Must equal password."
+          }
+        }
+      },
+      "AcademyParticipantUpdate": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "gender"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "cohortId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional cohort change, subject to previous cohort completion rules."
+          },
+          "courseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional existing course; if cohort-bound it must belong to the chosen cohort."
+          }
+        }
       }
     }
   },
@@ -388,6 +542,328 @@
           },
           "501": {
             "description": "Not implemented; internal details omitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/participants": {
+      "post": {
+        "summary": "Create an Academy participant as an authorized administrator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participant account and profile created atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "userId",
+                        "nip"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "nip": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/register": {
+      "post": {
+        "summary": "Register in the currently open Academy cohort.",
+        "description": "The server selects the open cohort and ignores caller-provided cohortId and courseId. Returns 409 when registration closes; no program is required.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyPublicRegistration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participant account and profile created atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "userId",
+                        "nip"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "nip": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/participants/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Participant profile ID."
+        }
+      ],
+      "put": {
+        "summary": "Update an Academy participant as an authorized administrator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
             "content": {
               "application/json": {
                 "schema": {
