@@ -17,11 +17,11 @@ class ZakatAcademyLessonAttachment extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['lessonId' => 'lesson_id', 'fileUrl' => 'file_url', 'fileType' => 'file_type', 'fileSize' => 'file_size', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['storagePath' => 'storage_path', 'lessonId' => 'lesson_id', 'fileUrl' => 'file_url', 'fileType' => 'file_type', 'fileSize' => 'file_size', 'createdAt' => 'created_at'];
 
     protected $casts = ['file_size' => 'integer', 'created_at' => 'immutable_datetime'];
 
-    protected $hidden = [];
+    protected $hidden = ['storage_path'];
 
     /** @return BelongsTo<ZakatAcademyLesson, $this> */
     public function lesson(): BelongsTo

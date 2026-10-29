@@ -32,10 +32,10 @@ export default async function Page({ params, searchParams }: {
       </table></div> : <AdminEmpty>Tidak ada materi terpublikasi.</AdminEmpty>}
       <PageLinks {...data.lessons} base={base} query={pagination} pageKey="materi" />
     </section>
-    <section className="mt-8"><h2 className="mb-4 text-xl font-bold text-foreground">Ringkasan kuis</h2>
-      {data.quizzes.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full text-left text-sm text-foreground"><thead><tr>{["Kuis / Bab", "Percobaan selesai", "Nilai terbaik", "Status"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead>
+    <section className="mt-8"><h2 className="mb-4 text-xl font-bold text-foreground">Ringkasan ujian</h2>
+      {data.quizzes.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full text-left text-sm text-foreground"><thead><tr>{["Ujian / Bab", "Percobaan selesai", "Nilai terbaik", "Status"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead>
         <tbody>{data.quizzes.items.map(quiz => <tr key={quiz.id} className="border-t border-border"><td className="p-3">{quiz.title}<p className="mt-1 text-xs text-foreground/60">{quiz.chapter.title}</p></td><td className="p-3">{quiz.completedAttempts}</td><td className="p-3">{quiz.bestScore ?? "—"}</td><td className="p-3">{quiz.passed ? "Lulus" : "Belum lulus"}</td></tr>)}</tbody>
-      </table></div> : <AdminEmpty>Tidak ada kuis terpublikasi.</AdminEmpty>}
+      </table></div> : <AdminEmpty>Tidak ada ujian terpublikasi.</AdminEmpty>}
       <PageLinks {...data.quizzes} base={base} query={pagination} pageKey="kuis" />
     </section>
   </>;

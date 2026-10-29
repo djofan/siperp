@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZakatAcademyProfile extends DomainModel
 {
+    public function cohort(): BelongsTo
+    {
+        return $this->belongsTo(AcademyCohort::class, 'cohort_id');
+    }
+
     protected $table = 'zakat_academy_profiles';
 
     protected $primaryKey = 'id';
@@ -19,7 +24,7 @@ class ZakatAcademyProfile extends DomainModel
 
     const UPDATED_AT = 'updated_at';
 
-    protected array $fieldMap = ['userId' => 'user_id', 'legacyCertificateUrl' => 'legacy_certificate_url', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'mustChangePassword' => 'must_change_password', 'deletedAt' => 'deleted_at'];
+    protected array $fieldMap = ['cohortId' => 'cohort_id', 'userId' => 'user_id', 'legacyCertificateUrl' => 'legacy_certificate_url', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'mustChangePassword' => 'must_change_password', 'deletedAt' => 'deleted_at'];
 
     protected $casts = ['created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime', 'must_change_password' => 'boolean', 'deleted_at' => 'immutable_datetime'];
 

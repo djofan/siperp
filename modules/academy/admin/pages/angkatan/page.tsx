@@ -1,13 +1,17 @@
-import Link from "next/link";
 import { academyPage } from "@/modules/academy/api/page-data";
-import type { AcademyPage2 } from "@/modules/academy/api/page-contracts";
+import type { AcademyCohort } from "@/modules/academy/api/page-contracts";
 import { requireAcademyAdmin } from "../../../api/admin-access";
 import { createCohort, setCohortRegistration } from "../../../api/cohort-actions";
 import { ActionForm } from "../../../components/ActionForm";
-import { AdminHeading } from "../../../components/admin/AdminUi";
+import { redirect } from "next/navigation";
 import { inputClass } from "../../../components/ui";
-export default async function CohortsPage() {
-    await requireAcademyAdmin();
-    const courses = await academyPage<AcademyPage2["courses"]>("academy/admin/cohorts");
-    return <><AdminHeading title="Angkatan Insan Academy" description="Setiap angkatan memiliki peserta, jadwal, nilai, dan sertifikat tersendiri. Hanya satu angkatan menerima pendaftaran web pada satu waktu."/><details className="mb-6 rounded-2xl bg-white p-5"><summary className="cursor-pointer font-semibold">Buat angkatan berikutnya</summary><ActionForm className="mt-5 max-w-xl" action={createCohort} label="Buat angkatan draft"><label>Nama angkatan<input name="title" required maxLength={191} className={inputClass} placeholder="Insan Academy — Angkatan 2"/></label><label>Salin materi dan soal dari<select name="sourceId" required className={inputClass}>{courses.map(course => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label><p className="text-sm text-gray-500">Materi dan soal disalin. Jadwal absolut ujian dikosongkan dan ujian menjadi draft untuk pemeriksaan.</p></ActionForm></details><div className="space-y-4">{courses.map(course => <article key={course.id} className="rounded-2xl bg-white p-5"><h2 className="font-semibold">{course.title}</h2><p className="mt-2 text-sm text-gray-500">{course._count.enrollments}/{course.quota} peserta · {course.isPublished ? "Terpublikasi" : "Draft"} · Pendaftaran {course.registrationOpen ? "dibuka" : "ditutup"}</p><p className="mt-2 text-sm">Mulai: {course.startsAt ? `${course.startsAt.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB` : "Belum ditetapkan"}</p><div className="mt-4 flex flex-wrap items-center gap-4"><ActionForm action={setCohortRegistration.bind(null, course.id, !course.registrationOpen)} label={course.registrationOpen ? "Tutup pendaftaran" : "Buka pendaftaran"}/><Link href={`/admin/academy/program/${course.id}`} className="text-sm text-green-700">Kelola materi & soal →</Link><Link href="/admin/academy/pendaftaran" className="text-sm text-green-700">Peserta & jadwal →</Link></div></article>)}</div></>;
+export async function CohortsPanel() {
+  await requireAcademyAdmin();
+  const cohorts = await academyPage<AcademyCohort[]>("academy/admin/cohorts");
+  return <>
+    <details className="mb-6 rounded-2xl border border-gray-100 bg-white p-5"><summary className="cursor-pointer font-semibold">Buat angkatan baru</summary><ActionForm className="mt-5 max-w-xl" action={createCohort} label="Buat angkatan"><label>Nama angkatan<input name="title" required minLength={3} maxLength={191} className={inputClass} placeholder="Insan Academy — Angkatan 2" /></label><p className="text-sm text-gray-500">Jumlah peserta tidak dibatasi. Materi dapat dibuat langsung atau diduplikasi dari angkatan lain.</p></ActionForm></details>
+    <div className="space-y-4">{cohorts.map(cohort => <article key={cohort.id} className="rounded-2xl border border-gray-100 bg-white p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">{cohort.title}</h2><span className={`rounded-full px-3 py-1 text-xs ${cohort.registrationOpen ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{cohort.registrationOpen ? "Pendaftaran dibuka" : "Pendaftaran ditutup"}</span></div><p className="mt-3 text-sm text-gray-500">{cohort.participants_count} peserta</p><div className="mt-4 flex flex-wrap items-center gap-4"><ActionForm action={setCohortRegistration.bind(null, cohort.id, !cohort.registrationOpen)} label={cohort.registrationOpen ? "Tutup Pendaftaran" : "Buka Pendaftaran"} /></div></article>)}{!cohorts.length && <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-gray-500">Belum ada angkatan. Buat angkatan untuk mendaftarkan peserta.</p>}</div>
+  </>;
 }
+
+export default async function CohortsPage() { await requireAcademyAdmin(); redirect("/admin/academy/peserta?tab=angkatan"); }

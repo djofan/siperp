@@ -14,7 +14,7 @@ const features = [
     border: "border-green-100",
   },
   {
-    title: "Kuis Interaktif",
+    title: "Ujian Interaktif",
     description: "Evaluasi harian, pekanan, dan akhir dengan pilihan ganda, benar–salah, serta beberapa jawaban benar.",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">

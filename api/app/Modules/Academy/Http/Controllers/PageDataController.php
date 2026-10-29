@@ -2,6 +2,7 @@
 
 namespace App\Modules\Academy\Http\Controllers;
 
+use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use App\Modules\Academy\Models\AcademyDiscussion as Discussion;
 use App\Modules\Academy\Models\AcademyNotificationRead as NotificationRead;
 use App\Modules\Academy\Models\AcademyStudyNote as Note;
@@ -36,6 +37,9 @@ class PageDataController
     {
         $this->context->admin($request);
         $query = $this->students();
+        if ($request->filled('cohort')) {
+            $query->whereIn('id', DB::table('academy_cohort_memberships')->where('cohort_id', $request->input('cohort'))->select('profile_id'));
+        }
         if (in_array($request->input('group'), ['IKHWAN', 'AKHWAT'], true)) {
             $query->where('gender', $request->input('group'));
         }
@@ -45,7 +49,10 @@ class PageDataController
         }
         $page = max(1, min(100000, (int) $request->input('page', 1)));
         $total = (clone $query)->count();
-        $people = $query->with('user:id,name,is_active', 'enrollments.course:id,title')->orderByDesc('created_at')->skip(($page - 1) * 25)->take(25)->get()->map(function ($row) {
+        $people = $query->with('cohort:id,title', 'user:id,name,is_active', 'enrollments.course:id,title')
+            ->orderBy('nis')
+            ->orderBy(DB::table('users')->select('name')->whereColumn('users.id', 'zakat_academy_profiles.user_id')->limit(1))
+            ->orderBy('id')->skip(($page - 1) * 25)->take(25)->get()->map(function ($row) {
             $data = $row->toArray();
             $data['user'] = ['name' => $row->user->name, 'isActive' => (bool) $row->user->is_active];
 
@@ -53,21 +60,21 @@ class PageDataController
         });
         $counts = $this->students()->select('gender')->selectRaw('COUNT(*) AS total')->groupBy('gender')->get()->map(fn ($row) => ['gender' => $row->gender, '_count' => ['_all' => (int) $row->total]]);
 
-        return $this->data(['people' => $people, 'total' => $total, 'counts' => $counts, 'courses' => Course::withCount('enrollments')->orderBy('order')->get()->map(fn ($row) => AcademyDto::make($row))]);
+        return $this->data(['people' => $people, 'total' => $total, 'counts' => $counts, 'cohorts' => Cohort::withCount('participants')->orderByDesc('created_at')->get(), 'courses' => Course::withCount('enrollments')->orderBy('order')->get()->map(fn ($row) => AcademyDto::make($row))]);
     }
 
     public function person(Request $request, string $id)
     {
         $this->context->admin($request);
 
-        return $this->data($this->students()->with('user:id,name')->findOrFail($id));
+        return $this->data($this->students()->with('user:id,name', 'cohort:id,title')->findOrFail($id));
     }
 
     public function cohorts(Request $request)
     {
         $this->context->admin($request);
 
-        return $this->data(Course::where('is_simulation', false)->withCount(['enrollments', 'completionRecords'])->orderByDesc('created_at')->get()->map(fn ($row) => AcademyDto::make($row)));
+        return $this->data(Cohort::withCount('participants')->orderByDesc('created_at')->orderBy('id')->get());
     }
 
     public function material(Request $request, string $courseId)

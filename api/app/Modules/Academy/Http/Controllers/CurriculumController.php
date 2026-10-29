@@ -231,11 +231,16 @@ class CurriculumController
     public function quizzes(Request $request)
     {
         $this->context->admin($request);
-        $query = Quiz::with('chapter.course:id,title')->withCount(['questions', 'attempts'])->orderByDesc('created_at')->orderBy('id');
+        $query = Quiz::with('chapter.course:id,title,cohort_id', 'chapter.course.cohort:id,title', 'questions:id,quiz_id,type')->withCount(['questions', 'attempts'])->orderByDesc('created_at')->orderBy('id');
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.mb_substr($request->input('search'), 0, 100).'%');
         }
 
+        if ($request->filled('cohort')) { $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort'))); }
+        if ($request->boolean('all')) {
+            $items = $query->get()->map(fn ($row) => AcademyDto::make($row));
+            return $this->data(['items' => $items, 'total' => $items->count(), 'page' => 1, 'pages' => 1]);
+        }
         return $this->data(AcademyDto::page($query, (int) $request->input('page', 1)));
     }
 
@@ -265,10 +270,11 @@ class CurriculumController
         }
         abort_if($data['quizDate'] && $data['closesAt'] && $data['closesAt'] <= $data['quizDate'], 422, 'Batas evaluasi harus setelah waktu buka.');
         $data += ['releaseDay' => 1, 'kind' => 'DAILY'];
-        foreach (['isPublished', 'isActive', 'allowRetake'] as $key) {
+        $data['allowRetake'] = false;
+        foreach (['isPublished', 'isActive'] as $key) {
             $data[$key] = $this->published($request, $key);
         }
-        abort_if($data['isActive'] && ! $data['isPublished'], 422, 'Publikasikan kuis sebelum mengaktifkannya.');
+        abort_if($data['isActive'] && ! $data['isPublished'], 422, 'Publikasikan ujian sebelum mengaktifkannya.');
 
         return $data;
     }
@@ -365,7 +371,7 @@ class CurriculumController
         DB::transaction(function () use ($courseId, $chapterId, $quizId) {
             $this->course($courseId);
             $quiz = $this->quiz($courseId, $chapterId, $quizId);
-            abort_if($quiz->attempts()->exists(), 409, 'Kuis memiliki riwayat percobaan.');
+            abort_if($quiz->attempts()->exists(), 409, 'Ujian memiliki riwayat percobaan.');
             $quiz->delete();
         }, 3);
 

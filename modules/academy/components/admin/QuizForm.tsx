@@ -6,6 +6,8 @@ import { FormField, Input } from "@/components/ui/FormField";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 
+import { QuestionFields, type QuestionValues } from "./QuestionForm";
+
 type Values = {
   title: string; description: string; passingScore: number | string; timeLimitMinutes: number | string;
   quizDate: string; isPublished: boolean; isActive: boolean; allowRetake: boolean;
@@ -13,33 +15,40 @@ type Values = {
   releaseDay?: number;
 };
 
-export function QuizForm({ action, initial, creating = false, chapterField }: {
-  action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: Values; creating?: boolean; chapterField?: ReactNode;
+export function QuizForm({ action, initial, creating = false, chapterField, withQuestions = false, questions }: {
+  action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: Values; creating?: boolean; chapterField?: ReactNode; withQuestions?: boolean; questions?: QuestionValues[];
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [values, setValues] = useState<Values>(initial ?? {
-    title: "", description: "", passingScore: 70, timeLimitMinutes: 10, quizDate: "", isPublished: false, isActive: false, allowRetake: false,
+    title: "", description: "", passingScore: 70, timeLimitMinutes: "", quizDate: "", isPublished: false, isActive: false, allowRetake: false,
   });
+  const [questionRows, setQuestionRows] = useState(() => (questions?.length ? questions : [undefined]).map((initial, index) => ({ key: index, initial })));
+  const [nextQuestionKey, setNextQuestionKey] = useState(questionRows.length);
   const prefix = useId();
   return <form action={formAction} className={panelClasses("space-y-5 p-5 sm:p-6")}>
     {chapterField}
+    <input type="hidden" name="passingScore" value={values.passingScore} />
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
-    <label className="block text-sm">Jenis evaluasi<select name="kind" value={values.kind ?? "DAILY"} onChange={event => setValues({ ...values, kind: event.target.value })} className="mt-2 w-full rounded-xl border border-border p-3"><option value="DAILY">Harian</option><option value="WEEKLY">Mingguan</option><option value="FINAL">Ujian per bab (akhir bulan)</option></select></label>
-    <FormField label="Judul kuis *" htmlFor={prefix + "-title"}><Input id={prefix + "-title"} name="title" required maxLength={191} value={values.title} onChange={event => setValues({ ...values, title: event.target.value })} /></FormField>
-    <label className="block text-sm">Hari evaluasi (1–30 sejak program dimulai)<Input name="releaseDay" type="number" min={1} max={30} required defaultValue={initial?.releaseDay ?? 1} /></label>
-    <FormField label="Deskripsi" htmlFor={prefix + "-description"}><textarea id={prefix + "-description"} name="description" maxLength={30000} rows={4} value={values.description} onChange={event => setValues({ ...values, description: event.target.value })} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" /></FormField>
-    <div className="grid gap-5 sm:grid-cols-2">{([
-      ["passingScore", "Nilai lulus (0–100)", 0, 100], ["timeLimitMinutes", "Durasi (menit, maksimal 24 jam)", 1, 1440],
-    ] as const).map(([name, label, min, max]) => <FormField key={name} label={label} htmlFor={prefix + name}><Input id={prefix + name} name={name} type="number" min={min} max={max} step={1} required value={values[name]} onChange={event => setValues({ ...values, [name]: event.target.value })} /></FormField>)}</div>
-    <FormField label="Mulai tersedia (WIB)" htmlFor={prefix + "-date"} hint="Kosongkan agar tersedia segera setelah dipublikasikan dan diaktifkan.">
+    <label className="block text-sm">Jenis evaluasi<select name="kind" value={values.kind ?? "DAILY"} onChange={event => setValues({ ...values, kind: event.target.value })} className="mt-2 w-full rounded-xl border border-border p-3"><option value="DAILY">Harian</option><option value="WEEKLY">Mingguan</option><option value="FINAL">Evaluasi akhir</option></select></label>
+    <FormField label="Judul ujian *" htmlFor={prefix + "-title"}><Input id={prefix + "-title"} name="title" required maxLength={191} value={values.title} onChange={event => setValues({ ...values, title: event.target.value })} /></FormField>
+    <input type="hidden" name="releaseDay" value={initial?.releaseDay ?? 1} />
+    <input type="hidden" name="description" value={values.description} />
+    <FormField label="Durasi" htmlFor={prefix + "-duration"}><Input id={prefix + "-duration"} name="timeLimitMinutes" type="number" min={1} max={1440} step={1} required value={values.timeLimitMinutes} onChange={event => setValues({ ...values, timeLimitMinutes: event.target.value })} /></FormField>
+    <div className="grid gap-5 md:grid-cols-2">
+    <FormField label="Mulai tersedia (WIB)" htmlFor={prefix + "-date"}>
       <Input id={prefix + "-date"} name="quizDate" type="datetime-local" min="1000-01-01T00:00" max="9999-12-31T23:59" value={values.quizDate} onChange={event => setValues({ ...values, quizDate: event.target.value })} />
     </FormField>
-    <FormField label="Batas pengerjaan (WIB)" htmlFor={prefix + "-close"} hint="Atur batas tutup untuk pengingat tenggat dan pembahasan otomatis. Tanpa batas tutup, pembahasan belum dapat dibuka."><Input id={prefix + "-close"} name="closesAt" type="datetime-local" value={values.closesAt ?? ""} onChange={event => setValues({ ...values, closesAt: event.target.value })} /></FormField>
-    {(["isPublished", "isActive", "allowRetake"] as const).map(name => <label key={name} className="flex items-center gap-3 text-sm text-foreground">
-      <input name={name} type="checkbox" disabled={creating && name !== "allowRetake"} checked={values[name]} onChange={event => setValues({ ...values, [name]: event.target.checked })} />
-      {name === "isPublished" ? "Publikasikan kuis" : name === "isActive" ? "Aktifkan pengerjaan kuis" : "Izinkan peserta mengulang kuis"}
-    </label>)}
-    <p className="text-sm leading-6 text-foreground/60">{creating ? "Simpan draft terlebih dahulu, kemudian tambahkan pertanyaan sebelum publikasi." : "Kuis dapat dikerjakan ketika program dan bab juga terpublikasi. Perubahan pertanyaan, nilai lulus, dan durasi hanya berlaku untuk percobaan baru. Menonaktifkan kuis menghentikan pengerjaan sementara."}</p>
-    <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : creating ? "Simpan draft" : "Simpan kuis"}</Button>
+    <FormField label="Batas pengerjaan (WIB)" htmlFor={prefix + "-close"}><Input id={prefix + "-close"} name="closesAt" type="datetime-local" value={values.closesAt ?? ""} onChange={event => setValues({ ...values, closesAt: event.target.value })} /></FormField>
+    </div>
+    {withQuestions && <section className="space-y-5 border-t border-gray-100 pt-5"><h2 className="font-semibold">Pertanyaan dan jawaban</h2>
+      {questionRows.map((row, index) => <section key={row.key} className="space-y-4 rounded-xl border border-gray-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Pertanyaan {index + 1}</h3><Button type="button" variant="secondary" size="sm" disabled={pending || questionRows.length <= 1} onClick={() => setQuestionRows(questionRows.filter(item => item.key !== row.key))}>Hapus pertanyaan</Button></div><QuestionFields initial={row.initial} pending={pending} namePrefix={`questions[${index}]`} /></section>)}
+      <Button type="button" variant="secondary" disabled={pending || questionRows.length >= 100} onClick={() => { setQuestionRows([...questionRows, { key: nextQuestionKey, initial: undefined }]); setNextQuestionKey(nextQuestionKey + 1); }}>Tambah Pertanyaan</Button>
+    </section>}
+    <input type="hidden" name="isPublished" value={values.isActive ? "on" : ""} />
+    <label className="flex items-center gap-3 text-sm text-foreground">
+      <input name="isActive" type="checkbox" disabled={creating && !withQuestions} checked={values.isActive} onChange={event => setValues({ ...values, isActive: event.target.checked, isPublished: event.target.checked })} />
+      Aktifkan Ujian
+    </label>
+    <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : creating && !withQuestions ? "Simpan draft" : "Simpan ujian"}</Button>
   </form>;
 }

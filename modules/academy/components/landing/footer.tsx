@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
 
+import Link from "next/link";
+
 export function Footer() {
   return (
     <footer className="border-t border-gray-100 bg-white px-4 py-10">
@@ -17,7 +19,7 @@ export function Footer() {
 
           {/* Links */}
           <div className="flex gap-6 text-sm text-gray-500">
-            <a href="/academy/#programs" className="transition-colors hover:text-green-600">Program</a>
+            <Link href="/academy/materi" className="transition-colors hover:text-green-600">Materi</Link>
             <a href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</a>
             <a href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</a>
           </div>

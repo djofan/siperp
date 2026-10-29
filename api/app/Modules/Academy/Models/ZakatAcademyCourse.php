@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ZakatAcademyCourse extends DomainModel
 {
+    public function cohort(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(AcademyCohort::class, 'cohort_id');
+    }
+
     protected $table = 'zakat_academy_courses';
 
     protected $primaryKey = 'id';
@@ -17,7 +22,7 @@ class ZakatAcademyCourse extends DomainModel
 
     const UPDATED_AT = 'updated_at';
 
-    protected array $fieldMap = ['shortDescription' => 'short_description', 'thumbnailUrl' => 'thumbnail_url', 'materialUrl' => 'material_url', 'isPublished' => 'is_published', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'durationDays' => 'duration_days', 'startsAt' => 'starts_at', 'isSimulation' => 'is_simulation', 'registrationOpen' => 'registration_open'];
+    protected array $fieldMap = ['cohortId' => 'cohort_id', 'shortDescription' => 'short_description', 'thumbnailUrl' => 'thumbnail_url', 'materialUrl' => 'material_url', 'isPublished' => 'is_published', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'durationDays' => 'duration_days', 'startsAt' => 'starts_at', 'isSimulation' => 'is_simulation', 'registrationOpen' => 'registration_open'];
 
     protected $casts = ['is_published' => 'boolean', 'order' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime', 'quota' => 'integer', 'duration_days' => 'integer', 'starts_at' => 'immutable_datetime', 'is_simulation' => 'boolean', 'registration_open' => 'boolean'];
 

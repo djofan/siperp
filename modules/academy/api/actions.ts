@@ -139,7 +139,7 @@ export async function saveAcademyAttachment(courseId: string, chapterId: string,
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${courseId}/bab/${chapterId}/materi/${lessonId}?tersimpan=1#lampiran`);
+    redirect(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`);
 }
 export async function reorderAcademyContent(courseId: string, chapterId: string, lessonId: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -178,7 +178,7 @@ export async function deleteAcademyAttachment(courseId: string, chapterId: strin
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${courseId}/bab/${chapterId}/materi/${lessonId}?tersimpan=1#lampiran`);
+    redirect(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`);
 }
 function adminQuizPath(courseId: string, chapterId: string, quizId: string) {
     return `/admin/academy/program/${courseId}/bab/${chapterId}/kuis/${quizId}`;
@@ -232,7 +232,7 @@ export async function deleteAcademyQuiz(courseId: string, chapterId: string, qui
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${courseId}/bab/${chapterId}`);
+    redirect("/admin/academy/kuis");
 }
 export async function syncAcademyCompletion(enrollmentId: string): Promise<ActionState> {
     await requireAcademyAdmin();

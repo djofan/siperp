@@ -9,7 +9,7 @@ export function AcademyHeader({ signedIn }: { signedIn: boolean }) {
         <span><span className="block text-lg font-bold text-lazsip-primary-900">Insan Academy</span><span className="block text-[10px] font-semibold tracking-[0.2em] text-lazsip-primary-600">BELAJAR BERSAMA LAZSIP</span></span>
       </Link>
       <nav aria-label="Navigasi utama" className="flex flex-wrap items-center gap-5 text-sm font-medium">
-        <Link href="/academy/program" className="hover:underline">Program belajar</Link>
+        <Link href="/academy/materi" className="hover:underline">Materi belajar</Link>
         {signedIn ? <><Link href="/academy/belajar" className="hover:underline">Belajar saya</Link><LogoutButton /></> : <><Link href="/academy/masuk" className="hover:underline">Masuk</Link><Link href="/academy/daftar" className="rounded-xl bg-lazsip-primary-800 px-4 py-2.5 text-white hover:bg-lazsip-primary-900">Daftar</Link></>}
       </nav>
     </div>

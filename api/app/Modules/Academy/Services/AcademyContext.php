@@ -99,7 +99,9 @@ class AcademyContext
             $score += $mean * $weights[$kind];
         }
 
-        return ['best' => $best, 'means' => $means, 'score' => round($score) / 100, 'complete' => $complete];
+        $score = round($score) / 100;
+
+        return ['best' => $best, 'means' => $means, 'score' => $score, 'predicate' => GradePredicate::forScore($score), 'complete' => $complete];
     }
 
     public function safeUrl(?string $value): bool
