@@ -2,7 +2,7 @@
 
 > **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
 
-> Status: **sedang dikerjakan** (Fase 5). Dokumen ini disusun dari pembedahan kode aplikasi lama
+> Status: **fitur utama tersedia; verifikasi perangkat masih diperlukan**. Dokumen ini disusun dari pembedahan kode aplikasi lama
 > `djofan/tanwir-qurani` (Laravel 12 + Filament) dan keputusan tim per 7 Oktober 2026.
 > Semua aturan bisnis di §6 diambil dari perilaku aplikasi lama — jangan diubah tanpa diskusi.
 >
@@ -156,7 +156,7 @@ Relasi ke Core hanya lewat `TanwirMember.userId → users.id`. Tidak mereferensi
 
 ## 8. File & Layanan Luar
 
-- **Setoran** disimpan di luar folder publik (`.tanwir-uploads/`, bisa diubah lewat `TANWIR_UPLOAD_DIR`),
+- **Setoran** disimpan di luar folder publik (disk Laravel `local`, subdirektori `tanwir/`),
   diputar lewat endpoint yang memeriksa hak akses dan mendukung HTTP Range. Direktori ini wajib ikut
   backup dan memakai volume persisten saat deploy.
 - **Foto profil** disimpan di direktori yang sama, diakses lewat endpoint berizin (bukan publik). Foto
@@ -190,8 +190,11 @@ guru, peserta, dan kelompok di platform baru. Repo lama hanya dipakai sebagai re
 
 ## 12. Definition of Done
 
-Status 7 Oktober 2026: semua butir di bawah sudah dibangun dan diuji (`npm run test:tanwir` + uji manual di browser,
-lihat `docs/tanwir-demo.md`). Tersisa: uji perekaman langsung di HP sungguhan.
+Status 26 Oktober 2026: fitur utama tersedia. Tes regresi API memakai Pest/Laravel
+(`npm run test:tanwir`), bukan lagi script Prisma/MySQL lama. Lihat cakupan dan
+langkah uji di `docs/tanwir-demo.md`. Daftar di bawah mencatat implementasi;
+tidak berarti seluruh perangkat/browser telah diuji. Tersisa: uji perekaman
+langsung di HP sungguhan dan pemeriksaan tampilan browser pada versi ini.
 
 
 - [x] Admin bisa membuat guru, peserta, kelompok (dengan PIC) — kode akun terbit otomatis.

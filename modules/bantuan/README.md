@@ -31,8 +31,10 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
   hanya-baca, notifikasi internal, master data, dan pengingat tenggat.
 - Pelaporan santunan rutin (janda dhuafa, anak yatim, anak asuh) dan tidak
   rutin (anak yatim). Bendahara/pengirim menandai dana sudah ditransfer,
-  lalu Relawan yang ditugaskan mengisi tanggal, lokasi, penerima, deskripsi,
-  foto kertas bantuan, dan foto bersama penerima sebelum status menjadi selesai.
+  lalu Verifikator (atau Relawan) yang ditugaskan mengisi tanggal, lokasi, penerima, deskripsi,
+  foto kertas bantuan, dan foto bersama penerima sebelum status menjadi Sudah.
+  Foto bukti transfer opsional. Setiap periode bulanan dicatat sebagai santunan
+  tersendiri agar transfer dan laporan periode sebelumnya tetap tersimpan.
 - Foto di atas 2 MB dikompresi pada browser; server tetap memvalidasi
   format gambar dan maksimum 2 MB.
 

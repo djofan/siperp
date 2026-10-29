@@ -70,6 +70,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
   function acceptFile(next: File) {
     if (next.size > MAX_SUBMISSION_BYTES) {
       setError("Ukuran file maksimal 50 MB.");
+      setPhase("idle");
       return;
     }
     setError("");
@@ -136,7 +137,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
       if (event.lengthComputable) setProgress(Math.round((event.loaded / event.total) * 100));
     };
     xhr.onload = () => {
-      let body: { error?: string; isLate?: boolean } | null = null;
+      let body: { error?: string | { message?: string }; isLate?: boolean } | null = null;
       try {
         body = JSON.parse(xhr.responseText);
       } catch {
@@ -146,7 +147,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
         setDone({ isLate: !!body?.isLate });
         router.refresh();
       } else {
-        setError(body?.error ?? "Setoran gagal dikirim. Coba lagi.");
+        setError(typeof body?.error === "string" ? body.error : body?.error?.message ?? "Setoran gagal dikirim. Coba lagi.");
         setPhase("ready");
       }
     };

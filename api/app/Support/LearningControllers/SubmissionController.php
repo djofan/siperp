@@ -62,11 +62,12 @@ class SubmissionController extends BaseController
             $task = $this->taskForStudent($request, $id, $member);
             abort_unless($task->type === 'quiz', 422, 'Tugas ini bukan kuis.');
             abort_if($task->submissions()->where('student_id', $member->id)->exists(), 409, 'Kuis ini sudah dikerjakan.');
-            $questions = $task->questions()->orderBy('order')->get(['id', 'correct_option']);
+            $questions = $task->questions()->orderBy('order')->get(['id', 'correct_option', 'option_a', 'option_b', 'option_c', 'option_d']);
             abort_unless($questions->isNotEmpty(), 422, 'Kuis belum punya soal.');
             $correct = 0;
             foreach ($questions as $question) {
                 abort_unless(isset($answers[$question->id]), 422, 'Semua soal wajib dijawab.');
+                abort_unless(trim($question->getAttribute('option_'.$answers[$question->id]) ?? '') !== '', 422, 'Pilih jawaban yang tersedia.');
                 if ($answers[$question->id] === $question->correctOption) {
                     $correct++;
                 }
@@ -167,9 +168,16 @@ class SubmissionController extends BaseController
 
     public function photo(Request $request, string $id, LearningFileStore $files)
     {
-        $this->context($request);
+        $context = $this->context($request);
         $model = $this->model($request, 'Member');
         $member = $model::findOrFail($id);
+        $viewer = $context['member'];
+        $sameGroup = $viewer && ($viewer->role === 'guru'
+            ? $member->group?->picId === $viewer->id
+            : ($viewer->groupId && $viewer->group?->picId === $member->id));
+        if ($this->module($request) === 'tanwir') {
+            abort_unless($context['admin'] || $viewer?->id === $member->id || $sameGroup, 404);
+        }
         $path = $files->path($this->module($request), $member->photo);
         $mime = ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp'][pathinfo($member->photo ?? '', PATHINFO_EXTENSION)] ?? null;
         abort_unless($path && $mime, 404);

@@ -41,12 +41,14 @@ export function TaskForm({
   minDeadline,
   questionsLocked = false,
   typeLocked = false,
+  deadlineLocked = false,
 }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   initial?: TaskFormValues;
   minDeadline: string;
   questionsLocked?: boolean;
   typeLocked?: boolean;
+  deadlineLocked?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [type, setType] = useState<TaskType>(initial?.type ?? "voice_note");
@@ -111,7 +113,8 @@ export function TaskForm({
       </Field>
 
       <Field label="Tenggat (WIB)" htmlFor="task-deadline" hint="Setelah lewat, tugas terkunci. Anda bisa memperpanjang tenggat dari halaman hasil tugas.">
-        <input id="task-deadline" name="deadline" type="datetime-local" required min={minDeadline} defaultValue={initial?.deadline} className={cn(inputClass, "sm:max-w-xs")} />
+        <input id="task-deadline" name="deadline" type="datetime-local" required readOnly={deadlineLocked} min={deadlineLocked ? undefined : minDeadline} defaultValue={initial?.deadline} className={cn(inputClass, "sm:max-w-xs")} />
+        {deadlineLocked && <p className="mt-2 text-xs text-tanwir-muted">Tenggat dikunci karena sudah ada pengumpulan. Gunakan Perpanjang di halaman hasil tugas setelah tenggat lewat.</p>}
       </Field>
 
       {type === "quiz" && (

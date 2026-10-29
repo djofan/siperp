@@ -16,14 +16,14 @@ class SantunanController
     public function index(Request $request, Access $access)
     {
         $role = $access->role($request);
-        abort_unless(in_array($role, ['admin', 'treasurer', 'volunteer', 'chair'], true), 403);
+        abort_unless(in_array($role, ['admin', 'treasurer', 'verifier', 'volunteer', 'chair'], true), 403);
         $filters = $request->validate([
             'frequency' => 'nullable|in:routine,non_routine',
             'transferStatus' => 'nullable|in:pending,transferred',
             'distributionStatus' => 'nullable|in:process,completed',
         ]);
         $query = Santunan::query()->latest('period')->latest('created_at');
-        if ($role === 'volunteer') {
+        if (in_array($role, ['verifier', 'volunteer'], true)) {
             $query->where('volunteer_id', $request->user()->id);
         }
         foreach (['frequency', 'transferStatus', 'distributionStatus'] as $key) {
@@ -47,7 +47,7 @@ class SantunanController
             'amount' => 'required|integer|min:1|max:9000000000000',
         ]);
         abort_if($data['frequency'] === 'non_routine' && $data['category'] !== 'orphan', 422, 'Santunan tidak rutin saat ini hanya untuk anak yatim.');
-        abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih relawan yang aktif.');
+        abort_unless(($access->assigned($data['volunteerId'], 'verifier') || $access->assigned($data['volunteerId'], 'volunteer')), 422, 'Pilih verifikator atau relawan yang aktif.');
 
         $row = new Santunan;
         $row->forceFill([
@@ -89,9 +89,9 @@ class SantunanController
     {
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
-        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
         $role = $access->role($request);
-        abort_unless($role === 'admin' || ($role === 'volunteer' && $row->volunteer_id === $request->user()->id), 403);
+        abort_unless($role === 'admin' || (in_array($role, ['verifier', 'volunteer'], true) && $row->volunteer_id === $request->user()->id), 403);
 
         return DB::transaction(function () use ($request, $row, $data, $access) {
             abort_if(DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->where('kind', $data['kind'])->exists(), 422, 'Foto untuk jenis bukti ini sudah tersedia.');
@@ -111,7 +111,7 @@ class SantunanController
         return DB::transaction(function () use ($request, $id, $access) {
             $row = $this->find($request, $access, $id, true);
             $role = $access->role($request);
-            abort_unless($role === 'admin' || ($role === 'volunteer' && $row->volunteer_id === $request->user()->id), 403);
+            abort_unless($role === 'admin' || (in_array($role, ['verifier', 'volunteer'], true) && $row->volunteer_id === $request->user()->id), 403);
             abort_unless($row->transfer_status === 'transferred', 409, 'Dana belum ditandai sudah ditransfer.');
             abort_if($row->distribution_status === 'completed', 409, 'Santunan sudah selesai dilaporkan.');
             $data = $request->validate([
@@ -146,9 +146,9 @@ class SantunanController
     private function find(Request $request, Access $access, string $id, bool $lock = false): Santunan
     {
         $role = $access->role($request);
-        abort_unless(in_array($role, ['admin', 'treasurer', 'volunteer', 'chair'], true), 403);
+        abort_unless(in_array($role, ['admin', 'treasurer', 'verifier', 'volunteer', 'chair'], true), 403);
         $query = Santunan::query();
-        if ($role === 'volunteer') {
+        if (in_array($role, ['verifier', 'volunteer'], true)) {
             $query->where('volunteer_id', $request->user()->id);
         }
         $row = ($lock ? $query->lockForUpdate() : $query)->findOrFail($id);
