@@ -578,9 +578,9 @@ it('permits draft surveys without photos but does not submit incomplete surveys'
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 2, 'survey' => []])->assertUnprocessable();
 });
 
-it('records routine and non-routine santunan from transfer through volunteer report', function () {
-    $volunteer = bantuanUser('volunteer');
-    $otherVolunteer = bantuanUser('volunteer');
+it('records santunan from transfer through the assigned distributor report', function (string $role, bool $withTransfer) {
+    $volunteer = bantuanUser($role);
+    $otherVolunteer = bantuanUser($role);
     $payload = ['frequency' => 'routine', 'category' => 'widow', 'period' => now()->format('Y-m'),
         'recipientName' => 'Penerima Santunan', 'volunteerId' => $volunteer->id, 'amount' => 300000];
 
@@ -588,7 +588,7 @@ it('records routine and non-routine santunan from transfer through volunteer rep
         ->assertCreated()->assertJsonPath('data.transferStatus', 'pending')->json('data.id');
     $this->actingAs($volunteer, 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertJsonCount(1, 'data');
     $this->actingAs($otherVolunteer, 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertJsonCount(0, 'data');
-    $this->getJson('/api/v1/bantuan/applications')->assertJsonCount(0, 'data');
+    $this->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', ['version' => 1])->assertNotFound();
     $this->actingAs($volunteer, 'sanctum')->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', [
         'version' => 1, 'distributionDate' => now()->toDateString(), 'location' => 'Bandung',
         'recipient' => 'Penerima Santunan', 'description' => 'Santunan telah diserahkan.',
@@ -609,6 +609,11 @@ it('records routine and non-routine santunan from transfer through volunteer rep
     $photoId = $this->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
         'kind' => 'recipient_photo', 'file' => UploadedFile::fake()->createWithContent('bersama.png', $png),
     ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    if ($withTransfer) {
+        $this->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
+            'kind' => 'transfer', 'file' => UploadedFile::fake()->createWithContent('transfer.png', $png),
+        ], ['Accept' => 'application/json'])->assertCreated();
+    }
     $this->postJson('/api/v1/bantuan/santunan/'.$id.'/complete', [
         'version' => 2, 'distributionDate' => now()->toDateString(), 'location' => 'Bandung',
         'recipient' => 'Penerima Santunan', 'description' => 'Santunan telah diserahkan.',
@@ -618,7 +623,9 @@ it('records routine and non-routine santunan from transfer through volunteer rep
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', [
         ...$payload, 'frequency' => 'non_routine', 'category' => 'widow', 'recipientName' => 'Penerima Lain',
     ])->assertUnprocessable();
-});
+    $this->postJson('/api/v1/bantuan/santunan', [...$payload, 'frequency' => 'non_routine', 'category' => 'orphan'])->assertCreated();
+    $this->postJson('/api/v1/bantuan/santunan', [...$payload, 'category' => 'foster_child'])->assertCreated();
+})->with([['verifier', false], ['verifier', true], ['volunteer', false]]);
 
 it('combines detailed application filters and exports exactly the filtered report', function () {
     $target = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');

@@ -12,7 +12,7 @@ let routeViewer=null;
 function load(filename){
   const full=path.resolve(filename);
   if(cache.has(full))return cache.get(full).exports;
-  const module={exports:{}};cache.set(full,module);
+  const loadedModule={exports:{}};cache.set(full,loadedModule);
   const localRequire=id=>{
     if(id==="next/navigation")return {useRouter:()=>({push(){},replace(){},refresh(){}}),redirect:target=>{throw new Error("REDIRECT:"+target);},notFound:()=>{throw new Error("NOT_FOUND");}};
     if(id==="@/lib/api")return {apiRequest:async target=>{if(target==="bantuan/viewer")return routeViewer;throw new Error("Unexpected API request: "+target);}};
@@ -25,8 +25,8 @@ function load(filename){
     return nativeRequire(id);
   };
   const compiled=ts.transpileModule(readFileSync(full,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
-  vm.runInNewContext(compiled,{module,exports:module.exports,require:localRequire,URLSearchParams,crypto:nativeRequire("node:crypto").webcrypto},{filename:full});
-  return module.exports;
+  vm.runInNewContext(compiled,{module:loadedModule,exports:loadedModule.exports,require:localRequire,URLSearchParams,crypto:nativeRequire("node:crypto").webcrypto},{filename:full});
+  return loadedModule.exports;
 }
 const {isWorkItem,queueCount}=load("modules/bantuan/workspace-guide.ts");
 const {navigation,canViewRoute}=load("modules/bantuan/policy.ts");

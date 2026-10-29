@@ -46,7 +46,7 @@ export function navigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEnt
   if(["admin","call_center"].includes(viewer.role))items.push({key:"pengajuan/baru",label:"Pengajuan baru",icon:"plus",group:"01 · Pengajuan"});
   if(viewer.canBypass&&["admin","call_center","verifier"].includes(viewer.role))items.push({key:"pengajuan/langsung",label:"Pengajuan langsung",icon:"plus",group:"01 · Pengajuan"});
   items.push(...processMenus.filter(item=>viewer.role==="admin"||item.roles.includes(viewer.role)));
-  if(["admin","treasurer","chair"].includes(viewer.role))items.push({key:"santunan",label:"Santunan",icon:"hand",group:"Umum"});
+  if(["admin","treasurer","chair","verifier"].includes(viewer.role))items.push({key:"santunan",label:"Santunan",icon:"hand",group:"Umum"});
   items.push({key:"laporan",label:"Laporan penyaluran",icon:"chart",group:"Laporan"});
   if(viewer.role==="admin")items.push(
     {key:"tim",label:"Tim & akses",icon:"users",group:"Pengelolaan"},
