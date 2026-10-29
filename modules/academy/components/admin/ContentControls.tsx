@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { Input } from "@/modules/academy/components/ui/FieldCompat";
 import type { ActionState } from "../../api/actions";
 
 type Action = (state: ActionState, form: FormData) => Promise<ActionState>;

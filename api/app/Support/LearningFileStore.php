@@ -37,16 +37,77 @@ class LearningFileStore
         }
         if (substr($bytes, 4, 4) === 'ftyp') {
             $brand = substr($bytes, 8, 4);
+            $handlers = $this->mp4Handlers($file);
+            abort_unless(in_array('soun', $handlers, true) || in_array('vide', $handlers, true), 422, 'File media tidak valid.');
+            if (! in_array('vide', $handlers, true)) {
+                return ['mime' => 'audio/mp4', 'ext' => 'm4a', 'kind' => 'audio'];
+            }
 
-            return $brand === 'M4A ' ? ['mime' => 'audio/mp4', 'ext' => 'm4a', 'kind' => 'audio'] : ['mime' => $brand === 'qt  ' ? 'video/quicktime' : 'video/mp4', 'ext' => $brand === 'qt  ' ? 'mov' : 'mp4', 'kind' => 'video'];
+            return ['mime' => $brand === 'qt  ' ? 'video/quicktime' : 'video/mp4', 'ext' => $brand === 'qt  ' ? 'mov' : 'mp4', 'kind' => 'video'];
         }
         abort(422, 'Format file tidak didukung.');
+    }
+
+    private function mp4Handlers(UploadedFile $file): array
+    {
+        // Inspect track handlers, not the container brand: Safari audio can use an isom/mp42 brand.
+        // Seek past media payloads so a 50 MB upload is never loaded into memory.
+        $stream = fopen($file->getRealPath(), 'rb');
+        if (! $stream) {
+            abort(422, 'File tidak dapat dibaca.');
+        }
+        $handlers = [];
+        $remaining = 10000;
+        $walk = function (int $start, int $end, int $depth = 0) use (&$walk, $stream, &$handlers, &$remaining): void {
+            for ($offset = $start; $offset + 8 <= $end && --$remaining >= 0; $offset += $size) {
+                fseek($stream, $offset);
+                $header = fread($stream, 8);
+                if (strlen($header) !== 8) {
+                    return;
+                }
+                $size = unpack('N', substr($header, 0, 4))[1];
+                $type = substr($header, 4, 4);
+                $headerSize = 8;
+                if ($size === 1) {
+                    $extended = fread($stream, 8);
+                    if (strlen($extended) !== 8) {
+                        return;
+                    }
+                    $parts = unpack('Nhigh/Nlow', $extended);
+                    if ($parts['high'] !== 0) {
+                        return;
+                    }
+                    $size = $parts['low'];
+                    $headerSize = 16;
+                } elseif ($size === 0) {
+                    $size = $end - $offset;
+                }
+                if ($size < $headerSize || $size > $end - $offset) {
+                    return;
+                }
+                if ($type === 'hdlr' && $depth === 3 && $size >= $headerSize + 12) {
+                    fseek($stream, $offset + $headerSize + 8);
+                    $handlers[] = fread($stream, 4);
+                } elseif (($depth === 0 && $type === 'moov') || ($depth === 1 && $type === 'trak') || ($depth === 2 && $type === 'mdia')) {
+                    $walk($offset + $headerSize, $offset + $size, $depth + 1);
+                }
+            }
+        };
+        try {
+            $walk(0, $file->getSize());
+        } finally {
+            fclose($stream);
+        }
+
+        return $handlers;
     }
 
     public function save(string $module, string $directory, UploadedFile $file, string $extension): string
     {
         $relative = $directory.'/'.Str::uuid().'.'.$extension;
-        $file->storeAs($module.'/'.$directory, basename($relative), 'local');
+        if ($file->storeAs($module.'/'.$directory, basename($relative), 'local') === false) {
+            throw new \RuntimeException('Unable to store private learning file.');
+        }
 
         return $relative;
     }

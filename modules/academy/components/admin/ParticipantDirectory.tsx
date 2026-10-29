@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Input } from "@/components/ui/FormField";
-import { Button } from "@/components/ui/Button";
+import { Input } from "@/modules/academy/components/ui/FieldCompat";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { listAdminCompletions, listAdminEnrollments } from "../../api/admin-participants";
 import { adminPage } from "../../api/admin-participant-validation";
 import { AdminHeading, AdminEmpty, AddLink } from "./AdminUi";

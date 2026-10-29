@@ -158,8 +158,13 @@ class TaskController extends BaseController
             $task = $model::where('teacher_id', $member->id)->whereKey($id)->lockForUpdate()->firstOrFail();
             $submitted = $task->submissions()->exists();
             abort_if($submitted && $input['type'] !== $task->type, 422, 'Tipe tugas tidak bisa diubah setelah ada yang mengumpulkan.');
-            $changed = ! $task->deadline->equalTo($input['deadline']);
+            // The browser edits minutes; retain seconds from an extension on an unchanged form.
+            $changed = $task->deadline->format('Y-m-d H:i') !== $input['deadline']->format('Y-m-d H:i');
+            abort_if($submitted && $changed, 422, 'Gunakan Perpanjang untuk mengubah tenggat setelah ada pengumpulan.');
             abort_if($changed && $input['deadline'] <= now(), 422, 'Tenggat harus setelah waktu sekarang.');
+            if (! $changed) {
+                unset($input['deadline']);
+            }
             if (! $submitted && $changed) {
                 $input['originalDeadline'] = $input['deadline'];
             }

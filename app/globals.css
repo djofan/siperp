@@ -451,3 +451,22 @@ body {
     transition: none;
   }
 }
+
+/* Scoped shadcn tokens for Academy. */
+@theme inline {
+  --color-academy-background: var(--academy-background, #ffffff);
+  --color-academy-card: var(--academy-card, #ffffff);
+  --color-academy-card-foreground: var(--academy-foreground, #0f172a);
+  --color-academy-primary: var(--academy-primary, #059669);
+  --color-academy-primary-foreground: #ffffff;
+  --color-academy-secondary: #f1f5f9;
+  --color-academy-secondary-foreground: #334155;
+  --color-academy-accent: #ecfdf5;
+  --color-academy-accent-foreground: #047857;
+  --color-academy-muted: #f1f5f9;
+  --color-academy-muted-foreground: #64748b;
+  --color-academy-input: #e2e8f0;
+  --color-academy-ring: #10b981;
+  --color-academy-destructive: #dc2626;
+  --color-academy-destructive-foreground: #ffffff;
+}

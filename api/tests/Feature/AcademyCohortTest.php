@@ -3,9 +3,11 @@
 use App\Modules\Academy\Models\AcademyCohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse;
 use App\Modules\Academy\Models\ZakatAcademyProfile;
+use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\Module;
 use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -81,3 +83,15 @@ it('forbids ordinary participants from creating cohorts', function () {
     $this->postJson('/api/v1/academy/admin/cohorts', ['title' => 'Forbidden', 'quota' => 20])->assertForbidden();
 });
 
+it('rejects a course from another cohort without creating a participant account', function () {
+    $chosen = newAcademyCohort('Angkatan Pilihan');
+    $other = newAcademyCohort('Angkatan Lain');
+    $chapter = DB::transaction(fn () => app(CohortLearning::class)->container($other->id));
+
+    $this->postJson('/api/v1/academy/participants', cohortParticipant([
+        'cohortId' => $chosen->id,
+        'courseId' => $chapter->courseId,
+    ]))->assertUnprocessable();
+
+    expect(ZakatAcademyProfile::count())->toBe(0)->and(User::count())->toBe(1);
+});

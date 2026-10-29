@@ -1,5 +1,7 @@
 # SIP Modular
 
+Lihat [arsitektur aktif](docs/arsitektur.md) untuk batas frontend/backend dan [alur kerja Git](ALUR.md) untuk kolaborasi tim.
+
 Platform SIP memakai satu repositori dengan dua aplikasi yang terpisah:
 
 - Next.js di root hanya menangani halaman, komponen, dan server action tipis yang memanggil API.

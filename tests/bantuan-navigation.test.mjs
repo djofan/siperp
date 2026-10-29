@@ -25,6 +25,8 @@ test("verifier can open assigned applications and the handover queue without adm
   const viewer={role:"verifier",canBypass:false};
   assert.equal(canViewRoute(viewer,["pengajuan"]),true);
   assert.equal(canViewRoute(viewer,["penyaluran"]),true);
+  assert.equal(canViewRoute(viewer,["santunan"]),true);
+  assert.ok(sidebarNavigation(viewer).some(item=>item.key==="santunan"));
   assert.equal(canViewRoute(viewer,["pengajuan","example"]),true);
   for(const route of ["tim","pengaturan","audit","dana","pencairan"])
     assert.equal(canViewRoute(viewer,[route]),false,route);

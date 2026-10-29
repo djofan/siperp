@@ -1,9 +1,13 @@
 # PRD — Core (Auth, Superadmin, Akses Modul)
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 **Bagian dari:** Platform Modular SIP (lihat `PRD.md` untuk arsitektur & roadmap keseluruhan)
 **Fase:** 0 (Fondasi — dikerjakan paralel dengan Fase 1/LAZSIP)
-**Stack:** Next.js (App Router), Prisma, MySQL
-**Status:** Draft untuk direview sebelum eksekusi
+**Stack aktif:** Next.js App Router untuk frontend, Laravel di `api/` untuk autentikasi dan otorisasi, MySQL untuk penyimpanan.
+**Status:** Berjalan melalui Core Laravel dan Sanctum.
+
+> **Catatan arsitektur (14 Oktober 2026):** Core adalah dasar dari semua modul lain, sehingga migrasinya ke Laravel (login, logout, otorisasi `module_access`) harus selesai lebih dulu sebelum modul bisnis dimigrasikan. Rincian alur auth dan strategi migrasi ada di [`arsitektur.md`](arsitektur.md) §3 dan §7. Bagian di bawah yang menyebut `app/api/...` dan `getSession()` menggambarkan implementasi Next.js saat ini; kontrak endpoint Laravel untuk Core dibuat saat migrasi Core dimulai. Login **kode akun** Tanwir/Ojol (`/tanwir/masuk`, `/ojol/masuk`) yang menerbitkan sesi Core juga harus diakomodasi saat Core dimigrasikan.
 
 ---
 
@@ -17,7 +21,7 @@ Core adalah lapisan pondasi yang dipakai **semua modul** (LAZSIP, SARSIP, Pendid
 
 ### 2.1 Login
 - Halaman `/admin/login` — satu halaman login untuk seluruh platform, dipakai admin modul manapun dan superadmin.
-- Autentikasi berbasis sesi (cookie session atau JWT — pilih salah satu, dicatat di §7).
+- Autentikasi berbasis sesi. Sesi Next.js saat ini berupa JWT dalam cookie; untuk API Laravel dipakai Sanctum Bearer token (lihat §7 dan `arsitektur.md` §3).
 - Setelah login, redirect ke dashboard sesuai akses: kalau cuma punya akses 1 modul → langsung ke dashboard modul itu; kalau lebih dari 1 modul atau superadmin → ke halaman pemilihan modul (`/admin`).
 
 ### 2.2 Dashboard Superadmin
@@ -78,15 +82,15 @@ Ini bagian penting supaya kerja Core dan kerja tiap modul (LAZSIP dkk) bisa para
 // modules/core/auth.ts
 
 // Ambil sesi user yang sedang login. null kalau belum login.
-getSession(): Promise<{ userId: number; isSuperadmin: boolean } | null>
+getSession(): Promise<{ userId: string; isSuperadmin: boolean } | null>  // userId = CUID (string), bukan angka
 
 // Cek apakah user tertentu punya akses ke modul tertentu.
 // Superadmin selalu return true tanpa perlu baris ModuleAccess.
-hasModuleAccess(userId: number, moduleSlug: string): Promise<boolean>
+hasModuleAccess(userId: string, moduleSlug: string): Promise<boolean>
 
 // Ambil role user di modul tertentu (untuk modul yang butuh bedakan admin/editor dst).
 // null kalau tidak punya akses sama sekali.
-getModuleRole(userId: number, moduleSlug: string): Promise<string | null>
+getModuleRole(userId: string, moduleSlug: string): Promise<string | null>
 ```
 
 **Kesepakatan kerja:** selama Core belum selesai, modul LAZSIP boleh memakai versi sementara (mock) dari tiga fungsi ini — misal `hasModuleAccess` sementara selalu `return true` supaya pengembangan halaman admin LAZSIP tidak terblokir. Begitu Core selesai, tinggal ganti import ke implementasi asli tanpa mengubah kode halaman LAZSIP.
@@ -106,6 +110,8 @@ app/api/super/users/route.ts          CRUD akun (superadmin only)
 app/api/super/users/[id]/access/route.ts   atur module_access akun ini
 ```
 
+**Setelah Core dimigrasikan ke Laravel**, endpoint auth dan akun pindah ke `/api/v1/...` mengikuti `api/docs/CONVENTIONS.md`. Saat ini baru ada `GET /api/v1/health` dan `POST /api/v1/auth/login` (placeholder, balasan 501, belum menerbitkan token). Kontrak endpoint final dibuat saat migrasi Core dan dicatat di `api/docs/openapi.json`.
+
 ## 6. Aturan Bisnis
 
 1. Hanya akun `isSuperadmin = true` yang boleh mengakses `/admin/super/**` dan endpoint `api/super/**`.
@@ -115,7 +121,7 @@ app/api/super/users/[id]/access/route.ts   atur module_access akun ini
 
 ## 7. Pertanyaan Terbuka
 
-- Sesi pakai cookie session biasa atau JWT? (Perlu diputuskan sebelum mulai — pengaruh ke cara `getSession()` diimplementasikan dan cara modul lain memverifikasinya kalau nanti ada kebutuhan verifikasi di luar Next.js request context, mis. saat build/SSR.)
+- ~~Sesi pakai cookie session biasa atau JWT?~~ **Terjawab:** sesi Next.js saat ini berupa JWT dalam cookie. Untuk API Laravel, autentikasi memakai Sanctum personal access token (kedaluwarsa absolut 7 hari) yang disimpan Next.js di cookie HttpOnly dan dikirim dari server sebagai `Authorization: Bearer`; keanggotaan modul tidak disimpan di token tapi dicek ke database tiap request. Integrasi login/logout menunggu migrasi Core. Detail: `arsitektur.md` §3.
 - Apakah perlu fitur reset password mandiri (lupa password), atau untuk versi awal reset password cukup dilakukan manual oleh superadmin?
 - Role per modul (`admin`, `editor`, dst) — apakah daftar role-nya perlu distandarkan lintas modul, atau memang bebas didefinisikan tiap modul sendiri-sendiri?
 
@@ -123,6 +129,7 @@ app/api/super/users/[id]/access/route.ts   atur module_access akun ini
 
 - Login & logout berfungsi, sesi tersimpan dengan aman.
 - Superadmin bisa membuat akun baru dan mengatur `module_access`-nya lewat UI (bukan lewat query manual ke database).
+- (Fase migrasi) Login, logout, dan otorisasi modul berjalan di Laravel dengan perilaku setara versi Next.js: `users.is_active`, `modules.is_active`, `module_access`, dan bypass superadmin dicek ke database di setiap request.
 - Middleware menolak akses ke `/admin/<modul>` bagi akun yang tidak punya `module_access` ke modul itu (dan bagi yang belum login).
 - Sidebar admin menampilkan menu sesuai `module_access` akun yang login secara dinamis.
 - Tiga fungsi kontrak (`getSession`, `hasModuleAccess`, `getModuleRole`) sudah final dan didokumentasikan, sehingga modul LAZSIP (dan modul-modul berikutnya) bisa mengganti versi mock mereka ke implementasi asli tanpa mengubah kode halaman.

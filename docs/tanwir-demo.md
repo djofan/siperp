@@ -1,33 +1,36 @@
-# Tanwir Qurani — data demo & pengujian lokal
-
-## Data demo (hanya database lokal)
-
-```bash
-npm run db:seed:tanwir-demo            # buat 1 guru, 2 peserta, 1 kelompok, 3 tugas contoh
-npm run db:seed:tanwir-demo -- --clean # hapus semua data demo
-```
-
-Semua data demo berawalan **[Demo]**. Script menolak berjalan bila `DATABASE_URL` bukan host lokal
-atau `NODE_ENV=production`. Menjalankan ulang tidak membuat data ganda — script hanya menampilkan
-kode akun yang sudah ada.
-
-- Kode akun dicetak di terminal (format `GTQ…` untuk guru, `PTQ…` untuk peserta).
-- Password semua akun demo: **`demo-tanwir-2026`** — bisa diganti lewat env `TANWIR_DEMO_PASSWORD`
-  sebelum menjalankan seed. Ini kredensial uji lokal, jangan dipakai di server sungguhan.
-- Masuk di `/tanwir/masuk`. Modul Tanwir yang masih **nonaktif** hanya bisa dibuka superadmin; aktifkan
-  dulu di `/admin/super/modul` agar akun demo bisa login.
-
-> Tip: login guru/peserta mengganti sesi di browser. Untuk tetap login sebagai superadmin di
-> `http://localhost:3000`, buka akun demo di `http://127.0.0.1:3000` (cookie terpisah per host).
+# Tanwir Qurani — pengujian lokal
 
 ## Uji otomatis
 
 ```bash
 npm run test:tanwir
+npm test
+npm run typecheck
 ```
 
-Menjalankan unit test aturan murni (`tests/tanwir-policy.test.ts`) dan uji alur penuh ke MySQL lokal
-(`tests/tanwir-flow.db-test.ts`): tugas otomatis ke kelompok PIC, validasi file dari isinya, setoran →
-tolak (alasan wajib) → kirim ulang (percobaan 2) → setujui, kuis bernilai otomatis tanpa membocorkan
-kunci, tenggat terkunci & perpanjangan oleh pembuat, penanda terlambat, lingkup data guru, dan hak akses
-file setoran. Data uji dibuat dengan penanda unik dan dihapus lagi di akhir.
+`test:tanwir` menjalankan Pest/Laravel pada `api/tests/Feature/TanwirWorkflowTest.php`, memakai SQLite **dalam memori** dan penyimpanan file palsu. Tes tidak membutuhkan MySQL, akun demo, atau layanan API yang sedang berjalan. Dependensi PHP harus terpasang di `api/vendor`.
+
+Cakupan tes:
+
+- Login kode akun, penolakan akun nonaktif, dan modul nonaktif.
+- Pembuatan akun dan kelompok oleh admin, kode otomatis yang tidak bisa diubah.
+- Distribusi tugas ke kelompok PIC dan pembatasan peserta tanpa kelompok.
+- Setoran → tolak dengan alasan → kirim ulang → setujui, percobaan dan riwayat, serta penghapusan file setoran lama.
+- Tenggat terkunci, perpanjangan oleh pembuat (1–72 jam), penanda terlambat, dan edit judul yang mempertahankan detik tenggat hasil perpanjangan.
+- Kuis sekali kerjakan, semua soal wajib dijawab, pilihan kosong ditolak, nilai otomatis, kunci tidak terbuka sebelum pengerjaan, soal/tipe dikunci setelah pengumpulan, dan kuis tidak masuk antrean koreksi.
+- Deteksi track audio MP4 berlabel isom, penolakan video untuk tugas suara, file palsu, dan ukuran di atas 50 MB.
+- Hak akses file setoran, foto profil, serta kelola anak didik sesuai lingkup.
+
+## Uji manual dengan akun lokal
+
+Script lama `db:seed:tanwir-demo` sudah tidak tersedia setelah migrasi backend ke Laravel. Buat akun uji guru, peserta, dan kelompok melalui `/admin/tanwir` menggunakan admin lokal. Aktifkan modul melalui `/admin/super/modul`, lalu masuk di `/tanwir/masuk` menggunakan kode akun yang terbit.
+
+Gunakan profil browser terpisah untuk admin, guru, dan peserta agar sesi tidak saling menggantikan. Periksa tampilan layar 360 px, perekaman dan pratinjau audio/video, unggahan dan pemutaran file, koreksi, profil, peta, serta tautan WhatsApp. Tautan WhatsApp hanya membuka pesan siap kirim.
+
+## Verifikasi perangkat yang masih diperlukan
+
+Tes API tidak membuktikan dukungan perangkat. Uji perekaman langsung pada Chrome Android dan Safari iOS di HP sungguhan, termasuk izin mikrofon/kamera, rekam ulang, batas ukuran, putus koneksi, unggah, dan putar ulang. Gunakan HTTPS atau localhost agar browser mengizinkan akses media.
+
+## Penyimpanan saat deploy
+
+Backend sekarang menyimpan file privat melalui disk Laravel `local`, pada subdirektori `tanwir/`. Volume tersebut harus persisten dan masuk backup. File dibuka melalui endpoint berizin `/api/tanwir/files/...`, bukan direktori publik. Pastikan batas unggahan PHP (`upload_max_filesize`, `post_max_size`) dan proxy mencukupi file 50 MB beserta overhead multipart.

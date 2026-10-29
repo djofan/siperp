@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useId, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField } from "@/modules/academy/components/ui/FieldCompat";
 import type { ActionState } from "../../api/actions";
 import type { QuizOptionInput } from "../../api/admin-quiz-validation";
 
