@@ -107,7 +107,7 @@ test("completed actions and explicit server draft saves show feedback and return
   assert.match(actions,/if\(success\)return <ProcessSuccess/);
   assert.match(intake,/if\(result\)return <ProcessSuccess/);
   assert.match(intake,/if\(manualDraft\)return <ProcessSuccess/);
-  assert.match(intake,/const draft=await persist\(form\);setManualDraft\(draft\)/);
+  assert.match(intake,/const draft=await persist\(form\);stopping.current=true;operation.current="done";setManualDraft\(draft\)/);
   assert.match(workspace,/setBatchSuccess\(true\)/);
   assert.match(workspace,/batchSuccess&&<ProcessSuccess/);
 });
@@ -226,11 +226,12 @@ test("photo refresh does not unmount active forms or rehydrate entered values", 
   assert.match(intake,/hidden=\{form\.step!==2\}/);
 });
 
-test("light Bantuan shell keeps actions discoverable and mobile layout separate",()=>{
+test("light Bantuan shell shares card and table presentation while keeping actions discoverable",()=>{
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
+  const listing=readFileSync("modules/bantuan/components/ApplicationList.tsx","utf8");
   const css=readFileSync("modules/bantuan/components/Workspace.module.css","utf8");
-  assert.match(workspace,/className=\{s.stickyAction\}/);
-  assert.match(workspace,/className=\{s.mobileApplications\}/);
+  assert.match(workspace,/<ApplicationList /);
+  assert.match(listing,/className=\{shared.stickyAction\}/);
   assert.match(workspace,/aria-label="Langkah berikutnya"/);
   assert.match(workspace,/navigation\(viewer\)/);
   assert.match(css,/\.table \.stickyAction\{position:sticky;right:0/);
@@ -262,7 +263,7 @@ test("intake uses four steps without reporter fields or required reporter data",
   assert.match(intake,/const labels=\["Data pemohon","Kondisi & kebutuhan","Foto & dokumen","Periksa & kirim"\]/);
   assert.doesNotMatch(intake,/Data pelapor|reporterFields|validateFields\([^,]+,form\.reporter/);
   assert.doesNotMatch(workspace,/case-panel-pelapor/);
-  assert.match(intake,/form\.step===1\)\{setBusy\(true\);try\{await persist/);
+  assert.match(intake,/form\.step===1\)\{operation.current="advance";setBusy\(true\);try\{await persist/);
   assert.match(intake,/formVersion:2/);
   assert.match(intake,/form\.step===3\?"Kirim pengajuan"/);
   assert.doesNotMatch(intake,/form\.step===4/);

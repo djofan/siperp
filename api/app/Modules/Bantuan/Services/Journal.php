@@ -31,7 +31,9 @@ class Journal
             'cancel' => 'Pengajuan dibatalkan', 'request_data' => 'Data perlu dilengkapi',
         ][$action] ?? $action;
         $ids = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
-            ->where('modules.slug', 'bantuan')->whereIn('role', ['admin', ...$roles])->pluck('user_id')->all();
+            ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'module_access.user_id')
+            ->where('modules.slug', 'bantuan')->get(['module_access.user_id', 'module_access.role', 'bantuan_staff.roles'])
+            ->filter(fn ($member) => array_intersect(Access::expandRoles($member->role, $member->roles), ['admin', ...$roles]))->pluck('user_id')->all();
         foreach (array_unique([...$ids, ...array_filter($users)]) as $id) {
             DB::table('bantuan_notifications')->insertOrIgnore(['id' => (string) Str::uuid(), 'application_id' => $row->id,
                 'user_id' => $id, 'message' => $row->number.' · '.$action, 'created_at' => now(),

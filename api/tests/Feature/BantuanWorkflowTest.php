@@ -425,6 +425,119 @@ it('sends deadline reminders at most once per recipient per day', function () {
     expect(DB::table('bantuan_notifications')->count())->toBe($count)->and($count)->toBeGreaterThan(0);
 });
 
+it('allows module admins and superadmins to edit and remove bantuan accounts', function (bool $superadmin) {
+    $admin = bantuanUser('admin');
+    if ($superadmin) $admin->forceFill(['is_superadmin' => true])->save();
+    $target = bantuanUser('call_center');
+    $this->actingAs($admin, 'sanctum')->putJson('/api/v1/bantuan/staff/'.$target->id, [
+        'name' => 'Petugas diperbarui', 'email' => 'updated-'.Str::uuid().'@example.test',
+        'password' => 'password-baru-123', 'role' => 'verifier', 'canBypass' => true, 'active' => true,
+    ])->assertOk();
+    $target->refresh();
+    expect($target->name)->toBe('Petugas diperbarui')->and(Hash::check('password-baru-123', $target->password_hash))->toBeTrue();
+    $this->deleteJson('/api/v1/bantuan/staff/'.$target->id)->assertOk()->assertJsonPath('sharedAccount', false);
+    expect($target->refresh()->is_active)->toBeFalse();
+    expect(DB::table('module_access')->where('user_id', $target->id)->exists())->toBeFalse();
+    $this->deleteJson('/api/v1/bantuan/staff/'.$admin->id)->assertForbidden();
+})->with([false, true]);
+
+it('protects shared identities and other module access when deleting from bantuan', function () {
+    $admin = bantuanUser('admin');
+    $target = bantuanUser('call_center');
+    $other = (string) Str::uuid();
+    DB::table('modules')->insert(['id' => $other, 'slug' => 'account-test', 'name' => 'Other', 'is_active' => true]);
+    DB::table('module_access')->insert(['id' => (string) Str::uuid(), 'user_id' => $target->id, 'module_id' => $other, 'role' => 'admin']);
+    $data = ['role' => 'call_center', 'canBypass' => false, 'active' => true, 'name' => 'Changed identity'];
+    $this->actingAs($admin, 'sanctum')->putJson('/api/v1/bantuan/staff/'.$target->id, $data)->assertForbidden();
+    $admin->forceFill(['is_superadmin' => true])->save();
+    $this->actingAs($admin->fresh(), 'sanctum')->putJson('/api/v1/bantuan/staff/'.$target->id, $data)->assertOk();
+    $this->deleteJson('/api/v1/bantuan/staff/'.$target->id)->assertOk()->assertJsonPath('sharedAccount', true);
+    expect($target->refresh()->is_active)->toBeTrue()->and($target->name)->toBe('Changed identity');
+    expect(DB::table('module_access')->where('user_id', $target->id)->where('module_id', $other)->exists())->toBeTrue();
+});
+
+it('denies operational roles and protects active assignments and superadmin accounts', function () {
+    $this->actingAs($this->cc, 'sanctum')->deleteJson('/api/v1/bantuan/staff/'.$this->verifier->id)->assertForbidden();
+    $id = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    $admin = bantuanUser('admin');
+    $this->actingAs($admin, 'sanctum')->deleteJson('/api/v1/bantuan/staff/'.$this->verifier->id)->assertConflict();
+    $protected = bantuanUser('admin'); $protected->forceFill(['is_superadmin' => true])->save();
+    $this->deleteJson('/api/v1/bantuan/staff/'.$protected->id)->assertForbidden();
+    $this->getJson('/api/v1/bantuan/staff')->assertOk();
+});
+
+it('supports fund requester and verifier roles with explicit switching and immediate revocation', function () {
+    $admin = bantuanUser('admin');
+    $id = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/bantuan/staff', [
+        'name' => 'Petugas dua peran', 'email' => 'multi@example.test', 'password' => 'password-aman-123',
+        'roles' => ['fund_requester', 'verifier'], 'canBypass' => true,
+    ])->assertCreated()->json('data.id');
+    $target = User::findOrFail($id);
+    expect(app(\App\Modules\Bantuan\Services\Access::class)->assigned($id, 'verifier'))->toBeTrue();
+    $rowId = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($rowId)->forceFill(['status' => 'survey_assignment'])->save();
+    $this->postJson('/api/v1/bantuan/applications/'.$rowId.'/actions/assign_survey', ['version' => 1, 'verifierId' => $id])->assertOk();
+    $this->actingAs($target, 'sanctum')->getJson('/api/v1/bantuan/viewer')->assertJsonPath('data.role', 'fund_requester')->assertJsonPath('data.roles', ['fund_requester', 'verifier']);
+    $this->getJson('/api/v1/bantuan/applications/'.$rowId)->assertNotFound();
+    $this->putJson('/api/v1/bantuan/active-role', ['role' => 'verifier'])->assertOk();
+    $this->getJson('/api/v1/bantuan/viewer')->assertJsonPath('data.role', 'verifier');
+    $this->getJson('/api/v1/bantuan/applications/'.$rowId)->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$rowId.'/actions/fund_submit', ['version' => 2])->assertForbidden();
+    $this->putJson('/api/v1/bantuan/active-role', ['role' => 'admin'])->assertForbidden();
+    $this->actingAs($admin, 'sanctum')->putJson('/api/v1/bantuan/staff/'.$id, ['roles' => ['fund_requester'], 'active' => true, 'canBypass' => false])->assertOk();
+    $this->actingAs($target, 'sanctum')->getJson('/api/v1/bantuan/viewer')->assertJsonPath('data.role', 'fund_requester');
+    $this->putJson('/api/v1/bantuan/active-role', ['role' => 'verifier'])->assertForbidden();
+    expect(app(\App\Modules\Bantuan\Services\Access::class)->assigned($id, 'verifier'))->toBeFalse();
+});
+
+it('keeps active roles isolated per login token and ignores obsolete grants after a Core change', function () {
+    $user = bantuanUser('fund_requester');
+    DB::table('bantuan_staff')->insert(['user_id' => $user->id, 'roles' => json_encode(['fund_requester', 'verifier']), 'can_bypass' => false]);
+    $one = $user->createToken('one')->accessToken;
+    $two = $user->createToken('two')->accessToken;
+    DB::table('bantuan_active_roles')->insert(['session_key' => 'token:'.$one->id, 'user_id' => $user->id, 'role' => 'verifier']);
+    $access = app(\App\Modules\Bantuan\Services\Access::class);
+    foreach ([[$one, 'verifier'], [$two, 'fund_requester']] as [$token, $expected]) {
+        $request = Illuminate\Http\Request::create('/');
+        $request->setUserResolver(fn () => $user->fresh()->withAccessToken($token));
+        $request->attributes->set('module_role', 'fund_requester');
+        expect($access->role($request))->toBe($expected);
+    }
+    expect(\App\Modules\Bantuan\Services\Access::expandRoles('call_center', json_encode(['fund_requester', 'verifier'])))->toBe(['call_center']);
+});
+
+it('keeps secondary approver unique and prevents approving an application assigned to oneself', function () {
+    DB::table('module_access')->where('user_id', $this->approver->id)->delete();
+    $admin = bantuanUser('admin');
+    $payload = ['name' => 'Dua peran', 'email' => 'two-roles@example.test', 'password' => 'password-aman-123', 'roles' => ['verifier', 'approver'], 'canBypass' => false];
+    $id = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/bantuan/staff', $payload)->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/staff', [...$payload, 'email' => 'second@example.test'])->assertUnprocessable();
+    $rowId = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($rowId)->forceFill(['status' => 'survey_submitted', 'verifier_id' => $id])->save();
+    $this->actingAs(User::findOrFail($id), 'sanctum')->putJson('/api/v1/bantuan/active-role', ['role' => 'approver'])->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$rowId.'/actions/approve', ['version' => 1, 'amount' => 1000000])->assertForbidden();
+});
+
+it('opens the Dashboard after operational login while keeping volunteer santunan scoped', function () {
+    $session = new \App\Modules\Bantuan\Services\BantuanSession;
+    foreach (['call_center', 'verifier', 'fund_requester', 'treasurer', 'approver', 'chair'] as $role) {
+        expect($session->redirect(['moduleRoles' => ['bantuan' => $role]], null))->toBe('/admin/bantuan');
+        expect($session->preferredPanel([(object) ['slug' => 'bantuan', 'role' => $role]]))->toBe('/admin/bantuan');
+    }
+    expect($session->redirect(['moduleRoles' => ['bantuan' => 'volunteer']], null))->toBe('/admin/bantuan/santunan');
+});
+
+it('counts only assigned work in verifier task badges while preserving scoped totals', function () {
+    $first = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $second = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($first)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    Application::findOrFail($second)->forceFill(['status' => 'survey_assigned', 'created_by' => $this->verifier->id])->save();
+    $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()
+        ->assertJsonPath('data.total', 2)->assertJsonPath('data.byStatus.survey_assigned', 2)
+        ->assertJsonPath('data.taskCounts.survey.survey_assigned', 1);
+});
+
 it('limits account administration to this module and enforces a single approver', function () {
     $admin = bantuanUser('admin');
     $payload = ['name' => 'Verifikator baru', 'email' => 'baru@example.test', 'password' => 'password-aman-123',
@@ -505,4 +618,66 @@ it('records routine and non-routine santunan from transfer through volunteer rep
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', [
         ...$payload, 'frequency' => 'non_routine', 'category' => 'widow', 'recipientName' => 'Penerima Lain',
     ])->assertUnprocessable();
+});
+
+it('combines detailed application filters and exports exactly the filtered report', function () {
+    $target = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $other = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::find($target)->forceFill(['status' => 'completed', 'amount' => 3500000, 'verifier_id' => $this->verifier->id,
+        'distributor_id' => $this->verifier->id, 'distribution_type' => 'verifier', 'created_at' => '2026-10-02 08:00:00',
+        'disbursed_at' => '2026-10-08 08:00:00', 'completed_at' => '2026-10-09 08:00:00', 'handover' => ['amount' => 3400000]])->save();
+    Application::find($other)->forceFill(['status' => 'completed', 'amount' => 1000000, 'program' => 'Pendidikan', 'region' => 'Jakarta'])->save();
+    $filters = ['program' => 'Kesehatan', 'status' => 'completed', 'source' => 'online', 'region' => 'Bandung',
+        'dateField' => 'completed', 'from' => '2026-10-01', 'to' => '2026-10-31', 'verifierId' => $this->verifier->id,
+        'distributorId' => $this->verifier->id, 'createdBy' => $this->cc->id, 'amountState' => 'set', 'distributionType' => 'verifier',
+        'amountMin' => '3000000', 'amountMax' => '4000000', 'perPage' => '12', 'sort' => 'amount_high', 'summary' => '1'];
+    $this->actingAs($this->approver, 'sanctum')->getJson('/api/v1/bantuan/applications?'.http_build_query($filters))
+        ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('per_page', 12)->assertJsonPath('data.0.id', $target)
+        ->assertJsonPath('summary.total', 1)->assertJsonPath('summary.completedAmount', 3400000)->assertJsonPath('summary.disbursedAmount', 3500000);
+    $csv = $this->get('/api/v1/bantuan/export?'.http_build_query($filters))->assertOk()->streamedContent();
+    expect($csv)->toContain(Application::find($target)->number)->not->toContain(Application::find($other)->number);
+    $this->getJson('/api/v1/bantuan/dashboard?'.http_build_query(['program' => 'Kesehatan', 'from' => '2026-10-01', 'to' => '2026-10-31']))
+        ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.byStatus.completed', 1);
+});
+
+it('paginates and sorts the complete filtered result and supports unassigned or missing amounts', function () {
+    $first = null;
+    for ($i = 1; $i <= 14; $i++) {
+        $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+        Application::find($id)->forceFill(['amount' => $i * 100000, 'created_at' => now()->subDays(15 - $i)])->save();
+        if ($i === 1) $first = $id;
+    }
+    $page1 = $this->getJson('/api/v1/bantuan/applications?perPage=12&sort=amount_low&verifierId=unassigned')->assertOk()
+        ->assertJsonPath('total', 14)->assertJsonPath('last_page', 2)->assertJsonCount(12, 'data')->assertJsonPath('data.0.id', $first)->json('data');
+    $page2 = $this->getJson('/api/v1/bantuan/applications?perPage=12&page=2&sort=amount_low&verifierId=unassigned')->assertOk()->assertJsonCount(2, 'data')->json('data');
+    expect(array_intersect(array_column($page1, 'id'), array_column($page2, 'id')))->toBe([]);
+    Application::find($first)->forceFill(['amount' => null])->save();
+    $this->getJson('/api/v1/bantuan/applications?amountState=unset')->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $first);
+    $this->getJson('/api/v1/bantuan/applications?dateField=completed&from=2026-01-01')->assertOk()->assertJsonPath('total', 0);
+});
+
+it('validates detailed filters and never widens verifier scope through status search or staff filters', function () {
+    $other = bantuanUser('verifier');
+    $own = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $hidden = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::find($own)->forceFill(['status' => 'disbursed', 'amount' => 500000, 'distributor_id' => $this->verifier->id, 'disbursed_at' => now()->subDays(30)])->save();
+    Application::find($hidden)->forceFill(['status' => 'disbursed', 'amount' => 900000, 'distributor_id' => $other->id, 'region' => 'Wilayah Privat', 'disbursed_at' => now()->subDays(30)])->save();
+    $response = $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/applications?task=distribution&distributorId=me&overdue=1&summary=1')->assertOk()
+        ->assertJsonPath('total', 1)->assertJsonPath('data.0.id', $own)->assertJsonPath('summary.total', 1);
+    expect($response->json('filterOptions.regions'))->not->toContain('Wilayah Privat');
+    $this->getJson('/api/v1/bantuan/applications?distributorId='.$other->id)->assertOk()->assertJsonPath('total', 0);
+    $this->getJson('/api/v1/bantuan/applications?states=disbursed&status=draft')->assertOk()->assertJsonPath('total', 0);
+    foreach (['from=2026-10-28&to=2026-10-01', 'amountMin=200&amountMax=100', 'amountMin=-1', 'perPage=10000', 'sort=amount%20DESC%3B--', 'dateField=unknown'] as $filter) {
+        $this->getJson('/api/v1/bantuan/applications?'.$filter)->assertUnprocessable();
+    }
+});
+
+it('filters audit records across the entire log and preserves management access', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $number = Application::find($id)->number;
+    $this->getJson('/api/v1/bantuan/audit')->assertForbidden();
+    $admin = bantuanUser('admin');
+    $this->actingAs($admin, 'sanctum')->getJson('/api/v1/bantuan/audit?'.http_build_query(['search' => $number, 'role' => 'call_center', 'action' => 'create', 'from' => now()->toDateString()]))
+        ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.applicationNumber', $number)->assertJsonPath('data.0.actorName', $this->cc->name);
+    $this->getJson('/api/v1/bantuan/audit?role=treasurer')->assertOk()->assertJsonPath('total', 0);
 });

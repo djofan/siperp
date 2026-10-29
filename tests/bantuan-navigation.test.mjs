@@ -67,11 +67,12 @@ test("operational accounts see each of their process queues without management a
 test("sidebar stays compact while the process launcher retains every authorized queue",()=>{
   for(const role of roles){
     const viewer={role,canBypass:true},sidebar=sidebarNavigation(viewer);
-    assert.ok(sidebar.length<=7,role);
+    assert.ok(sidebar.length<=8,role);
+    assert.ok(sidebar.length>=6,role);
     assert.ok(sidebar.some(item=>item.key==="proses"),role);
     assert.equal(canViewRoute(viewer,["proses"]),true);
     for(const item of sidebar)assert.equal(canViewRoute(viewer,item.key?[item.key]:[]),true);
     for(const item of navigation(viewer).filter(item=>item.states?.length))assert.equal(canViewRoute(viewer,[item.key]),true);
-    assert.equal(sidebar.some(item=>item.states?.length),false);
+    if(role!=="admin")assert.ok(sidebar.some(item=>item.states?.length),role);
   }
 });
