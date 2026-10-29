@@ -33,8 +33,8 @@ class AppServiceProvider extends ServiceProvider
             throw new LogicException('The production API requires a MySQL or MariaDB database.');
         }
         RateLimiter::for('login', function (Request $request): Limit {
-            $email = $request->input('email') ?? $request->input('code') ?? $request->input('nip');
-            $normalized = is_string($email) ? strtolower(trim($email)) : '';
+            $code = $request->input('code');
+            $normalized = is_string($code) ? strtoupper(trim($code)) : '';
 
             return Limit::perMinute(5)->by(hash('sha256', $normalized.'|'.$request->ip()));
         });

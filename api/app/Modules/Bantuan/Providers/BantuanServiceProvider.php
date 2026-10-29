@@ -21,6 +21,7 @@ class BantuanServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.bantuan' => ['roles' => [], 'links' => [['label' => 'Kelola tim & peran Bantuan', 'href' => '/admin/bantuan/tim']]]]);
         Route::middleware(['api', 'auth:sanctum', 'user.active', 'module.access:bantuan'])->prefix('api/v1/bantuan')->group(__DIR__.'/../routes/api.php');
         if ($this->app->runningInConsole()) {
             Artisan::command('bantuan:remind', function () {

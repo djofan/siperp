@@ -15,6 +15,7 @@ class LazsipServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.lazsip' => ['roles' => ['editor' => 'Editor LAZSIP'], 'links' => []]]);
         \App\Modules\Payment\Models\PaymentDonor::resolveRelationUsing('donations', fn ($donor) => $donor->hasMany(\App\Modules\Lazsip\Models\LazsipDonation::class, 'donor_id', 'id'));
         \App\Modules\Payment\Models\PaymentDonor::resolveRelationUsing('zakatPayments', fn ($donor) => $donor->hasMany(\App\Modules\Lazsip\Models\LazsipZakatPayment::class, 'donor_id', 'id'));
         Route::middleware('api')->prefix('api/v1/lazsip')->group(__DIR__.'/../routes/api.php');

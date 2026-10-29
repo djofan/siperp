@@ -16,6 +16,7 @@ class AcademyServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.academy' => ['roles' => ['teacher' => 'Pengajar', 'editor' => 'Editor Academy'], 'links' => [['label' => 'Daftarkan peserta Academy', 'href' => '/admin/academy/pendaftaran']]]]);
         Route::middleware('api')->prefix('api/v1/academy')->group(__DIR__.'/../routes/api.php');
     }
 }

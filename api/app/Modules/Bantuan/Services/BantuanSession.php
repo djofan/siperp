@@ -3,7 +3,7 @@
 namespace App\Modules\Bantuan\Services;
 
 use App\Contracts\Modules\ModuleSession;
-use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -13,12 +13,14 @@ class BantuanSession implements ModuleSession
 
     public function credentialField(): string
     {
-        return 'email';
+        return 'code';
     }
 
     public function resolveLogin(string $identifier): array
     {
-        return ['userId' => User::where('email', trim($identifier))->value('id'), 'membership' => null];
+        $user = AccountCodes::find($identifier);
+        $allowed = $user && ($user->is_superadmin || DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')->where('user_id', $user->id)->where('modules.slug', 'bantuan')->exists());
+        return ['userId' => $allowed ? $user->id : null, 'membership' => null];
     }
 
     public function viewer(Request $request, array $session): array

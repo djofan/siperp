@@ -8,6 +8,7 @@ use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademySetting as Setting;
 use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -99,17 +100,19 @@ class IntakeController
                 if (! $user) {
                     $password = 'Ia!'.Str::random(16);
                     $user = new User;
+                    $user->code = $this->nip();
                     $user->name = $data['name'];
                     $user->email = $data['email'];
                     $user->password_hash = Hash::make($password);
                     $user->save();
-                    $credentials[] = ['email' => $user->email, 'password' => $password];
+                    $credentials[] = ['code' => $user->code, 'email' => $user->email, 'password' => $password];
                 }
 
                 $profile ??= new Profile;
                 $profile->cohortId = $cohort->id;
                 $profile->userId = $user->id;
-                $profile->nis = $profile->nis ?: $this->nip();
+                $profile->nis = $profile->nis ?: ($newUser ? $user->code : $this->nip());
+                AccountCodes::register($user->id, $profile->nis);
                 $profile->phone = $data['phone'];
                 $profile->gender = $data['gender'];
                 if ($newUser) {

@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Services;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use CaliCastle\Cuid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,8 @@ class UserService
     {
         return DB::transaction(function () use ($input): User {
             $user = new User;
-            $user->forceFill(['name' => trim($input['name']), 'email' => trim($input['email']), 'password_hash' => Hash::make($input['password']), 'is_superadmin' => $input['isSuperadmin'] ?? false, 'is_active' => true]);
+            if (empty($input['isSuperadmin'])) $user->code = AccountCodes::next('admin');
+            $user->forceFill(['name' => trim($input['name']), 'email' => ! empty($input['email']) ? trim($input['email']) : null, 'password_hash' => Hash::make($input['password']), 'is_superadmin' => $input['isSuperadmin'] ?? false, 'is_active' => true]);
             $user->save();
             $user->refresh();
             $this->log("Akun {$user->name} dibuat".($user->is_superadmin ? ' sebagai superadmin' : ''));
@@ -33,7 +35,7 @@ class UserService
     {
         return DB::transaction(function () use ($id, $input): User {
             $user = User::findOrFail($id);
-            $user->forceFill(['name' => trim($input['name']), 'email' => trim($input['email'])]);
+            $user->forceFill(['name' => trim($input['name']), 'email' => ! empty($input['email']) ? trim($input['email']) : strtolower($user->code).'@accounts.sip.invalid']);
             if (! empty($input['password'])) {
                 $user->password_hash = Hash::make($input['password']);
             }
@@ -119,6 +121,7 @@ class UserService
                     $this->log("Akses {$user->name} ke {$name} dicabut");
                 }
             }
+            if (collect($entries)->contains(fn ($entry) => $entry['role'] === 'admin')) AccountCodes::ensureAdmin($user);
         });
     }
 

@@ -15,6 +15,7 @@ export type ActionState = {
     error: string;
     message?: string;
     credentials?: {
+        code: string;
         email: string;
         password: string;
     }[];

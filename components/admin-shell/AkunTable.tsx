@@ -13,6 +13,7 @@ interface ModuleOption {
 interface UserRow {
   id: string;
   name: string;
+  code: string;
   email: string;
   isSuperadmin: boolean;
   isActive: boolean;
@@ -29,6 +30,7 @@ export function AkunTable({ users }: { users: UserRow[] }) {
       <Thead>
         <Tr>
           <Th>Nama</Th>
+          <Th>Kode login</Th>
           <Th>Email</Th>
           <Th>Akses Modul</Th>
           <Th>Status</Th>
@@ -43,7 +45,8 @@ export function AkunTable({ users }: { users: UserRow[] }) {
                 {user.name}
               </Link>
             </Td>
-            <Td className="text-foreground/60">{user.email}</Td>
+            <Td className="font-mono text-accent">{user.code}</Td>
+            <Td className="text-foreground/60">{user.email || "—"}</Td>
             <Td>
               {user.isSuperadmin ? (
                 <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent">

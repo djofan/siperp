@@ -3,6 +3,7 @@
 export interface User {
   id: string;
   name: string;
+  code: string;
   email: string;
   isSuperadmin: boolean;
   isActive: boolean;

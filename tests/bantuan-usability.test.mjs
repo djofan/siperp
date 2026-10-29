@@ -35,6 +35,19 @@ const {LoadingState}=load("modules/bantuan/components/LoadingState.tsx");
 const viewer=role=>({id:"test",name:"Petugas",role,canBypass:true,settings:{programs:["Kebutuhan Pokok"],regions:[],housing:[],distributionDays:7,minimumSurveyPhotos:5}});
 const stats={total:5,byStatus:{draft:1,survey_assigned:3,completed:1},byProgram:{},bySource:{},approvedAmount:0,disbursedAmount:0,completedAmount:0,overdue:0,tickets:[],taskCounts:{survey:{survey_assigned:1},distribution:{}}};
 
+test("all decisions and the internal comment form are visible without expanding hidden menus",()=>{
+  const {ActionPanel}=load("modules/bantuan/components/ActionPanel.tsx");
+  const html=renderToStaticMarkup(React.createElement(ActionPanel,{viewer:viewer("approver"),row:{id:"aid",number:"BNT-TEST",status:"review1",source:"online",applicant:{},documents:[],version:1,createdBy:"call-center"},staff:[],reload(){}}));
+  assert.match(html,/Setujui untuk survei/);
+  assert.match(html,/Minta lengkapi data/);
+  assert.match(html,/Tolak pengajuan/);
+  assert.doesNotMatch(html,/<details|<summary|Tambah catatan internal/);
+  assert.match(html,/<textarea[^>]*name="reason"/);
+  assert.match(html,/Simpan catatan/);
+  assert.match(html,/tidak mengubah status pengajuan/);
+  assert.match(html,/data-tone="danger"/);
+});
+
 test("role workspaces distinguish work from monitoring rather than asking users to guess stages",()=>{
   const cc=navigation(viewer("call_center"));
   assert.equal(isWorkItem("call_center",cc.find(item=>item.key==="penugasan-survei")),true);

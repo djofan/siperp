@@ -15,6 +15,7 @@ class TeknisiServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        config(['modules.account_management.teknisi' => ['roles' => ['manager' => 'Manager outlet', 'monitoring' => 'Pemantau'], 'links' => [['label' => 'Daftarkan teknisi & penempatan outlet', 'href' => '/admin/teknisi/teknisi/baru']]]]);
         Route::middleware('api')->prefix('api/v1/teknisi')->group(__DIR__.'/../routes/api.php');
     }
 }

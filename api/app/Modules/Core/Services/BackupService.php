@@ -10,6 +10,12 @@ use RuntimeException;
 
 class BackupService
 {
+    public static function writableColumns(array $columns): array
+    {
+        return array_values(array_map(fn ($column) => $column['Field'], array_filter($columns,
+            fn ($column) => ! preg_match('/(?:VIRTUAL|STORED) GENERATED/i', $column['Extra'] ?? ''))));
+    }
+
     public function validId(string $id): bool
     {
         return (bool) preg_match('/^erp-\d{8}T\d{9}Z-[a-f0-9]{8}\.sipbak$/D', $id);
@@ -123,9 +129,9 @@ class BackupService
             foreach ($tables as $table) {
                 $name = $this->quote($table->name);
                 $ddl = $pdo->query('SHOW CREATE TABLE '.$name)->fetch(PDO::FETCH_ASSOC)['Create Table'];
-                $columns = $pdo->query('SHOW COLUMNS FROM '.$name)->fetchAll(PDO::FETCH_COLUMN);
+                $columns = self::writableColumns($pdo->query('SHOW COLUMNS FROM '.$name)->fetchAll(PDO::FETCH_ASSOC));
                 $rows = [];
-                $query = $pdo->query('SELECT * FROM '.$name);
+                $query = $pdo->query('SELECT '.implode(',', array_map($this->quote(...), $columns)).' FROM '.$name);
                 while ($row = $query->fetch(PDO::FETCH_NUM)) {
                     $encoded = array_map(fn ($v) => is_string($v) && ! mb_check_encoding($v, 'UTF-8') ? ['type' => 'buffer', 'value' => base64_encode($v)] : $v, $row);
                     $size += strlen(json_encode($encoded, JSON_THROW_ON_ERROR));
@@ -283,12 +289,14 @@ class BackupService
             }
             $pdo->beginTransaction();
             foreach ($snapshot['tables'] as $table) {
-                $columns = implode(',', array_map($this->quote(...), $table['columns']));
-                $statement = $pdo->prepare('INSERT INTO '.$this->quote($table['name']).' ('.$columns.') VALUES ('.implode(',', array_fill(0, count($table['columns']), '?')).')');
+                $writable = self::writableColumns($pdo->query('SHOW COLUMNS FROM '.$this->quote($table['name']))->fetchAll(PDO::FETCH_ASSOC));
+                $indexes = array_keys(array_intersect($table['columns'], $writable));
+                $columns = implode(',', array_map(fn ($index) => $this->quote($table['columns'][$index]), $indexes));
+                $statement = $pdo->prepare('INSERT INTO '.$this->quote($table['name']).' ('.$columns.') VALUES ('.implode(',', array_fill(0, count($indexes), '?')).')');
                 foreach ($table['rows'] as $row) {
                     $decoded = array_map(fn ($v) => is_array($v) ? match ($v['type'] ?? '') {
                         'buffer' => base64_decode($v['value'], true), 'bigint' => $v['value'], 'date' => CarbonImmutable::parse($v['value'])->utc()->format('Y-m-d H:i:s.v'), default => throw new RuntimeException('Tipe backup tidak valid.')
-                    } : $v, $row);
+                    } : $v, array_map(fn ($index) => $row[$index], $indexes));
                     $statement->execute($decoded);
                 }
             }
