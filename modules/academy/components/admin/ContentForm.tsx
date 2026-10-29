@@ -1,10 +1,11 @@
 "use client";
 
 import { useActionState, useId, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField, Input, Select } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
+import { AudioUploadField } from "../AudioUploadField";
 
 type Values = {
   title?: string; slug?: string; order?: number; isPublished?: boolean;
@@ -77,7 +78,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
             onChange={(event) => setValues({ ...values, [field.name]: event.target.value })} />}
       </FormField>;
     })}
-    {uploadAudio && <FormField label="Upload audio *" htmlFor={`${prefix}-audio`} hint="MP3, WAV, OGG, atau M4A, maksimal 50 MB."><input id={`${prefix}-audio`} name="file" type="file" required accept=".mp3,.wav,.ogg,.m4a" className="block w-full rounded-xl border border-border p-3 text-sm" onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.setCustomValidity(file && file.size > 50 * 1024 * 1024 ? "Ukuran audio maksimal 50 MB." : ""); }} /></FormField>}
+    {uploadAudio && <AudioUploadField required />}
     {flat && kind === "lesson" && !uploadAudio && <FormField label="Status" htmlFor={`${prefix}-status`}>
       <Select id={`${prefix}-status`} name="isPublished" value={values.isPublished ? "1" : "0"} onChange={event => setValues({ ...values, isPublished: event.target.value === "1" })}>
         <option value="0">Draft</option>
@@ -92,9 +93,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
     {existingAudio && <section className="space-y-3 border-t border-gray-100 pt-5">
       <h2 className="font-semibold">File audio</h2>
       {existingAudio.url ? <>{existingAudio.title && <p className="text-sm text-gray-500">{existingAudio.title}</p>}<audio controls preload="metadata" src={existingAudio.url} className="w-full" aria-label={values.title ?? "Audio materi"} /></> : <p className="text-sm text-gray-500">Belum ada audio.</p>}
-      <FormField label={existingAudio.url ? "Ganti file audio" : "Upload file audio"} htmlFor={`${prefix}-edit-audio`} hint="MP3, WAV, OGG, atau M4A, maksimal 50 MB. Kosongkan jika tidak ingin mengganti audio.">
-        <input id={`${prefix}-edit-audio`} name="file" type="file" accept=".mp3,.wav,.ogg,.m4a" className="block w-full rounded-xl border border-border p-3 text-sm" onChange={event => { const file = event.currentTarget.files?.[0]; event.currentTarget.setCustomValidity(file && file.size > 50 * 1024 * 1024 ? "Ukuran audio maksimal 50 MB." : ""); }} />
-      </FormField>
+      <AudioUploadField label={existingAudio.url ? "Ganti file audio" : "Upload file audio"} />
     </section>}
     <Button type="submit" disabled={pending}>{pending ? uploadAudio ? "Mengunggah & menyimpan…" : "Menyimpan…" : uploadAudio ? "Simpan materi" : "Simpan perubahan"}</Button>
   </form>;

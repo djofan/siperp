@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useId, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField, Input } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField, Input } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 

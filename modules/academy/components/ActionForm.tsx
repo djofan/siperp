@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, type ReactNode } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import type { ActionState } from "../api/actions";
 
 export function ActionForm({ action, label, children, className = "" }: {

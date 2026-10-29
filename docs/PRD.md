@@ -1,9 +1,11 @@
 # Product Requirements Document (PRD)
 ## Platform Modular Solidaritas Insan Peduli (SIP)
 
-**Versi:** 1.0 — Draft perencanaan awal
-**Status:** Untuk direview senior/tim sebelum eksekusi
-**Stack:** Next.js (App Router) full-stack, TypeScript, Prisma, MySQL, satu aplikasi/satu deploy/satu database
+**Versi:** 1.1 — diperbarui 14 Oktober 2026 (arsitektur frontend Next.js + backend Laravel)
+**Status:** Berjalan; fondasi Laravel selesai, migrasi modul bertahap
+**Stack:** Frontend Next.js (App Router, TypeScript); backend Laravel 13 (API REST, `api/`) untuk seluruh modul bisnis aktif; MySQL satu database bersama; satu repo
+
+> **Status implementasi 29 Oktober 2026:** frontend Next.js dan seluruh backend bisnis aktif Laravel. Migration aktif berada di `api/database/migrations`; Prisma legacy hanya referensi. Penyebutan backend Next.js, Prisma, atau tahapan migrasi di uraian historis di bawah bukan instruksi runtime/deployment. Lihat [arsitektur aktif](arsitektur.md) dan README untuk alur saat ini.
 
 ---
 
@@ -24,7 +26,7 @@ Solidaritas Insan Peduli (SIP) saat ini menjalankan beberapa divisi/program lewa
 3. Menambah program baru (mis. Zakat Academy) berarti membangun sistem dari nol lagi, termasuk hosting dan auth-nya sendiri.
 
 **Tujuan platform baru:**
-- Satu aplikasi, satu database, satu hosting/deploy untuk semua divisi dan program (LAZSIP, SARSIP, Divisi Pendidikan, Tanwir Qurani, SIP sendiri, dan program-program mendatang).
+- Satu platform (satu repo, satu database, satu sistem login) untuk semua divisi dan program (LAZSIP, SARSIP, Divisi Pendidikan, Tanwir Qurani, Ojol Mengaji, SIP sendiri, dan program-program mendatang). Secara teknis terdiri dari satu frontend Next.js dan satu backend Laravel, bukan satu aplikasi per divisi.
 - Satu sistem login. Satu akun **superadmin** yang bisa membuat akun baru dan mengatur akun lain boleh mengakses modul apa saja (satu akun bisa punya akses ke lebih dari satu modul sekaligus).
 - Modul-modul bersifat **flat/sejajar** — SIP, LAZSIP, SARSIP, Divisi Pendidikan, Tanwir Qurani, dan program-program mendatang semuanya modul yang setara, tidak ada hierarki induk-anak antar modul.
 - Menambah modul baru di kemudian hari tidak boleh mengubah kode modul yang sudah ada, tidak butuh hosting baru, tidak butuh sistem login baru.
@@ -33,22 +35,27 @@ Solidaritas Insan Peduli (SIP) saat ini menjalankan beberapa divisi/program lewa
 
 ## 2. Prinsip Arsitektur
 
-- **Modular monolith**: satu aplikasi Next.js, dipecah secara folder per modul — bukan microservices, bukan multi-app terpisah.
-- **Satu database (MySQL) bersama**, diakses lewat Prisma. Tiap modul punya file schema sendiri (`prisma/schema/<modul>.prisma`) yang digabung otomatis saat build. Tabel antar modul boleh saling berelasi bila memang perlu (mis. modul lapor ke `users` di Core), tapi sebisa mungkin berdiri sendiri.
+- **Modular monolith di kedua sisi**: satu aplikasi Next.js (frontend) dan satu aplikasi Laravel (backend API), masing-masing dipecah per modul — bukan microservices, bukan backend terpisah per modul.
+- **Satu database (MySQL) bersama.** Saat ini tabel dan migration yang ada dimiliki Prisma; tiap modul punya file schema sendiri (`modules/<modul>/schema.prisma`, dan `prisma/schema/core.prisma` untuk Core) yang digabung otomatis. Laravel mengakses tabel yang sama lewat Eloquent. Siapa yang memegang migration jangka panjang belum diputuskan (lihat `arsitektur.md` §6). Tabel antar modul boleh saling berelasi bila memang perlu (mis. modul lapor ke `users` di Core), tapi sebisa mungkin berdiri sendiri.
 - **Core** (dipakai semua modul): autentikasi, tabel `users`, `modules` (registry), `module_access` (izin akun ke modul), shell layout admin (sidebar dinamis), komponen UI dasar.
-- **Struktur folder standar tiap modul:**
+- **Struktur folder standar tiap modul** (rincian di `CLAUDE.md` §4):
   ```
-  app/(public)/<modul>/        halaman publik
-  app/admin/<modul>/            halaman admin
-  app/api/<modul>/              endpoint (pengganti backend terpisah)
-  modules/<modul>/              business logic murni (service functions)
-  components/<modul>/           komponen UI modul ini
-  prisma/schema/<modul>.prisma  tabel database modul ini
+  Frontend (Next.js)
+  modules/<modul>/pages/         isi halaman publik (di-re-export oleh app/(public)/<modul>/)
+  modules/<modul>/admin/pages/   isi halaman admin (di-re-export oleh app/admin/<modul>/)
+  modules/<modul>/components/    komponen UI modul ini
+  modules/<modul>/schema.prisma  tabel database modul ini
+  modules/<modul>/api/           [hanya modul yang belum dimigrasikan] logic & endpoint Next.js
+
+  Backend (Laravel)
+  api/app/Modules/<Modul>/       controller, request, resource, model, policy, routes
+  api/routes → /api/v1/<modul>   prefix otomatis lewat provider modul
   ```
-- **Menambah modul baru** = menambah folder-folder di atas + satu baris di tabel `modules` + pemberian akses lewat panel superadmin. Modul lama tidak disentuh.
+- **Menambah modul baru** = menambah folder frontend dan backend di atas + satu baris di tabel `modules` + pemberian akses lewat panel superadmin. Modul lama tidak disentuh.
+- **Migrasi bertahap (strangler):** backend tiap modul dipindah dari Next.js ke Laravel satu per satu. Modul yang belum dipindah tetap berjalan di Next.js. Urutan dan status ada di `arsitektur.md` §7.
 - **Aset lama yang di-reuse, bukan ditulis ulang dari nol:**
   - Komponen React dari `lazsiplp` dan `sarsiplp` — dipindah apa adanya ke `components/lazsip/` dan `components/sarsip/`.
-  - Aturan bisnis yang sudah terbukti jalan di backend Go (`db_sip` versi LAZSIP maupun SARSIP) dan di Laravel (`tanwir-qurani`) — dipakai sebagai referensi logic, ditulis ulang sebagai TypeScript service, bukan dipanggil sebagai backend terpisah.
+  - Aturan bisnis yang sudah terbukti jalan di backend Go (`db_sip` versi LAZSIP maupun SARSIP) dan di Laravel (`tanwir-qurani`) — dipakai sebagai referensi logic, ditulis ulang sebagai service di backend platform (TypeScript untuk modul yang belum dimigrasikan, PHP/Laravel setelah dimigrasikan), bukan dipanggil sebagai backend terpisah.
 
 ---
 
@@ -74,6 +81,7 @@ Satu akun bisa punya banyak baris di `module_access` — itulah mekanisme "satu 
 | Fase | Modul/Fokus | Output utama |
 |---|---|---|
 | 0 | Fondasi & Core | Aplikasi kosong berjalan, auth + superadmin + registry modul siap |
+| 0b | Fondasi Laravel API & migrasi Core | Fondasi selesai (kerangka sembilan modul, Sanctum, konvensi REST, kontrak OpenAPI); migrasi Core ke Laravel adalah langkah berikutnya, lalu modul lain satu per satu — detail: `docs/arsitektur.md` §7 |
 | 1 | Modul LAZSIP | Website & admin LAZSIP lengkap, jadi modul pertama sekaligus pola acuan modul lain |
 | 2 | Modul SIP | Portal induk (profil yayasan, program umum, laporan, blog, penghubung ke divisi lain) |
 | 3 | Modul SARSIP | Website & admin tanggap bencana |
@@ -83,6 +91,8 @@ Satu akun bisa punya banyak baris di `module_access` — itulah mekanisme "satu 
 | 6 | Integrasi & Peluncuran | QA lintas modul, migrasi data lama, pelatihan admin, go-live |
 
 Urutan ini mengikuti prioritas yang sudah disepakati: LAZSIP dulu (karena progresnya paling jauh), baru SIP, SARSIP, Pendidikan, dan terakhir Tanwir Qurani (paling kompleks, dan sudah berjalan baik di sistem lama sehingga tidak mendesak).
+
+**Pembaruan 14 Oktober 2026:** ditambahkan Fase 0b (fondasi Laravel API). Fase 1–5b di bawah ditulis saat backend masih Next.js; backend tiap modul dimigrasikan ke Laravel bertahap **tanpa mengubah scope fitur** modul itu.
 
 **Pembaruan 7 Oktober 2026:** Tanwir Qurani mulai dikerjakan, disusul Ojol Mengaji (keduanya sebelumnya Laravel/Filament terpisah). Tiap modul punya PRD sendiri di `docs/prd-<modul>.md` — PRD modul adalah acuan detail; dokumen ini hanya ringkasan lintas modul.
 
@@ -105,6 +115,18 @@ Urutan ini mengikuti prioritas yang sudah disepakati: LAZSIP dulu (karena progre
 - Setup deployment (hosting, environment variable, database production).
 
 **Definition of done:** Bisa login sebagai superadmin, bisa membuat akun baru, bisa memberi/mencabut akses modul (meski modulnya belum ada isinya), aplikasi sudah live di domain production walau masih kosong kontennya.
+
+---
+
+## Fase 0b — Fondasi Laravel API & Migrasi Core
+
+**Tujuan:** Menyiapkan backend Laravel yang berdampingan dengan Next.js, supaya backend modul bisa dimigrasikan bertahap tanpa mengganggu modul yang sedang berjalan.
+
+**Sudah selesai (branch `feature/laravel-api`):** Laravel 13 di `api/` dengan kerangka sembilan modul (Core, Payment, Lazsip, Sip, Academy, Sarsip, Tanwir, Ojol, Teknisi); autentikasi Sanctum Bearer token (kedaluwarsa absolut 7 hari); kompatibilitas hash bcrypt dua arah dengan Next.js; ID CUID v1 dan timezone UTC; `/api/v1/health`; login placeholder dengan limiter; middleware akses modul yang gagal tertutup; konvensi REST (`api/docs/CONVENTIONS.md`) dan kontrak OpenAPI (`api/docs/openapi.json`).
+
+**Belum dikerjakan:** migrasi Core (login/logout sungguhan, otorisasi `module_access`), integrasi token di Next.js, idempotensi production, keputusan kepemilikan migration database, serta migrasi modul bisnis.
+
+**Definition of done fase ini:** Core berjalan di Laravel (login, logout, otorisasi modul), Next.js memakai API Core, dan keputusan kepemilikan migration sudah dicatat di `docs/arsitektur.md` §6.
 
 ---
 
@@ -134,7 +156,7 @@ Urutan ini mengikuti prioritas yang sudah disepakati: LAZSIP dulu (karena progre
 - **Kelola Pendaftar** — pendaftar Program Pemberdayaan & Pendidikan (belum ada di sistem lama, dibangun baru).
 - Dashboard overview: statistik donasi/zakat bulan ini, campaign paling laris, transaksi terbaru.
 
-### Entitas data (`prisma/schema/lazsip.prisma`)
+### Entitas data (`modules/lazsip/schema.prisma`)
 ```
 news, campaigns, donations, zakat_payments, programs,
 activities, beneficiaries, donors, payment_fees, partners, site_content
@@ -145,7 +167,7 @@ activities, beneficiaries, donors, payment_fees, partners, site_content
 - Status transaksi `paid` hanya berubah lewat webhook payment gateway (bukan redirect sukses di frontend).
 - Payment gateway belum diputuskan — bangun dulu alur sampai tahap simulasi (mark paid/failed manual), payment gateway sungguhan menyusul begitu diputuskan.
 
-**Definition of done:** Semua fitur di atas jalan native di Next.js (bukan manggil backend Go lagi), terhubung ke sistem auth Core (bukan JWT sendiri), dan LAZSIP bisa dipakai sehari-hari oleh admin sebagai pengganti `lazsip.or.id`.
+**Definition of done:** Semua fitur di atas jalan di platform baru (bukan manggil backend Go lagi — saat Fase 1 ditulis, backend-nya Next.js; migrasi ke Laravel mengikuti Fase 0b), terhubung ke sistem auth Core (bukan JWT sendiri), dan LAZSIP bisa dipakai sehari-hari oleh admin sebagai pengganti `lazsip.or.id`.
 
 ---
 
@@ -169,7 +191,7 @@ activities, beneficiaries, donors, payment_fees, partners, site_content
 - CRUD: Struktur Pengurus, Halaman Profil (Tentang, Jangkauan Bantuan), Program Bantuan SIP (info umum, bukan campaign donasi — itu tetap di LAZSIP), Blog SIP, Laporan Bulanan/Tahunan (upload PDF/isi konten), Kegiatan Terkini, Mitra.
 - Kelola tautan antar-divisi (supaya kalau ada modul baru, cukup ditambahkan link-nya dari sini tanpa ubah kode).
 
-### Entitas data (`prisma/schema/sip.prisma`)
+### Entitas data (`modules/sip/schema.prisma`)
 ```
 pengurus, profil_pages, laporan (bulanan/tahunan), blog_sip,
 kegiatan_terkini, mitra, program_bantuan_info
@@ -199,7 +221,7 @@ kegiatan_terkini, mitra, program_bantuan_info
 - CRUD Berita/Laporan (judul, kategori, thumbnail, konten, tanggal, status draft/publish).
 - Pengaturan umum: nomor WhatsApp, template pesan otomatis, rekening donasi.
 
-### Entitas data (`prisma/schema/sarsip.prisma`)
+### Entitas data (`modules/sarsip/schema.prisma`)
 ```
 campaigns, news, distribution_reports, programs, settings
 ```
@@ -219,7 +241,7 @@ campaigns, news, distribution_reports, programs, settings
 - Admin: CRUD lembaga binaan, CRUD program, laporan penyaluran bantuan pendidikan.
 - Pertanyaan terbuka: apakah Divisi Pendidikan hanya "etalase informasi" (seperti section yang sudah ada di LAZSIP sekarang), atau punya sistem kerja sendiri (pendataan siswa, laporan sekolah binaan, dst) yang lebih dalam?
 
-### Entitas data (sementara, `prisma/schema/pendidikan.prisma`)
+### Entitas data (sementara, rencana `modules/pendidikan/schema.prisma`)
 ```
 lembaga_binaan, program_pendidikan, laporan_penyaluran
 ```
@@ -270,7 +292,7 @@ kelompok penerima tugas, ada **co-reviewer**, tanpa anak didik, situs publik den
 - Dokumentasi teknis: cara menambah modul baru (mengikuti pola yang sudah dipraktikkan sejak Fase 1), cara mengelola akun & akses lewat panel superadmin.
 - Rencana pasca-launch: pemantauan error, backup database rutin, jadwal review kebutuhan modul baru (mis. Zakat Academy, Teknisi HP, dll) yang tinggal ditambahkan mengikuti pola modular yang sudah baku.
 
-**Definition of done:** Semua domain lama sudah dialihkan, semua tim divisi sudah bisa login dan bekerja di sistem baru, sistem lama (WordPress, Go, Laravel) resmi dipensiunkan.
+**Definition of done:** Semua domain lama sudah dialihkan, semua tim divisi sudah bisa login dan bekerja di sistem baru, sistem lama (WordPress, Go, dan aplikasi Laravel/Filament lama `tanwir-qurani` & `ojol-mengaji`) resmi dipensiunkan. Catatan: Laravel di folder `api/` adalah backend platform baru, **bukan** sistem lama yang dipensiunkan.
 
 ---
 
@@ -281,6 +303,9 @@ kelompok penerima tugas, ada **co-reviewer**, tanpa anak didik, situs publik den
 - **Migrasi fitur kompleks Tanwir Qurani & Ojol Mengaji** (rekaman, kuis, peta) adalah fase dengan risiko waktu paling tinggi — dipecah: Tanwir dulu sampai lulus DoD, baru Ojol.
 - **Penyimpanan file setoran** saat ini di disk server (`.tanwir-uploads/`, `.ojol-uploads/`) — wajib volume persisten & ikut backup; pindah ke object storage bila volume membesar.
 - **Duplikasi kemungkinan backend `db_sip`** — perlu dipastikan LAZSIP dan SARSIP tidak sedang menyimpan data yang seharusnya sama di dua tempat berbeda sebelum migrasi Fase 1 & 3 dimulai.
+- **Kepemilikan migration database (Prisma vs Laravel)** belum diputuskan. Dua sistem migration yang menulis ke database yang sama mudah bentrok — harus diputuskan dan dicatat sebelum modul bisnis pertama dimigrasikan (`arsitektur.md` §6).
+- **Dua backend berjalan bersamaan selama transisi** (Next.js untuk modul yang belum dimigrasikan, Laravel untuk yang sudah) — perlu disiplin agar aturan bisnis kritis (uang, privasi) tidak terduplikasi atau berbeda perilaku antar keduanya.
+- **Cara menjalankan dua proses di production** (hosting, reverse proxy, PHP ≥ 8.4.1) belum dikonfigurasi.
 - **Nama domain final untuk tiap modul** (subdomain vs subpath, mis. `sip.or.id/lazsip` vs `lazsip.sip.or.id`) belum diputuskan — perlu disepakati sebelum Fase 0 selesai karena mempengaruhi konfigurasi routing.
 
 ---

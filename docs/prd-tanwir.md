@@ -1,8 +1,12 @@
 # PRD — Modul Tanwir Qurani
 
+> **Status implementasi 29 Oktober 2026:** frontend Next.js, backend Laravel. Uraian Prisma atau backend Next.js di bawah adalah referensi historis kebutuhan produk; ikuti [arsitektur aktif](arsitektur.md) dan README untuk implementasi/deployment.
+
 > Status: **sedang dikerjakan** (Fase 5). Dokumen ini disusun dari pembedahan kode aplikasi lama
 > `djofan/tanwir-qurani` (Laravel 12 + Filament) dan keputusan tim per 7 Oktober 2026.
 > Semua aturan bisnis di §6 diambil dari perilaku aplikasi lama — jangan diubah tanpa diskusi.
+>
+> **Catatan arsitektur (14 Oktober 2026):** backend modul ini saat ini di Next.js dan **belum dimigrasikan ke Laravel** (lihat `docs/arsitektur.md` §7). "Aplikasi lama" di dokumen ini adalah `djofan/tanwir-qurani` (Laravel/Filament, repo terpisah), **bukan** `api/` di repo ini. Saat modul dimigrasikan, tiga hal perlu diputuskan lebih dulu: login kode akun yang menerbitkan sesi Core (§3), penanganan unggahan besar dan streaming dengan HTTP Range (§8–§9), dan penyimpanan file setoran privat.
 
 ## 1. Ringkasan
 
@@ -169,7 +173,7 @@ Relasi ke Core hanya lewat `TanwirMember.userId → users.id`. Tidak mereferensi
 ## 9. Kebutuhan Non-Fungsional
 
 - Semua halaman app nyaman di layar 360 px; perekaman berjalan di Chrome Android & Safari iOS terbaru.
-- Unggahan besar memakai route handler (bukan server action) dan streaming ke disk.
+- Unggahan besar memakai route handler (bukan server action) dan streaming ke disk (di Next.js; penanganannya setelah migrasi ke Laravel belum diputuskan).
 - Query halaman publik tidak pernah memilih field privat (CLAUDE.md §5).
 - Logika murni (status tugas, terlambat, nilai kuis, format kode) punya unit test.
 
