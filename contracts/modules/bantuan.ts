@@ -32,7 +32,7 @@ export const documentLabels: Record<string, string> = {
 };
 export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; closingText: string }
 export interface BantuanViewer { id: string; name: string; role: string; roles?: string[]; canBypass: boolean; settings: BantuanSettings }
-export interface BantuanStaff { id: string; name: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
+export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface AidApplication {
   id: string; number: string; name: string; status: string; program: string; region: string; source: string; createdBy: string;
   amount: number | null; verifierId: string | null; distributorId: string | null; distributionType: string | null;

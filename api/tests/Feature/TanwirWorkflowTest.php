@@ -16,10 +16,11 @@ uses(RefreshDatabase::class);
 
 function tanwirMember(string $role, ?string $group = null): TanwirMember
 {
+    $code = ($role === 'guru' ? 'GTQ' : 'PTQ').strtoupper(Str::random(8));
     $user = new User;
-    $user->forceFill(['name' => $role, 'email' => Str::uuid().'@example.test', 'password_hash' => Hash::make('password-tanwir-test'), 'is_active' => true, 'is_superadmin' => false])->save();
+    $user->forceFill(['code' => $code, 'name' => $role, 'email' => Str::uuid().'@example.test', 'password_hash' => Hash::make('password-tanwir-test'), 'is_active' => true, 'is_superadmin' => false])->save();
     $member = new TanwirMember;
-    $member->forceFill(['userId' => $user->id, 'code' => ($role === 'guru' ? 'GTQ' : 'PTQ').strtoupper(Str::random(8)), 'role' => $role, 'groupId' => $group])->save();
+    $member->forceFill(['userId' => $user->id, 'code' => $code, 'role' => $role, 'groupId' => $group])->save();
 
     return $member;
 }

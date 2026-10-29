@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Academy\Models\AcademyCohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
 use App\Modules\Academy\Models\ZakatAcademyQuizQuestion;
@@ -213,7 +214,9 @@ $courseId = $course['data']['id'];
 [$status, $chapter] = sendRequest('POST', 'academy/admin/courses/'.$courseId.'/chapters', ['title' => 'Test chapter', 'slug' => 'test-chapter', 'order' => 0, 'isPublished' => 'on'], $adminToken);
 check($status === 200, 'Academy saves scoped chapters');
 $chapterId = $chapter['data']['id'];
-[$status, $person] = sendRequest('POST', 'academy/participants', ['name' => 'Academy student', 'address' => 'Test address', 'phone' => '081234567894', 'password' => 'test-password', 'gender' => 'IKHWAN', 'courseId' => $courseId], $adminToken);
+$cohort = new AcademyCohort;
+$cohort->forceFill(['title' => 'Angkatan smoke test', 'quota' => 200, 'registrationOpen' => false])->save();
+[$status, $person] = sendRequest('POST', 'academy/participants', ['name' => 'Academy student', 'address' => 'Test address', 'phone' => '081234567894', 'password' => 'test-password', 'gender' => 'IKHWAN', 'cohortId' => $cohort->id, 'courseId' => $courseId], $adminToken);
 check($status === 201 && $person['data']['nip'] === 'PAZ001', 'Academy assigns a profile and enrollment atomically');
 $student = User::find($person['data']['userId']);
 $studentToken = app(TokenIssuer::class)->issue($student)->plainTextToken;
