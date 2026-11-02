@@ -53,12 +53,12 @@ Each module has Models, Http/Controllers, Http/Requests, Http/Resources, Policie
 Use Form Requests for validation and API Resources for responses. Successful resource responses are wrapped in `data`. Errors use the same envelope for validation, authentication, rate limiting, not found, and unexpected exceptions:
 
 ```json
-{"error":{"code":"validation_failed","message":"...","details":{"email":["..."]}}}
+{"error":{"code":"validation_failed","message":"...","details":{"code":["..."]}}}
 ```
 
 Empty details are an object. HTTP status is preserved, as are exception headers such as Retry-After. Unexpected exception details are logged locally and hidden from clients. Health returns a HealthResource with `status` and `database.status`: HTTP 200 when SELECT 1 succeeds, HTTP 503 with degraded/unavailable when it fails.
 
-`POST /api/v1/auth/login` is a validated placeholder returning 501, not a working login. It demonstrates `throttle:login`: five attempts per minute per normalized email (lowercase/trim) and IP, including failed attempts. The file cache backs the limiter in development. Configure trusted proxies deliberately before production; otherwise IPs behind a proxy may share a limit.
+`POST /api/v1/auth/login` authenticates using `code` and `password` and issues a Sanctum token in an HttpOnly cookie. All module login endpoints use the same credentials; email is contact information only. `throttle:login` permits five attempts per minute per normalized code (uppercase/trim) and IP, including failed attempts. See [account code migration](../docs/login-kode-akun.md).
 
 ## Bearer authentication boundary
 

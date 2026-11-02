@@ -41,7 +41,9 @@ class PaymentController
 
     public function status(string $id, TransactionService $transactions): JsonResponse
     {
-        return response()->json($transactions->publicData(PaymentTransaction::findOrFail($id)))->header('Cache-Control', 'no-store');
+        $row = PaymentTransaction::findOrFail($id);
+        app(IpaymuService::class)->enqueueReconciliation($row);
+        return response()->json($transactions->publicData($row))->header('Cache-Control', 'no-store');
     }
 
     public function simulate(Request $request, string $id, TransactionService $transactions): Response
@@ -83,6 +85,8 @@ class PaymentController
         $row = PaymentTransaction::where('gateway', 'ipaymu_sandbox')->findOrFail($id);
         try {
             $row = $gateway->sync($row);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $error) {
+            throw $error;
         } catch (\Throwable) {
             abort(502, 'Status belum dapat diverifikasi.');
         }
@@ -95,10 +99,11 @@ class PaymentController
         $gateway->configuration();
         $data = $request->all();
         abort_unless($gateway->verifyCallback($data, $request->header('X-Signature')), 401, 'Tanda tangan tidak valid.');
+        $payload = array_intersect_key($data, array_flip(['reference_id', 'referenceId', 'trx_id', 'sid', 'merchant', 'sub_total', 'amount']));
         try {
-            $gateway->handleCallback($data);
+            \App\Modules\Payment\Jobs\ProcessIpaymuCallback::dispatch($payload);
         } catch (\Throwable) {
-            abort(503, 'Notifikasi belum dapat diverifikasi.');
+            abort(503, 'Notifikasi belum dapat disimpan. Silakan kirim ulang.');
         }
 
         return response()->json(['received' => true]);

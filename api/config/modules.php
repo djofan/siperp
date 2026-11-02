@@ -20,4 +20,5 @@ return ['providers' => [
     TanwirServiceProvider::class,
     OjolServiceProvider::class,
     TeknisiServiceProvider::class,
+    \App\Modules\Bantuan\Providers\BantuanServiceProvider::class,
 ]];

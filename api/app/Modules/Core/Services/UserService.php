@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Services;
 
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use CaliCastle\Cuid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,7 +15,8 @@ class UserService
     {
         return DB::transaction(function () use ($input): User {
             $user = new User;
-            $user->forceFill(['name' => trim($input['name']), 'email' => trim($input['email']), 'password_hash' => Hash::make($input['password']), 'is_superadmin' => $input['isSuperadmin'] ?? false, 'is_active' => true]);
+            if (empty($input['isSuperadmin'])) $user->code = AccountCodes::next('admin');
+            $user->forceFill(['name' => trim($input['name']), 'email' => ! empty($input['email']) ? trim($input['email']) : null, 'password_hash' => Hash::make($input['password']), 'is_superadmin' => $input['isSuperadmin'] ?? false, 'is_active' => true]);
             $user->save();
             $user->refresh();
             $this->log("Akun {$user->name} dibuat".($user->is_superadmin ? ' sebagai superadmin' : ''));
@@ -33,12 +35,22 @@ class UserService
     {
         return DB::transaction(function () use ($id, $input): User {
             $user = User::findOrFail($id);
-            $user->forceFill(['name' => trim($input['name']), 'email' => trim($input['email'])]);
+            $user->name = trim($input['name']);
+            if (array_key_exists('email', $input)) {
+                $user->email = ! empty($input['email']) ? trim($input['email']) : strtolower($user->code).'@accounts.sip.invalid';
+            }
             if (! empty($input['password'])) {
                 $user->password_hash = Hash::make($input['password']);
             }
             $user->save();
             $this->log("Data akun {$user->name} diperbarui".(! empty($input['password']) ? ' (termasuk password)' : ''));
+            if (array_key_exists('entries', $input)) {
+                if ($user->is_superadmin) {
+                    throw ValidationException::withMessages(['entries' => 'Superadmin otomatis memiliki akses penuh ke semua modul.']);
+                }
+                $this->setAccess($id, $input['entries']);
+                $user->refresh();
+            }
 
             return $user;
         });
@@ -87,7 +99,13 @@ class UserService
             $modules = DB::table('modules')->whereIn('id', array_column($entries, 'moduleId'))->get()->keyBy('id');
             foreach ($entries as $entry) {
                 $module = $modules->get($entry['moduleId']);
-                $roles = match ($module?->slug) {
+                if ($module && in_array($entry['role'], config('modules.unique_roles.'.$module->slug, []), true)) {
+                    DB::table('modules')->where('id', $module->id)->lockForUpdate()->first();
+                    if (DB::table('module_access')->where('module_id', $module->id)->where('role', $entry['role'])->where('user_id', '!=', $id)->exists()) {
+                        throw ValidationException::withMessages(['entries' => 'Role ini hanya boleh dimiliki satu akun pada modul tersebut.']);
+                    }
+                }
+                $roles = config('modules.roles.'.$module?->slug) ?? match ($module?->slug) {
                     'teknisi' => ['admin', 'manager', 'technician', 'monitoring'],
                     'academy' => ['admin', 'editor', 'teacher'],
                     'tanwir', 'ojol' => ['admin', 'guru', 'peserta'],
@@ -113,6 +131,7 @@ class UserService
                     $this->log("Akses {$user->name} ke {$name} dicabut");
                 }
             }
+            if (collect($entries)->contains(fn ($entry) => $entry['role'] === 'admin')) AccountCodes::ensureAdmin($user);
         });
     }
 

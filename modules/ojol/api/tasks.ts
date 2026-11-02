@@ -1,6 +1,6 @@
 import type { QuizOption } from "./policy";
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/ojol";
 export interface QuestionInput {
     question: string;
     optionA: string;

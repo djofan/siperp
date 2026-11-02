@@ -1,6 +1,6 @@
 import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/academy";
 export type CurriculumStatsResult = {
     courses: number;
     published: number;

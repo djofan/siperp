@@ -9,6 +9,7 @@ class SipServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        config(['modules.account_management.sip' => ['roles' => ['editor' => 'Editor konten'], 'links' => []]]);
         Route::middleware('api')->prefix('api/v1/sip')->group(__DIR__.'/../routes/api.php');
     }
 }

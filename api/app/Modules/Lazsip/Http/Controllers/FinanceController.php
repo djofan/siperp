@@ -50,7 +50,12 @@ class FinanceController
         $page = PaymentTransaction::with('donor:id,name')->where('module_source', 'lazsip')->where('source_type', $campaign ? 'campaign' : 'zakat')->orderByDesc('created_at')->orderBy('id')->paginate($request->integer('per_page', 100));
         $titles = $campaign ? LazsipCampaign::whereIn('id', $page->getCollection()->pluck('source_id'))->pluck('title', 'id') : LazsipZakatDetail::whereIn('id', $page->getCollection()->pluck('source_id'))->pluck('zakat_type', 'id');
         $page->through(function ($row) use ($campaign, $titles) {
-            $data = ['id' => $row->id, 'donorName' => $row->donor->name, 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt];
+            $data = ['id' => $row->id, 'trackingCode' => $row->trackingCode, 'donorName' => $row->donor->name, 'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod, 'status' => $row->status, 'createdAt' => $row->createdAt];
+            $data['gateway'] = $row->gateway;
+            $data['gatewayState'] = $row->gatewayState;
+            if ($row->status === 'pending' && $row->gatewayState === 'escrow') {
+                $data['status'] = 'escrow';
+            }
 
             return $campaign ? [...$data, 'campaign' => ['title' => $titles[$row->sourceId] ?? '(campaign tidak ditemukan)']] : [...$data, 'zakatType' => ($titles[$row->sourceId] ?? null) === 'fitrah' ? 'fitrah' : 'maal'];
         });

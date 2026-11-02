@@ -12,6 +12,8 @@
     "api:test": "php api/vendor/pestphp/pest/bin/pest --configuration api/phpunit.xml"
   },
   "dependencies": {
+    "heic-to": "^1.6.6",
+    "lucide-react": "^1.61.0",
     "maplibre-gl": "^5.24.0",
     "next": "16.3.5",
     "react": "19.2.8",

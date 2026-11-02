@@ -1,0 +1,13 @@
+.picker{position:relative;display:grid;gap:8px;margin:16px 0 22px;min-width:0}.picker>label{font-size:12px;font-weight:500}.search{display:flex;align-items:center;gap:10px;padding:0 14px;border-radius:12px;background:#f0f6eb;color:#7a9770}.search input{flex:1;min-width:0;height:46px;background:transparent;border:0;outline:0;color:#254633;font-size:13px}.search:focus-within{outline:2px solid #9fc291;outline-offset:1px}.picker small{font-size:11px;line-height:1.6;color:#7a9072}.dropdown{position:absolute;top:83px;left:0;right:0;z-index:12;max-height:300px;overflow:auto;padding:6px;background:#fff;border:1px solid #e2ecdc;border-radius:14px;box-shadow:0 12px 32px #29472214}.dropdown button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-radius:9px;padding:12px;color:#3a6335}.dropdown button[aria-selected=true],.dropdown button:hover{background:#f1f7eb}.dropdown button span{min-width:0}.dropdown strong,.selected strong{font-size:13px;display:block}.dropdown small{display:block;overflow-wrap:anywhere}.dropdown p{font-size:12px;color:#7b8e70;padding:12px;margin:0}.selected{padding:18px;border-radius:14px;background:#f4f8ef;display:grid;gap:10px;margin-top:7px}.selected>div:first-child{display:flex;gap:10px;align-items:center}.selected p{font-size:12px;line-height:1.7;color:#67805b;margin:0}.actions{display:flex;gap:10px;flex-wrap:wrap}.error{font-size:12px;color:#a74b39}.spin{animation:pickerSpin 1s linear infinite}@keyframes pickerSpin{to{transform:rotate(360deg)}}@media(max-width:760px){.actions>button{width:100%}.dropdown{top:83px}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.picker{gap:10px;margin:0 0 30px}
+.picker>label{color:#375b3b;font-weight:600}
+.search{min-height:50px;padding:0 16px;gap:12px;background:#f6f9f2;border:1px solid #e0e9d9;border-radius:12px;transition:border-color .15s,box-shadow .15s}
+.search>svg{flex-shrink:0}
+.picker .search input{height:48px;padding:0;margin:0;border:0;border-radius:0;box-shadow:none;line-height:1.5;background:transparent;appearance:none}
+.picker .search input:focus,.picker .search input:focus-visible{outline:none;outline-offset:0;border:0;box-shadow:none;background:transparent}
+.search:focus-within{outline:none;border-color:#91b582;box-shadow:0 0 0 3px #8aaf761a}
+.search input::placeholder{color:#99a78f}
+.picker>small{font-size:11px;line-height:1.8;color:#8a9a80}
+.dropdown{top:82px;padding:8px}
+.selected{margin-top:12px;padding:22px;gap:14px}
+@media(max-width:760px){.picker{margin-bottom:26px}.selected{padding:18px}}

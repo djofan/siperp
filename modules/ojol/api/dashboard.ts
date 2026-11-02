@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api";
-import type * as Domain from "@/lib/domain";
+import type * as Domain from "@/contracts/modules/ojol";
 export type AdminSummaryResult = {
     guru: number;
     peserta: number;

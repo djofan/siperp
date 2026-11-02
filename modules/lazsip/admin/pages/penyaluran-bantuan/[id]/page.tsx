@@ -29,6 +29,8 @@ export default async function EditBeneficiaryPage({
           gender: beneficiary.gender,
           referralSource: beneficiary.referralSource,
           photo: beneficiary.photo ?? "",
+          handoverPhoto: beneficiary.handoverPhoto ?? "",
+          certificatePhoto: beneficiary.certificatePhoto ?? "",
           needs: beneficiary.needs,
           aidType: beneficiary.aidType,
           amountReceived: String(beneficiary.amountReceived),

@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { SipLaporan } from "@/lib/domain";
+import type { SipLaporan } from "@/contracts/modules/sip";
 
 export async function getLaporanById(id: string) {
   try { return await apiRequest<SipLaporan>(`sip/laporan/${encodeURIComponent(id)}`); }

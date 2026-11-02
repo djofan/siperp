@@ -22,7 +22,10 @@ class SiteContentController
     public function update(Request $request, string $key): JsonResponse
     {
         abort_unless(in_array($key, self::KEYS, true), 404);
-        $data = $request->validate(['content' => 'required|array', 'content.*' => 'string|max:100000']);
+        $data = $request->validate(['content' => 'required|array', 'content.*' => 'nullable|string|max:100000']);
+        // Laravel converts empty form strings to null. Optional content must stay
+        // an empty string so the editor and public defaults keep the same contract.
+        $data['content'] = array_map(fn ($value) => $value ?? '', $data['content']);
         if ($key === 'layanan') {
             foreach (array_filter(array_map('trim', explode("\n", $data['content']['faq'] ?? ''))) as $line) {
                 $parts = explode('|', $line, 2);

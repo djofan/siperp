@@ -11,6 +11,7 @@ use App\Modules\Core\Http\Controllers\ModuleSessionController;
 use App\Modules\Core\Http\Controllers\ParticipantController;
 use App\Modules\Core\Http\Controllers\SessionController;
 use App\Modules\Core\Http\Controllers\UserController;
+use App\Modules\Core\Http\Controllers\ManagedAccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
@@ -26,6 +27,8 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::delete('/{module}/participants/{id}', [ParticipantController::class, 'destroy'])->where('module', 'academy|teknisi');
     Route::get('/auth/me', [SessionController::class, 'show']);
     Route::post('/auth/logout', [SessionController::class, 'destroy']);
+    Route::get('/core/module-accounts', [ManagedAccountController::class, 'index']);
+    Route::post('/core/module-accounts', [ManagedAccountController::class, 'store']);
     Route::get('/{module}/viewer', [ModuleSessionController::class, 'viewer'])->where('module', 'tanwir|ojol|academy|teknisi');
     Route::middleware('superadmin')->group(function (): void {
         Route::prefix('super/erp')->group(function () {

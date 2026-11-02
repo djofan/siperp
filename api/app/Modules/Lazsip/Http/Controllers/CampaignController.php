@@ -34,7 +34,18 @@ class CampaignController
 
     private function input(Request $request, ?string $id = null): array
     {
-        return $request->validate(['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'targetAmount' => 'required|integer|min:1|max:2147483647', 'image' => 'sometimes|nullable|string|max:191', 'uniqueCode' => ['required', 'string', 'regex:/^\d{2}$/D', Rule::unique('lazsip_campaigns', 'unique_code')->ignore($id)], 'isPinned' => 'required|boolean', 'status' => 'required|in:active,completed']);
+        return $request->validate([
+            'title' => 'required|string|max:191', 'description' => 'required|string|max:1000000',
+            'targetAmount' => 'required|integer|min:1|max:2147483647', 'image' => 'sometimes|nullable|string|max:191',
+            'uniqueCode' => ['required', 'string', 'regex:/^\d{2}$/D', Rule::unique('lazsip_campaigns', 'unique_code')->ignore($id)],
+            'isPinned' => 'required|boolean', 'status' => 'required|in:active,completed',
+            'documentationPhotos' => 'sometimes|nullable|array',
+            'documentationPhotos.*' => 'array:id,image,caption,isDemo',
+            'documentationPhotos.*.id' => 'required|string|max:64|distinct',
+            'documentationPhotos.*.image' => ['required', 'string', 'max:191', 'regex:~^/(?:uploads/lazsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|aid/[a-z0-9-]+\.(?:jpg|png|webp))$~D'],
+            'documentationPhotos.*.caption' => 'present|nullable|string|max:500',
+            'documentationPhotos.*.isDemo' => 'sometimes|boolean',
+        ]);
     }
 
     public function store(Request $request): JsonResponse

@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { SipNews } from "@/lib/domain";
+import type { SipNews } from "@/contracts/modules/sip";
 
 export async function listNewsForAdmin() { return apiCollection<SipNews>("sip/admin/news"); }
 export async function listPublishedNews() { return apiCollection<SipNews>("sip/news"); }

@@ -4,6 +4,7 @@ const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 7; // 7 hari
 export interface SessionPayload {
   userId: string;
   name: string;
+  code?: string;
   isSuperadmin: boolean;
   moduleSlugs: string[];
   moduleRoles?: Record<string, string>;
@@ -29,6 +30,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     return {
       userId: payload.userId,
       name: payload.name,
+      code: payload.code,
       isSuperadmin: payload.isSuperadmin,
       moduleSlugs: payload.moduleSlugs as string[],
       moduleRoles: payload.moduleRoles,

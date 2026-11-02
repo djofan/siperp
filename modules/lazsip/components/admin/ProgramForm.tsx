@@ -6,8 +6,11 @@ import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadF
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
 import { panelClasses } from "@/components/ui/panel";
+import type { DocumentationPhoto } from "@/contracts/modules/lazsip";
+import { DocumentationEditor, useDocumentationEditor } from "./DocumentationEditor";
 
 interface ProgramFormValues {
+  documentationPhotos: DocumentationPhoto[];
   title: string;
   description: string;
   requirements: string;
@@ -35,10 +38,13 @@ export function ProgramForm({
   const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const gallery=useDocumentationEditor(initialValues?.documentationPhotos??[]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if(gallery.uploading){setError("Tunggu hingga semua foto selesai diunggah.");return;}
+    if(gallery.photos.some(photo=>!photo.image)){setError("Unggah foto pada setiap baris dokumentasi, atau hapus baris kosong.");return;}
 
     if (!isEdit && !image) {
       setError("Gambar program wajib diunggah.");
@@ -66,12 +72,14 @@ export function ProgramForm({
         type,
         formUrl,
         isPinned,
+        documentationPhotos:gallery.photos,
       }),
-    });
+    }).catch(()=>null);
+    if(!response){setError("Koneksi terputus. Isian tetap tersimpan, silakan coba lagi.");setIsSubmitting(false);return;}
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan program.");
+      setError(typeof data?.error==="string"?data.error:data?.error?.message??"Gagal menyimpan program.");
       setIsSubmitting(false);
       return;
     }
@@ -122,7 +130,7 @@ export function ProgramForm({
             </div>
           )}
 
-          <ImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+          <ImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} required={!isEdit} />
         </div>
 
         <div className="flex flex-col gap-5">
@@ -161,11 +169,12 @@ export function ProgramForm({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <LoadingButton type="submit" loading={isSubmitting}>
+          <LoadingButton type="submit" loading={isSubmitting} disabled={gallery.uploading}>
             {isEdit ? "Simpan Perubahan" : "Tambah Program"}
           </LoadingButton>
         </div>
       </div>
+      <DocumentationEditor editor={gallery} kind="program" saving={isSubmitting}/>
     </form>
   );
 }

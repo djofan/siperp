@@ -62,14 +62,17 @@ php artisan tinker
 ```
 
 ```php
-app(\App\Modules\Core\Services\UserService::class)->create([
+$account = app(\App\Modules\Core\Services\UserService::class)->create([
     'name' => 'Administrator',
     'email' => 'admin@example.com',
     'password' => 'ganti-dengan-password-kuat',
     'isSuperadmin' => true,
     'moduleIds' => [],
 ]);
+$account->code; // Simpan kode ini untuk login bersama password.
 ```
+
+Semua modul menggunakan kode akun + password. Email hanya untuk kontak. Lihat [panduan login kode akun](docs/login-kode-akun.md) untuk migrasi dan kode akun lama.
 
 ## Pemeriksaan
 

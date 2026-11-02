@@ -2,11 +2,8 @@
 
 namespace App\Modules\Payment\Services;
 
-use App\Modules\Lazsip\Models\LazsipCampaign;
-use App\Modules\Lazsip\Models\LazsipZakatDetail;
 use App\Modules\Payment\Models\PaymentReceipt;
 use App\Modules\Payment\Models\PaymentTransaction;
-use App\Modules\Sarsip\Models\SarsipEntry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -15,22 +12,21 @@ class ReceiptService
 {
     public function queue(PaymentTransaction $row): void
     {
-        if ($row->status !== 'paid' || ! $row->paidAt || ! in_array($row->moduleSource, ['lazsip', 'sarsip'], true)) {
+        if ($row->status !== 'paid' || ! $row->paidAt || ! app(\App\Support\PaymentModules::class)->has($row->moduleSource)) {
             return;
         }
         $donor = $row->donor;
         if (! $donor->email || PaymentReceipt::where('transaction_id', $row->id)->exists()) {
             return;
         }
-        $label = $row->sourceType === 'zakat'
-            ? (LazsipZakatDetail::find($row->sourceId)?->zakatType === 'fitrah' ? 'Zakat Fitrah' : 'Zakat Maal')
-            : ($row->moduleSource === 'sarsip' ? (SarsipEntry::whereKey($row->sourceId)->value('title') ?? 'Donasi SARSIP') : (LazsipCampaign::whereKey($row->sourceId)->value('title') ?? 'Donasi LAZSIP'));
-        $brand = $row->moduleSource === 'sarsip' ? 'SARSIP' : 'LAZSIP';
+        $description = app(\App\Support\PaymentModules::class)->for($row->moduleSource)->describe($row->sourceType, $row->sourceId);
+        $label = $description['label'];
+        $brand = $description['brand'];
         $zakat = $row->sourceType === 'zakat';
         $test = in_array($row->gateway, ['simulation', 'ipaymu_sandbox'], true);
         $title = $zakat ? 'Pembayaran zakat berhasil' : 'Donasi '.$brand.' berhasil';
         $note = $test ? 'Ini konfirmasi pengujian/simulasi, bukan bukti penerimaan uang nyata.' : 'Pembayaran Anda telah dikonfirmasi berhasil.';
-        $message = $zakat ? 'Terima kasih telah menunaikan zakat melalui LAZSIP. Semoga Allah menerima zakat Anda dan memberikan keberkahan.' : ($brand === 'SARSIP' ? 'Terima kasih atas dukungan Anda untuk misi pencarian, pertolongan, dan kemanusiaan SARSIP.' : 'Terima kasih telah berbagi melalui LAZSIP. Dukungan Anda berarti bagi penerima manfaat campaign ini.');
+        $message = $description['message'];
         $money = fn ($amount) => 'Rp'.number_format($amount, 0, ',', '.');
         $details = [[$zakat ? 'Jenis zakat' : 'Campaign', $label], [$zakat ? 'Nominal zakat' : 'Nominal donasi', $money($row->amount)], ['Biaya admin', $money($row->adminFee)], ['Total pembayaran', $money($row->amount + $row->adminFee)], ['Tanggal pembayaran', $row->paidAt->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s').' WIB'], ['Kode transaksi', $row->trackingCode]];
         $text = implode("\n\n", [$brand.' — '.$title, $note, "Assalamu'alaikum, {$donor->name}.", $message, ...array_map(fn ($item) => $item[0].': '.$item[1], $details), 'Simpan kode transaksi untuk memeriksa status pembayaran Anda.', 'Salam, Tim '.$brand]);

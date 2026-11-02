@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
-import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { calculateFee } from "@/lib/payments/feeCalculation";
 const money = (v: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
 type Method = { method: string; feeAmount: number | null; feePercentage: number | null };
 

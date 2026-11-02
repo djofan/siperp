@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const STATUS = {
+  escrow: { title: "Sudah dibayar · Escrow", description: "Pembayaran diterima iPaymu, tetapi dana masih ditahan dan belum tersedia untuk disalurkan. Jangan membayar ulang." },
   pending: { title: "Menunggu konfirmasi admin", description: "Admin modul asal akan menandai transaksi ini lunas atau gagal melalui halaman Kelola Transaksi." },
   paid: { title: "Simulasi pembayaran berhasil", description: "Admin telah menandai transaksi ini lunas. Pembayaran sudah tercatat pada modul asal." },
   failed: { title: "Simulasi pembayaran gagal", description: "Admin telah menandai transaksi ini gagal. Nominal transaksi ini tidak dihitung sebagai pembayaran lunas." },
@@ -43,7 +44,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
       const response = await fetch(`/api/payment/gateway-status/${encodeURIComponent(transaction.id)}`, { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(apiErrorMessage(data, "Status pembayaran belum dapat diperiksa."));
-      if (["pending", "paid", "failed"].includes(data.status)) setStatus(data.status);
+      if (["pending", "paid", "failed", "escrow"].includes(data.status)) setStatus(data.status);
     } catch (err) { setCheckoutError((err as Error).message); }
     finally { setChecking(false); }
   }
@@ -75,7 +76,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
   );
 
   useEffect(() => {
-    if (status !== "pending") return;
+    if (status !== "pending" && status !== "escrow") return;
     let stopped = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
@@ -96,13 +97,13 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
         }
         if (!response.ok) throw new Error("Status unavailable");
         const data = await response.json();
-        if (data.id !== transaction.id || !["pending", "paid", "failed"].includes(data.status)) {
+        if (data.id !== transaction.id || !["pending", "paid", "failed", "escrow"].includes(data.status)) {
           throw new Error("Invalid status response");
         }
         if (stopped) return;
         setError(null);
         setStatus(data.status);
-        keepChecking = data.status === "pending";
+        keepChecking = data.status === "pending" || data.status === "escrow";
       } catch {
         if (!stopped) setError("Status belum dapat diperbarui. Kami akan mencoba lagi otomatis; Anda tidak perlu membuat transaksi baru.");
       } finally {
@@ -120,6 +121,7 @@ export function CheckoutForm({ transaction }: { transaction: { id: string; track
   }, [transaction.id, status]);
 
   const current = isIpaymu ? {
+    escrow: STATUS.escrow,
     pending: { title: "Menunggu pembayaran test", description: "Lanjutkan ke iPaymu Sandbox untuk memilih metode pembayaran. Status diperbarui otomatis setelah callback iPaymu." },
     paid: { title: "Pembayaran test berhasil", description: "iPaymu telah mengonfirmasi pembayaran test ini." },
     failed: { title: "Sesi pembayaran berakhir", description: "Sesi test kedaluwarsa. Pembayaran ini tidak dihitung sebagai dana masuk." },

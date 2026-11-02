@@ -17,9 +17,9 @@ class LazsipProgram extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['formUrl' => 'form_url', 'isPinned' => 'is_pinned', 'registrationOpen' => 'registration_open', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['documentationPhotos' => 'documentation_photos', 'formUrl' => 'form_url', 'isPinned' => 'is_pinned', 'registrationOpen' => 'registration_open', 'createdAt' => 'created_at'];
 
-    protected $casts = ['is_pinned' => 'boolean', 'registration_open' => 'boolean', 'created_at' => 'immutable_datetime'];
+    protected $casts = ['documentation_photos' => 'array', 'is_pinned' => 'boolean', 'registration_open' => 'boolean', 'created_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 

@@ -1,17 +1,20 @@
 import { listActivities } from "@/modules/lazsip/api/activities";
 import { ActivityCard } from "@/modules/lazsip/components/ActivityCard";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 
 export default async function LazsipKegiatanPage() {
   const activities = await listActivities();
 
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
+      <PageIntroRow>
       <BackLink href="/lazsip#kegiatan">Kembali ke Beranda</BackLink>
 
       <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
         Kegiatan
       </span>
+      </PageIntroRow>
       <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
         Semua Kegiatan LAZSIP
       </h1>

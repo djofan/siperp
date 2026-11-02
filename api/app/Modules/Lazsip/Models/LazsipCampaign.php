@@ -17,9 +17,9 @@ class LazsipCampaign extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['targetAmount' => 'target_amount', 'currentAmount' => 'current_amount', 'uniqueCode' => 'unique_code', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['documentationPhotos' => 'documentation_photos', 'targetAmount' => 'target_amount', 'currentAmount' => 'current_amount', 'uniqueCode' => 'unique_code', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
 
-    protected $casts = ['target_amount' => 'integer', 'current_amount' => 'integer', 'is_pinned' => 'boolean', 'created_at' => 'immutable_datetime'];
+    protected $casts = ['documentation_photos' => 'array', 'target_amount' => 'integer', 'current_amount' => 'integer', 'is_pinned' => 'boolean', 'created_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 

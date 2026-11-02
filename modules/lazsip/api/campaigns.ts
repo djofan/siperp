@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { LazsipCampaign } from "@/lib/domain";
+import type { LazsipCampaign } from "@/contracts/modules/lazsip";
 export type CampaignView = LazsipCampaign & { donorCount: number };
 export interface CampaignHistoryEntry {
   id: string;

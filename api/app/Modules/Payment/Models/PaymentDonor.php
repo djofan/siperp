@@ -2,8 +2,6 @@
 
 namespace App\Modules\Payment\Models;
 
-use App\Modules\Lazsip\Models\LazsipDonation;
-use App\Modules\Lazsip\Models\LazsipZakatPayment;
 use App\Support\DomainModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -31,15 +29,4 @@ class PaymentDonor extends DomainModel
         return $this->hasMany(PaymentTransaction::class, 'donor_id', 'id');
     }
 
-    /** @return HasMany<LazsipDonation, $this> */
-    public function donations(): HasMany
-    {
-        return $this->hasMany(LazsipDonation::class, 'donor_id', 'id');
-    }
-
-    /** @return HasMany<LazsipZakatPayment, $this> */
-    public function zakatPayments(): HasMany
-    {
-        return $this->hasMany(LazsipZakatPayment::class, 'donor_id', 'id');
-    }
 }

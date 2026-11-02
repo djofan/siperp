@@ -1,5 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { SipPenyaluranBantuan } from "@/lib/domain";
+import type { SipPenyaluranBantuan } from "@/contracts/modules/sip";
 
 export async function listPenyaluranBantuan() { return apiCollection<SipPenyaluranBantuan>("sip/penyaluran-bantuan"); }
 export async function getPenyaluranBantuanById(id: string) {

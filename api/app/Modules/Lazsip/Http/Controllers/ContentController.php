@@ -20,7 +20,7 @@ class ContentController
 
     private const PUBLIC_CARD = ['id', 'name', 'age', 'amount_received', 'aid_type', 'photo', 'is_pinned', 'verifier_area', 'verifier_name'];
 
-    private const PUBLIC_DETAIL = ['id', 'name', 'age', 'problem_faced', 'gender', 'photo', 'referral_source', 'needs', 'aid_type', 'amount_received', 'verifier_name', 'verifier_area'];
+    private const PUBLIC_DETAIL = ['id', 'name', 'age', 'problem_faced', 'gender', 'photo', 'handover_photo', 'certificate_photo', 'referral_source', 'needs', 'aid_type', 'amount_received', 'verifier_name', 'verifier_area'];
 
     private function query(Request $request, bool $detail = false)
     {
@@ -99,6 +99,20 @@ class ContentController
             default => abort(404),
             'beneficiaries' => ['name' => $title, 'address' => $text, 'problemFaced' => $text, 'birthDate' => 'required|date|before_or_equal:today', 'age' => 'required|integer|min:0|max:150', 'gender' => $title, 'referralSource' => $title, 'photo' => $image, 'needs' => $text, 'aidType' => 'required|in:pendidikan,kesehatan,kebutuhan_pokok,lainnya', 'amountReceived' => 'required|integer|min:0|max:2147483647', 'verifierName' => $title, 'verifierArea' => $title, 'maritalStatus' => 'required|in:menikah,janda-cerai,janda-meninggal,duda-cerai,duda-meninggal', 'nik' => 'sometimes|nullable|string|max:191', 'occupation' => 'sometimes|nullable|string|max:191', 'monthlyIncome' => 'sometimes|nullable|integer|min:0|max:2147483647', 'dependentsCount' => 'sometimes|nullable|integer|min:0|max:2147483647', 'dependentsDetail' => 'sometimes|nullable|string|max:1000000', 'isPinned' => 'required|boolean'],
         };
+        if ($request->route('resource') === 'beneficiaries') {
+            $rules['handoverPhoto'] = $image;
+            $rules['certificatePhoto'] = $image;
+        }
+        if (in_array($request->route('resource'), ['activities', 'programs'], true)) {
+            $rules = [...$rules,
+                'documentationPhotos' => 'sometimes|nullable|array',
+                'documentationPhotos.*' => 'array:id,image,caption,isDemo',
+                'documentationPhotos.*.id' => 'required|string|max:64|distinct',
+                'documentationPhotos.*.image' => ['required', 'string', 'max:191', 'regex:~^/(?:uploads/lazsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|aid/[a-z0-9-]+\.(?:jpg|png|webp))$~D'],
+                'documentationPhotos.*.caption' => 'present|nullable|string|max:500',
+                'documentationPhotos.*.isDemo' => 'sometimes|boolean',
+            ];
+        }
         $data = $request->validate($rules);
         foreach ($data as $key => $value) {
             if (is_string($value)) {

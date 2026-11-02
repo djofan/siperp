@@ -14,11 +14,11 @@ class SessionData
             ->get(['modules.slug', 'module_access.role']);
 
         return [
-            'userId' => $user->id, 'name' => $user->name,
+            'userId' => $user->id, 'name' => $user->name, 'code' => $user->code,
             'isSuperadmin' => $user->is_superadmin,
             'moduleSlugs' => $access->pluck('slug')->all(),
             'moduleRoles' => $access->pluck('role', 'slug')->all(),
-            'panelRedirect' => ! $user->is_superadmin && $access->isNotEmpty() && $access->every(fn ($row) => $row->slug === 'teknisi' && $row->role === 'technician') ? '/teknisi/panel' : null,
+            'panelRedirect' => ! $user->is_superadmin ? app(\App\Support\ModuleSessions::class)->preferredPanel($access->all()) : null,
         ];
     }
 }

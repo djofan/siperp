@@ -36,7 +36,7 @@ class TransactionService
             'gatewayReferenceId' => $gateway === 'ipaymu_sandbox' ? 'SIP-'.Str::uuid() : null,
         ])->save();
         $row->refresh();
-        DB::afterCommit(fn () => app(ReceiptService::class)->tracking($row));
+        DB::afterCommit(fn () => \App\Modules\Payment\Jobs\DeliverPaymentEmail::dispatch($row->id, true));
 
         return $row;
     }
@@ -58,7 +58,7 @@ class TransactionService
             return $row;
         }, 5);
         if ($row->status === 'paid') {
-            app(ReceiptService::class)->deliver($row->id);
+            \App\Modules\Payment\Jobs\DeliverPaymentEmail::dispatch($row->id);
         }
 
         return $row;
@@ -84,6 +84,6 @@ class TransactionService
     {
         return ['id' => $row->id, 'trackingCode' => $row->trackingCode, 'moduleSource' => $row->moduleSource,
             'amount' => $row->amount, 'adminFee' => $row->adminFee, 'paymentMethod' => $row->paymentMethod,
-            'status' => $row->status, 'createdAt' => $row->createdAt, 'paidAt' => $row->paidAt, 'gateway' => $row->gateway];
+            'status' => $row->status === 'pending' && $row->gatewayState === 'escrow' ? 'escrow' : $row->status, 'gatewayState' => $row->gatewayState, 'createdAt' => $row->createdAt, 'paidAt' => $row->paidAt, 'gateway' => $row->gateway];
     }
 }

@@ -89,6 +89,7 @@ class MemberController extends BaseController
                 $code = $prefix.str_pad((string) ++$sequence, 3, '0', STR_PAD_LEFT);
             } while ($model::where('code', $code)->exists());
             $user = new User;
+            $user->code = $code;
             $user->forceFill(['name' => $credentials['name'], 'email' => strtolower($credentials['email'] ?? $this->placeholder($request, $code)), 'password_hash' => Hash::make($credentials['password']), 'is_active' => $request->boolean('isActive'), 'is_superadmin' => false])->save();
             $member = new $model;
             $member->forceFill(['userId' => $user->id, 'code' => $code, 'role' => $role, 'groupId' => $groupId ?: null, ...$profile])->save();

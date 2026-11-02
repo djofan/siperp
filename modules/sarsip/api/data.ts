@@ -1,5 +1,6 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
-import type { SarsipEntry, SarsipProfile, SarsipPaymentMethod, PaymentTransaction } from "@/lib/domain";
+import type { SarsipEntry, SarsipProfile, SarsipPaymentMethod } from "@/contracts/modules/sarsip";
+import type { PaymentTransaction } from "@/contracts/modules/payment";
 export const KINDS = ["kegiatan", "campaign", "berita"] as const;
 export type EntryKind = typeof KINDS[number];
 export function isEntryKind(value: string): value is EntryKind { return KINDS.includes(value as EntryKind); }

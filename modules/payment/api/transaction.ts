@@ -1,6 +1,6 @@
 import "server-only";
 import {apiRequest,apiCollection,ApiError} from "@/lib/api";
-import type {PaymentTransaction} from "@/lib/domain";
+import type { PaymentTransaction } from "@/contracts/modules/payment";
 export async function getTransactionStatus(id: string) {
   try { return await apiRequest<Pick<PaymentTransaction, "id" | "trackingCode" | "moduleSource" | "amount" | "adminFee" | "paymentMethod" | "status" | "createdAt" | "paidAt" | "gateway">>(`payment/status/${encodeURIComponent(id)}`); }
   catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
