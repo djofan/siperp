@@ -37,6 +37,7 @@ export interface SarsipProfile {
   headline: string;
   description: string;
   contact: string | null;
+  heroImage: string | null;
 }
 
 export interface SarsipPaymentMethod {
