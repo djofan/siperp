@@ -137,3 +137,11 @@ Content-Type: application/json
 ```
 
 ID ilustratif; test menggunakan CUID asli. Jalankan `php artisan test --filter=RestConventionsTest` dan `php artisan test --filter=OpenApiContractTest`. Hasil keseluruhan dicatat pada `api/VERIFICATION.md`.
+
+## Periode santunan rutin
+
+`POST /api/v1/bantuan/santunan/periods` membuat kumpulan santunan rutin bulan berikutnya.
+Request `{sourcePeriod: "YYYY-MM"}`; admin/bendahara saja. Respons 201 melalui API Resource
+berisi `data.period` dan `data.createdCount`, Location menunjuk daftar santunan dengan filter
+`period`. 409 bila rutin bulan tujuan sudah ada; 422 bila sumber kosong atau penyalur tidak aktif.
+Penyalinan atomik dan diserialisasi pada registri modul; laporan, status, dan dokumen tidak disalin.

@@ -1233,3 +1233,46 @@ it('filters audit records across the entire log and preserves management access'
         ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.applicationNumber', $number)->assertJsonPath('data.0.actorName', $this->cc->name);
     $this->getJson('/api/v1/bantuan/audit?role=treasurer')->assertOk()->assertJsonPath('total', 0);
 });
+
+
+it('copies only routine santunan into the next month once with fresh reports and statuses', function () {
+    $this->verifier = bantuanUser('volunteer');
+    $payload = ['frequency' => 'routine', 'category' => 'widow', 'period' => '2026-12',
+        'recipientName' => 'Penerima rutin', 'volunteerId' => $this->verifier->id, 'amount' => 300000];
+    $id = $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', $payload)->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/santunan', [...$payload, 'frequency' => 'non_routine', 'category' => 'orphan'])->assertCreated();
+    \App\Modules\Bantuan\Models\Santunan::findOrFail($id)->forceFill([
+        'transfer_status' => 'transferred', 'distribution_status' => 'completed',
+        'report' => ['description' => 'Laporan lama'], 'completed_at' => '2026-12-05', 'version' => 3,
+    ])->save();
+    $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-12'])->assertForbidden();
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-12'])
+        ->assertCreated()->assertJsonPath('data.period', '2027-01')->assertJsonPath('data.createdCount', 1);
+    $this->getJson('/api/v1/bantuan/santunan?period=2027-01')->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.recipientName', 'Penerima rutin')->assertJsonPath('data.0.amount', 300000)
+        ->assertJsonPath('data.0.volunteerId', $this->verifier->id)->assertJsonPath('data.0.transferStatus', 'pending')
+        ->assertJsonPath('data.0.distributionStatus', 'process')->assertJsonPath('data.0.report', null)
+        ->assertJsonPath('data.0.completedAt', null)->assertJsonPath('data.0.transferredAt', null)->assertJsonCount(0, 'data.0.documents');
+    $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-12'])->assertConflict();
+    $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2025-01'])->assertUnprocessable();
+    expect(\App\Modules\Bantuan\Models\Santunan::findOrFail($id)->report['description'])->toBe('Laporan lama');
+});
+
+
+it('copies fifty routine recipients and rejects inactive distributors without partial results', function () {
+    $this->verifier = bantuanUser('volunteer');
+    for ($i = 1; $i <= 50; $i++) {
+        \App\Modules\Bantuan\Models\Santunan::forceCreate([
+            'id' => (string) Str::uuid(), 'number' => 'TEST-ROUTINE-'.$i,
+            'frequency' => 'routine', 'category' => 'widow', 'period' => '2026-10-01',
+            'recipient' => ['name' => 'Penerima '.$i], 'volunteer_id' => $this->verifier->id,
+            'amount' => 300000, 'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
+        ]);
+    }
+    $this->verifier->forceFill(['is_active' => false])->save();
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-10'])->assertUnprocessable();
+    expect(\App\Modules\Bantuan\Models\Santunan::count())->toBe(50);
+    $this->verifier->forceFill(['is_active' => true])->save();
+    $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-10'])->assertCreated()->assertJsonPath('data.createdCount', 50);
+    expect(\App\Modules\Bantuan\Models\Santunan::whereDate('period', '2026-11-01')->count())->toBe(50);
+});
