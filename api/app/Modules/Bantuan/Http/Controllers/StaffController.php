@@ -4,9 +4,11 @@ namespace App\Modules\Bantuan\Http\Controllers;
 
 use App\Modules\Bantuan\Services\Access;
 use App\Modules\Bantuan\Services\Journal;
+use App\Modules\Bantuan\Services\Whatsapp;
 use App\Modules\Core\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -18,8 +20,8 @@ class StaffController
         $rows = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
             ->join('users', 'users.id', '=', 'module_access.user_id')->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'users.id')
             ->where('modules.slug', 'bantuan')->select(['users.id', 'users.name', 'users.is_active as active', 'module_access.role', 'bantuan_staff.region', 'bantuan_staff.roles as storedRoles']);
-        if ($access->role($request) === 'admin') {
-            $rows->addSelect(['users.email', 'users.code', 'users.is_superadmin as protectedAccount', 'bantuan_staff.can_bypass as canBypass']);
+        if ($access->has($request, ['admin'])) {
+            $rows->addSelect(['users.email', 'users.code', 'users.is_superadmin as protectedAccount', 'bantuan_staff.can_bypass as canBypass', 'bantuan_staff.phone as encryptedPhone', 'bantuan_staff.whatsapp_enabled as whatsappEnabled']);
         }
 
         $people = $rows->orderBy('users.name')->get();
@@ -27,10 +29,13 @@ class StaffController
             $person->roles = Access::expandRoles($person->role, $person->storedRoles);
             unset($person->storedRoles);
         }
-        if ($access->role($request) === 'admin') {
+        if ($access->has($request, ['admin'])) {
             $moduleId = DB::table('modules')->where('slug', 'bantuan')->value('id');
             $sharedIds = DB::table('module_access')->where('module_id', '!=', $moduleId)->pluck('user_id')->all();
             foreach ($people as $person) {
+                $person->phone = Whatsapp::phone($person->encryptedPhone) ?? '';
+                $person->whatsappEnabled = (bool) $person->whatsappEnabled;
+                unset($person->encryptedPhone);
                 if (str_ends_with($person->email, '.invalid')) $person->email = '';
                 $person->sharedAccount = in_array($person->id, $sharedIds, true);
                 $person->canManage = ! $person->protectedAccount && $person->id !== $request->user()->id && ($person->role !== 'admin' || $request->user()->is_superadmin);
@@ -46,8 +51,9 @@ class StaffController
         $access->allow($request, []);
         $input = $request->validate(['name' => 'required|string|max:191', 'email' => 'nullable|email|max:191|unique:users,email',
             'password' => 'required|string|min:12|max:72', 'role' => ['required_without:roles', Rule::in(Access::ROLES)],
-            'roles' => 'sometimes|required|array|min:1|max:8', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
-            'region' => 'nullable|string|max:191', 'canBypass' => 'required|boolean']);
+            'roles' => 'sometimes|required|array|min:1|max:9', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
+            'region' => 'nullable|string|max:191', 'canBypass' => 'required|boolean',
+            'phone' => 'sometimes|nullable|string|max:30', 'whatsappEnabled' => 'sometimes|boolean']);
 
         $input = $this->normalizeRoles($input);
         abort_if(in_array('admin', $input['roles'], true), 422, 'Akun admin dibuat oleh superadmin melalui Core. Pilih peran operasional untuk anggota tim.');
@@ -68,9 +74,10 @@ class StaffController
     {
         $access->allow($request, []);
         $input = $request->validate(['role' => ['required_without:roles', Rule::in(Access::ROLES)], 'region' => 'nullable|string|max:191',
-            'roles' => 'sometimes|required|array|min:1|max:8', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
+            'roles' => 'sometimes|required|array|min:1|max:9', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
             'name' => 'sometimes|required|string|max:191', 'email' => ['sometimes', 'nullable', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)],
-            'canBypass' => 'required|boolean', 'active' => 'required|boolean', 'password' => 'nullable|string|min:12|max:72']);
+            'canBypass' => 'required|boolean', 'active' => 'required|boolean', 'password' => 'nullable|string|min:12|max:72',
+            'phone' => 'sometimes|nullable|string|max:30', 'whatsappEnabled' => 'sometimes|boolean']);
 
         $input = $this->normalizeRoles($input);
         return DB::transaction(function () use ($request, $id, $input, $journal) {
@@ -145,7 +152,12 @@ class StaffController
     private function profile(string $id, array $data): void
     {
         abort_if($data['canBypass'] && ! array_intersect($data['roles'], ['call_center', 'verifier']), 422, 'Izin langsung hanya untuk Call Center atau Verifikator.');
-        DB::table('bantuan_staff')->updateOrInsert(['user_id' => $id], ['region' => $data['region'] ?? null, 'can_bypass' => $data['canBypass'], 'roles' => json_encode($data['roles'], JSON_THROW_ON_ERROR)]);
+        $existing = DB::table('bantuan_staff')->where('user_id', $id)->first();
+        $phone = array_key_exists('phone', $data) ? Whatsapp::normalizePhone($data['phone']) : Whatsapp::phone($existing?->phone);
+        $enabled = $data['whatsappEnabled'] ?? (bool) ($existing?->whatsapp_enabled ?? false);
+        if ($enabled && ! $phone) throw \Illuminate\Validation\ValidationException::withMessages(['phone' => 'Nomor WhatsApp wajib diisi jika notifikasi diaktifkan.']);
+        DB::table('bantuan_staff')->updateOrInsert(['user_id' => $id], ['region' => $data['region'] ?? null, 'can_bypass' => $data['canBypass'], 'roles' => json_encode($data['roles'], JSON_THROW_ON_ERROR),
+            'phone' => $phone ? Crypt::encryptString($phone) : null, 'whatsapp_enabled' => $enabled]);
     }
 
     private function normalizeRoles(array $data): array

@@ -18,7 +18,7 @@ export function Card({title,description,action,children,className=""}:{title?:st
 }
 export function Badge({status}:{status:string}){
   const tone=status==="completed"?s.green:status.startsWith("rejected")||["cancelled","delivery_failed"].includes(status)?s.red:
-    ["review1","survey_submitted","bypass_review","review2","fund_submitted","needs_data"].includes(status)?s.amber:"";
+    ["review1","survey_cc_review","survey_submitted","bypass_review","review2","fund_submitted","needs_data"].includes(status)?s.amber:"";
   return <span className={`${s.badge} ${tone}`}>{bantuanStatuses[status]??status}</span>;
 }
 export function Input({label,error,hint,...props}:InputHTMLAttributes<HTMLInputElement>&{label:string;error?:string;hint?:string}){

@@ -35,12 +35,22 @@ class UserService
     {
         return DB::transaction(function () use ($id, $input): User {
             $user = User::findOrFail($id);
-            $user->forceFill(['name' => trim($input['name']), 'email' => ! empty($input['email']) ? trim($input['email']) : strtolower($user->code).'@accounts.sip.invalid']);
+            $user->name = trim($input['name']);
+            if (array_key_exists('email', $input)) {
+                $user->email = ! empty($input['email']) ? trim($input['email']) : strtolower($user->code).'@accounts.sip.invalid';
+            }
             if (! empty($input['password'])) {
                 $user->password_hash = Hash::make($input['password']);
             }
             $user->save();
             $this->log("Data akun {$user->name} diperbarui".(! empty($input['password']) ? ' (termasuk password)' : ''));
+            if (array_key_exists('entries', $input)) {
+                if ($user->is_superadmin) {
+                    throw ValidationException::withMessages(['entries' => 'Superadmin otomatis memiliki akses penuh ke semua modul.']);
+                }
+                $this->setAccess($id, $input['entries']);
+                $user->refresh();
+            }
 
             return $user;
         });

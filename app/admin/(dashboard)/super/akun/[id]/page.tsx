@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
-import { AksesForm } from "@/components/admin-shell/AksesForm";
 import { EditAkunForm } from "@/components/admin-shell/EditAkunForm";
 import { DeleteAkunButton } from "@/components/admin-shell/DeleteAkunButton";
 import { getUserWithAccess } from "@/modules/core/users";
 import { listModules } from "@/modules/core/modules";
 import { getSession } from "@/lib/auth";
+import { ArrowLeft } from "lucide-react";
+import styles from "@/components/admin-shell/AccountForm.module.css";
 
 export default async function DetailAkunPage({
   params,
@@ -28,53 +28,21 @@ export default async function DetailAkunPage({
   const isSelf = session?.userId === user.id;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className={styles.page}>
       <div>
         <Link
           href="/admin/super/akun"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/50 hover:text-foreground"
+          className={styles.back}
         >
-          ← Kembali ke Kelola Akun
+          <ArrowLeft size={15} /> Kembali ke Kelola Akun
         </Link>
-        <PageHeader title={`Detail Akun — ${user.name}`} description={`Kode login: ${user.code}`} />
+        <PageHeader title="Kelola akun" description={`${user.name} · ${user.code}`} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Informasi Akun</CardTitle>
-            <CardDescription>Kode akun untuk login, identitas, dan pengaturan password.</CardDescription>
-          </CardHeader>
-          <EditAkunForm userId={user.id} code={user.code} initialName={user.name} initialEmail={user.email} />
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Akses Modul</CardTitle>
-            <CardDescription>Atur modul mana saja yang boleh diakses akun ini.</CardDescription>
-          </CardHeader>
-          {user.isSuperadmin ? (
-            <p className="text-sm text-foreground/50">
-              Akun ini superadmin, otomatis punya akses ke semua modul.
-            </p>
-          ) : (
-            <AksesForm
-              userId={user.id}
-              modules={modules}
-              initialAccess={user.moduleAccess.map((access) => ({
-                moduleId: access.module.id,
-                role: access.role,
-              }))}
-            />
-          )}
-        </Card>
-      </div>
-
-      <Card tone="danger">
-        <CardHeader>
-          <CardTitle className="text-danger">Zona Berbahaya</CardTitle>
-          <CardDescription>Tindakan berikut tidak bisa dibatalkan.</CardDescription>
-        </CardHeader>
+      <EditAkunForm modules={modules} account={{ id: user.id, name: user.name, code: user.code, isSuperadmin: user.isSuperadmin,
+        access: user.moduleAccess.map(access => ({ moduleId: access.module.id, role: access.role })) }} />
+      <section className={styles.danger}>
+        <div><h2>Hapus akun</h2><p>Hapus akun beserta aksesnya. Tindakan ini tidak dapat dibatalkan.</p></div>
         {isSelf ? (
           <p className="text-sm text-foreground/50">
             Tidak bisa menghapus akun yang sedang kamu pakai untuk login.
@@ -82,7 +50,7 @@ export default async function DetailAkunPage({
         ) : (
           <DeleteAkunButton userId={user.id} userName={user.name} />
         )}
-      </Card>
+      </section>
     </div>
   );
 }

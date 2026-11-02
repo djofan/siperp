@@ -40,7 +40,8 @@ class UserController
 
     public function update(Request $request, string $id, UserService $users): JsonResponse
     {
-        $input = $request->validate(['name' => 'required|string|max:191', 'email' => ['nullable', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)], 'password' => 'sometimes|nullable|string|min:8|max:72']);
+        $input = $request->validate(['name' => 'required|string|max:191', 'email' => ['nullable', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)], 'password' => 'sometimes|nullable|string|min:8|max:72',
+            'entries' => 'sometimes|array', 'entries.*.moduleId' => 'required|string|distinct|exists:modules,id', 'entries.*.role' => 'required|string']);
 
         return response()->json(['ok' => true, 'data' => $this->representation($users->update($id, $input))]);
     }

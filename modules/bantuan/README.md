@@ -9,9 +9,96 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
 - Superadmin otomatis mempunyai kontrol modul.
 - Superadmin dapat memberi akses melalui Core. Admin modul dapat membuat
   anggota dengan akses hanya untuk Bantuan, bukan memberi akses modul lain.
-- Akun operasional: admin, call_center, approver, verifier, fund_requester,
-  treasurer, chair. Satu akun approver; bypass default mati.
+- Akun operasional: admin, requester (Petugas Pengajuan), call_center,
+  approver, verifier, volunteer (Penyalur), fund_requester, treasurer, chair.
+  Satu akun approver; bypass default mati.
 - Tidak ada route publik untuk data atau dokumen modul.
+
+## Akun dengan beberapa peran
+
+- Semua menu, antrean, dan tindakan dari peran yang diberikan tersedia
+  bersamaan. Pengguna tidak memilih atau mengganti peran aktif.
+- Izin setiap tindakan tetap diperiksa backend berdasarkan tahap, penugasan,
+  dan kepemilikan pengajuan. Memiliki peran Approver tidak mengizinkan
+  persetujuan pengajuan sendiri atau hasil survei sendiri.
+- Tombol pilihan modul hanya ditampilkan untuk superadmin atau admin modul.
+- Penambahan peran keuangan tidak membuka identitas dan dokumen privat
+  pengajuan lain melalui peran lapangan yang cakupannya terbatas.
+
+## Alur berdasarkan pembuat pengajuan
+
+- Petugas Pengajuan: membuat pengajuan sendiri → review Call Center →
+  Approver → penugasan Verifikator oleh Call Center.
+- Call Center otomatis dapat membuat pengajuan. Pengajuannya langsung
+  menuju Approver, baik WhatsApp maupun datang ke kantor.
+- Peran saat pembuatan dicatat pada `intake_role`. Perubahan akses, perbaikan
+  data, dan membuka kembali pengajuan tidak melewati review yang wajib.
+- Petugas Pengajuan hanya melihat pengajuan sendiri, melengkapi data yang
+  dikembalikan, dan tidak dapat memberi keputusan atau memakai jalur langsung.
+- Penyalur tetap menangani santunan yang ditugaskan. Nama peran sebelumnya
+  diperbarui tanpa mengganti kode role, akun, maupun penugasannya.
+- Jalankan migrasi `2026_10_30_000000_add_bantuan_intake_role.php` sebelum
+  memakai alur ini. Data lama diisi dari peran pada catatan pembuatan.
+
+## Survei, peta, dan review Call Center
+
+- Hasil survei masuk `survey_cc_review`. Call Center memeriksa dan dapat
+  menyimpan koreksi hasil survei maupun data pemohon, lalu mengirimnya ke
+  `survey_submitted` untuk keputusan Approver. Bukti kunjungan asli dipertahankan.
+- Verifikator dapat menolak tugas dengan alasan. Tugas kembali ke penugasan
+  Call Center; Call Center juga dapat mengganti petugas saat survei berjalan.
+- Call Center wajib menentukan alamat survei saat penugasan/penggantian verifikator.
+  Alamat dan pin disimpan terenkripsi terpisah dari data pemohon. Perubahan alamat
+  survei menghapus pin lama. Pengajuan lama tanpa alamat survei memakai alamat
+  pemohon sampai Call Center menetapkan alamat kunjungannya.
+- Di detail survei, Cek jarak mencari tujuan dari alamat survei melalui
+  geocoder. Titik awal memakai GPS (atas izin pengguna) atau pencarian lokasi
+  lain. Hasil ambigu dipilih pengguna; pin rumah dapat dikoreksi secara opsional.
+  Peta vektor OpenFreeMap Positron menampilkan animasi rute jalan dari OSRM,
+  jarak jalan dan estimasi waktu mobil tanpa lalu lintas langsung. Lokasi awal
+  tidak disimpan. Pencarian menormalkan RT/RW dan singkatan alamat; hasil yang
+  hanya cocok dengan kawasan ditandai sebagai perkiraan dan harus dipilih pengguna.
+  Titik rumah tetap dapat disesuaikan pada peta. Jika alamat lengkap tidak cocok,
+  pencarian mencoba nama jalan/tempat sebelum koma (tanpa nomor, RT/RW, blok,
+  atau gang) melalui parameter street + postalcode, street tanpa kode pos,
+  lalu pencarian bebas dan kawasan. Hasil alternatif tetap perlu dikonfirmasi.
+  Endpoint `BANTUAN_GEOCODER_URL` dapat diganti; default Nominatim dibatasi
+  satu pencarian per detik untuk seluruh aplikasi dengan cache terenkripsi 30 hari.
+  `BANTUAN_ROUTER_URL` mengatur endpoint OSRM (default server demo publik),
+  dengan pembatasan global satu permintaan per detik dan cache terenkripsi 6 jam.
+  Ketersediaan server demo tidak dijamin; gunakan penyedia sendiri untuk kebutuhan
+  produksi yang memerlukan jaminan layanan. Kegagalan rute ditampilkan sebagai
+  pesan kesalahan, bukan diganti dengan garis lurus yang menyerupai rute jalan.
+  Produksi multi-server harus memakai cache bersama untuk pembatasan global.
+- Migrasi `2026_11_01_000000_add_bantuan_survey_cc_review.php` mengalihkan
+  hasil survei lama yang masih menunggu keputusan ke review Call Center.
+
+## Kartu pengajuan dana
+
+- Menu **Pengajuan dana** tersedia untuk Pengaju Dana, Admin, Bendahara,
+  dan Ketua. Pengaju Dana/Admin membuat kartu dari bantuan `fund_ready`.
+- Checklist dapat mencakup beberapa halaman; total selalu dihitung ulang
+  backend dari nominal yang telah disetujui. Kartu menyimpan rincian nominal
+  saat diajukan sebagai riwayat.
+- Keputusan dana dicatat untuk seluruh kartu. Pengajuan yang masih berada
+  dalam kartu aktif tidak dapat diputuskan sendiri atau dipindah penyalurnya.
+- Jalankan migrasi `2026_11_01_000000_create_bantuan_funding_requests.php`.
+
+## Notifikasi WhatsApp Fonnte
+
+- Jalankan migrasi `2026_11_01_010000_add_bantuan_whatsapp_outbox.php`.
+- Di `api/.env`, isi `BANTUAN_FONNTE_TOKEN`, aktifkan
+  `BANTUAN_WHATSAPP_ENABLED=true`, dan atur `BANTUAN_PUBLIC_URL` ke alamat
+  HTTPS web yang bisa dibuka penerima. Token tidak disimpan di frontend.
+- Hubungkan nomor pengirim di Fonnte. Admin mengisi nomor penerima dan
+  mengaktifkan persetujuan notifikasi melalui **Tim & akses**.
+- Jalankan scheduler Laravel setiap menit (`php artisan schedule:work`
+  untuk pengembangan). Worker memproses antrean di luar permintaan web;
+  pengingat tugas harian dijadwalkan pukul 08.00 Asia/Jakarta.
+- Periksa konfigurasi tanpa mengirim melalui
+  `php artisan bantuan:whatsapp --status`. Pengiriman dinonaktifkan sampai
+  konfigurasi lengkap; pengujian memakai HTTP palsu tanpa pesan nyata.
+- Panduan lengkap: [Konfigurasi WhatsApp](../../api/app/Modules/Bantuan/WHATSAPP.md).
 
 ## Cakupan Fase 1
 
@@ -29,12 +116,6 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
   beralasan. Gagal salur dan pengembalian dana tercatat.
 - Dashboard dasar, ekspor ringkasan CSV yang bisa dibuka di Excel, audit
   hanya-baca, notifikasi internal, master data, dan pengingat tenggat.
-- Pelaporan santunan rutin (janda dhuafa, anak yatim, anak asuh) dan tidak
-  rutin (anak yatim). Bendahara/pengirim menandai dana sudah ditransfer,
-  lalu Verifikator (atau Relawan) yang ditugaskan mengisi tanggal, lokasi, penerima, deskripsi,
-  foto kertas bantuan, dan foto bersama penerima sebelum status menjadi Sudah.
-  Foto bukti transfer opsional. Setiap periode bulanan dicatat sebagai santunan
-  tersendiri agar transfer dan laporan periode sebelumnya tetap tersimpan.
 - Foto di atas 2 MB dikompresi pada browser; server tetap memvalidasi
   format gambar dan maksimum 2 MB.
 

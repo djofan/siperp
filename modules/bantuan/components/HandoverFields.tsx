@@ -12,7 +12,7 @@ export function HandoverFields({ row, today }: { row: AidDetail; today: string }
     <div className={s.nominal}>
       <span className={s.kicker}><Wallet size={17}/> Nominal penyerahan</span>
       <label className={s.field}>Nominal diserahkan <em>*</em>
-        <span className={s.amount}><span aria-hidden="true">Rp</span><input type="text" inputMode="numeric" autoComplete="off" required placeholder="0"
+        <span className={s.amount}><span aria-hidden="true">Rp</span><input data-validation-key="handover.amount" type="text" inputMode="numeric" autoComplete="off" required placeholder="0"
           value={amount ? Number(amount).toLocaleString("id-ID") : ""} onChange={event => {
             const digits = event.target.value.replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "").slice(0, 13);
             setAmount(digits);

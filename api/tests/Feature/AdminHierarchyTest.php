@@ -24,6 +24,47 @@ beforeEach(function () {
     }
 });
 
+it('saves identity and module access together without requiring or changing contact email', function () {
+    Sanctum::actingAs(hierarchyAccount(true));
+    $target = hierarchyAccount(false, ['hierarchy-sip']);
+    $target->forceFill(['email' => 'keep-contact@example.test'])->save();
+    $code = $target->code;
+    $hash = $target->password_hash;
+    $this->putJson('/api/v1/super/akun/'.$target->id, ['name' => 'Admin diperbarui', 'entries' => [
+        ['moduleId' => 'hierarchy-lazsip', 'role' => 'admin'], ['moduleId' => 'hierarchy-bantuan', 'role' => 'admin'],
+    ]])->assertOk()->assertJsonPath('data.name', 'Admin diperbarui')->assertJsonPath('data.code', $code);
+    expect($target->fresh()->email)->toBe('keep-contact@example.test')->and($target->fresh()->password_hash)->toBe($hash)
+        ->and(DB::table('module_access')->where('user_id', $target->id)->orderBy('module_id')->pluck('module_id')->all())
+        ->toBe(['hierarchy-bantuan', 'hierarchy-lazsip']);
+});
+
+it('rolls back identity password and audit changes when module access is invalid', function () {
+    Sanctum::actingAs(hierarchyAccount(true));
+    $target = hierarchyAccount(false, ['hierarchy-sip']);
+    $hash = $target->password_hash;
+    $logs = DB::table('access_logs')->count();
+    $this->putJson('/api/v1/super/akun/'.$target->id, ['name' => 'Tidak boleh tersimpan', 'password' => 'new-test-password',
+        'entries' => [['moduleId' => 'hierarchy-sip', 'role' => 'unrecognized-role']]])->assertUnprocessable();
+    expect($target->fresh()->name)->toBe('Akun hierarki')->and($target->fresh()->password_hash)->toBe($hash)
+        ->and(DB::table('module_access')->where('user_id', $target->id)->value('role'))->toBe('admin')
+        ->and(DB::table('access_logs')->count())->toBe($logs);
+});
+
+it('allows all module access to be removed while keeping the account code unchanged', function () {
+    Sanctum::actingAs(hierarchyAccount(true));
+    $target = hierarchyAccount(false, ['hierarchy-sip']);
+    $code = $target->code;
+    $this->putJson('/api/v1/super/akun/'.$target->id, ['name' => $target->name, 'entries' => []])->assertOk();
+    expect(DB::table('module_access')->where('user_id', $target->id)->count())->toBe(0)->and($target->fresh()->code)->toBe($code);
+});
+
+it('does not let a module admin edit identities or grant access through the Core account form', function () {
+    Sanctum::actingAs(hierarchyAccount(false, ['hierarchy-sip']));
+    $target = hierarchyAccount(false, ['hierarchy-lazsip']);
+    $this->putJson('/api/v1/super/akun/'.$target->id, ['name' => 'Unauthorized', 'entries' => []])->assertForbidden();
+    expect($target->fresh()->name)->toBe('Akun hierarki')->and(DB::table('module_access')->where('user_id', $target->id)->count())->toBe(1);
+});
+
 it('has exactly one superadmin SASIP01 and refuses a second through the model or API', function () {
     $owner = hierarchyAccount(true);
     expect($owner->code)->toBe('SASIP01');

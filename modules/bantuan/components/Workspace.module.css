@@ -187,3 +187,5 @@
 .dialogHeader .iconButton{flex-shrink:0}
 .dialogBody{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 @media(max-width:760px){.dialog[open]{max-height:calc(100dvh - 24px)}}
+
+.notificationCount{position:absolute;right:-4px;top:-4px;min-width:19px;height:19px;border-radius:10px;padding:0 4px;display:grid;place-items:center;background:#b74730;color:#fff;font-size:10px;font-weight:700}.notification:hover{background:#f3f7ef}.notification:focus-visible{outline:2px solid #397c51;outline-offset:2px}

@@ -5,6 +5,18 @@ use App\Modules\Bantuan\Http\Controllers\DocumentController;
 use App\Modules\Bantuan\Http\Controllers\SantunanController;
 use App\Modules\Bantuan\Http\Controllers\StaffController as S;
 use Illuminate\Support\Facades\Route;
+use App\Modules\Bantuan\Http\Controllers\FundingRequestController;
+use App\Modules\Bantuan\Http\Controllers\MustahiqController;
+
+Route::get('mustahiq', [MustahiqController::class, 'index']);
+Route::get('mustahiq/{id}', [MustahiqController::class, 'show']);
+Route::put('mustahiq/{id}', [MustahiqController::class, 'update']);
+
+Route::get('funding-requests/ready', [FundingRequestController::class, 'ready']);
+Route::get('funding-requests', [FundingRequestController::class, 'index']);
+Route::post('funding-requests', [FundingRequestController::class, 'store']);
+Route::get('funding-requests/{id}', [FundingRequestController::class, 'show']);
+Route::post('funding-requests/{id}/decision', [FundingRequestController::class, 'decide']);
 
 Route::get('viewer', [C::class, 'viewer']);
 Route::put('active-role', [C::class, 'switchRole']);
@@ -16,6 +28,8 @@ Route::post('duplicate-check', [C::class, 'duplicate']);
 Route::post('applicants/search', [C::class, 'searchApplicants'])->middleware('throttle:60,1');
 Route::post('batch', [C::class, 'batch']);
 Route::get('applications/{id}', [C::class, 'show']);
+Route::post('applications/{id}/locations', [\App\Modules\Bantuan\Http\Controllers\SurveyLocationController::class, 'search'])->middleware('throttle:20,1');
+Route::post('applications/{id}/route', [\App\Modules\Bantuan\Http\Controllers\SurveyLocationController::class, 'route'])->middleware('throttle:20,1');
 Route::put('applications/{id}', [C::class, 'update']);
 Route::delete('applications/{id}', [C::class, 'destroy']);
 Route::post('applications/{id}/actions/{action}', [C::class, 'action']);
@@ -23,6 +37,7 @@ Route::post('applications/{id}/documents', [C::class, 'document'])->middleware('
 Route::get('documents/{id}', [C::class, 'download']);
 Route::delete('documents/{id}', [DocumentController::class, 'destroy']);
 Route::get('notifications', [C::class, 'notifications']);
+Route::put('notifications/read-all', [C::class, 'readAllNotifications']);
 Route::put('notifications/{id}/read', [C::class, 'readNotification']);
 Route::get('audit', [C::class, 'audit']);
 Route::match(['GET', 'PUT'], 'settings', [C::class, 'master']);

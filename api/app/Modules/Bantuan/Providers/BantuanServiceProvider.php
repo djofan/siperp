@@ -23,7 +23,10 @@ class BantuanServiceProvider extends ServiceProvider
     {
         config(['modules.account_management.bantuan' => ['roles' => [], 'links' => [['label' => 'Kelola tim & peran Bantuan', 'href' => '/admin/bantuan/tim']]]]);
         Route::middleware(['api', 'auth:sanctum', 'user.active', 'module.access:bantuan'])->prefix('api/v1/bantuan')->group(__DIR__.'/../routes/api.php');
+        Route::middleware(['api', 'auth:sanctum', 'user.active', 'module.access:bantuan'])->prefix('api/v1/bantuan')->group(__DIR__.'/../routes/whatsapp.php');
         if ($this->app->runningInConsole()) {
+            $this->commands([\App\Modules\Bantuan\Console\WhatsappOutbox::class]);
+            Schedule::command('bantuan:whatsapp')->everyMinute()->withoutOverlapping(5);
             Artisan::command('bantuan:remind', function () {
                 $this->info(app(Reminders::class)->send().' tugas diperiksa.');
             })->purpose('Kirim pengingat internal tugas bantuan yang melewati tenggat');
