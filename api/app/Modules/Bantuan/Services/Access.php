@@ -8,17 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class Access
 {
-    public const ROLES = ['admin', 'call_center', 'approver', 'verifier', 'volunteer', 'fund_requester', 'treasurer', 'chair'];
+    public const ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'volunteer', 'fund_requester', 'treasurer', 'chair'];
+
+    private const SENSITIVE_ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'chair'];
 
     public function role(Request $request): string
     {
-        if ($request->attributes->has('bantuan_active_role')) return $request->attributes->get('bantuan_active_role');
         $roles = $this->roles($request);
-        $active = DB::table('bantuan_active_roles')->where('session_key', $this->sessionKey($request))->where('user_id', $request->user()->id)->value('role');
-        $role = in_array($active, $roles, true) ? $active : $roles[0];
-        $request->attributes->set('bantuan_active_role', $role);
-
-        return $role;
+        $actor = $request->attributes->get('bantuan_actor_role');
+        return in_array($actor, $roles, true) ? $actor : $roles[0];
     }
 
     public static function expandRoles(string $primary, ?string $stored): array
@@ -44,26 +42,51 @@ class Access
         return $id ? 'token:'.$id : 'user:'.$request->user()->id;
     }
 
-    public function allow(Request $request, array $roles): void
+    public function has(Request $request, array $roles): bool
     {
-        abort_unless(in_array($this->role($request), ['admin', ...$roles], true), 403, 'Peran Anda tidak diizinkan melakukan tindakan ini.');
+        return (bool) array_intersect($this->roles($request), $roles);
+    }
+
+    public function allow(Request $request, array $roles): string
+    {
+        $granted = $this->roles($request);
+        $eligible = array_values(array_intersect($roles, $granted));
+        $role = in_array('admin', $granted, true) ? 'admin' : ($eligible[0] ?? null);
+        abort_unless($role, 403, 'Peran Anda tidak diizinkan melakukan tindakan ini.');
+        $request->attributes->set('bantuan_actor_role', $role);
+        return $role;
+    }
+
+    public const ONGOING = ['needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'survey_submitted', 'bypass_review', 'review2', 'approved', 'fund_ready', 'fund_submitted', 'fund_approved', 'disbursed', 'delivery_failed'];
+
+    public function canMonitor(Request $request): bool
+    {
+        return $this->has($request, ['admin', 'call_center', 'requester', 'approver', 'chair', 'fund_requester', 'treasurer']);
     }
 
     public function scope($query, Request $request)
     {
-        $role = $this->role($request);
-        if ($role === 'verifier') {
-            $query->where(fn ($q) => $q->where('created_by', $request->user()->id)->orWhere('verifier_id', $request->user()->id)->orWhere('distributor_id', $request->user()->id));
-        }
-        if ($role === 'volunteer') {
-            // Relawan santunan tidak mendapat akses ke data pengajuan bantuan.
-            $query->whereRaw('1 = 0');
-        }
-        if (in_array($role, ['fund_requester', 'treasurer'], true)) {
-            $query->whereNotNull('amount');
-        }
+        return $this->scopeRoles($query, $request, $this->roles($request));
+    }
 
-        return $query;
+    public function scopeSensitive($query, Request $request)
+    {
+        return $this->scopeRoles($query, $request, array_intersect($this->roles($request), self::SENSITIVE_ROLES));
+    }
+
+    private function scopeRoles($query, Request $request, array $roles)
+    {
+        if (array_intersect($roles, ['admin', 'call_center', 'approver', 'chair'])) return $query;
+
+        // Keep the union grouped so subsequent filters cannot widen visibility.
+        return $query->where(function ($scope) use ($roles, $request) {
+            $scope->whereRaw('1 = 0');
+            if (array_intersect($roles, ['requester', 'verifier'])) $scope->orWhere('created_by', $request->user()->id);
+            if (in_array('verifier', $roles, true)) {
+                $scope->orWhere('verifier_id', $request->user()->id)->orWhere('distributor_id', $request->user()->id);
+            }
+            if (array_intersect($roles, ['fund_requester', 'treasurer'])) $scope->orWhereNotNull('amount');
+        });
     }
 
     public function find(Request $request, string $id, bool $lock = false): Application
@@ -73,9 +96,27 @@ class Access
         return ($lock ? $q->lockForUpdate() : $q)->findOrFail($id);
     }
 
-    public function sensitive(Request $request): bool
+    public function sensitive(Request $request, ?Application $row = null): bool
     {
-        return ! in_array($this->role($request), ['fund_requester', 'treasurer'], true);
+        if ($this->has($request, ['admin', 'call_center', 'approver', 'chair'])) return true;
+        if (! $row) return $this->has($request, ['requester', 'verifier']);
+        $userId = $request->user()->id;
+        return ($row->created_by === $userId && $this->has($request, ['requester', 'verifier']))
+            || ($this->has($request, ['verifier']) && in_array($userId, [$row->verifier_id, $row->distributor_id], true));
+    }
+
+    public function documentRole(Request $request, Application $row, string $kind): string
+    {
+        $own = $row->created_by === $request->user()->id;
+        $roles = match (true) {
+            in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true)
+                ? ['call_center', ...($own ? ['verifier'] : []), ...($own && $row->status !== 'screening' ? ['requester'] : [])] : [],
+            str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned' && $row->verifier_id === $request->user()->id ? ['verifier'] : [],
+            in_array($kind, ['transfer', 'return'], true) => in_array($row->status, ['fund_approved', 'disbursed', 'delivery_failed'], true) ? ['treasurer'] : [],
+            default => $row->status === 'disbursed' ? ($row->distribution_type === 'direct' ? ['treasurer']
+                : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier'] : [])) : [],
+        };
+        return $this->allow($request, $roles);
     }
 
     public function assigned(string $userId, string $role): bool
@@ -89,7 +130,7 @@ class Access
 
     public function bypass(Request $request): bool
     {
-        return $this->role($request) === 'admin' || (in_array($this->role($request), ['call_center', 'verifier'], true)
+        return $this->has($request, ['admin']) || ($this->has($request, ['call_center', 'verifier'])
             && (bool) DB::table('bantuan_staff')->where('user_id', $request->user()->id)->value('can_bypass'));
     }
 }

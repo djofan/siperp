@@ -24,7 +24,9 @@ class BantuanController
     public function viewer(Request $request, Access $access)
     {
         return response()->json(['data' => ['id' => $request->user()->id, 'name' => $request->user()->name,
-            'role' => $access->role($request), 'roles' => $access->roles($request), 'canBypass' => $access->bypass($request), 'settings' => $this->settings()]]);
+            'role' => $access->role($request), 'roles' => $access->roles($request), 'canBypass' => $access->bypass($request),
+            'canChooseModules' => $request->user()->is_superadmin || DB::table('module_access')->where('user_id', $request->user()->id)->where('role', 'admin')->exists(),
+            'settings' => $this->settings()]]);
     }
 
     public function switchRole(Request $request, Access $access, Journal $journal)
@@ -32,7 +34,6 @@ class BantuanController
         $role = $request->validate(['role' => 'required|string|max:50'])['role'];
         abort_unless(in_array($role, $access->roles($request), true), 403, 'Peran ini tidak diberikan kepada akun Anda.');
         DB::table('bantuan_active_roles')->updateOrInsert(['session_key' => $access->sessionKey($request)], ['user_id' => $request->user()->id, 'role' => $role]);
-        $request->attributes->set('bantuan_active_role', $role);
         $journal->record($request, null, 'switch_role', null, ['role' => $role]);
         return response()->json(['data' => ['role' => $role]]);
     }
@@ -40,7 +41,7 @@ class BantuanController
     private function summary(Application $row): array
     {
         return ['id' => $row->id, 'number' => $row->number, 'name' => $row->name, 'status' => $row->status,
-            'createdBy' => $row->created_by,
+            'createdBy' => $row->created_by, 'intakeRole' => $row->intake_role,
             'program' => $row->program, 'region' => $row->region, 'source' => $row->source, 'amount' => $row->amount,
             'verifierId' => $row->verifier_id, 'distributorId' => $row->distributor_id, 'distributionType' => $row->distribution_type,
             'version' => $row->version, 'createdAt' => $row->created_at->toIso8601String(), 'updatedAt' => $row->updated_at->toIso8601String(),
@@ -77,27 +78,33 @@ class BantuanController
 
     public function show(Request $request, string $id, Access $access)
     {
-        $row = $access->find($request, $id);
+        // Monitoring grants read access only; mutations still use Access::find and workflow rules.
+        $row = $access->canMonitor($request)
+            ? Application::query()->where(function ($query) use ($access, $request) {
+                $query->whereIn('status', Access::ONGOING)->orWhere(fn ($own) => $access->scope($own, $request));
+            })->findOrFail($id)
+            : $access->find($request, $id);
         $applicant = $row->applicant;
-        if (! $access->sensitive($request)) {
+        $sensitive = $access->sensitive($request, $row);
+        if (! $sensitive) {
             $private = $applicant;
             $applicant = ['name' => $applicant['name'], 'nik' => substr($applicant['nik'], 0, 6).'xxxxxxxxxx',
                 'city' => $applicant['city'], 'district' => $applicant['district'], 'publicationConsent' => $applicant['publicationConsent']];
-            if ($access->role($request) === 'treasurer' && $row->distribution_type === 'direct') {
+            if ($access->has($request, ['treasurer']) && $row->distribution_type === 'direct') {
                 foreach (['street', 'rtRw', 'village', 'phone'] as $field) $applicant[$field] = $private[$field] ?? null;
             }
         }
-        $duplicates = Application::where('nik_hash', $row->nik_hash)->where('id', '!=', $row->id)->count();
+        $duplicates = $access->scope(Application::query(), $request)->where('nik_hash', $row->nik_hash)->where('id', '!=', $row->id)->count();
         $documents = DB::table('bantuan_documents')->where('application_id', $id)->whereNull('deleted_at');
-        if (! $access->sensitive($request)) {
+        if (! $sensitive) {
             $documents->whereNotIn('kind', ['ktp', 'kk', 'supporting', 'sktm', 'face', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_environment', 'survey_other']);
         }
         $events = DB::table('bantuan_events')->leftJoin('users', 'users.id', '=', 'bantuan_events.actor_id')->where('application_id', $id)
             ->orderBy('bantuan_events.created_at')->get(['bantuan_events.id', 'action', 'from_status', 'to_status', 'actor_role', 'bantuan_events.created_at', 'users.name as actorName', 'details'])
-            ->map(function ($event) use ($access, $request) {
+            ->map(function ($event) use ($sensitive) {
                 $details = json_decode(Crypt::decryptString($event->details), true);
                 $event->reason = $details['reason'] ?? null;
-                if ($event->reason && ! $access->sensitive($request)) {
+                if ($event->reason && ! $sensitive) {
                     $event->reason = preg_replace('/[0-9]{7,}/', '********', $event->reason);
                 }
                 unset($event->details);
@@ -105,8 +112,11 @@ class BantuanController
                 return $event;
             });
 
-        return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant,
-            'bypassReason' => $row->bypass_reason, 'survey' => $access->sensitive($request) ? $row->survey : null, 'handover' => $row->handover,
+        $funding = DB::table('bantuan_funding_request_items')->join('bantuan_funding_requests', 'bantuan_funding_requests.id', '=', 'bantuan_funding_request_items.funding_request_id')
+            ->where('active_application_id', $row->id)->first(['bantuan_funding_requests.id', 'bantuan_funding_requests.number']);
+        return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'fundingRequest' => $funding,
+            'surveyLocation' => $sensitive ? $row->survey_location : null,
+            'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
             'duplicateApplications' => $this->applicantHistory($request, $access, $row->nik_hash, $row->id),
             'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at', 'caption'])->map(function ($doc) { $doc->caption = $doc->caption ? Crypt::decryptString($doc->caption) : null; return $doc; }), 'events' => $events]]);
@@ -131,11 +141,11 @@ class BantuanController
 
     public function destroy(Request $request, string $id, Access $access, \App\Modules\Bantuan\Services\ApplicationDeletion $deletion)
     {
-        $access->allow($request, ['call_center', 'verifier']);
+        $access->allow($request, ['call_center', 'verifier', 'requester']);
         $input = $request->validate(['version' => 'required|integer|min:1']);
         $paths = DB::transaction(function () use ($request, $id, $access, $input, $deletion) {
             $row = $access->find($request, $id, true);
-            abort_unless($access->role($request) === 'admin' || $row->created_by === $request->user()->id, 403, 'Hanya draft sendiri yang dapat dihapus.');
+            abort_unless($access->has($request, ['admin']) || $row->created_by === $request->user()->id, 403, 'Hanya draft sendiri yang dapat dihapus.');
             abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang terlebih dahulu.');
             abort_unless($row->status === 'draft', 409, 'Pengajuan sudah dikirim. Gunakan Batalkan pengajuan, bukan hapus.');
 
@@ -177,21 +187,21 @@ class BantuanController
 
     public function duplicate(Request $request, Access $access, Intake $intake)
     {
-        $access->allow($request, ['call_center', 'verifier']);
+        $access->allow($request, ['call_center', 'verifier', 'requester']);
         $data = $request->validate(['nik' => 'required|digits:16', 'excludeId' => 'nullable|uuid']);
         $hash = $intake->nikHash($data['nik']);
-        return response()->json(['data' => ['count' => Application::where('nik_hash', $hash)
+        return response()->json(['data' => ['count' => $access->scope(Application::query(), $request)->where('nik_hash', $hash)
             ->when($data['excludeId'] ?? null, fn ($query, $id) => $query->where('id', '!=', $id))->count(),
             'applications' => $this->applicantHistory($request, $access, $hash, $data['excludeId'] ?? null)]]);
     }
 
     public function searchApplicants(Request $request, Access $access, Intake $intake)
     {
-        $access->allow($request, ['call_center', 'verifier']);
+        $access->allow($request, ['call_center', 'verifier', 'requester']);
         $data = $request->validate(['query' => 'required|string|min:2|max:191', 'excludeId' => 'nullable|uuid']);
         $term = trim($data['query']);
         if (strlen($term) < 2 || (ctype_digit($term) && strlen($term) !== 16)) return response()->json(['data' => []]);
-        $query = $access->scope(Application::query(), $request)
+        $query = $access->scopeSensitive(Application::query(), $request)
             ->when($data['excludeId'] ?? null, fn ($q, $id) => $q->where('id', '!=', $id));
         if (ctype_digit($term)) $query->where('nik_hash', $intake->nikHash($term));
         else $query->where('name', 'like', '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $term).'%');
@@ -207,17 +217,8 @@ class BantuanController
             $row = $access->find($request, $id, true);
             $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,return',
                 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
-            $role = $access->role($request);
             $kind = $data['kind'];
-            if ($role !== 'admin') {
-                $allowed = match (true) {
-                    in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($role, ['call_center', 'verifier'], true) && in_array($row->status, ['draft', 'needs_data', 'screening'], true) && ($role !== 'verifier' || $row->created_by === $request->user()->id),
-                    str_starts_with($kind, 'survey_') || $kind === 'sktm' => $role === 'verifier' && $row->verifier_id === $request->user()->id && $row->status === 'survey_assigned',
-                    in_array($kind, ['transfer', 'return'], true) => $role === 'treasurer' && in_array($row->status, ['fund_approved', 'disbursed', 'delivery_failed'], true),
-                    default => $row->status === 'disbursed' && (($role === 'verifier' && $row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id) || ($role === 'treasurer' && $row->distribution_type === 'direct')),
-                };
-                abort_unless($allowed, 403, 'Dokumen ini tidak dapat diunggah pada tahap/peran Anda.');
-            }
+            $access->documentRole($request, $row, $kind);
             abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true), 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
             $docId = $data['clientId'] ?? (string) Str::uuid();
             $existing = DB::table('bantuan_documents')->where('id', $docId)->first();
@@ -241,7 +242,7 @@ class BantuanController
         $doc = DB::table('bantuan_documents')->where('id', $id)->whereNull('deleted_at')->firstOrFail();
         $row = $access->find($request, $doc->application_id);
         if (in_array($doc->kind, ['face', 'ktp', 'kk', 'supporting', 'sktm'], true) || str_starts_with($doc->kind, 'survey_')) {
-            abort_unless($access->sensitive($request), 403);
+            abort_unless($access->sensitive($request, $row), 403);
         }
         $journal->record($request, $row, 'read_document', $row->status, ['documentId' => $id]);
         $bytes = Crypt::decryptString(Storage::disk('local')->get($doc->path));
@@ -258,8 +259,8 @@ class BantuanController
         return response()->json(['data' => [
             'total' => (clone $q)->count(), 'byStatus' => (clone $q)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
             'taskCounts' => [
-                'survey' => (clone $q)->where('verifier_id', $request->user()->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
-                'distribution' => (clone $q)->where('distributor_id', $request->user()->id)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+                'survey' => $listing->task(clone $q, $request, $access, 'survey')->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
+                'distribution' => $listing->task(clone $q, $request, $access, 'distribution')->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
             ],
             'byProgram' => (clone $q)->selectRaw('program, COUNT(*) as total')->groupBy('program')->pluck('total', 'program'),
             'bySource' => (clone $q)->selectRaw('source, COUNT(*) as total')->groupBy('source')->pluck('total', 'source'),
@@ -292,6 +293,13 @@ class BantuanController
             }
             fclose($out);
         }, 'ringkasan-bantuan-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'no-store, private']);
+    }
+
+    public function readAllNotifications(Request $request)
+    {
+        $readAt = now();
+        DB::table('bantuan_notifications')->where('user_id', $request->user()->id)->whereNull('read_at')->update(['read_at' => $readAt]);
+        return response()->json(['data' => ['read_at' => $readAt->toIso8601String()]]);
     }
 
     public function readNotification(Request $request, string $id)

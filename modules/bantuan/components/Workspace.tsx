@@ -7,7 +7,9 @@ import { bantuanRoles, bantuanStatuses, bantuanActionLabels } from "@/contracts/
 import type { AidDashboard, AidDetail, AidNotification, AidPage, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
 import { day, money, request } from "../api/client";
 import { preparePhoto } from "../api/photos";
-import { navigation, sidebarNavigation, defaultListStates, processInfo, nextStep } from "../policy";
+import { navigation, sidebarNavigation, defaultListStates, processInfo, nextStep, menuGroups } from "../policy";
+import { MenuGroup } from "./MenuGroup";
+import { Mustahiq } from "./Mustahiq";
 import { IntakeForm } from "./IntakeForm";
 import { DependentsSummary } from "./Dependents";
 import { ActionPanel, DocumentUpload } from "./ActionPanel";
@@ -16,11 +18,13 @@ import { ProcessHub } from "./ProcessHub";
 import { Dashboard } from "./Dashboard";
 import { ProcessSuccess } from "./ProcessSuccess";
 import { Santunan } from "./Santunan";
-import { RoleSwitcher } from "./RoleSwitcher";
+import { FundingRequests } from "./FundingRequests";
+import { SurveyMap } from "./SurveyMap";
+import { rolesOf, hasRole, hasAnyRole, roleLabel, intakeViewer, canEditIntake } from "../permissions";
 import { PageGuide } from "./PageGuide";
 import { HelpButton } from "./HelpButton";
 import { LoadingState } from "./LoadingState";
-import { getAvailableActions } from "./ActionPanel";
+import { getAvailableActions, getActionSectionLabel } from "./ActionPanel";
 import { ApplicantHistory } from "./ApplicantHistory";
 import { ApplicationFilters } from "./ApplicationFilters";
 import { ApplicationList } from "./ApplicationList";
@@ -32,7 +36,7 @@ import { clearPhotoMemory } from "../api/photo-queue";
 import s from "./Workspace.module.css";
 
 export function Badge({ status }: { status: string }) {
-  const tone=status==="completed"?s.green:status.startsWith("rejected")||["cancelled","delivery_failed"].includes(status)?s.red:["review1","survey_submitted","bypass_review","review2","fund_submitted"].includes(status)?s.amber:["survey_assigned","disbursed"].includes(status)?s.blue:"";
+  const tone=status==="completed"?s.green:status.startsWith("rejected")||["cancelled","delivery_failed"].includes(status)?s.red:["review1","survey_cc_review","survey_submitted","bypass_review","review2","fund_submitted"].includes(status)?s.amber:["survey_assigned","disbursed"].includes(status)?s.blue:"";
   return <span className={`${s.badge} ${tone}`}>{bantuanStatuses[status]??status}</span>;
 }
 export function Workspace({ route, initialViewer }: { route: string[]; initialViewer?: BantuanViewer }) {
@@ -55,7 +59,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   function setSelected(value:Record<string,boolean>|((current:Record<string,boolean>)=>Record<string,boolean>)){setSelection(current=>({key:listKey,ids:typeof value==="function"?value(current.key===listKey?current.ids:{}):value}));}
   function updateFilters(value:ListFilters){setFilterState({tab,filters:value});setPageState({tab,number:1});setError("");setSelected({});setBatchAction("");}
   const listRefreshing=loadedListKey!==listKey&&!error;
-  const viewerId=viewer?.id,viewerRole=viewer?.role;
+  const viewerId=viewer?.id,viewerRole=viewer?.role,viewerRoles=JSON.stringify(viewer?.roles??[]);
   const [menuQuery,setMenuQuery]=useState(""),[loggingOut,setLoggingOut]=useState(false);
   const [batchSuccess,setBatchSuccess]=useState(false);
   const [amounts,setAmounts]=useState<Record<string,string>>({});
@@ -71,26 +75,50 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     return()=>{live=false;controller.abort();};
   },[revision]);
   useEffect(()=>{
-    if(!viewerId||!viewerRole||isNew||["tim","pengaturan","audit","proses","santunan",""].includes(tab))return;
+    if(!viewerId||!viewerRole||isNew||menuGroups.some(group=>group.key===tab)||["mustahiq","tim","pengaturan","audit","proses","santunan","pengajuan-dana",""].includes(tab))return;
     let live=true;const controller=new AbortController();
     if(tab==="pengajuan"&&applicationId){
       void request<AidDetail>(`applications/${encodeURIComponent(applicationId)}`,{signal:controller.signal})
         .then(row=>{if(live)setDetail(row);}).catch(err=>{if(live)setError(err instanceof Error?err.message:"Pengajuan belum dapat dimuat.");});
     }else{
-      const params=applicationParams({role:viewerRole},tab,JSON.parse(serializedFilters),number);
+      const params=applicationParams({role:viewerRole,roles:JSON.parse(viewerRoles)},tab,JSON.parse(serializedFilters),number);
       if(tab==="laporan")params.set("summary","1");
       void request<AidPage>(`applications?${params}`,{signal:controller.signal},false)
         .then(rows=>{if(live){if(!rows.data.length&&rows.total>0&&number>rows.last_page){setPageState({tab,number:rows.last_page});return;}setPage(rows);setLoadedListKey(listKey);}})
         .catch(err=>{if(live)setError(err instanceof Error?err.message:"Daftar pengajuan belum dapat dimuat.");});
     }
     return()=>{live=false;controller.abort();};
-  },[viewerId,viewerRole,tab,applicationId,isNew,number,serializedFilters,revision,listKey]);
+  },[viewerId,viewerRole,viewerRoles,tab,applicationId,isNew,number,serializedFilters,revision,listKey]);
+  useEffect(()=>{
+    if(!viewerId)return;
+    let live=true,pending=false;
+    const controller=new AbortController();
+    async function refreshNotifications(){
+      if(pending||document.visibilityState!=="visible")return;
+      pending=true;
+      try{const notes=await request<AidNotification[]>("notifications",{signal:controller.signal});if(live)setNotifications(notes);}catch{/* Keep the last inbox while offline. */}finally{pending=false;}
+    }
+    void refreshNotifications();
+    const timer=window.setInterval(()=>void refreshNotifications(),15000);
+    const onFocus=()=>void refreshNotifications();
+    window.addEventListener("focus",onFocus);document.addEventListener("visibilitychange",onFocus);
+    return()=>{live=false;controller.abort();window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onFocus);};
+  },[viewerId,showNotifications]);
+  const [markingAll,setMarkingAll]=useState(false);
+  async function markAllRead(){
+    if(markingAll)return;
+    setMarkingAll(true);
+    const visibleIds=new Set(notifications.map(note=>note.id));
+    try{const result=await request<{read_at:string}>("notifications/read-all",{method:"PUT"});setNotifications(notes=>notes.map(note=>visibleIds.has(note.id)&&!note.read_at?{...note,read_at:result.read_at}:note));}
+    catch(err){setError(err instanceof Error?err.message:"Notifikasi belum dapat ditandai.");}
+    finally{setMarkingAll(false);}
+  }
   async function markRead(note:AidNotification){try{await request(`notifications/${note.id}/read`,{method:"PUT"});setShowNotifications(false);router.push(`/admin/bantuan/pengajuan/${note.application_id}`);reload();}catch(err){setError(String(err));}}
   async function batch(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!page||!batchAction)return;setBatchBusy(true);setError("");const form=new FormData(e.currentTarget);try{
     if(batchAction==="disburse"){const file=form.get("file");if(file instanceof File&&file.size){const prepared=await preparePhoto(file);for(const row of page.data.filter(r=>selected[r.id])){const upload=new FormData();upload.set("kind","transfer");upload.set("file",prepared);await request(`applications/${row.id}/documents`,{method:"POST",body:upload});}}}
     await request("batch",{method:"POST",body:JSON.stringify({action:batchAction,reason:form.get("reason"),reference:form.get("reference"),transferDate:form.get("transferDate"),account:form.get("account"),totalAmount:Number(form.get("totalAmount")),items:page.data.filter(r=>selected[r.id]).map(r=>({id:r.id,version:r.version,amount:Number(amounts[r.id]??r.amount??0),transferAmount:r.amount}))})});setSelected({});setBatchAction("");setBatchSuccess(true);
   }catch(err){setError(err instanceof Error?err.message:"Proses massal gagal.");}finally{setBatchBusy(false);}}
-  const canCreate=!!viewer&&(["admin","call_center"].includes(viewer.role)||viewer.role==="verifier"&&viewer.canBypass);
+  const canCreate=!!viewer&&(hasAnyRole(viewer,["admin","call_center","requester"])||hasRole(viewer,"verifier")&&viewer.canBypass);
   async function logout(){
     setLoggingOut(true);
     try{
@@ -102,17 +130,17 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   }
   const allLinks=viewer?navigation(viewer):[];
   const links=viewer?sidebarNavigation(viewer):[];
-  const activeLink=links.find(l=>l.key===key)??links.find(l=>l.key===tab)??allLinks.find(l=>l.key===tab)??(processInfo(tab)?links.find(l=>l.key==="proses"):undefined);
+  const activeLink=menuGroups.find(group=>group.key===tab)??links.find(l=>l.key===key)??links.find(l=>l.key===tab)??allLinks.find(l=>l.key===tab)??(processInfo(tab)?links.find(l=>l.key==="proses"):undefined);
   const queue=processInfo(tab);
-  const sidebarActiveKey=links.some(link=>link.key===activeLink?.key)?activeLink!.key:queue?"proses":activeLink?.key??"";
+  const sidebarActiveKey=menuGroups.find(group=>group.key===tab||allLinks.some(entry=>entry.key===key&&entry.group===group.group))?.key??(links.some(link=>link.key===activeLink?.key)?activeLink!.key:queue?"proses":activeLink?.key??"");
   const queueStates=viewer?defaultListStates(viewer,tab):[];
-  const newHref="/admin/bantuan/pengajuan/"+(viewer?.role==="verifier"?"langsung":"baru");
-  const listTitle:Record<string,string>={...(queue?{[tab]:queue.label}:{}),pengajuan:"Semua pengajuan",review:"Antrean persetujuan",survei:queue?.label??"Tugas lapangan",dana:"Pengajuan dana",pencairan:queue?.label??"Pencairan & penyaluran",penyaluran:queue?.label??"Penyerahan bantuan",screening:queue?.label??"Antrean screening",laporan:"Laporan bantuan"};
+  const newHref="/admin/bantuan/pengajuan/"+(!!viewer&&!hasAnyRole(viewer,["admin","call_center","requester"])&&hasRole(viewer,"verifier")?"langsung":"baru");
+  const listTitle:Record<string,string>={...(queue?{[tab]:queue.label}:{}),pengajuan:!!viewer&&rolesOf(viewer).every(role=>role==="requester")?"Pengajuan saya":"Semua pengajuan",review:"Antrean persetujuan",survei:queue?.label??"Tugas lapangan",dana:"Pengajuan dana",pencairan:queue?.label??"Pencairan & penyaluran",penyaluran:queue?.label??"Penyerahan bantuan",screening:queue?.label??"Antrean screening",laporan:"Laporan bantuan"};
   const isDetail=tab==="pengajuan"&&applicationId&&!isNew;
   const isEdit=isDetail&&route[2]==="edit";
   const selectedRows=page?.data.filter(r=>selected[r.id])??[];
   const batchStates:Record<string,string[]>={approve:["survey_submitted","review2","bypass_review"],fund_submit:["fund_ready"],fund_approve:["fund_submitted"],fund_reject:["fund_submitted"],disburse:["fund_approved"]};
-  const batchOptions=viewer?[...(["admin","approver","chair"].includes(viewer.role)?["approve"]:[]),...(["admin","fund_requester"].includes(viewer.role)?["fund_submit","fund_approve","fund_reject"]:[]),...(["admin","treasurer"].includes(viewer.role)?["disburse"]:[])]:[];
+  const batchOptions=viewer?[...(hasAnyRole(viewer,["admin","approver","chair"])?["approve"]:[]),...(hasAnyRole(viewer,["admin","fund_requester"])?["fund_submit","fund_approve","fund_reject"]:[]),...(hasAnyRole(viewer,["admin","treasurer"])?["disburse"]:[])]:[];
   const eligibleBatchOptions=batchOptions.filter(a=>selectedRows.every(r=>batchStates[a].includes(r.status)));
   const report=page?.summary;
   return <div className={s.app}>
@@ -121,19 +149,22 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     <aside className={s.sidebar} data-open={mobile}><Link href="/admin/bantuan" className={s.brand}><span className={s.brandLabel}>LAZSIP</span><strong>Pengajuan bantuan</strong></Link>
       {viewer&&<SidebarMenu viewer={viewer} dashboard={dashboard} activeKey={sidebarActiveKey} onNavigate={()=>setMobile(false)}/>}
       <div className={s.sidebarHelp}><Icon name="shield"/><div><strong>Ruang kerja internal</strong><p>Data pribadi hanya untuk petugas berwenang.</p></div></div>
-      <div className={s.sidebarFooter}><span className={s.avatar}>{viewer?.name.slice(0,2).toUpperCase()??"…"}</span><div style={{minWidth:0}}><strong style={{fontSize:12}}>{viewer?.name??"Memuat akun…"}</strong><div className={s.tiny}>{bantuanRoles[viewer?.role??""]??""}</div></div><button className={s.iconButton} aria-label="Keluar dari akun" title="Keluar" onClick={()=>void logout()} disabled={loggingOut}><Icon name="logout"/></button></div>
+      <div className={s.sidebarFooter}><span className={s.avatar}>{viewer?.name.slice(0,2).toUpperCase()??"…"}</span><div style={{minWidth:0}}><strong style={{fontSize:12}}>{viewer?.name??"Memuat akun…"}</strong><div className={s.tiny}>{viewer?roleLabel(viewer):""}</div></div><button className={s.iconButton} aria-label="Keluar dari akun" title="Keluar" onClick={()=>void logout()} disabled={loggingOut}><Icon name="logout"/></button></div>
     </aside>
-    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}>{viewer&&<><HelpButton viewer={viewer}/><RoleSwitcher viewer={viewer}/></>}<Link href="/admin" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link><span className={s.pill}>Internal</span><button className={s.iconButton} aria-label="Notifikasi" aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.dot}/>}</button><div className={s.topProfile}><span className={s.avatar}>{viewer?.name.slice(0,1)??"S"}</span><div><strong>{viewer?.name}</strong><small>{bantuanRoles[viewer?.role??""]}</small></div></div></div></header>
-    {showNotifications&&<section className={s.popover}><div className={s.cardHeader} style={{padding:"0 0 14px"}}><h2>Notifikasi</h2><button className={s.link} onClick={()=>setShowNotifications(false)}>Tutup</button></div>{notifications.length?notifications.map(n=><button key={n.id} className={s.notification} onClick={()=>markRead(n)} style={{fontWeight:n.read_at?400:600}}>{n.message}<small>{day(n.created_at)}</small></button>):<p className={s.tiny}>Belum ada notifikasi baru.</p>}</section>}
+    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}>{viewer&&<><HelpButton viewer={viewer}/></>}{viewer&&(viewer.canChooseModules??hasRole(viewer,"admin"))&&<Link href="/admin/modul" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link>}<span className={s.pill}>Internal</span><button className={s.iconButton} aria-label={`Notifikasi, ${notifications.filter(n=>!n.read_at).length} belum dibaca`} aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.notificationCount}>{notifications.filter(n=>!n.read_at).length}</span>}</button><div className={s.topProfile}><span className={s.avatar}>{viewer?.name.slice(0,1)??"S"}</span><div><strong>{viewer?.name}</strong><small>{viewer?roleLabel(viewer):""}</small></div></div></div></header>
+    {showNotifications&&<section className={s.popover}><div className={s.cardHeader} style={{padding:"0 0 14px"}}><h2>Notifikasi</h2><button type="button" className={s.link} disabled={markingAll||!notifications.some(n=>!n.read_at)} onClick={()=>void markAllRead()}>{markingAll?"Menandai…":"Tandai semua dibaca"}</button><button className={s.link} onClick={()=>setShowNotifications(false)}>Tutup</button></div>{notifications.length?notifications.map(n=><button key={n.id} className={s.notification} onClick={()=>markRead(n)} style={{fontWeight:n.read_at?400:600}}>{n.message}<small>{day(n.created_at)}</small></button>):<p className={s.tiny}>Belum ada notifikasi baru.</p>}</section>}
     <main className={s.main}>{error&&<div className={`${s.notice} ${s.error}`} role="alert"><span>{error}</span><button aria-label="Tutup pesan" onClick={()=>setError("")}>×</button></div>}
       {!viewer?loading?<LoadingState variant="detail" label="Menyiapkan ruang kerja…"/>:<div className={s.empty}><p>Akses modul belum tersedia. Pastikan Anda mendapat izin dari superadmin.</p><Link className={s.button} href="/admin">Kembali ke platform</Link></div>:
-      isNew?canCreate?<IntakeForm viewer={viewer} direct={applicationId==="langsung"}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
-      isDetail?!detail&&!error?<LoadingState variant="detail" label="Memuat detail pengajuan…"/>:detail?isEdit?<IntakeForm viewer={viewer} initial={detail}/>:<Detail row={detail} viewer={viewer} staff={staff} reload={reload}/>:<div className={s.empty}><h3>Pengajuan belum dapat dimuat</h3><button type="button" className={s.button} onClick={reload}>Coba lagi</button></div>:
+      tab==="pengajuan-dana"?<FundingRequests viewer={viewer} onChanged={reload}/>:
+      isNew?canCreate?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} direct={applicationId==="langsung"}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
+      isDetail?!detail&&!error?<LoadingState variant="detail" label="Memuat detail pengajuan…"/>:detail?isEdit?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} initial={detail}/>:<Detail key={`${detail.id}:${detail.status}`} row={detail} viewer={viewer} staff={staff} reload={reload}/>:<div className={s.empty}><h3>Pengajuan belum dapat dimuat</h3><button type="button" className={s.button} onClick={reload}>Coba lagi</button></div>:
       tab===""?<Dashboard viewer={viewer} dashboard={dashboard} failed={!!error} onRetry={reload}/>:
+      tab==="mustahiq"?<Mustahiq key={key} id={route[1]}/>:
+      menuGroups.some(group=>group.key===tab)?<MenuGroup view={tab} viewer={viewer} dashboard={dashboard}/>:
       tab==="proses"?<ProcessHub viewer={viewer} dashboard={dashboard} failed={!!error} onRetry={reload}/>:
       tab==="santunan"?<Santunan viewer={viewer} staff={staff}/>:
       ["tim","pengaturan","audit"].includes(tab)?<Management tab={tab} viewer={viewer} staff={staff} reload={reload} loading={loading}/>:
-      <><div className={s.heading}><div>{queue&&<Link className={s.backLink} href="/admin/bantuan/proses"><Icon name="back"/>Semua proses</Link>}<div className={s.eyebrow}>{tab?"OPERASIONAL BANTUAN":"SELAMAT DATANG KEMBALI"}</div><h1>{tab?listTitle[tab]??"Pengajuan bantuan":`Ringkasan bantuan`}</h1><p>{queue?.description??(tab==="dana"?"Penanda manual dari web pengajuan dana. Tidak ada transfer otomatis.":tab==="pencairan"?"Pantau dana siap cair dan bukti penyerahan yang belum lengkap.":"Pantau setiap tahap, pastikan bantuan sampai kepada yang membutuhkan.")}</p></div><div className={s.actions}>{tab==="laporan"&&["admin","approver","chair","fund_requester","treasurer"].includes(viewer.role)&&<a className={`${s.button} ${s.secondary}`} href={`/api/bantuan/export?${applicationParams(viewer,tab,filters)}`}>↓ Ekspor hasil filter</a>}{canCreate&&<Link className={s.button} href={newHref}><Icon name="plus"/>Pengajuan baru</Link>}</div></div>
+      <><div className={s.heading}><div>{queue&&<Link className={s.backLink} href="/admin/bantuan/proses"><Icon name="back"/>Semua proses</Link>}<div className={s.eyebrow}>{tab?"OPERASIONAL BANTUAN":"SELAMAT DATANG KEMBALI"}</div><h1>{tab?listTitle[tab]??"Pengajuan bantuan":`Ringkasan bantuan`}</h1><p>{queue?.description??(tab==="dana"?"Penanda manual dari web pengajuan dana. Tidak ada transfer otomatis.":tab==="pencairan"?"Pantau dana siap cair dan bukti penyerahan yang belum lengkap.":"Pantau setiap tahap, pastikan bantuan sampai kepada yang membutuhkan.")}</p></div><div className={s.actions}>{tab==="laporan"&&hasAnyRole(viewer,["admin","approver","chair","fund_requester","treasurer"])&&<a className={`${s.button} ${s.secondary}`} href={`/api/bantuan/export?${applicationParams(viewer,tab,filters)}`}>↓ Ekspor hasil filter</a>}{canCreate&&<Link className={s.button} href={newHref}><Icon name="plus"/>Pengajuan baru</Link>}</div></div>
       <PageGuide title={tab==="laporan"?"Cara membaca laporan bantuan":"Cara mengerjakan daftar ini"} steps={tab==="laporan"?["Ringkasan menampilkan nominal yang ditetapkan, dicairkan, dan diserahkan.","Gunakan pencarian dan filter untuk menemukan pengajuan tertentu.","Buka pengajuan untuk melihat dokumen dan riwayat. Ekspor CSV tersedia sesuai peran."]:["Cari nama atau nomor pengajuan; gunakan filter jika diperlukan.",queue?.description??"Buka pengajuan untuk melihat data, status, dan langkah berikutnya.","Di halaman detail, periksa data lalu pilih tombol langkah berikutnya atau tab Tindakan."]}/>
       {report&&tab==="laporan"&&<><div className={`${s.stats} ${tab?s.compactStats:""}`}>{[
         {label:"Total pengajuan",value:report.total,hint:"Sesuai filter laporan",icon:"file"},
@@ -142,7 +173,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
         {label:"Bantuan selesai",value:report.byStatus.completed??0,hint:"Bukti penyerahan sudah lengkap",icon:"check"},
       ].map((stat,i)=><div key={stat.label} className={`${s.stat} ${i===3?s.accentCard:""}`}><div className={s.statTop}>{stat.label}<Icon name={stat.icon}/></div><strong>{stat.value}</strong><p>{stat.hint}</p></div>)}</div>
       {report.overdue>0&&<div className={s.notice}>{report.overdue} pengajuan melewati batas penyaluran {viewer.settings.distributionDays} hari. Mohon segera lengkapi bukti penyerahan.<Link className={s.link} href={allLinks.some(link=>link.key==="penyaluran")?"/admin/bantuan/penyaluran":"/admin/bantuan/pengajuan"}>Tinjau →</Link></div>}
-      {tab==="laporan"&&<div className={s.split}><section className={s.card}><div className={s.cardHeader}><div><h2>Perjalanan bantuan</h2><p>Ringkasan sesuai filter daftar di bawah</p></div><span className={s.pill}>Hasil filter</span></div><div className={s.cardBody}>{[["Proses screening",["draft","screening","needs_data"]],["Review & survei",["review1","survey_assignment","survey_assigned","survey_submitted","review2","bypass_review"]],["Proses dana",["approved","fund_ready","fund_submitted","fund_approved"]],["Penyaluran",["disbursed"]],["Selesai",["completed"]]].map(([label,keys])=>{const count=(keys as string[]).reduce((a,k)=>a+Number(report.byStatus[k]??0),0);return <div key={String(label)}><div className={s.progressRow}><span>{label}</span><strong>{count}</strong></div><div className={s.progress}><span style={{width:`${report.total?count/report.total*100:0}%`}}/></div></div>;})}</div></section>
+      {tab==="laporan"&&<div className={s.split}><section className={s.card}><div className={s.cardHeader}><div><h2>Perjalanan bantuan</h2><p>Ringkasan sesuai filter daftar di bawah</p></div><span className={s.pill}>Hasil filter</span></div><div className={s.cardBody}>{[["Proses screening",["draft","screening","needs_data"]],["Review & survei",["review1","survey_assignment","survey_assigned","survey_cc_review","survey_submitted","review2","bypass_review"]],["Proses dana",["approved","fund_ready","fund_submitted","fund_approved"]],["Penyaluran",["disbursed"]],["Selesai",["completed"]]].map(([label,keys])=>{const count=(keys as string[]).reduce((a,k)=>a+Number(report.byStatus[k]??0),0);return <div key={String(label)}><div className={s.progressRow}><span>{label}</span><strong>{count}</strong></div><div className={s.progress}><span style={{width:`${report.total?count/report.total*100:0}%`}}/></div></div>;})}</div></section>
       <section className={s.card}><div className={s.cardHeader}><div><h2>Ringkasan dana</h2><p>Nominal sesuai filter laporan</p></div></div><div className={s.cardBody}>{[["Bantuan ditetapkan",report.approvedAmount],["Dana dicairkan",report.disbursedAmount],["Bantuan tersalurkan",report.completedAmount]].map(([label,value])=><div className={s.document} key={String(label)} style={{alignItems:"flex-start",flexDirection:"column",gap:5}}><span className={s.tiny}>{label}</span><strong style={{fontSize:21,fontWeight:600}}>{money(Number(value))}</strong></div>)}<p className={s.tiny} style={{marginTop:18}}>Bukan saldo rekening. Pencairan dilakukan manual oleh Bendahara.</p></div></section></div>}
       </>}
       {dashboard&&tab==="pencairan"&&dashboard.tickets.length>0&&<section className={s.card}><div className={s.cardHeader}><div><h2>Tiket pencairan per penyalur</h2><p>Hanya dana yang telah ditandai disetujui</p></div></div><div className={s.cardBody}>{dashboard.tickets.map((t,i)=><div key={i} className={s.document}><div><strong>{t.distribution_type==="direct"?"Bendahara → penerima langsung":staff.find(p=>p.id===t.distributor_id)?.name??"Verifikator"}</strong><div className={s.tiny}>{t.total} penerima</div></div><strong>{money(Number(t.amount))}</strong></div>)}</div></section>}
@@ -161,17 +192,21 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
 
 function Detail({ row,viewer,staff,reload }: {row:AidDetail;viewer:BantuanViewer;staff:BantuanStaff[];reload:()=>void}) {
   const [todayTime]=useState(()=>Date.now());
-  const [section,setSection]=useState("pemohon");
-  const isSurveyEntry=viewer.role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned";
-  const detailTabs=[{id:"pemohon",label:"Data pemohon"},{id:"dokumen",label:"Dokumen pendukung"},{id:"tindakan",label:isSurveyEntry?"Hasil survei":"Tindakan"},{id:"riwayat",label:"Riwayat"}];
-  const upcoming=nextStep(row.status,row.source);
+  const isSurveyReview=row.status==="survey_cc_review";
+  const canReviewSurvey=getAvailableActions(row,viewer).some(action=>action.key==="survey_review_submit");
+  const [section,setSection]=useState(isSurveyReview?"tindakan":"pemohon");
+  const isSurveyEntry=hasRole(viewer,"verifier")&&row.verifierId===viewer.id&&row.status==="survey_assigned";
+  const detailTabs=[{id:"pemohon",label:"Data pemohon"},{id:"dokumen",label:"Dokumen pendukung"},{id:"tindakan",label:getActionSectionLabel(row,viewer)},{id:"riwayat",label:"Riwayat"}];
+  const upcoming=nextStep(row.status,row.source,row.intakeRole);
   const canAct=getAvailableActions(row,viewer).length>0;
   const openActions=()=>{setSection("tindakan");requestAnimationFrame(()=>document.getElementById("case-tab-tindakan")?.scrollIntoView({behavior:"smooth",block:"start"}));};
   const person=(id:string|null)=>staff.find(p=>p.id===id)?.name??"Belum ditugaskan";
   const labels:Record<string,string>={intakeType:"Jenis pengajuan",name:"Nama lengkap",nik:"NIK",birthPlace:"Tempat lahir",birthDate:"Tanggal lahir",gender:"Jenis kelamin",maritalStatus:"Status pernikahan",street:"Alamat",rtRw:"RT / RW",village:"Desa / kelurahan",district:"Kecamatan",city:"Kabupaten / kota",housing:"Status tempat tinggal",rent:"Biaya sewa",job:"Pekerjaan",phone:"Nomor HP",income:"Penghasilan",incomePeriod:"Periode penghasilan",dependentCount:"Jumlah tanggungan",dependents:"Rincian tanggungan",prayer:"Sholat 5 waktu",smoking:"Merokok",previousAid:"Pernah dibantu",previousAidNotes:"Bantuan sebelumnya",publicationConsent:"Persetujuan publikasi",willingSktm:"Bersedia mengurus SKTM",informationSource:"Sumber informasi",problem:"Masalah yang dihadapi",date:"Tanggal laporan",type:"Jenis pelapor",address:"Alamat",background:"Latar belakang",currentCondition:"Kondisi saat ini",needs:"Kebutuhan",efforts:"Upaya yang dilakukan",homeObservation:"Kondisi rumah",socialRecord:"Kondisi sosial",recommendation:"Rekomendasi",notes:"Catatan",suggestions:"Kritik & saran",hasSktm:"Memiliki SKTM",sktmExplanation:"Penjelasan SKTM",stayDuration:"Lama tinggal",stayUnit:"Satuan",method:"Metode penyerahan",amount:"Nominal diserahkan",differenceReason:"Alasan selisih nominal"};
   const renderData=(data:Record<string,unknown>)=><dl className={s.infoGrid}>{Object.entries(data).map(([k,v])=>["latitude","longitude","contacts"].includes(k)?null:<div key={k}><dt>{labels[k]??k}</dt><dd>{k==="intakeType"?(v==="returning"?"Pemohon pernah mengajukan":"Pemohon baru"):k==="dependents"?<DependentsSummary value={v}/>:typeof v==="boolean"?(v?"Ya":"Tidak"):String(v??"—").replaceAll("_"," ")}</dd></div>)}</dl>;
-  return <><Link href="/admin/bantuan/pengajuan" className={s.link}>← Semua pengajuan</Link><div className={s.heading} style={{marginTop:20}}><div><div className={s.eyebrow}>{row.number} · {row.source==="bypass"?"JALUR LANGSUNG":row.source==="walk_in"?"WALK-IN":"ONLINE"}</div><h1>{row.name}</h1><p>{row.program} <span style={{padding:"0 7px"}}>·</span> {row.region} <span style={{padding:"0 7px"}}>·</span> {day(row.createdAt)}</p></div><div className={s.actions}><Badge status={row.status}/>{["draft","needs_data","screening"].includes(row.status)&&["admin","call_center","verifier"].includes(viewer.role)&&<Link className={`${s.button} ${s.secondary}`} href={`/admin/bantuan/pengajuan/${row.id}/edit`}>Edit data</Link>}</div></div>
+  return <><Link href="/admin/bantuan/pengajuan" className={s.link}>← Semua pengajuan</Link><div className={s.heading} style={{marginTop:20}}><div><div className={s.eyebrow}>{row.number} · {row.source==="bypass"?"JALUR LANGSUNG":row.source==="walk_in"?"WALK-IN":"ONLINE"}</div><h1>{row.name}</h1><p>{row.program} <span style={{padding:"0 7px"}}>·</span> {row.region} <span style={{padding:"0 7px"}}>·</span> {day(row.createdAt)}</p></div><div className={s.actions}><Badge status={row.status}/>{canEditIntake(viewer,row)&&<Link className={`${s.button} ${s.secondary}`} href={`/admin/bantuan/pengajuan/${row.id}/edit`}>Edit data</Link>}</div></div>
     <ApplicantHistory count={row.duplicateCount} applications={row.duplicateApplications??[]}/>
+    {row.status==="survey_assignment"&&[...row.events].reverse().find(event=>event.action==="survey_decline")&&<div className={s.notice}><strong>Tugas survei ditolak Verifikator.</strong><p>{[...row.events].reverse().find(event=>event.action==="survey_decline")?.reason}</p><small>Call Center dapat memilih Verifikator pengganti melalui tab Tindakan.</small></div>}
+    {["survey_assignment","survey_assigned"].includes(row.status)&&(hasAnyRole(viewer,["admin","call_center"])||hasRole(viewer,"verifier")&&row.verifierId===viewer.id)&&<SurveyMap row={row} initiallyExpanded={isSurveyEntry} onAddressChange={hasAnyRole(viewer,["admin","call_center"])?async surveyAddress=>{await request(`applications/${row.id}/actions/survey_address`,{method:"POST",body:JSON.stringify({surveyAddress,version:row.version})});reload();}:undefined} editable={hasAnyRole(viewer,["admin","call_center"])||hasRole(viewer,"verifier")&&row.verifierId===viewer.id} onDestination={async point=>{await request(`applications/${row.id}/actions/survey_location`,{method:"POST",body:JSON.stringify({...point,version:row.version})});reload();}}/>}
     {row.bypassReason&&<div className={s.notice}>Alasan jalur langsung: {row.bypassReason}</div>}
     <div className={s.caseSummary}>
       <div><small>Nominal bantuan</small><strong>{row.amount?money(row.amount):"Belum ditetapkan"}</strong></div>
@@ -179,7 +214,7 @@ function Detail({ row,viewer,staff,reload }: {row:AidDetail;viewer:BantuanViewer
       <div><small>Penyalur</small><strong>{row.distributionType==="direct"?"Bendahara langsung":person(row.distributorId)}</strong></div>
       <div><small>{row.disbursedAt?"Dana dicairkan":"Referensi dana"}</small><strong>{row.disbursedAt?day(row.disbursedAt):row.fundReference??"Belum ada"}</strong></div>
     </div>
-    <section className={s.nextStep} aria-label="Langkah berikutnya"><span className={s.nextStepIcon}><Icon name="arrow"/></span><div><small>LANGKAH BERIKUTNYA</small><h2>{upcoming.title}</h2><p>{upcoming.description}</p></div><span className={s.nextOwner}>{upcoming.owner}</span>{canAct&&<button type="button" className={s.button} onClick={openActions}>{isSurveyEntry?"Isi hasil survei":"Buka langkah berikutnya"}<Icon name="arrow"/></button>}</section>
+    <section className={s.nextStep} aria-label="Langkah berikutnya"><span className={s.nextStepIcon}><Icon name="arrow"/></span><div><small>LANGKAH BERIKUTNYA</small><h2>{upcoming.title}</h2><p>{upcoming.description}</p></div><span className={s.nextOwner}>{upcoming.owner}</span>{canAct&&<button type="button" className={s.button} onClick={openActions}>{canReviewSurvey?"Periksa & koreksi hasil survei":isSurveyEntry?"Isi hasil survei":"Buka langkah berikutnya"}<Icon name="arrow"/></button>}</section>
     <PageGuide title="Cara menyelesaikan tahap pengajuan ini" steps={["Periksa Data pemohon dan Dokumen pendukung terlebih dahulu.",canAct?"Tekan Buka langkah berikutnya untuk menuju form tindakan Anda.":`Tahap ini menunggu ${upcoming.owner}. Anda dapat memantau perkembangan melalui Riwayat.`,"Isi form yang tersedia, lalu konfirmasi. Setelah berhasil, Anda kembali ke daftar pengajuan."]}/>
     <div className={s.caseWorkspace}>
       <div className={s.caseTabs} role="tablist" aria-label="Bagian pengajuan">{detailTabs.map(item=><button type="button" key={item.id} role="tab" id={"case-tab-"+item.id} aria-controls={"case-panel-"+item.id} aria-selected={section===item.id} onClick={()=>setSection(item.id)} onKeyDown={e=>{
@@ -189,8 +224,8 @@ function Detail({ row,viewer,staff,reload }: {row:AidDetail;viewer:BantuanViewer
       }} tabIndex={section===item.id?0:-1}>{item.label}</button>)}</div>
       {/* Keep every panel mounted: switching tabs or uploading must retain drafts. */}
       <div role="tabpanel" id="case-panel-tindakan" aria-labelledby="case-tab-tindakan" hidden={section!=="tindakan"} className={s.casePanel}>
-        <ActionPanel key={row.id} row={row} viewer={viewer} staff={staff} reload={reload}/>
-        {row.survey&&!isSurveyEntry&&<section className={s.card}><div className={s.cardHeader}><h2>Hasil verifikasi</h2></div><div className={s.cardBody}>{renderData(row.survey)}{Array.isArray(row.survey.contacts)&&row.survey.contacts.length>0&&<><h3 className={s.sectionTitle} style={{marginTop:20}}>Kontak kerabat / tetangga</h3>{(row.survey.contacts as {name:string;relationship:string;phone:string}[]).map((c,i)=><p key={i}>{c.name} · {c.relationship} · {c.phone}</p>)}</>}</div></section>}
+        <ActionPanel key={`${row.id}:${row.status}`} row={row} viewer={viewer} staff={staff} reload={reload}/>
+        {row.survey&&!isSurveyEntry&&!canReviewSurvey&&<section className={s.card}><div className={s.cardHeader}><h2>Hasil verifikasi</h2></div><div className={s.cardBody}>{renderData(row.survey)}{Array.isArray(row.survey.contacts)&&row.survey.contacts.length>0&&<><h3 className={s.sectionTitle} style={{marginTop:20}}>Kontak kerabat / tetangga</h3>{(row.survey.contacts as {name:string;relationship:string;phone:string}[]).map((c,i)=><p key={i}>{c.name} · {c.relationship} · {c.phone}</p>)}</>}</div></section>}
         {row.handover&&<section className={s.card}><div className={s.cardHeader}><h2>Penyerahan bantuan</h2><Badge status="completed"/></div><div className={s.cardBody}>{renderData(row.handover)}</div></section>}
         <div className={s.caseShortcuts}><button type="button" onClick={()=>setSection("dokumen")}><Icon name="upload"/> Unggah / lihat dokumen <Icon name="arrow"/></button><button type="button" onClick={()=>setSection("riwayat")}><Icon name="history"/> Lihat riwayat proses <Icon name="arrow"/></button></div>
       </div>

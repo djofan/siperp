@@ -22,7 +22,7 @@ export async function getUserWithAccess(id: string) {
 export async function createUserWithAccess(input: { name: string; email?: string; password: string; isSuperadmin: boolean; moduleIds: string[] }) {
   return apiRequest<CoreUser>("super/akun", { method: "POST", body: JSON.stringify(input) });
 }
-export async function updateUser(id: string, input: { name: string; email: string; password?: string }) {
+export async function updateUser(id: string, input: { name: string; email?: string; password?: string; entries?: { moduleId: string; role: string }[] }) {
   return apiRequest<CoreUser>(`super/akun/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(input) });
 }
 export async function deleteUser(id: string) { await apiRequest(`super/akun/${encodeURIComponent(id)}`, { method: "DELETE" }); }

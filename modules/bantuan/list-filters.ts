@@ -1,6 +1,6 @@
-import type { BantuanViewer } from "@/contracts/modules/bantuan";
 import { bantuanStatuses } from "@/contracts/modules/bantuan";
 import { defaultListStates, processInfo } from "./policy";
+import { hasRole, hasAnyRole, type RoleViewer } from "./permissions";
 
 export const sourceLabels:Record<string,string>={online:"Online / WhatsApp",walk_in:"Datang ke kantor",bypass:"Pengajuan langsung"};
 export const dateLabels:Record<string,string>={created:"Tanggal pengajuan",updated:"Terakhir diperbarui",disbursed:"Tanggal pencairan",completed:"Tanggal selesai"};
@@ -20,11 +20,12 @@ export function validateFilters(filters:ListFilters):string {
   return "";
 }
 
-export function applicationParams(viewer:Pick<BantuanViewer,"role">,tab:string,filters:ListFilters,page=1):URLSearchParams {
+export function applicationParams(viewer:RoleViewer,tab:string,filters:ListFilters,page=1):URLSearchParams {
   const params=new URLSearchParams({page:String(page)});
+  if(tab==="berjalan")params.set("view","ongoing");
   for(const [key,value] of Object.entries(filters))if(value.trim())params.set(key,value.trim());
   const states=defaultListStates(viewer,tab);if(states.length)params.set("states",states.join(","));
-  const task=processInfo(tab)?.task;if(viewer.role==="verifier"&&task)params.set("task",task);
+  const task=processInfo(tab)?.task;if(hasRole(viewer,"verifier")&&!hasAnyRole(viewer,["admin","call_center"])&&task&&(task!=="distribution"||!hasRole(viewer,"treasurer")))params.set("task",task);
   return params;
 }
 

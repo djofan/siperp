@@ -12,6 +12,7 @@ class ApplicationQuery
     public function filters(Request $request): array
     {
         return $request->validate([
+            'view' => 'nullable|in:ongoing',
             'status' => 'nullable|string|max:50', 'states' => 'nullable|string|max:500',
             'search' => 'nullable|string|max:191', 'program' => 'nullable|string|max:191', 'region' => 'nullable|string|max:191',
             'source' => 'nullable|in:online,walk_in,bypass', 'task' => 'nullable|in:survey,distribution',
@@ -28,14 +29,17 @@ class ApplicationQuery
 
     public function build(Request $request, Access $access, array $filters): Builder
     {
-        $query = $access->scope(Application::query(), $request);
+        if (($filters['view'] ?? null) === 'ongoing') {
+            abort_unless($access->canMonitor($request), 403);
+            $query = Application::query()->whereIn('status', Access::ONGOING);
+        } else {
+            $query = $access->scope(Application::query(), $request);
+        }
         if (! empty($filters['states'])) $query->whereIn('status', explode(',', $filters['states']));
         foreach (['status', 'program', 'region', 'source'] as $field) {
             if (! empty($filters[$field])) $query->where($field, $filters[$field]);
         }
-        if ($access->role($request) === 'verifier' && ! empty($filters['task'])) {
-            $query->where($filters['task'] === 'survey' ? 'verifier_id' : 'distributor_id', $request->user()->id);
-        }
+        if (! empty($filters['task'])) $this->task($query, $request, $access, $filters['task']);
         $dateColumn = ['created' => 'created_at', 'updated' => 'updated_at', 'disbursed' => 'disbursed_at', 'completed' => 'completed_at'][$filters['dateField'] ?? 'created'];
         if (! empty($filters['from'])) $query->whereDate($dateColumn, '>=', $filters['from']);
         if (! empty($filters['to'])) $query->whereDate($dateColumn, '<=', $filters['to']);
@@ -58,9 +62,18 @@ class ApplicationQuery
             $query->where(function (Builder $nested) use ($filters, $access, $request) {
                 $nested->where('name', 'like', '%'.$filters['search'].'%')->orWhere('number', 'like', '%'.$filters['search'].'%');
                 if ($access->sensitive($request) && preg_match('/^[0-9]{16}$/D', $filters['search'])) {
-                    $nested->orWhere('nik_hash', app(Intake::class)->nikHash($filters['search']));
+                    $nested->orWhere(fn ($private) => $access->scopeSensitive($private, $request)->where('nik_hash', app(Intake::class)->nikHash($filters['search'])));
                 }
             });
+        }
+        return $query;
+    }
+
+    public function task(Builder $query, Request $request, Access $access, string $task): Builder
+    {
+        if ($access->has($request, ['verifier']) && ! $access->has($request, ['admin', 'call_center'])
+            && ($task === 'survey' || ! $access->has($request, ['treasurer']))) {
+            $query->where($task === 'survey' ? 'verifier_id' : 'distributor_id', $request->user()->id);
         }
         return $query;
     }

@@ -1,9 +1,11 @@
 "use client";
+import { roleLabel } from "../permissions";
+
 
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Plus, CheckCheck, ChevronDown, BookOpen, FileText, Clock3, ClipboardList, Search, RotateCcw } from "lucide-react";
-import { bantuanRoles, type AidDashboard, type BantuanViewer } from "@/contracts/modules/bantuan";
+import { type AidDashboard, type BantuanViewer } from "@/contracts/modules/bantuan";
 import { href, navigation, type NavEntry } from "../policy";
 import { isWorkItem, queueCount, roleSteps, taskCopy } from "../workspace-guide";
 import { Icon } from "./ui";
@@ -13,10 +15,10 @@ import s from "./ProcessHub.module.css";
 export function ProcessHub({viewer,dashboard,title="Pekerjaan saya",failed=false,onRetry}:{viewer:BantuanViewer;dashboard:AidDashboard|null;title?:string;failed?:boolean;onRetry?:()=>void}){
   const [search,setSearch]=useState(""),[group,setGroup]=useState(""),[mode,setMode]=useState("pending");
   const menus=navigation(viewer),items=menus.filter(item=>item.states?.length);
-  const work=items.filter(item=>isWorkItem(viewer.role,item));
+  const work=items.filter(item=>isWorkItem(viewer,item));
   const matches=(item:NavEntry)=>(!group||item.group===group)&&[item.label,item.description,taskCopy[item.key]?.title].join(" ").toLowerCase().includes(search.trim().toLowerCase());
   const pending=work.filter(item=>(mode==="all"||queueCount(viewer,dashboard,item)!==0)&&matches(item));
-  const monitoring=items.filter(item=>!isWorkItem(viewer.role,item)&&!item.group.includes("Arsip")&&(mode==="all"||queueCount(viewer,dashboard,item)!==0)&&matches(item));
+  const monitoring=items.filter(item=>!isWorkItem(viewer,item)&&!item.group.includes("Arsip")&&(mode==="all"||queueCount(viewer,dashboard,item)!==0)&&matches(item));
   const archives=items.filter(item=>item.group.includes("Arsip")&&matches(item));
   const canCreate=menus.some(item=>item.key==="pengajuan/baru");
   const canDirect=menus.some(item=>item.key==="pengajuan/langsung");
@@ -34,10 +36,10 @@ export function ProcessHub({viewer,dashboard,title="Pekerjaan saya",failed=false
     </Link>;
   }
   return <div className={s.page}>
-    <header className={s.header}><div><span className={s.eyebrow}>PENGAJUAN BANTUAN</span><h1>{title}</h1><p>Mulai pengajuan baru atau lanjutkan pekerjaan yang perlu Anda tangani.</p></div><span className={s.role}>Peran aktif · {bantuanRoles[viewer.role]}</span></header>
+    <header className={s.header}><div><span className={s.eyebrow}>PENGAJUAN BANTUAN</span><h1>{title}</h1><p>Mulai pengajuan baru atau lanjutkan pekerjaan yang perlu Anda tangani.</p></div><span className={s.role}>Peran Anda · {roleLabel(viewer)}</span></header>
     <section className={s.welcome}>
-      <div className={s.start}><span className={s.startIcon}>{canCreate?<Plus size={24}/>:<CheckCheck size={24}/>}</span><div><h2>{canCreate?"Ada pemohon yang ingin mengajukan bantuan?":total?"Ada pekerjaan yang menunggu Anda":"Mulai dari tugas yang diberikan kepada Anda"}</h2><p>{canCreate?"Isi data pemohon dalam empat langkah. Bisa disimpan dulu dan dilanjutkan kapan saja.":"Daftar di bawah mengikuti peran aktif dan cakupan akses Anda."}</p><div className={s.startActions}>{canCreate?<Link className={s.primary} href={href("pengajuan/baru")}>Buat pengajuan baru<ArrowRight size={17}/></Link>:pending[0]&&dashboard?<Link className={s.primary} href={href(pending[0].key)}>Buka pekerjaan pertama<ArrowRight size={17}/></Link>:<Link className={s.secondary} href={href("pengajuan")}>Lihat pengajuan</Link>}{canCreate&&(dashboard?.byStatus.draft??0)>0&&<Link className={s.textLink} href={href("draft")}>Lanjutkan draft ({dashboard?.byStatus.draft})</Link>}</div></div></div>
-      <details className={s.guide}><summary><BookOpen size={16}/>Cara kerja Anda<ChevronDown size={14}/></summary><ol>{roleSteps(viewer.role).map((step,i)=><li key={step}><span>{i+1}</span>{step}</li>)}</ol></details>
+      <div className={s.start}><span className={s.startIcon}>{canCreate?<Plus size={24}/>:<CheckCheck size={24}/>}</span><div><h2>{canCreate?"Ada pemohon yang ingin mengajukan bantuan?":total?"Ada pekerjaan yang menunggu Anda":"Mulai dari tugas yang diberikan kepada Anda"}</h2><p>{canCreate?"Isi data pemohon dalam empat langkah. Bisa disimpan dulu dan dilanjutkan kapan saja.":"Daftar di bawah mencakup tugas dari seluruh peran yang Anda miliki."}</p><div className={s.startActions}>{canCreate?<Link className={s.primary} href={href("pengajuan/baru")}>Buat pengajuan baru<ArrowRight size={17}/></Link>:pending[0]&&dashboard?<Link className={s.primary} href={href(pending[0].key)}>Buka pekerjaan pertama<ArrowRight size={17}/></Link>:<Link className={s.secondary} href={href("pengajuan")}>Lihat pengajuan</Link>}{canCreate&&(dashboard?.byStatus.draft??0)>0&&<Link className={s.textLink} href={href("draft")}>Lanjutkan draft ({dashboard?.byStatus.draft})</Link>}</div></div></div>
+      <details className={s.guide}><summary><BookOpen size={16}/>Cara kerja Anda<ChevronDown size={14}/></summary><ol>{roleSteps(viewer).map((step,i)=><li key={step}><span>{i+1}</span>{step}</li>)}</ol></details>
     </section>
     <div className={s.filters} aria-label="Filter pekerjaan">
       <label className={s.searchField}><span>Cari pekerjaan</span><span className={s.searchInput}><Search size={18} aria-hidden="true"/><input type="search" aria-label="Cari tahap pekerjaan" placeholder="Cari tugas atau tahap bantuan…" value={search} onChange={e=>setSearch(e.target.value)}/></span></label>

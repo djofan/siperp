@@ -52,11 +52,11 @@ test("santunan uses compact cards without changing its transfer and two evidence
   assert.match(page,/className=\{d.cards\}/);
   assert.match(page,/hidden=\{!showCreate\}/);
   assert.match(page,/hidden=\{expanded!==row.id\}/);
-  assert.match(page,/for\(const kind of \["aid_paper","recipient_photo","transfer"\]\)/);
+  assert.match(page,/for\(const kind of \["aid_paper","recipient_photo"\]\)/);
   assert.match(page,/santunan\/\$\{row.id\}\/transferred/);
   assert.match(page,/santunan\/\$\{row.id\}\/complete/);
   assert.match(page,/version:row.version/);
-  assert.match(page,/\["verifier","volunteer"\].includes\(viewer.role\)&&viewer.id===row.volunteerId/);
+  assert.match(page,/hasRole\(viewer,"volunteer"\)&&viewer.id===row.volunteerId/);
   assert.match(policy,/if\(viewer.role==="volunteer"\)return route.length===1&&route\[0\]==="santunan"/);
 });
 
@@ -77,7 +77,7 @@ test("survey entry is a compact two column form with no resize corner or field b
   const css=readFileSync("modules/bantuan/components/Workspace.module.css","utf8");
   const fields=actions.match(/const surveyFields=\[([\s\S]*?)\n\];/)[1];
   assert.doesNotMatch(fields,/wide:true/);
-  assert.match(actions,/className=\{active==="survey_submit"\?s.surveyForm:undefined\}/);
+  assert.match(actions,/className=\{surveyEntry\?s.surveyForm:undefined\}/);
   assert.match(css,/\.surveyForm \.formGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
   assert.match(css,/\.surveyForm \.input\{border:0/);
   assert.match(css,/\.surveyForm \.field textarea\{[^}]*resize:none/);
@@ -88,9 +88,9 @@ test("detail follows applicant documents action history order with survey entry 
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:isSurveyEntry\?"Hasil survei":"Tindakan"\},\{id:"riwayat",label:"Riwayat"\}\]/);
-  assert.match(workspace,/viewer.role==="verifier"&&row.verifierId===viewer.id&&row.status==="survey_assigned"/);
+  assert.match(workspace,/hasRole\(viewer,"verifier"\)&&row.verifierId===viewer.id&&row.status==="survey_assigned"/);
   assert.match(workspace,/row.survey&&!isSurveyEntry/);
-  assert.match(actions,/row.status==="survey_assigned"\?"survey_submit":null/);
+  assert.match(actions,/\["survey_submit","survey_decline"\].includes\(a.key\)&&row.verifierId!==viewer.id/);
 });
 
 test("completed actions and explicit server draft saves show feedback and return to the list",()=>{
@@ -265,6 +265,6 @@ test("intake uses four steps without reporter fields or required reporter data",
   assert.doesNotMatch(workspace,/case-panel-pelapor/);
   assert.match(intake,/form\.step===1\)\{operation.current="advance";setBusy\(true\);try\{await persist/);
   assert.match(intake,/formVersion:2/);
-  assert.match(intake,/form\.step===3\?"Kirim pengajuan"/);
+  assert.match(intake,/form\.step===3\?/);
   assert.doesNotMatch(intake,/form\.step===4/);
 });

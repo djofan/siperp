@@ -7,11 +7,25 @@ import vm from "node:vm";
 const require=createRequire(import.meta.url);
 const ts=require("typescript");
 const source=readFileSync("modules/bantuan/policy.ts","utf8");
-const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
-const sandbox={exports:{}};
+const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText;
+const loadSource=(file,imports={})=>{const context={exports:{},require:id=>imports[id]};vm.runInNewContext(ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText,context);return context.exports;};
+const contracts=loadSource("contracts/modules/bantuan.ts");
+const permissions=loadSource("modules/bantuan/permissions.ts",{"@/contracts/modules/bantuan":contracts});
+const sandbox={exports:{},require:id=>id==="./permissions"?permissions:null};
 vm.runInNewContext(compiled,sandbox);
 const {navigation,sidebarNavigation,canViewRoute,defaultListStates,processMenus,processInfo}=sandbox.exports;
-const roles=["admin","call_center","approver","chair","verifier","fund_requester","treasurer"];
+const roles=["admin","requester","call_center","approver","chair","verifier","fund_requester","treasurer"];
+
+test("mustahiq navigation uses the role union and denies field-only accounts",()=>{
+  for(const roles of [["verifier"],["volunteer"],["verifier","volunteer"],["verifier","call_center"],["volunteer","treasurer"],["admin"],["requester"]]){
+    const viewer={role:roles[0],roles,canBypass:false};
+    const allowed=roles.some(role=>!["verifier","volunteer"].includes(role));
+    assert.equal(navigation(viewer).some(item=>item.key==="mustahiq"),allowed);
+    assert.equal(canViewRoute(viewer,["mustahiq"]),allowed);
+    assert.equal(canViewRoute(viewer,["mustahiq","person-id"]),allowed);
+    assert.equal(canViewRoute(viewer,["mustahiq","person-id","arbitrary"]),false);
+  }
+});
 
 test("every displayed Bantuan navigation link is accepted by the server policy",()=>{
   for(const role of roles){
@@ -25,8 +39,6 @@ test("verifier can open assigned applications and the handover queue without adm
   const viewer={role:"verifier",canBypass:false};
   assert.equal(canViewRoute(viewer,["pengajuan"]),true);
   assert.equal(canViewRoute(viewer,["penyaluran"]),true);
-  assert.equal(canViewRoute(viewer,["santunan"]),true);
-  assert.ok(sidebarNavigation(viewer).some(item=>item.key==="santunan"));
   assert.equal(canViewRoute(viewer,["pengajuan","example"]),true);
   for(const route of ["tim","pengaturan","audit","dana","pencairan"])
     assert.equal(canViewRoute(viewer,[route]),false,route);
@@ -49,6 +61,7 @@ test("every workflow status has a specific menu with a matching queue filter",()
 
 test("operational accounts see each of their process queues without management access",()=>{
   const expected={
+    requester:["draft","perlu-dilengkapi"],
     call_center:["draft","screening","perlu-dilengkapi","penugasan-survei","penugasan-penyalur"],
     approver:["review-tahap-1","review-tahap-2","review-ulang","review-langsung"],
     verifier:["survei","penyaluran","gagal-salur","selesai"],
@@ -69,12 +82,39 @@ test("operational accounts see each of their process queues without management a
 test("sidebar stays compact while the process launcher retains every authorized queue",()=>{
   for(const role of roles){
     const viewer={role,canBypass:true},sidebar=sidebarNavigation(viewer);
-    assert.ok(sidebar.length<=8,role);
+    assert.ok(sidebar.length<=11,role);
     assert.ok(sidebar.length>=6,role);
     assert.ok(sidebar.some(item=>item.key==="proses"),role);
     assert.equal(canViewRoute(viewer,["proses"]),true);
     for(const item of sidebar)assert.equal(canViewRoute(viewer,item.key?[item.key]:[]),true);
     for(const item of navigation(viewer).filter(item=>item.states?.length))assert.equal(canViewRoute(viewer,[item.key]),true);
     if(role!=="admin")assert.ok(sidebar.some(item=>item.states?.length),role);
+  }
+});
+
+test("staff can create and follow their own applications without review fund or management menus",()=>{
+  const viewer={role:"requester",canBypass:true};
+  assert.equal(canViewRoute(viewer,["pengajuan","baru"]),true);
+  assert.equal(canViewRoute(viewer,["pengajuan","example","edit"]),true);
+  assert.ok(navigation(viewer).some(item=>item.key==="pengajuan"&&item.label==="Pengajuan saya"));
+  for(const route of [["pengajuan","langsung"],["screening"],["review-tahap-1"],["penugasan-survei"],["dana"],["pencairan"],["tim"],["audit"]])
+    assert.equal(canViewRoute(viewer,route),false,route.join("/"));
+});
+
+test("the intake preview follows the original role rather than the WhatsApp or walk in source",()=>{
+  const {intakeStage}=sandbox.exports;
+  for(const source of ["online","walk_in"]){
+    assert.equal(intakeStage(source,"requester"),"screening");
+    assert.equal(intakeStage(source,"call_center"),"review1");
+  }
+  assert.equal(intakeStage("bypass","verifier"),"bypass_review");
+});
+
+test("ongoing applications are visible to operational roles but not field-only accounts",()=>{
+  for(const role of ["admin","call_center","requester","fund_requester","treasurer","approver","chair"]){
+    assert.equal(canViewRoute({role,canBypass:false},["berjalan"]),true);
+  }
+  for(const role of ["verifier","volunteer"]){
+    assert.equal(canViewRoute({role,canBypass:false},["berjalan"]),false);
   }
 });

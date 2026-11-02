@@ -1,9 +1,11 @@
 "use client";
+import { roleLabel } from "../permissions";
+
 
 import Link from "next/link";
 import { useEffect, useState, type CSSProperties } from "react";
 import { ArrowRight, Files, CircleDashed, HandHeart, CheckCheck, Plus, ClipboardList, Inbox } from "lucide-react";
-import { bantuanRoles, type AidDashboard, type BantuanViewer } from "@/contracts/modules/bantuan";
+import { type AidDashboard, type BantuanViewer } from "@/contracts/modules/bantuan";
 import { href, navigation, finalStates } from "../policy";
 import { isWorkItem, queueCount, taskCopy } from "../workspace-guide";
 import { LoadingState } from "./LoadingState";
@@ -21,7 +23,7 @@ export function Dashboard({viewer,dashboard,failed,onRetry}:{viewer:BantuanViewe
   const summaryFailed=hasPeriod?scoped?.key===periodKey&&scoped.error:failed;
   const menus=navigation(viewer);
   const canCreate=menus.some(item=>item.key==="pengajuan/baru");
-  const work=menus.filter(item=>item.states?.length&&isWorkItem(viewer.role,item));
+  const work=menus.filter(item=>item.states?.length&&isWorkItem(viewer,item));
   const pending=work.filter(item=>(queueCount(viewer,dashboard,item)??0)>0);
   const workReady=work.every(item=>queueCount(viewer,dashboard,item)!==null);
   const count=(states:string[])=>states.reduce((sum,state)=>sum+Number(summary?.byStatus[state]??0),0);
@@ -35,7 +37,7 @@ export function Dashboard({viewer,dashboard,failed,onRetry}:{viewer:BantuanViewe
   ]:[];
   const stages=[
     {label:"Persiapan pengajuan",states:["draft","needs_data","screening"],color:"#8ca39b"},
-    {label:"Persetujuan & survei",states:["review1","survey_assignment","survey_assigned","survey_submitted","review2","bypass_review"],color:"#be9752"},
+    {label:"Persetujuan & survei",states:["review1","survey_assignment","survey_assigned","survey_cc_review","survey_submitted","review2","bypass_review"],color:"#be9752"},
     {label:"Proses dana",states:["approved","fund_ready","fund_submitted","fund_approved"],color:"#729483"},
     {label:"Penyaluran",states:["disbursed","delivery_failed"],color:"#5d9670"},
     {label:"Selesai",states:["completed"],color:"#2b7853"},
@@ -45,7 +47,7 @@ export function Dashboard({viewer,dashboard,failed,onRetry}:{viewer:BantuanViewe
     <header className={s.header}>
       <div className={s.welcome}><span className={s.eyebrow}>RINGKASAN BANTUAN</span><h1>Dashboard</h1><p>Halo, {viewer.name.split(" ")[0]}. Pantau pengajuan dan lanjutkan pekerjaan Anda dari sini.</p></div>
       <div className={s.headerActions}>
-        <span className={s.workspaceRole}><span/>{bantuanRoles[viewer.role]}</span>
+        <span className={s.workspaceRole}><span/>{roleLabel(viewer)}</span>
         <div>{canCreate&&<Link className={s.secondary} href={href("pengajuan/baru")}><Plus size={16}/>Pengajuan baru</Link>}<Link className={s.primary} href={href("proses")}>Pekerjaan saya<ArrowRight size={16}/></Link></div>
       </div>
     </header>

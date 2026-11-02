@@ -12,7 +12,7 @@ let routeViewer=null;
 function load(filename){
   const full=path.resolve(filename);
   if(cache.has(full))return cache.get(full).exports;
-  const loadedModule={exports:{}};cache.set(full,loadedModule);
+  const module={exports:{}};cache.set(full,module);
   const localRequire=id=>{
     if(id==="next/navigation")return {useRouter:()=>({push(){},replace(){},refresh(){}}),redirect:target=>{throw new Error("REDIRECT:"+target);},notFound:()=>{throw new Error("NOT_FOUND");}};
     if(id==="@/lib/api")return {apiRequest:async target=>{if(target==="bantuan/viewer")return routeViewer;throw new Error("Unexpected API request: "+target);}};
@@ -24,9 +24,9 @@ function load(filename){
     }
     return nativeRequire(id);
   };
-  const compiled=ts.transpileModule(readFileSync(full,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
-  vm.runInNewContext(compiled,{module:loadedModule,exports:loadedModule.exports,require:localRequire,URLSearchParams,crypto:nativeRequire("node:crypto").webcrypto},{filename:full});
-  return loadedModule.exports;
+  const compiled=ts.transpileModule(readFileSync(full,"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
+  vm.runInNewContext(compiled,{module,exports:module.exports,require:localRequire,URLSearchParams,crypto:nativeRequire("node:crypto").webcrypto},{filename:full});
+  return module.exports;
 }
 const {isWorkItem,queueCount}=load("modules/bantuan/workspace-guide.ts");
 const {navigation,canViewRoute}=load("modules/bantuan/policy.ts");
@@ -34,6 +34,68 @@ const {ProcessHub}=load("modules/bantuan/components/ProcessHub.tsx");
 const {LoadingState}=load("modules/bantuan/components/LoadingState.tsx");
 const viewer=role=>({id:"test",name:"Petugas",role,canBypass:true,settings:{programs:["Kebutuhan Pokok"],regions:[],housing:[],distributionDays:7,minimumSurveyPhotos:5}});
 const stats={total:5,byStatus:{draft:1,survey_assigned:3,completed:1},byProgram:{},bySource:{},approvedAmount:0,disbursedAmount:0,completedAmount:0,overdue:0,tickets:[],taskCounts:{survey:{survey_assigned:1},distribution:{}}};
+
+test("multiple roles expose their combined menus, work and actions without granting management or self approval",()=>{
+  const who={...viewer("requester"),roles:["requester","verifier","fund_requester"]};
+  const menus=navigation(who),keys=menus.map(menu=>menu.key);
+  for(const key of ["pengajuan/baru","survei","penyaluran","dana-siap","dana-diajukan"])assert.ok(keys.includes(key),key);
+  assert.equal(new Set(keys).size,keys.length);
+  for(const menu of menus)assert.equal(canViewRoute(who,menu.key.split("/").filter(Boolean)),true,menu.key);
+  assert.equal(canViewRoute(who,["tim"]),false);
+  for(const key of ["draft","survei","dana-siap"])assert.equal(isWorkItem(who,menus.find(menu=>menu.key===key)),true,key);
+  assert.equal(queueCount(who,stats,menus.find(menu=>menu.key==="survei")),1);
+  const {getAvailableActions}=load("modules/bantuan/components/ActionPanel.tsx");
+  const row={id:"test-aid",status:"survey_assigned",source:"online",intakeRole:"call_center",createdBy:"other",verifierId:who.id};
+  assert.ok(getAvailableActions(row,who).some(action=>action.key==="survey_submit"));
+  assert.ok(getAvailableActions({...row,status:"fund_ready"},who).some(action=>action.key==="fund_submit"));
+  assert.ok(!getAvailableActions({...row,status:"survey_submitted",createdBy:who.id},{...who,roles:[...who.roles,"approver"]}).some(action=>action.key==="approve"));
+});
+
+test("survey results stop at Call Center and only the assigned verifier may decline a task",()=>{
+  const {getAvailableActions}=load("modules/bantuan/components/ActionPanel.tsx");
+  const cc=viewer("call_center"),row={id:"survey",status:"survey_cc_review",source:"online",createdBy:cc.id,verifierId:"field-person"};
+  assert.ok(getAvailableActions(row,cc).some(action=>action.key==="survey_review_submit"));
+  assert.ok(!getAvailableActions(row,viewer("approver")).some(action=>action.key==="approve"));
+  assert.ok(!getAvailableActions({...row,verifierId:cc.id},cc).some(action=>action.key==="survey_review_submit"));
+  const field=viewer("verifier"),assigned={...row,status:"survey_assigned",verifierId:field.id};
+  assert.ok(getAvailableActions(assigned,field).some(action=>action.key==="survey_decline"));
+  assert.ok(!getAvailableActions({...assigned,verifierId:"other"},field).some(action=>action.key==="survey_decline"));
+  assert.ok(navigation(cc).some(menu=>menu.key==="review-survei-cc"));
+});
+
+test("funding cards expose only permitted routes and replace individual decisions for active grouped aid",()=>{
+  const {getAvailableActions}=load("modules/bantuan/components/ActionPanel.tsx");
+  const who=viewer("fund_requester"),row={id:"aid",status:"fund_submitted",source:"online",createdBy:"other",fundingRequest:{id:"card",number:"DANA-TEST"}};
+  assert.ok(!getAvailableActions(row,who).some(action=>["fund_approve","fund_reject"].includes(action.key)));
+  for(const role of ["fund_requester","treasurer","chair","admin"])assert.equal(canViewRoute(viewer(role),["pengajuan-dana"]),true);
+  for(const role of ["verifier","requester","call_center"])assert.equal(canViewRoute(viewer(role),["pengajuan-dana"]),false);
+  const {FundingRequests}=load("modules/bantuan/components/FundingRequests.tsx");
+  const html=renderToStaticMarkup(React.createElement(FundingRequests,{viewer:who}));
+  assert.match(html,/Buat kartu dana/);assert.match(html,/Memuat kartu dana/);assert.doesNotMatch(html,/Belum ada kartu yang sesuai/);
+});
+
+test("operational headers remove role switching and show the module launcher only with admin permission",()=>{
+  const {Workspace}=load("modules/bantuan/components/Workspace.tsx");
+  for(const [role,canChooseModules,visible] of [["requester",false,false],["requester",true,true],["admin",true,true]]){
+    const html=renderToStaticMarkup(React.createElement(Workspace,{route:[],initialViewer:{...viewer(role),roles:[role,"verifier"],canChooseModules}}));
+    assert.equal(html.includes("Pilihan modul"),visible,role+":"+canChooseModules);
+    assert.doesNotMatch(html,/Ganti peran|Gunakan peran|Peran aktif/);
+  }
+});
+
+test("adding a distribution role keeps the dashboard and owned intake accessible alongside santunan",()=>{
+  const who={...viewer("volunteer"),roles:["volunteer","requester"]};
+  assert.equal(canViewRoute(who,[]),true);
+  assert.equal(canViewRoute(who,["santunan"]),true);
+  assert.equal(canViewRoute(who,["pengajuan","baru"]),true);
+  const {canEditIntake,intakeViewer}=load("modules/bantuan/permissions.ts");
+  const row={status:"draft",source:"online",createdBy:who.id};
+  assert.equal(canEditIntake(who,row),true);
+  assert.equal(canEditIntake(who,{...row,createdBy:"another"}),false);
+  assert.equal(intakeViewer(who).role,"requester");
+  const combined={...who,roles:["requester","call_center","verifier"]};
+  assert.equal(intakeViewer(combined).role,"call_center");
+});
 
 test("all decisions and the internal comment form are visible without expanding hidden menus",()=>{
   const {ActionPanel}=load("modules/bantuan/components/ActionPanel.tsx");
@@ -46,6 +108,22 @@ test("all decisions and the internal comment form are visible without expanding 
   assert.match(html,/Simpan catatan/);
   assert.match(html,/tidak mengubah status pengajuan/);
   assert.match(html,/data-tone="danger"/);
+});
+
+test("staff application actions expose submission and early cancellation but never self review",()=>{
+  const {getAvailableActions}=load("modules/bantuan/components/ActionPanel.tsx");
+  const who=viewer("requester"),row={id:"aid",status:"draft",source:"online",intakeRole:"requester",createdBy:who.id};
+  assert.deepEqual(Array.from(getAvailableActions(row,who),action=>action.key),["submit","cancel"]);
+  assert.equal(getAvailableActions({...row,createdBy:"someone-else"},who).length,0);
+  assert.deepEqual(Array.from(getAvailableActions({...row,status:"screening"},who),action=>action.key),["cancel"]);
+  assert.equal(getAvailableActions({...row,status:"review1"},who).length,0);
+  const review=getAvailableActions({...row,status:"screening"},viewer("call_center"));
+  assert.ok(review.every(action=>!["screen_pass","screen_reject"].includes(action.key)));
+  const otherReview=getAvailableActions({...row,status:"screening",createdBy:"other-staff"},viewer("call_center"));
+  assert.ok(otherReview.some(action=>action.key==="screen_pass"));
+  const {bantuanRoles}=load("contracts/modules/bantuan.ts");
+  assert.equal(bantuanRoles.requester,"Petugas Pengajuan");
+  assert.equal(bantuanRoles.volunteer,"Penyalur");
 });
 
 test("role workspaces distinguish work from monitoring rather than asking users to guess stages",()=>{
@@ -186,6 +264,6 @@ test("sidebar uses a few informative primary menus while work counts include hid
   const workLink=html.match(/<a[^>]*href="\/admin\/bantuan\/proses"[\s\S]*?<\/a>/)?.[0];
   assert.match(workLink,/aria-label="10 pengajuan"/);
   const destinations=[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
-  assert.equal(destinations.length,7);
+  assert.equal(destinations.length,8);
   for(const target of destinations)assert.equal(canViewRoute(viewer("call_center"),target.replace("/admin/bantuan","").split("/").filter(Boolean)),true);
 });

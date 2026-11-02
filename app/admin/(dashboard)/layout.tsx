@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { accountPanelRedirect } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
-import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
+import { CoreChrome } from "@/components/admin-shell/CoreChrome";
 
 export default async function DashboardLayout({
   children,
@@ -40,8 +40,8 @@ export default async function DashboardLayout({
   }
 
   return (
-    <AdminShellChrome groups={groups} userName={session.name}>
+    <CoreChrome groups={groups} userName={session.name} isSuperadmin={session.isSuperadmin}>
       {children}
-    </AdminShellChrome>
+    </CoreChrome>
   );
 }

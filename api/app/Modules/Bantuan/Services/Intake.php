@@ -33,6 +33,8 @@ class Intake
             'applicant.willingSktm' => $request->input('applicant.hasSktm') === false || $request->input('applicant.hasSktm') === 0 || $request->input('applicant.hasSktm') === '0'
                 ? 'required|boolean' : 'exclude',
             'applicant.informationSource' => 'required|string|max:191', 'applicant.problem' => 'required|string|max:10000',
+            'applicant.latitude' => 'nullable|required_with:applicant.longitude|numeric|between:-90,90',
+            'applicant.longitude' => 'nullable|required_with:applicant.latitude|numeric|between:-180,180',
         ];
         if (is_array($request->input('applicant.dependents'))) {
             $rules['applicant.dependents'] = 'nullable|array|max:100';
@@ -57,7 +59,7 @@ class Intake
     public function save(Request $request, ?string $id = null): Application
     {
         $access = app(Access::class);
-        $access->allow($request, ['call_center', 'verifier']);
+        $access->allow($request, ['call_center', 'verifier', 'requester']);
         $draft = $request->boolean('draft');
         $request->validate(['draftKey' => 'nullable|uuid']);
         if (! $id && $request->filled('draftKey')) {
@@ -79,7 +81,7 @@ class Intake
         $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
         abort_unless(in_array($data['program'], $settings['programs'], true), 422, 'Program tidak terdaftar.');
         abort_if(! $id && $data['source'] === 'bypass' && (! $access->bypass($request) || strlen(trim($data['bypassReason'] ?? '')) < 5), 422, 'Jalur langsung memerlukan izin dan alasan minimal 5 karakter.');
-        abort_if($access->role($request) === 'verifier' && $data['source'] !== 'bypass', 403);
+        $access->allow($request, $data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']);
 
         return DB::transaction(function () use ($request, $id, $data, $applicant, $access, $draft) {
             $row = $id ? $access->find($request, $id, true) : new Application;
@@ -91,7 +93,9 @@ class Intake
                     || ! in_array($data['source'], ['online', 'walk_in'], true)), 422,
                     'Sumber WhatsApp / datang langsung hanya dapat diubah selama draft atau perlu dilengkapi. Jalur khusus tidak dapat diubah.');
                 abort_unless(in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Data hanya dapat diedit sebelum screening selesai.');
-                abort_if($access->role($request) === 'verifier' && $row->created_by !== $request->user()->id, 403);
+                $own = $row->created_by === $request->user()->id;
+                $access->allow($request, ['call_center', ...($own && $row->source === 'bypass' ? ['verifier'] : []),
+                    ...($own && $row->source !== 'bypass' && in_array($row->status, ['draft', 'needs_data'], true) ? ['requester'] : [])]);
                 abort_unless((int) $request->input('version') === $row->version, 409, 'Data sudah berubah. Muat ulang.');
             }
             $before = $id ? $row->applicant : null;
@@ -100,6 +104,7 @@ class Intake
                 $row->id = $request->input('draftKey') ?: (string) Str::uuid();
                 $row->number = 'BNT-'.now()->format('ymd').'-'.strtoupper(Str::random(6));
                 $row->created_by = $request->user()->id;
+                $row->intake_role = $access->role($request);
                 $row->status = 'draft';
                 $row->version = 0;
             }
