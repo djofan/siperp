@@ -2,6 +2,19 @@
 
 Modul tim SAR Solidaritas Insan Peduli.
 
+## Logo dan foto hero
+
+Logo resmi berada di `public/sarsip-logo.png`, dipakai pada navbar, footer, dan sidebar admin.
+Foto hero diubah lewat **Admin SARSIP → Profil Tim → Foto hero halaman utama**.
+Pilih JPG/PNG/WebP maksimal 2 MB, tunggu upload selesai, lalu klik **Simpan profil**.
+Foto disimpan di storage Laravel melalui endpoint upload SARSIP yang memerlukan akses admin;
+URL-nya disimpan pada `sarsip_profiles.hero_image`. Menghapus foto mengembalikan ilustrasi bawaan,
+tanpa menghapus berkas yang mungkin masih dipakai konten lain.
+
+Runtime aktif memakai Laravel. Terapkan migration `2026_11_02_000000_add_sarsip_hero_image`
+melalui `php artisan migrate` dari folder `api/` sebelum menjalankan versi ini.
+Migration hanya menambah kolom nullable dan mempertahankan profil yang sudah ada.
+
 ## Halaman
 
 - `/sarsip`: profil tim, kegiatan, campaign, dan berita terbaru.

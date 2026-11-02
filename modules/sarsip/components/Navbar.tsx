@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { SarsipMark } from "@/modules/sarsip/components/SarsipMark";
 
 const links = [
   ["Tentang", "/sarsip#tentang"],
@@ -47,7 +48,7 @@ export default function Navbar() {
     <header ref={headerRef} className={`${isHome ? "fixed inset-x-0" : "sticky"} top-3 z-40 mx-auto max-w-6xl px-3 pt-3 sm:px-6`}>
       <div className="relative flex items-center justify-between gap-3 rounded-full border border-slate-100 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md lg:px-6">
         <Link href="/sarsip" onClick={() => setOpen(false)} className="flex shrink-0 items-center gap-3">
-          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-600 text-xl font-black text-white">S</span>
+          <SarsipMark />
           <span className="text-xl font-black tracking-tight">SAR<span className="text-orange-600">SIP</span><span className="block text-[9px] font-semibold tracking-[.15em] text-slate-500">SEARCH & RESCUE</span></span>
         </Link>
         <button

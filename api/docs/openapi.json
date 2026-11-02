@@ -410,6 +410,83 @@
             "description": "Optional existing course; if cohort-bound it must belong to the chosen cohort."
           }
         }
+      },
+      "SarsipProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "headline",
+          "description",
+          "contact",
+          "heroImage"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "contact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "heroImage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191,
+            "pattern": "^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$",
+            "description": "Image URL returned by the authenticated SARSIP upload endpoint. Null uses the built-in illustration. Omission on update preserves the saved photo for older clients."
+          }
+        }
+      },
+      "SarsipProfileUpdate": {
+        "type": "object",
+        "required": [
+          "headline",
+          "description"
+        ],
+        "properties": {
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "contact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "heroImage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191,
+            "pattern": "^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$",
+            "description": "Image URL returned by the authenticated SARSIP upload endpoint. Null uses the built-in illustration. Omission on update preserves the saved photo for older clients."
+          }
+        }
       }
     }
   },
@@ -869,6 +946,107 @@
           },
           "429": {
             "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/profile": {
+      "get": {
+        "summary": "Read public SARSIP profile and hero image",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Public profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SarsipProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Save SARSIP profile and optional hero image",
+        "description": "Requires an active user with SARSIP access. Older clients may omit heroImage to keep the current photo; send null to return to the built-in illustration.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SarsipProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
             "content": {
               "application/json": {
                 "schema": {

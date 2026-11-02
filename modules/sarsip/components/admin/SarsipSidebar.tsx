@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { SarsipMark } from "@/modules/sarsip/components/SarsipMark";
 
 const NAV_ITEMS = [
   { href: "/admin/sarsip", label: "Dashboard" },
@@ -52,11 +53,7 @@ export function SarsipSidebar({ userName, onNavigate }: { userName: string; onNa
   return (
     <div className="flex h-full w-64 shrink-0 flex-col py-2">
       <div className="flex h-18 shrink-0 items-center gap-2.5 px-6">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a9 9 0 0 0-9 9h3a6 6 0 0 1 12 0h3a9 9 0 0 0-9-9zM12 21v-6M8 21h8" />
-          </svg>
-        </span>
+        <SarsipMark className="h-11 w-11" />
         <span className="text-base font-extrabold tracking-tight text-white">SARSIP Admin</span>
       </div>
 
