@@ -136,9 +136,20 @@ class FundingRequests
         return $this->workflow->perform($step, $row->id, $action);
     }
 
+    public static function descriptionFields(Application $row): array
+    {
+        $applicant = $row->applicant ?? [];
+        $survey = $row->survey ?? [];
+        return [
+            'problem' => (string) ($applicant['problem'] ?? ''),
+            'needs' => (string) ($survey['needs'] ?? $applicant['bypassNeeds'] ?? ''),
+        ];
+    }
+
     public function payload(FundingRequest $batch): array
     {
         $batch->loadMissing('items.application');
+        $distributors = DB::table('users')->whereIn('id', $batch->items->map(fn ($item) => $item->application->distributor_id)->filter()->unique())->pluck('name', 'id');
 
         return [
             'id' => $batch->id, 'number' => $batch->number, 'title' => $batch->title, 'notes' => $batch->notes,
@@ -151,6 +162,9 @@ class FundingRequests
                 'submittedVersion' => $item->submitted_version, 'decisionVersion' => $item->decision_version,
                 'version' => $item->application->version, 'status' => $item->application->status,
                 'currentAmount' => $item->application->amount,
+                'distributorName' => $item->application->distribution_type === 'direct' ? 'Bendahara langsung'
+                    : ($distributors[$item->application->distributor_id] ?? 'Belum ditetapkan'),
+                ...self::descriptionFields($item->application),
             ])->values(),
         ];
     }

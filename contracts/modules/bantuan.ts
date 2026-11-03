@@ -22,7 +22,7 @@ export const bantuanStatuses: Record<string, string> = {
   survey_assignment: "Menunggu Verifikator", survey_assigned: "Sedang survei", survey_submitted: "Review tahap 2",
   survey_cc_review: "Review survei Call Center",
   review2: "Review ulang nominal", bypass_review: "Keputusan langsung", approved: "Tentukan penyalur",
-  fund_ready: "Perlu diajukan dananya", fund_submitted: "Dana diajukan", fund_approved: "Siap dicairkan",
+  fund_ready: "Perlu diajukan dananya", fund_submitted: "Dana sedang diajukan", fund_approved: "Siap dicairkan",
   disbursed: "Dana di penyalur", completed: "Selesai", delivery_failed: "Gagal disalurkan", returned: "Dana dikembalikan",
   rejected_screening: "Ditolak screening", rejected_t1: "Ditolak tahap 1", rejected_t2: "Ditolak tahap 2",
   rejected_bypass: "Ditolak langsung", cancelled: "Dibatalkan",
@@ -31,9 +31,9 @@ export const documentLabels: Record<string, string> = {
   face: "Foto wajah", ktp: "Foto KTP", kk: "Foto KK", supporting: "Foto pendukung", survey_recipient: "Penerima saat survei", survey_front: "Tampak depan rumah",
   survey_inside: "Ruangan dalam (minimal 2)", survey_environment: "Rumah & lingkungan", survey_other: "Foto survei lainnya",
   sktm: "Foto SKTM", transfer: "Bukti transfer Bendahara", handover: "Foto penyerahan", certificate: "Foto sertifikat",
-  receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
+  education_other: "Bukti tambahan pendidikan", receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
 };
-export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; closingText: string }
+export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; surveyReminderDays?: number; closingText: string }
 export interface BantuanViewer { id: string; name: string; code?: string; role: string; roles?: string[]; canChooseModules?: boolean; canBypass: boolean; settings: BantuanSettings }
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface AidApplication {
@@ -45,6 +45,7 @@ export interface AidDependent { name:string; relationship:string; gender:string;
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
 export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
 export interface AidDetail extends AidApplication {
+  surveyDeadline?:{assignedAt:string;dueAt:string;days:number;overdue:boolean}|null;
   surveyLocation?: { address?: string; latitude?: number; longitude?: number } | null;
   fundingRequest?: { id:string; number:string } | null;
   applicant: AidValues;
@@ -56,6 +57,7 @@ export interface AidDetail extends AidApplication {
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {
+  personal?:{created:number;surveyed:number;distributed:number;distributedAmount:number};
   taskCounts?: { survey: Record<string, number>; distribution: Record<string, number> };
   total: number; byStatus: Record<string, number>; byProgram: Record<string, number>; bySource: Record<string, number>;
   approvedAmount: number; disbursedAmount: number; completedAmount: number; overdue: number;

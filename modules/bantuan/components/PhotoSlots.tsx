@@ -8,11 +8,15 @@ import { Button, Dialog } from "./ui";
 import s from "./Workspace.module.css";
 
 export interface PhotoRequirement {kind:string;minimum:number;hint?:string}
-export const intakePhotos=(source:string):PhotoRequirement[]=>[{kind:"face",minimum:source==="online"?0:1,hint:"Wajah jelas, tanpa penutup."},{kind:"ktp",minimum:source==="online"?0:1,hint:"Seluruh kartu dan tulisan dapat dibaca."},{kind:"kk",minimum:0,hint:"Kartu keluarga, jika tersedia."},{kind:"supporting",minimum:0,hint:"Bisa beberapa foto, masing-masing dengan keterangan."}];
+export const intakePhotos=(source:string):PhotoRequirement[]=>[{kind:"face",minimum:source==="walk_in"?1:0,hint:"Wajah jelas, tanpa penutup."},{kind:"ktp",minimum:source==="walk_in"?1:0,hint:"Seluruh kartu dan tulisan dapat dibaca."},{kind:"kk",minimum:0,hint:"Kartu keluarga, jika tersedia."},{kind:"supporting",minimum:0,hint:source==="bypass"?"Tambahkan foto kondisi rumah, kesehatan, kebutuhan mendesak, atau bukti biaya. Bisa lebih dari satu; jelaskan isi setiap foto.":"Bisa beberapa foto, masing-masing dengan keterangan."}];
 export const surveyPhotos:PhotoRequirement[]=[
   {kind:"survey_recipient",minimum:1},{kind:"survey_front",minimum:1},{kind:"survey_inside",minimum:2,hint:"Ambil dua sudut ruangan yang berbeda."},
   {kind:"survey_environment",minimum:1},{kind:"sktm",minimum:0,hint:"Jika tersedia. Tidak wajib untuk mengirim hasil survei."},{kind:"survey_other",minimum:0},
 ];
+export const surveyPhotosFor=(source:string):PhotoRequirement[]=>source==="online"?[
+  {kind:"ktp",minimum:1,hint:"Wajib sebelum hasil survei dikirim. Foto dari pengajuan awal tetap berlaku."},
+  {kind:"kk",minimum:1,hint:"Seluruh kartu keluarga dan tulisannya harus terbaca."},...surveyPhotos
+]:surveyPhotos;
 export const handoverPhotos:PhotoRequirement[]=[{kind:"handover",minimum:1},{kind:"certificate",minimum:1,hint:"Foto sertifikat kertas yang telah diserahkan."},{kind:"receipt",minimum:0}];
 export function PhotoSlots({owner,applicationId,documents=[],requirements,editable=true,onReady,onUploaded,minimumTotal=0}:
   {owner:string;applicationId:string;documents?:AidDetail["documents"];requirements:PhotoRequirement[];editable?:boolean;
@@ -31,7 +35,7 @@ export function PhotoSlots({owner,applicationId,documents=[],requirements,editab
   },[owner,applicationId]);
   const ids=new Set(documents.map(d=>d.id));
   const staged=queue.filter(p=>!ids.has(p.id)&&requirements.some(r=>r.kind===p.kind));
-  const relevant=documents.filter(d=>requirements.some(r=>r.kind===d.kind)&&!(editable&&(d.kind.startsWith("survey_")||d.kind==="return")&&d.used_at));
+  const relevant=documents.filter(d=>requirements.some(r=>r.kind===d.kind)&&!(editable&&d.kind==="return"&&d.used_at));
   const count=(kind:string)=>relevant.filter(d=>d.kind===kind).length+staged.filter(p=>p.kind===kind&&p.status==="done").length;
   const missing=requirements.filter(r=>count(r.kind)<r.minimum).map(r=>`${documentLabels[r.kind]} (${count(r.kind)}/${r.minimum})`);
   const totalPhotos=requirements.filter(r=>r.kind.startsWith("survey_")).reduce((sum,r)=>sum+count(r.kind),0);
@@ -70,3 +74,5 @@ export function PhotoSlots({owner,applicationId,documents=[],requirements,editab
     {remove&&<Dialog title="Hapus foto ini?" description="Foto tidak lagi dihitung sebagai kelengkapan. Bukti yang sudah dipakai tidak bisa dihapus." onClose={()=>!removing&&setRemove(null)}><div className={s.actions}><Button type="button" variant="secondary" onClick={()=>setRemove(null)} disabled={removing}>Batal</Button><Button type="button" variant="danger" disabled={removing} onClick={async()=>{setRemoving(true);try{await removePhoto(owner,applicationId,remove.id,remove.server);setRemove(null);onUploaded?.();}catch(e){setError(e instanceof Error?e.message:"Foto belum dapat dihapus.");setRemove(null);}finally{setRemoving(false);}}}><Trash2 size={16}/>{removing?"Menghapus…":"Hapus foto"}</Button></div></Dialog>}
   </div>;
 }
+
+export function handoverPhotosFor(program:string):PhotoRequirement[]{return /pendidikan/i.test(program)?[...handoverPhotos,{kind:"education_other",minimum:0,hint:"Opsional: bukti pembayaran sekolah, kuitansi, buku, atau perlengkapan pendidikan. Bisa lebih dari satu foto."}]:handoverPhotos;}

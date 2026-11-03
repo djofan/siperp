@@ -1,0 +1,375 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bantuan workflow and reporting supplement",
+    "version": "1.1.0",
+    "description": "Additive settings contract. Maintained separately because tools/export-openapi.mjs is absent from this checkout."
+  },
+  "servers": [
+    {
+      "url": "/api/v1/bantuan"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/settings": {
+      "get": {
+        "summary": "Read module settings (module admin or superadmin)",
+        "responses": {
+          "200": {
+            "description": "Current settings; surveyReminderDays defaults to 5",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Settings"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not an administrator"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update module settings (module admin or superadmin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings; an omitted surveyReminderDays preserves the existing value for compatibility"
+          },
+          "403": {
+            "description": "Not an administrator"
+          },
+          "422": {
+            "description": "Invalid setting"
+          }
+        }
+      }
+    },
+    "/regions/{level}": {
+      "get": {
+        "summary": "Authenticated administrative address choices; full street address remains sufficient",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "province",
+                "city",
+                "district",
+                "village"
+              ]
+            }
+          },
+          {
+            "name": "parent",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]{1,13}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "data: array of {id: string, name: string}; parent required except province"
+          },
+          "422": {
+            "description": "Invalid or missing parent"
+          },
+          "503": {
+            "description": "Provider unavailable; optional address choices may be omitted"
+          }
+        }
+      }
+    },
+    "/applications/{id}/remind-survey": {
+      "post": {
+        "summary": "Call Center/admin prepares WhatsApp reminder and notifies assigned verifier; never sends WhatsApp automatically",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "data: {url: wa.me URL, message: string}. Bell reminder deduplicated per day."
+          },
+          "403": {
+            "description": "Not Call Center/admin"
+          },
+          "409": {
+            "description": "Survey not assigned or not overdue"
+          },
+          "422": {
+            "description": "Verifier phone missing"
+          }
+        }
+      }
+    },
+    "/reports/full": {
+      "get": {
+        "summary": "Admin-only complete private report, same filters as application listing including dates/status/program/source/staff/surveyOverdue",
+        "responses": {
+          "200": {
+            "description": "data: array of private report rows. No pagination; Cache-Control no-store, private. Includes identity, address, applicant needs, nominal, staff, timestamps and optional reporter."
+          },
+          "403": {
+            "description": "Not module admin/superadmin"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Settings": {
+        "type": "object",
+        "required": [
+          "programs",
+          "regions",
+          "housing",
+          "minimumSurveyPhotos",
+          "distributionDays"
+        ],
+        "properties": {
+          "programs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "maxLength": 191
+            }
+          },
+          "regions": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "maxLength": 191
+            }
+          },
+          "housing": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 191
+            }
+          },
+          "minimumSurveyPhotos": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 30
+          },
+          "distributionDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365
+          },
+          "surveyReminderDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "default": 5,
+            "description": "Days since the latest assignment or returned survey. Daily scheduler notifies Call Center and the assigned verifier; editing draft content does not restart the clock."
+          },
+          "closingText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          }
+        }
+      },
+      "IntakeFeedbackFields": {
+        "type": "object",
+        "description": "Additional encrypted applicant fields. Only street required among address fields. Call Center/admin may correct applicant data in any stage, preserving workflow and assignment, with current version. Source cannot change after submission. All Petugas Pengajuan submit to Approver. Approval automatically assigns an active survey verifier as distributor and advances to fund_ready.",
+        "properties": {
+          "province": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provinceId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cityId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "district": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "districtId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "village": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "villageId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rtRw": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterRelationship": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterOrganization": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterAddress": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterPhone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reporterProgram": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestCategory": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customBeneficiaries": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customLocation": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customBudget": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customSchedule": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "customOutcome": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rentPeriod": {
+            "enum": [
+              "bulan",
+              "tahun",
+              null
+            ]
+          },
+          "assessment_fields": {
+            "description": "Individual assessment_* keys mirror survey fields for detailed walk-in/bypass intake; optional."
+          }
+        }
+      },
+      "FeedbackResponseAdditions": {
+        "description": "Application detail includes optional surveyDeadline {assignedAt,dueAt,days,overdue}. Dashboard personal includes created,surveyed,distributed,distributedAmount scoped to account and filters. education_other is optional private evidence in education handovers.",
+        "type": "object"
+      }
+    }
+  }
+}

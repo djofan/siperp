@@ -17,12 +17,54 @@ class Intake
     public function validateApplicant(Request $request, bool $draft = false): array
     {
         $rules = [
+            'applicant.requestCategory' => 'nullable|in:perorangan,renovasi rumah,air bersih,santunan rutin,bantuan janda,lainnya',
+            'applicant.customTitle' => 'nullable|string|max:10000',
+            'applicant.customBeneficiaries' => 'nullable|string|max:10000',
+            'applicant.customLocation' => 'nullable|string|max:10000',
+            'applicant.customBudget' => 'nullable|string|max:10000',
+            'applicant.customSchedule' => 'nullable|string|max:10000',
+            'applicant.customOutcome' => 'nullable|string|max:10000',
+
+            'applicant.assessment_sktmExplanation' => 'nullable|string|max:10000',
+            'applicant.assessment_background' => 'nullable|string|max:10000',
+            'applicant.assessment_currentCondition' => 'nullable|string|max:10000',
+            'applicant.assessment_needs' => 'nullable|string|max:10000',
+            'applicant.assessment_efforts' => 'nullable|string|max:10000',
+            'applicant.assessment_homeObservation' => 'nullable|string|max:10000',
+            'applicant.assessment_socialRecord' => 'nullable|string|max:10000',
+            'applicant.assessment_suggestions' => 'nullable|string|max:10000',
+            'applicant.assessment_notes' => 'nullable|string|max:10000',
+            'applicant.assessment_date' => 'nullable|date|before_or_equal:today',
+            'applicant.assessment_hasSktm' => 'nullable|boolean',
+            'applicant.assessment_stayDuration' => 'nullable|numeric|min:0',
+            'applicant.assessment_stayUnit' => 'nullable|in:bulan,tahun',
+            'applicant.assessment_recommendation' => 'nullable|in:layak,tidak_layak',
+
+            'applicant.reporterName' => 'nullable|string|max:191',
+            'applicant.reporterRelationship' => 'nullable|string|max:191',
+            'applicant.reporterOrganization' => 'nullable|string|max:191',
+            'applicant.reporterAddress' => 'nullable|string|max:1000',
+            'applicant.reporterPhone' => 'nullable|string|max:30',
+            'applicant.reporterProgram' => 'nullable|string|max:191',
+            'applicant.province' => 'nullable|string|max:191',
+            'applicant.provinceId' => 'nullable|string|max:20',
+            'applicant.cityId' => 'nullable|string|max:20',
+            'applicant.districtId' => 'nullable|string|max:20',
+            'applicant.villageId' => 'nullable|string|max:20',
+            'applicant.rentPeriod' => 'nullable|in:bulan,tahun',
+            'applicant.bypassKnowledge' => 'nullable|string|max:10000',
+            'applicant.bypassCondition' => 'nullable|string|max:10000',
+            'applicant.bypassHome' => 'nullable|string|max:10000',
+            'applicant.bypassExpenses' => 'nullable|string|max:10000',
+            'applicant.bypassEfforts' => 'nullable|string|max:10000',
+            'applicant.bypassNeeds' => 'nullable|string|max:10000',
+            'applicant.bypassRecommendation' => 'nullable|string|max:10000',
             'applicant' => 'required|array', 'applicant.name' => 'required|string|max:191', 'applicant.nik' => 'required|digits:16',
             'applicant.intakeType' => 'nullable|in:new,returning',
             'applicant.birthPlace' => 'required|string|max:191', 'applicant.birthDate' => 'required|date|before_or_equal:today',
             'applicant.gender' => 'required|in:laki_laki,perempuan', 'applicant.maritalStatus' => 'required|in:Menikah,Duda,Janda,Janda mati,Belum menikah',
-            'applicant.street' => 'required|string|max:500', 'applicant.rtRw' => 'required|string|max:30',
-            'applicant.village' => 'required|string|max:191', 'applicant.district' => 'required|string|max:191', 'applicant.city' => 'required|string|max:191',
+            'applicant.street' => 'required|string|max:500', 'applicant.rtRw' => 'nullable|string|max:30',
+            'applicant.village' => 'nullable|string|max:191', 'applicant.district' => 'nullable|string|max:191', 'applicant.city' => 'nullable|string|max:191',
             'applicant.housing' => 'required|string|max:191', 'applicant.rent' => 'nullable|integer|min:0|max:9000000000000',
             'applicant.job' => 'required|string|max:191', 'applicant.income' => 'required|integer|min:0|max:9000000000000',
             'applicant.incomePeriod' => 'required|in:hari,pekan,bulan', 'applicant.dependentCount' => 'required|integer|min:0|max:100',
@@ -79,7 +121,7 @@ class Intake
         $data = $request->validate($rules);
         $data['region'] = $data['region'] ?? '';
         $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
-        abort_unless(in_array($data['program'], $settings['programs'], true), 422, 'Program tidak terdaftar.');
+        abort_unless(in_array($data['program'], [...$settings['programs'], 'Lainnya'], true), 422, 'Program tidak terdaftar.');
         abort_if(! $id && $data['source'] === 'bypass' && (! $access->bypass($request) || strlen(trim($data['bypassReason'] ?? '')) < 5), 422, 'Jalur langsung memerlukan izin dan alasan minimal 5 karakter.');
         $access->allow($request, $data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']);
 
@@ -92,7 +134,7 @@ class Intake
                     || ! in_array($row->source, ['online', 'walk_in'], true)
                     || ! in_array($data['source'], ['online', 'walk_in'], true)), 422,
                     'Sumber WhatsApp / datang langsung hanya dapat diubah selama draft atau perlu dilengkapi. Jalur khusus tidak dapat diubah.');
-                abort_unless(in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Data hanya dapat diedit sebelum screening selesai.');
+                abort_unless($access->has($request, ['call_center']) || $access->role($request) === 'admin' || in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Perubahan pada tahap ini hanya dapat dilakukan Call Center.');
                 $own = $row->created_by === $request->user()->id;
                 $access->allow($request, ['call_center', ...($own && $row->source === 'bypass' ? ['verifier'] : []),
                     ...($own && $row->source !== 'bypass' && in_array($row->status, ['draft', 'needs_data'], true) ? ['requester'] : [])]);

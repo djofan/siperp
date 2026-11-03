@@ -116,7 +116,7 @@ export function inboxStates(role:string):string[]{
 }
 export function intakeStage(source:string, intakeRole?:string|null):string {
   if(source==="bypass")return "bypass_review";
-  if(intakeRole==="requester")return "screening";
+  if(intakeRole==="requester")return "review1";
   if(["admin","call_center"].includes(intakeRole??""))return "review1";
   return source==="online"?"review1":"screening";
 }

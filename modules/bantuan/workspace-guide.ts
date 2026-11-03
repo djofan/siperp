@@ -17,7 +17,7 @@ export function isWorkItem(role: string | RoleViewer, item: NavEntry): boolean {
 }
 export function queueCount(viewer: BantuanViewer, dashboard: AidDashboard | null, item: NavEntry): number | null {
   if (!dashboard) return null;
-  const assigned = hasRole(viewer,"verifier") && !hasAnyRole(viewer,["admin","call_center"]) && (item.task!=="distribution"||!hasRole(viewer,"treasurer"));
+  const assigned = !hasAnyRole(viewer,["admin","call_center"]) && (item.task==="distribution"||hasRole(viewer,"verifier"));
   const counts = assigned && item.task ? dashboard.taskCounts?.[item.task] : dashboard.byStatus;
   return counts ? (item.states ?? []).reduce((sum, state) => sum + Number(counts[state] ?? 0), 0) : null;
 }
@@ -37,7 +37,7 @@ export const taskCopy: Record<string, { title: string; action: string; descripti
 };
 export function roleSteps(role: string | RoleViewer): string[] {
   if(typeof role!=="string")return [...new Set(rolesOf(role).flatMap(value=>roleSteps(value)))];
-  if (role === "requester") return ["Buat pengajuan dan lengkapi data pemohon.", "Kirim ke Call Center untuk diperiksa terlebih dahulu.", "Pantau pengajuan sendiri dan perbaiki data jika diminta; Approver dan Verifikator menangani tahap berikutnya."];
+  if (role === "requester") return ["Buat pengajuan dan lengkapi data pemohon.", "Kirim langsung ke Approver untuk persetujuan awal.", "Setelah disetujui, Call Center menugaskan Verifikator. Pantau pengajuan sendiri dan perbaiki data jika diminta."];
   if (role === "volunteer") return ["Buka santunan yang ditugaskan kepada Anda.", "Tunggu dana ditandai sudah ditransfer oleh Bendahara.", "Setelah diserahkan, isi laporan dan unggah dua foto bukti."];
   if (["call_center", "admin"].includes(role)) return ["Buat pengajuan dan isi data pemohon.", "Kirim ke penyetuju; draft belum masuk proses.", "Setelah disetujui, pilih petugas survei atau penyalur."];
   if (role === "verifier") return ["Buka tugas survei yang ditugaskan kepada Anda.", "Isi hasil kunjungan dan lengkapi foto survei.", "Jika ditunjuk menyalurkan, laporkan penyerahan bantuan."];

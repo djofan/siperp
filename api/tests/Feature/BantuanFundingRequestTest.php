@@ -223,3 +223,15 @@ it('keeps legacy individual funding decisions available outside active cards', f
     $this->postJson('/api/v1/bantuan/applications/'.$row->id.'/actions/fund_approve', ['version' => 2])->assertOk();
     expect($row->fresh()->status)->toBe('fund_approved')->and(DB::table('bantuan_funding_requests')->count())->toBe(0);
 });
+
+it('provides funding descriptions without exposing identity documents or full applicant records', function () {
+    $row = fundingApplication($this->fundingActor);
+    $row->forceFill(['applicant' => ['name' => 'Penerima dana', 'nik' => '0000000000000001', 'phone' => '00000000000', 'problem' => 'Penghasilan terhenti.'],
+        'survey' => ['needs' => 'Paket pangan satu bulan.', 'notes' => 'Catatan internal']])->save();
+    $this->getJson('/api/v1/bantuan/funding-requests/ready')->assertOk()
+        ->assertJsonPath('data.0.problem', 'Penghasilan terhenti.')->assertJsonPath('data.0.needs', 'Paket pangan satu bulan.')
+        ->assertJsonMissingPath('data.0.applicant')->assertJsonMissingPath('data.0.survey')->assertJsonMissingPath('data.0.nik');
+    $this->postJson('/api/v1/bantuan/funding-requests', fundingInput([$row]))->assertCreated()
+        ->assertJsonPath('data.items.0.problem', 'Penghasilan terhenti.')->assertJsonPath('data.items.0.needs', 'Paket pangan satu bulan.')
+        ->assertJsonMissingPath('data.items.0.applicant');
+});

@@ -18,7 +18,7 @@ class BantuanController
 {
     private function settings(): array
     {
-        return json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true, 512, JSON_THROW_ON_ERROR);
+        return ['surveyReminderDays' => 5, ...json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true, 512, JSON_THROW_ON_ERROR)];
     }
 
     public function viewer(Request $request, Access $access)
@@ -81,7 +81,7 @@ class BantuanController
         // Monitoring grants read access only; mutations still use Access::find and workflow rules.
         $row = $access->canMonitor($request)
             ? Application::query()->where(function ($query) use ($access, $request) {
-                $query->whereIn('status', Access::ONGOING)->orWhere(fn ($own) => $access->scope($own, $request));
+                $query->whereIn('status', Access::ONGOING)->orWhereIn('id', $access->scope(Application::query(), $request)->select('id'));
             })->findOrFail($id)
             : $access->find($request, $id);
         $applicant = $row->applicant;
@@ -89,7 +89,7 @@ class BantuanController
         if (! $sensitive) {
             $private = $applicant;
             $applicant = ['name' => $applicant['name'], 'nik' => substr($applicant['nik'], 0, 6).'xxxxxxxxxx',
-                'city' => $applicant['city'], 'district' => $applicant['district'], 'publicationConsent' => $applicant['publicationConsent']];
+                'city' => ($applicant['city'] ?? null), 'district' => ($applicant['district'] ?? null), 'publicationConsent' => $applicant['publicationConsent']];
             if ($access->has($request, ['treasurer']) && $row->distribution_type === 'direct') {
                 foreach (['street', 'rtRw', 'village', 'phone'] as $field) $applicant[$field] = $private[$field] ?? null;
             }
@@ -115,7 +115,8 @@ class BantuanController
         $funding = DB::table('bantuan_funding_request_items')->join('bantuan_funding_requests', 'bantuan_funding_requests.id', '=', 'bantuan_funding_request_items.funding_request_id')
             ->where('active_application_id', $row->id)->first(['bantuan_funding_requests.id', 'bantuan_funding_requests.number']);
         return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'fundingRequest' => $funding,
-            'surveyLocation' => $sensitive ? $row->survey_location : null,
+            'surveyDeadline' => app(\App\Modules\Bantuan\Services\Reminders::class)->surveyDeadline($row),
+              'surveyLocation' => $sensitive ? $row->survey_location : null,
             'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
             'duplicateApplications' => $this->applicantHistory($request, $access, $row->nik_hash, $row->id),
@@ -215,7 +216,7 @@ class BantuanController
     {
         return DB::transaction(function () use ($request, $id, $access, $journal) {
             $row = $access->find($request, $id, true);
-            $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,return',
+            $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,education_other,return',
                 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
             $kind = $data['kind'];
             $access->documentRole($request, $row, $kind);
@@ -257,6 +258,12 @@ class BantuanController
         $days = $this->settings()['distributionDays'];
 
         return response()->json(['data' => [
+            'personal' => [
+                'created' => (clone $q)->where('created_by', $request->user()->id)->count(),
+                'surveyed' => DB::table('bantuan_events')->where('actor_id', $request->user()->id)->where('action', 'survey_submit')->whereIn('application_id', (clone $q)->select('bantuan_applications.id'))->distinct()->count('application_id'),
+                'distributed' => (clone $q)->where('status', 'completed')->where('distributor_id', $request->user()->id)->count(),
+                'distributedAmount' => (int) (clone $q)->where('status', 'completed')->where('distributor_id', $request->user()->id)->cursor()->sum(fn ($row) => $row->handover['amount'] ?? $row->amount),
+            ],
             'total' => (clone $q)->count(), 'byStatus' => (clone $q)->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
             'taskCounts' => [
                 'survey' => $listing->task(clone $q, $request, $access, 'survey')->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status'),
@@ -339,7 +346,8 @@ class BantuanController
             $input = $request->validate(['programs' => 'required|array|min:1|max:30', 'programs.*' => 'required|string|max:191',
                 'regions' => 'present|array|max:100', 'regions.*' => 'required|string|max:191', 'housing' => 'required|array|min:1|max:20',
                 'housing.*' => 'required|string|max:191', 'minimumSurveyPhotos' => 'required|integer|min:5|max:30',
-                'distributionDays' => 'required|integer|min:1|max:365', 'closingText' => 'nullable|string|max:10000']);
+                'distributionDays' => 'required|integer|min:1|max:365', 'surveyReminderDays' => 'sometimes|integer|min:1|max:365', 'closingText' => 'nullable|string|max:10000']);
+            $input['surveyReminderDays'] ??= $this->settings()['surveyReminderDays'];
             DB::transaction(function () use ($request, $input, $journal) {
                 DB::table('bantuan_settings')->where('key', 'general')->update(['value' => json_encode($input)]);
                 $journal->record($request, null, 'update_settings', null, $input);

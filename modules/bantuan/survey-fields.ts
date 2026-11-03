@@ -1,0 +1,15 @@
+export const surveyFields=[
+  {key:"date",label:"Tanggal verifikasi",type:"date"},
+  {key:"hasSktm",label:"Sudah memiliki SKTM?",type:"boolean"},
+  {key:"sktmExplanation",label:"Penjelasan jika belum memiliki SKTM",type:"textarea",optional:true},
+  {key:"background",label:"Latar belakang",type:"textarea"},
+  {key:"currentCondition",label:"Kondisi saat ini",type:"textarea"},
+  {key:"needs",label:"Kebutuhan bantuan",type:"textarea"},
+  {key:"efforts",label:"Usaha dan upaya yang sudah dilakukan",type:"textarea"},
+  {key:"homeObservation",label:"Pengamatan rumah & perabotan",type:"textarea"},
+  {key:"stayDuration",label:"Lama tinggal",type:"number"}, {key:"stayUnit",label:"Satuan",options:["bulan","tahun"]},
+  {key:"socialRecord",label:"Track record dan kondisi sosial",type:"textarea"},
+  {key:"recommendation",label:"Rekomendasi Verifikator",options:["layak","tidak_layak"]},
+  {key:"suggestions",label:"Kritik dan saran",type:"textarea",optional:true},
+  {key:"notes",label:"Catatan tambahan",type:"textarea",optional:true},
+];

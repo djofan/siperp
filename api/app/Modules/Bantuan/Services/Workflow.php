@@ -97,8 +97,19 @@ class Workflow
                 app(Intake::class)->validateApplicant($complete);
                 abort_if($role === 'verifier' && ($row->source !== 'bypass' || $row->created_by !== $request->user()->id), 403);
                 abort_if($role === 'requester' && ($row->source === 'bypass' || $row->created_by !== $request->user()->id), 403);
-                if ($row->source !== 'online') {
+                if ($row->source === 'walk_in') {
                     $this->requiredDocuments($row, ['face' => 1, 'ktp' => 1]);
+                }
+                if ($row->source === 'bypass') {
+                    $complete->validate([
+                        'applicant.bypassKnowledge' => 'required|string|max:10000',
+                        'applicant.bypassCondition' => 'required|string|max:10000',
+                        'applicant.bypassHome' => 'required|string|max:10000',
+                        'applicant.bypassExpenses' => 'required|string|max:10000',
+                        'applicant.bypassEfforts' => 'required|string|max:10000',
+                        'applicant.bypassNeeds' => 'required|string|max:10000',
+                        'applicant.bypassRecommendation' => 'required|string|max:10000',
+                    ]);
                 }
                 $next = $this->intakeStage($row);
             }
@@ -159,10 +170,13 @@ class Workflow
                 }
                 $survey = array_replace($row->survey ?? [], $corrections->validate($surveyRules)['survey']);
                 abort_if(! $draft && ! ($survey['hasSktm'] ?? false) && empty($survey['sktmExplanation']), 422, 'Jelaskan alasan belum memiliki SKTM.');
+                if (! $draft && $row->source === 'online') {
+                    $this->requiredDocuments($row, ['ktp' => 1, 'kk' => 1]);
+                }
                 if ($action === 'survey_submit') {
-                    $this->requiredDocuments($row, ['survey_recipient' => 1, 'survey_front' => 1, 'survey_inside' => 2, 'survey_environment' => 1], true);
+                    $this->requiredDocuments($row, ['survey_recipient' => 1, 'survey_front' => 1, 'survey_inside' => 2, 'survey_environment' => 1]);
                     $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
-                    abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->count() < ($settings['minimumSurveyPhotos'] ?? 5), 422, 'Jumlah foto survei baru belum memenuhi minimum.');
+                    abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->count() < ($settings['minimumSurveyPhotos'] ?? 5), 422, 'Jumlah foto survei belum memenuhi minimum.');
                     DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->update(['used_at' => now()]);
                 }
                 if ($action === 'survey_review_submit') {
@@ -182,6 +196,12 @@ class Workflow
             }
             if ($action === 'approve') {
                 $row->amount = $request->validate(['amount' => 'required|integer|min:1|max:9000000000000'])['amount'];
+                if ($row->verifier_id && $access->assigned($row->verifier_id, 'verifier')) {
+                    $row->distributor_id = $row->verifier_id;
+                    $row->distribution_type = 'verifier';
+                    $next = 'fund_ready';
+                }
+                // Bypass without a survey still needs an explicit accountable distributor.
             }
             if ($action === 'review_reject' && $from === 'bypass_review') {
                 $next = 'rejected_bypass';
@@ -302,7 +322,7 @@ class Workflow
     private function intakeStage(Application $row): string
     {
         if ($row->source === 'bypass') return 'bypass_review';
-        if ($row->intake_role === 'requester') return 'screening';
+        if ($row->intake_role === 'requester') return 'review1';
         if (in_array($row->intake_role, ['call_center', 'admin'], true)) return 'review1';
         return $row->source === 'online' ? 'review1' : 'screening';
     }
