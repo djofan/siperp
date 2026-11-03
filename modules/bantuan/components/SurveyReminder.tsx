@@ -24,7 +24,7 @@ export function SurveyReminder({row,viewer}:{row:AidDetail;viewer:BantuanViewer}
     <a className={s.button} href={link} target="_blank" rel="noopener noreferrer">Buka WhatsApp<ArrowUpRight size={16}/></a>
     <small>Periksa pesan, lalu tekan Kirim di WhatsApp.</small>
    </>:<>
-    <button className={s.button} type="button" disabled={busy} onClick={()=>void remind()}><BellRing size={16}/>{busy?"Menyiapkan pengingat…":"Ingatkan verifikator"}</button>
+    <button className={s.button} type="button" disabled={busy} onClick={()=>void remind()}><BellRing size={16}/>{busy?"Menyiapkan pengingat...":"Ingatkan verifikator"}</button>
     <small>Buat notifikasi web dan siapkan pesan WhatsApp.</small>
    </>}
   </div>}
