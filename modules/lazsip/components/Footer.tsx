@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { serviceLinks } from "./ServiceInfoPage";
 import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
 import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
 
@@ -175,6 +176,9 @@ export function Footer({
 
       <div className="relative">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-6 text-xs text-white/45 sm:flex-row sm:justify-between sm:px-6">
+          <nav aria-label="Bantuan dan kebijakan" className="flex flex-wrap justify-center gap-x-5 gap-y-3 text-sm text-white/80">
+            {serviceLinks.map(link => <Link key={link.href} href={link.href} className="hover:text-white">{link.label}</Link>)}
+          </nav>
           <p>
             © {new Date().getFullYear()} {lazsipSiteConfig.name}. Seluruh hak cipta dilindungi.
           </p>
