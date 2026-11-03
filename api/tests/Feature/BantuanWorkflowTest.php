@@ -1434,3 +1434,16 @@ it('accepts routine card programs and restricts non-routine santunan to orphans'
     if ($category === 'orphan') $result->assertCreated();
     else $result->assertUnprocessable();
 })->with(['widow', 'orphan', 'foster_child', 'tahfidz']);
+
+
+it('prepares immediate survey assignment details only for call center with an active assignment',function(){
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id,'survey_location'=>['address'=>'Jalan Melati Nomor 10, Bogor']])->save();
+    DB::table('bantuan_staff')->updateOrInsert(['user_id'=>$this->verifier->id],['phone'=>Crypt::encryptString('081234567890')]);
+    $url='/api/v1/bantuan/applications/'.$id.'/remind-survey';
+    $this->postJson($url)->assertConflict();
+    $this->postJson($url,['purpose'=>'assignment'])->assertOk()->assertJsonPath('data.message',fn($message)=>str_contains($message,'Jalan Melati Nomor 10, Bogor') && str_contains($message,'Anda mendapat tugas survei'));
+    $this->actingAs($this->verifier,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertForbidden();
+    Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();
+    $this->actingAs($this->cc,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertConflict();
+});

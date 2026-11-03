@@ -189,3 +189,38 @@
 @media(max-width:760px){.dialog[open]{max-height:calc(100dvh - 24px)}}
 
 .notificationCount{position:absolute;right:-4px;top:-4px;min-width:19px;height:19px;border-radius:10px;padding:0 4px;display:grid;place-items:center;background:#b74730;color:#fff;font-size:10px;font-weight:700}.notification:hover{background:#f3f7ef}.notification:focus-visible{outline:2px solid #397c51;outline-offset:2px}
+
+/* Narrow screens: content wraps before it can push the viewport sideways. */
+.app .body,.app .main,.app .field,.app .cardBody{min-width:0}
+.app .input{min-width:0;max-width:100%}
+.app .heading h1,.app .infoGrid dd{overflow-wrap:anywhere}
+.app .cardHeader{flex-wrap:wrap}
+@media(max-width:760px){
+ .app .topbar{gap:10px;padding:12px 16px}
+ .app .topActions{min-width:0;flex-wrap:wrap}
+ .app .breadcrumb{min-width:0;flex-wrap:wrap}
+ .app .popover{right:12px;left:12px;width:auto;max-height:calc(100dvh - 100px);overscroll-behavior:contain}
+ .app .button{white-space:normal;text-align:center;min-height:44px;max-width:100%}
+ .app .actions{width:100%;gap:10px}
+ .app .caseTabs{overflow-x:auto;overscroll-behavior-x:contain}
+ .app .caseTabs button{flex:0 0 auto;min-width:120px;white-space:nowrap}
+ .app .modal{max-height:calc(100dvh - 32px);padding:20px;overscroll-behavior:contain}
+ .app .sidebar{max-width:calc(100vw - 48px);padding-bottom:max(18px,env(safe-area-inset-bottom))}
+ .app .main{padding-bottom:max(32px,env(safe-area-inset-bottom))}
+ .app .input,.app select,.app textarea{font-size:16px!important}
+ .app .iconButton{width:44px;height:44px;flex-shrink:0}
+}
+@media(max-width:380px){.app .stats{grid-template-columns:1fr}.app .search{min-width:0;flex-basis:100%}}
+
+.reporterToggle{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:14px;background:#f1f6eb;cursor:pointer}.reporterToggle input{width:20px!important;height:20px!important;min-height:20px!important;flex:0 0 20px;accent-color:#287446}.reporterToggle span{display:grid;gap:4px;min-width:0}.reporterToggle strong{font-size:13px;color:#254e38}.reporterToggle small{font-size:11px;color:#72846a}
+
+/* Keep short applicant facts compact; give the problem description its own row. */
+.casePanel .infoGrid{align-items:start}
+.casePanel .infoGrid>.infoNarrative{grid-column:1/-1;padding:16px 18px}
+.casePanel .infoNarrative dd{max-width:100ch;line-height:1.8}
+
+.assignmentComplete{padding:20px 24px 8px;display:grid;gap:20px}
+.assignmentFooter{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.assignmentFooter>span{font-size:12px;color:var(--muted);line-height:1.6}
+.assignmentFooter>a{flex-shrink:0}
+@media(max-width:760px){.assignmentComplete{padding:14px;gap:16px}.assignmentFooter{align-items:flex-start;flex-direction:column}.assignmentFooter>a{width:100%;justify-content:center}}

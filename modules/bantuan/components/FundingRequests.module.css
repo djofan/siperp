@@ -68,3 +68,13 @@
 .root .selectAllButton:disabled{opacity:.55;cursor:not-allowed}
 .root .clearSelection{background:transparent;border:0;color:#395847;padding:12px;font-size:12px;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:700px){.root .selectAllBar{align-items:stretch;flex-direction:column;padding:18px}.selectAllActions{flex-wrap:wrap}.root .selectAllButton{flex:1}}
+
+.root .panel,.root .formGrid>*{min-width:0}
+@media(max-width:600px){
+ .root .cardTop,.root .sectionHeading,.root .listMeta,.root .pagination{flex-wrap:wrap}
+ .root .primary,.root .secondary,.root .danger{white-space:normal;text-align:center;max-width:100%}
+ .root .selectionList>div{flex-wrap:wrap}.root .selectionList>div>div{min-width:0;overflow-wrap:anywhere}
+ .root .filters label{min-width:0;flex-basis:100%}
+ .root input:not([type=checkbox]):not([type=radio]),.root select,.root textarea{font-size:16px}
+ .root .cardTotal{flex-wrap:wrap}.root .cardTotal strong{font-size:23px;overflow-wrap:anywhere}
+}

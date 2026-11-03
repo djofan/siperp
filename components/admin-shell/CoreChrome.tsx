@@ -49,6 +49,12 @@ export function CoreChrome({groups,userName,isSuperadmin,children}:{groups:NavGr
       }
     };document.addEventListener("keydown",handler);return()=>document.removeEventListener("keydown",handler);
   },[open]);
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 851px)");
+    const reset = () => { if (media.matches) setOpen(false); };
+    media.addEventListener("change", reset);
+    return () => media.removeEventListener("change", reset);
+  }, []);
   async function logout(){setBusy(true);setError("");try{const response=await fetch("/api/auth/logout",{method:"POST"});if(!response.ok)throw Error("Belum berhasil keluar. Coba lagi.");router.replace("/admin/login");router.refresh();}catch(e){setError(e instanceof Error?e.message:"Gagal keluar.");setBusy(false);}}
   return <div className={`${s.shell} ${dark.chrome} dark`} data-role={isSuperadmin?"super":"admin"}>
     <AdminGradientBackground glow="115,174,67" placement={isSuperadmin?"top":"corners"}/>

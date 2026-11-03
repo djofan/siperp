@@ -1,4 +1,5 @@
 "use client";
+import { SurveyReminder } from "./SurveyReminder";
 import Link from "next/link";
 import { rolesOf } from "../permissions";
 
@@ -174,6 +175,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     for(const [key,value] of Object.entries(row.survey??{})) if(value===null||typeof value==="string"||typeof value==="number"||typeof value==="boolean")values[key]=value;
     return values;
   });
+  const [assignedRow,setAssignedRow]=useState<typeof row|null>(null);
   const [corrections,setCorrections]=useState(row.applicant),[correct,setCorrect]=useState(false);
   const [contacts,setContacts]=useState<{name:string;relationship:string;phone:string}[]>((row.survey?.contacts as {name:string;relationship:string;phone:string}[])??[]);
   const [geo,setGeo]=useState<{latitude:number;longitude:number}|null>(null);
@@ -234,7 +236,8 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     if(["survey_submit","survey_save","survey_review_submit","survey_review_save"].includes(key)){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}
     if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),notes:form.get("notes")};
     try{
-      await request(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});
+      const updated = await request<typeof row>(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});
+      if(key==="assign_survey"){setAssignedRow(updated);return;}
       if(key==="comment"){setSavedNotice("Catatan internal berhasil disimpan.");submittedForm.reset();reload();}
       else setSuccess(key==="survey_save"?"Draft survei tersimpan":key==="survey_review_save"?"Koreksi survei tersimpan":actions.find(action=>action.key===key)?.label??"Proses selesai");
     }catch(err){
@@ -251,6 +254,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   const actionFormId="aid-action-form-"+row.id,regionId=actionFormId+"-region";
   const surveyErrors=Object.fromEntries(Object.entries(fieldErrors).filter(([key])=>key.startsWith("survey.")).map(([key,value])=>[key.slice(7),value]));
   const correctionErrors=Object.fromEntries(Object.entries(fieldErrors).filter(([key])=>key.startsWith("applicant.")).map(([key,value])=>[key.slice(10),value]));
+  if(assignedRow)return <div className={s.assignmentComplete}><SurveyReminder key={assignedRow.version} row={assignedRow} viewer={viewer} assignment/><div className={s.assignmentFooter}><span>Penugasan sudah tersimpan. Anda dapat melanjutkan pekerjaan lainnya.</span><Link className={`${s.button} ${s.secondary}`} href="/admin/bantuan/proses">Kembali ke pekerjaan saya</Link></div></div>;
   if(success)return <ProcessSuccess title="Berhasil disimpan" description={`${success}. Perubahan pengajuan ${row.number} sudah tersimpan.`}/>;
   return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>Keputusan dicatat beserta petugas dan waktunya.</p></div></div><div className={s.cardBody}>
     {row.fundingRequest&&<div className={s.notice}><strong>Termasuk kartu dana {row.fundingRequest.number}</strong><p>Keputusan dana dicatat dari kartu agar seluruh bantuan dalam kartu tetap konsisten.</p>{rolesOf(viewer).some(role=>["admin","fund_requester","treasurer","chair"].includes(role))&&<Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buka kartu pengajuan dana →</Link>}</div>}

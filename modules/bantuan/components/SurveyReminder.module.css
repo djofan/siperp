@@ -15,3 +15,12 @@
 .notice .error{grid-column:1/-1;margin:0;font-size:12px;color:#a23224}
 @media(max-width:760px){.notice{grid-template-columns:1fr;padding:20px;gap:18px}.actions{align-items:flex-start;max-width:none;padding-left:54px}.actions small{text-align:left}}
 @media(prefers-reduced-motion:reduce){.notice .button{transition:none}}
+
+.notice[data-assignment=true]{margin-bottom:0;background:#f3f8f2;grid-template-columns:minmax(0,1fr) minmax(220px,280px)}
+.notice[data-assignment=true] .icon{background:#e0efdf;color:#246e43}
+.notice[data-assignment=true] .copy>strong{color:#234d38}
+.notice[data-assignment=true] .copy>p{color:#516b5c}
+.notice[data-assignment=true] .meta{color:#708474}
+.notice[data-assignment=true] .actions{align-items:stretch}
+.notice[data-assignment=true] .actions small{text-align:center}
+@media(max-width:900px){.notice[data-assignment=true]{grid-template-columns:1fr}.notice[data-assignment=true] .actions{padding-left:0;max-width:none;align-items:flex-start}.notice[data-assignment=true] .actions small{text-align:left}}

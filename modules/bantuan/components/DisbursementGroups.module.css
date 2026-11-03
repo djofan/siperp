@@ -28,3 +28,11 @@
  .expanded .fields{grid-template-columns:1fr}
  .root .openButton{font-size:12px}
 }
+
+@media(max-width:600px){
+ .recipients>label{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:start}
+ .recipients>label>b{grid-column:2}.recipients small{overflow-wrap:anywhere}
+ .selection{flex-wrap:wrap}.footer{display:grid;grid-template-columns:1fr}
+ .root .primary{white-space:normal;text-align:center}
+ .root input:not([type=checkbox]){font-size:16px}
+}
