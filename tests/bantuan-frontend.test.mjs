@@ -63,9 +63,9 @@ test("santunan uses compact cards without changing its transfer and two evidence
 test("survey evidence uploads inside survey entry and remains visible in the document gallery",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const documentUpload=actions.slice(actions.indexOf("export function DocumentUpload"),actions.indexOf("export function ActionPanel"));
-  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\|\|k==="transfer"\|\|\["handover","certificate","receipt"\].includes\(k\)\)return false/);
+  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\|\|k==="transfer"\|\|\["handover","certificate","receipt","education_other"\].includes\(k\)\)return false/);
   assert.match(actions,/aria-label="Foto hasil survei"/);
-  assert.match(actions,/<PhotoSlots owner=\{viewer.id\} applicationId=\{row.id\} documents=\{row.documents\} requirements=\{surveyPhotos\}/);
+  assert.match(actions,/<PhotoSlots owner=\{viewer.id\} applicationId=\{row.id\} documents=\{row.documents\} requirements=\{surveyPhotosFor\(row.source\)\}/);
   assert.match(actions,/minimumTotal=\{viewer.settings.minimumSurveyPhotos\}/);
   assert.match(actions,/onUploaded=\{reload\}/);
   assert.match(actions,/key==="survey_submit"&&!surveyPhotosReady/);
@@ -75,7 +75,7 @@ test("survey evidence uploads inside survey entry and remains visible in the doc
 test("survey entry is a compact two column form with no resize corner or field borders",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const css=readFileSync("modules/bantuan/components/Workspace.module.css","utf8");
-  const fields=actions.match(/const surveyFields=\[([\s\S]*?)\n\];/)[1];
+  const fields=readFileSync("modules/bantuan/survey-fields.ts","utf8");
   assert.doesNotMatch(fields,/wide:true/);
   assert.match(actions,/className=\{surveyEntry\?s.surveyForm:undefined\}/);
   assert.match(css,/\.surveyForm \.formGrid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
@@ -87,7 +87,7 @@ test("survey entry is a compact two column form with no resize corner or field b
 test("detail follows applicant documents action history order with survey entry only for its assigned verifier",()=>{
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
-  assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:isSurveyEntry\?"Hasil survei":"Tindakan"\},\{id:"riwayat",label:"Riwayat"\}\]/);
+  assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:getActionSectionLabel\(row,viewer\)\},\{id:"riwayat",label:"Riwayat"\}\]/);
   assert.match(workspace,/hasRole\(viewer,"verifier"\)&&row.verifierId===viewer.id&&row.status==="survey_assigned"/);
   assert.match(workspace,/row.survey&&!isSurveyEntry/);
   assert.match(actions,/\["survey_submit","survey_decline"\].includes\(a.key\)&&row.verifierId!==viewer.id/);
@@ -100,7 +100,7 @@ test("completed actions and explicit server draft saves show feedback and return
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   assert.match(feedback,/setTimeout\(proceed,2200\)/);
   assert.match(feedback,/clearTimeout\(timer\)/);
-  assert.match(feedback,/router.replace\("\/admin\/bantuan\/pengajuan"\)/);
+  assert.match(feedback,/router.replace\(destination\)/);
   assert.match(feedback,/if\(leaving.current\)return/);
   assert.match(actions,/if\(key==="comment"\)/);
   assert.match(actions,/setSuccess\(key==="survey_save"\?"Draft survei tersimpan"/);
@@ -145,7 +145,7 @@ test("intake photos follow source and preserve individual captions in the upload
   const form=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
   const queue=readFileSync("modules/bantuan/api/photo-queue.ts","utf8");
   assert.match(form,/requirements=\{intakePhotos\(form.source\)\}/);
-  assert.match(slots,/minimum:source==="online"\?0:1/);
+  assert.match(slots,/minimum:source==="walk_in"\?1:0/);
   assert.match(slots,/kind:"kk",minimum:0/);
   assert.match(slots,/kind:"supporting",minimum:0/);
   assert.match(slots,/Keterangan foto \$\{i\+1\}/);
@@ -215,7 +215,7 @@ test("photo refresh does not unmount active forms or rehydrate entered values", 
   const refresh=workspace.match(/const reload=useCallback\(\(\)=>\{([^}]+)\}/)?.[1];
   assert.ok(refresh);
   assert.doesNotMatch(refresh,/setLoading/);
-  assert.match(workspace, /ActionPanel key=\{row\.id\}/);
+  assert.match(workspace, /ActionPanel key=\{`\$\{row\.id\}:\$\{row\.status\}`\}/);
   assert.doesNotMatch(workspace,/key=\{row\.id\+.*row\.version/);
   const photoRefresh=intake.match(/const refreshDocuments=useCallback\(async\(\)=>\{([\s\S]*?)\},\[\]\)/)?.[1];
   assert.ok(photoRefresh);
@@ -246,7 +246,7 @@ test("compact detail panels retain mounted forms when switching sections",()=>{
   assert.match(workspace,/role="tablist" aria-label="Bagian pengajuan"/);
   assert.match(workspace,/hidden=\{section!=="tindakan"\}/);
   assert.match(workspace,/hidden=\{section!=="dokumen"\}/);
-  assert.match(workspace,/ActionPanel key=\{row\.id\}/);
+  assert.match(workspace,/ActionPanel key=\{`\$\{row\.id\}:\$\{row\.status\}`\}/);
   assert.match(workspace,/\[\.\.\.row\.events\]\.reverse\(\)/);
   assert.match(css,/\.historyScroll\{[^}]*max-height:440px;overflow-y:auto/);
   assert.match(css,/\.casePanel\[hidden\]\{display:none\}/);
@@ -257,11 +257,12 @@ test("intake does not ask for or require an assignment region",()=>{
   assert.doesNotMatch(intake,/Wilayah penugasan|current\.region|aid-regions/);
 });
 
-test("intake uses four steps without reporter fields or required reporter data",()=>{
+test("intake keeps four steps and makes reporter data optional",()=>{
   const intake=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   assert.match(intake,/const labels=\["Data pemohon","Kondisi & kebutuhan","Foto & dokumen","Periksa & kirim"\]/);
-  assert.doesNotMatch(intake,/Data pelapor|reporterFields|validateFields\([^,]+,form\.reporter/);
+  assert.match(intake,/Data pelapor/);
+  assert.match(intake,/reporterName[^\n]*optional:true/);
   assert.doesNotMatch(workspace,/case-panel-pelapor/);
   assert.match(intake,/form\.step===1\)\{operation.current="advance";setBusy\(true\);try\{await persist/);
   assert.match(intake,/formVersion:2/);

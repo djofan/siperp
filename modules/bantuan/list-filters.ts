@@ -5,10 +5,10 @@ import { hasRole, hasAnyRole, type RoleViewer } from "./permissions";
 export const sourceLabels:Record<string,string>={online:"Online / WhatsApp",walk_in:"Datang ke kantor",bypass:"Pengajuan langsung"};
 export const dateLabels:Record<string,string>={created:"Tanggal pengajuan",updated:"Terakhir diperbarui",disbursed:"Tanggal pencairan",completed:"Tanggal selesai"};
 export const sortLabels:Record<string,string>={newest:"Pengajuan terbaru",oldest:"Pengajuan terlama",updated:"Baru diperbarui",amount_high:"Nominal terbesar",amount_low:"Nominal terkecil",name:"Nama A–Z"};
-export const defaultFilters={search:"",status:"",program:"",source:"",region:"",from:"",to:"",dateField:"created",verifierId:"",distributorId:"",createdBy:"",amountMin:"",amountMax:"",amountState:"",distributionType:"",overdue:"",sort:"newest",perPage:"12"};
+export const defaultFilters={search:"",status:"",program:"",source:"",region:"",from:"",to:"",dateField:"created",verifierId:"",distributorId:"",createdBy:"",amountMin:"",amountMax:"",amountState:"",distributionType:"",surveyOverdue:"",overdue:"",sort:"newest",perPage:"12"};
 export type ListFilters=typeof defaultFilters;
 export type FilterKey=keyof ListFilters;
-export const advancedKeys:FilterKey[]=["source","region","from","to","dateField","verifierId","distributorId","createdBy","amountMin","amountMax","amountState","distributionType","overdue"];
+export const advancedKeys:FilterKey[]=["source","region","from","to","dateField","verifierId","distributorId","createdBy","amountMin","amountMax","amountState","distributionType","overdue","surveyOverdue"];
 
 export function validateFilters(filters:ListFilters):string {
   if(filters.from&&filters.to&&filters.from>filters.to)return "Tanggal akhir harus sama dengan atau setelah tanggal awal.";
@@ -34,6 +34,7 @@ export function activeFilterChips(filters:ListFilters,names:Record<string,string
   const amount=(value:string)=>"Rp"+Number(value).toLocaleString("id-ID");
   const person=(value:string)=>value==="me"?"Saya":value==="unassigned"?"Belum ditugaskan":names[value]??"Petugas dipilih";
   const labels:Partial<Record<FilterKey,string>>={
+    surveyOverdue:filters.surveyOverdue?"Survei melewati batas waktu":"",
     search:filters.search?`Pencarian: ${filters.search}`:"",status:bantuanStatuses[filters.status],program:filters.program,
     source:sourceLabels[filters.source],region:filters.region?`Wilayah: ${filters.region}`:"",
     from:filters.from?`${dateLabels[filters.dateField]} mulai ${date(filters.from)}`:"",to:filters.to?`Sampai ${date(filters.to)}`:"",

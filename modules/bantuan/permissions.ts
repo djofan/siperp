@@ -12,5 +12,5 @@ export function intakeViewer(viewer: BantuanViewer, direct = false): BantuanView
   return { ...viewer, role };
 }
 export function canEditIntake(viewer: BantuanViewer, row: AidApplication): boolean {
-  return ["draft", "needs_data", "screening"].includes(row.status) && (hasAnyRole(viewer, ["admin", "call_center"]) || row.createdBy === viewer.id && (hasRole(viewer, "requester") && row.source !== "bypass" && ["draft", "needs_data"].includes(row.status) || hasRole(viewer, "verifier") && row.source === "bypass"));
+  return hasAnyRole(viewer, ["admin", "call_center"]) || ["draft", "needs_data", "screening"].includes(row.status) && (hasAnyRole(viewer, ["admin", "call_center"]) || row.createdBy === viewer.id && (hasRole(viewer, "requester") && row.source !== "bypass" && ["draft", "needs_data"].includes(row.status) || hasRole(viewer, "verifier") && row.source === "bypass"));
 }

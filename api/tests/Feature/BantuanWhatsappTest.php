@@ -185,10 +185,10 @@ it('rejects multiple targets and optin without a phone', function () {
     Http::assertNothingSent();
 });
 
-it('reminds assigned tasks across stages once daily without network', function () {
+it('reminds other tasks daily without prematurely reminding a new survey assignment', function () {
     $verifier = waMember(); $cc = waMember('call_center');
     waApplication($verifier); waApplication($cc, 'screening');
     app(Reminders::class)->send(); app(Reminders::class)->send();
-    expect(DB::table('bantuan_whatsapp_outbox')->count())->toBe(2);
+    expect(DB::table('bantuan_whatsapp_outbox')->count())->toBe(1);
     Http::assertNothingSent();
 });

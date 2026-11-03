@@ -22,7 +22,7 @@ class ApplicationQuery
             'distributionType' => 'nullable|in:verifier,direct', 'amountState' => 'nullable|in:set,unset',
             'amountMin' => 'nullable|integer|min:0|max:999999999999',
             'amountMax' => ['nullable', 'integer', 'min:0', 'max:999999999999', ...($request->filled('amountMin') ? ['gte:amountMin'] : [])],
-            'overdue' => 'nullable|boolean', 'sort' => 'nullable|in:newest,oldest,updated,amount_high,amount_low,name',
+            'surveyOverdue' => 'nullable|boolean', 'overdue' => 'nullable|boolean', 'sort' => 'nullable|in:newest,oldest,updated,amount_high,amount_low,name',
             'page' => 'nullable|integer|min:1', 'perPage' => 'nullable|integer|in:12,20,24,48', 'summary' => 'nullable|boolean',
         ]);
     }
@@ -54,6 +54,11 @@ class ApplicationQuery
         if (($filters['amountState'] ?? '') === 'set') $query->whereNotNull('amount');
         if (isset($filters['amountMin'])) $query->where('amount', '>=', $filters['amountMin']);
         if (isset($filters['amountMax'])) $query->where('amount', '<=', $filters['amountMax']);
+        if (! empty($filters['surveyOverdue'])) {
+            $settings=json_decode(DB::table('bantuan_settings')->where('key','general')->value('value'),true);
+            $cutoff=now()->subDays(max(1,(int)($settings['surveyReminderDays']??5)));
+            $query->where('status','survey_assigned')->whereNotNull('verifier_id')->whereIn('id',DB::table('bantuan_events')->select('application_id')->whereIn('action',['assign_survey','survey_return','survey_again'])->groupBy('application_id')->havingRaw('MAX(created_at) <= ?',[$cutoff]));
+        }
         if (! empty($filters['overdue'])) {
             $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
             $query->where('status', 'disbursed')->where('disbursed_at', '<', now()->subDays($settings['distributionDays'] ?? 7));
@@ -71,9 +76,16 @@ class ApplicationQuery
 
     public function task(Builder $query, Request $request, Access $access, string $task): Builder
     {
-        if ($access->has($request, ['verifier']) && ! $access->has($request, ['admin', 'call_center'])
-            && ($task === 'survey' || ! $access->has($request, ['treasurer']))) {
-            $query->where($task === 'survey' ? 'verifier_id' : 'distributor_id', $request->user()->id);
+        if (! $access->has($request, ['admin', 'call_center'])) {
+            if ($task === 'distribution') {
+                $query->where(function ($assigned) use ($request, $access) {
+                    $assigned->whereRaw('1 = 0');
+                    if ($access->has($request, ['verifier'])) $assigned->orWhere('distributor_id', $request->user()->id);
+                    if ($access->has($request, ['treasurer'])) $assigned->orWhere('distribution_type', 'direct');
+                });
+            } elseif ($access->has($request, ['verifier'])) {
+                $query->where('verifier_id', $request->user()->id);
+            }
         }
         return $query;
     }

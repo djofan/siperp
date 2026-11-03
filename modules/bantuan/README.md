@@ -27,7 +27,7 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
 
 ## Alur berdasarkan pembuat pengajuan
 
-- Petugas Pengajuan: membuat pengajuan sendiri → review Call Center →
+- Petugas Pengajuan: membuat pengajuan sendiri → langsung ke
   Approver → penugasan Verifikator oleh Call Center.
 - Call Center otomatis dapat membuat pengajuan. Pengajuannya langsung
   menuju Approver, baik WhatsApp maupun datang ke kantor.
@@ -163,3 +163,15 @@ Tidak ada seeder data pribadi atau akun dengan password bawaan.
 isolasi hak akses, masker data, enkripsi file, draft, batch atomic,
 keputusan pertama, bukti wajib, role tunggal, dan pengingat.
 Tes memakai SQLite in-memory; database aplikasi tidak di-reset.
+
+
+## Feedback operasional November 2026
+
+- Impor pesan WhatsApp pada pengajuan dan hasil survei menampilkan pratinjau sebelum diterapkan. Data pemohon dan pelapor dipisahkan; pelapor opsional. Field tetap dapat dikoreksi. Pengajuan datang langsung/bypass mendukung rincian asesmen awal.
+- Semua Petugas Pengajuan menuju Approver. Hasil survei tetap diperiksa Call Center sebelum persetujuan nominal. Verifikator aktif otomatis menjadi penyalur setelah nominal disetujui; langsung masuk antrean dana. Jalur tanpa verifikator tetap membutuhkan penetapan penyalur.
+- Call Center dapat memperbarui data pemohon setelah diproses, tanpa mereset status, nominal atau penugasan. Alamat lengkap wajib; provinsi/kota/kecamatan/kelurahan opsional dengan pilihan bertingkat.
+- Pengingat survei default 5 hari, diubah admin melalui Pengaturan. Scheduler Laravel harus aktif untuk lonceng otomatis; gunakan scheduler deployment yang sudah ada. Tombol Ingatkan menyiapkan pesan WhatsApp ke nomor verifikator; pengguna menekan Kirim di WhatsApp. Tidak mengirim otomatis.
+- Pilih semua pada pengajuan dana mengikuti filter, maksimal 100 per grup. Bendahara memeriksa nominal yang disetujui, tanggal/rekening dan bukti transfer opsional. Pendidikan menyediakan foto bukti lain opsional.
+- Sertifikat menggunakan tiga template PDF yang disediakan, dengan nama, nominal, tanggal dan petugas yang dapat disesuaikan. Unduhan sertifikat tidak menyelesaikan penyerahan secara otomatis.
+- Dashboard memuat kontribusi akun. Laporan admin dapat diekspor menjadi XLSX dengan ringkasan dan rincian, format nominal, filter dan header tetap. Lembar pertama Rekap permohonan mengikuti screenshot acuan: kop LAZSIP, hari/tanggal, nama/alamat pemohon, masalah, pelapor, tiga kolom status dan keterangan. Dibantu hanya untuk completed; Tidak dibantu untuk penolakan/pembatalan/dana kembali; Ditunda untuk needs_data. Tahap lain tetap kosong pada tiga kolom hasil, dijelaskan di Keterangan.
+- Kontrak tambahan: `api/docs/bantuan-settings.openapi.json`. Pilihan wilayah memakai layanan wilayah yang telah digunakan platform; jika layanan gagal, alamat lengkap tetap dapat disimpan.

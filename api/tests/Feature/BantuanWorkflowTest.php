@@ -26,12 +26,12 @@ function bantuanSurvey(): array
 it('reviews and corrects a full survey and applicant before explicitly forwarding without new evidence', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
     DB::table('bantuan_notifications')->where('application_id', $id)->delete();
     $url = '/api/v1/bantuan/applications/'.$id.'/actions/';
     $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_submit', ['version' => 1, 'survey' => bantuanSurvey()])
         ->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
-    expect(DB::table('bantuan_documents')->where('application_id', $id)->whereNull('used_at')->count())->toBe(0);
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->whereNull('used_at')->count())->toBe(2);
     expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->approver->id)->count())->toBe(0);
     $this->actingAs($this->approver, 'sanctum')->postJson($url.'approve', ['version' => 2, 'amount' => 100])->assertConflict();
     $reviewer = $this->cc; // Intake ownership must not prevent reviewing another verifier's survey.
@@ -64,7 +64,7 @@ it('protects CC survey review from self review and unauthorized roles across mul
     $user = bantuanUser('verifier');
     bantuanRoles($user, ['verifier', 'call_center', 'approver']);
     Application::findOrFail($id)->forceFill(['status' => 'survey_cc_review', $relationship => $user->id, 'survey' => bantuanSurvey()])->save();
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
     DB::table('bantuan_documents')->where('application_id', $id)->update(['used_at' => now()]);
     foreach (['survey_review_save', 'survey_review_submit', 'survey_return'] as $action) {
         $this->actingAs($user, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action,
@@ -75,21 +75,24 @@ it('protects CC survey review from self review and unauthorized roles across mul
     $this->actingAs(bantuanUser('admin'), 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_review_submit', ['version' => 1])->assertOk();
 })->with(['verifier_id']);
 
-it('returns surveys to the assigned verifier and consumes fresh evidence only once', function () {
+it('returns surveys to the assigned verifier and retains evidence when correcting data', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
     $url = '/api/v1/bantuan/applications/'.$id.'/actions/';
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
     $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_submit', ['version' => 1, 'survey' => bantuanSurvey()])->assertOk();
     $reviewer = bantuanUser('call_center');
     $this->actingAs($reviewer, 'sanctum')->postJson($url.'survey_return', ['version' => 2])->assertUnprocessable();
     $this->postJson($url.'survey_return', ['version' => 2, 'reason' => 'Periksa kembali kondisi rumah.'])->assertOk()
         ->assertJsonPath('data.status', 'survey_assigned')->assertJsonPath('data.verifierId', $this->verifier->id);
-    $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_submit', ['version' => 3, 'survey' => bantuanSurvey()])->assertUnprocessable();
-    expect(Application::findOrFail($id)->version)->toBe(3);
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
-    $this->postJson($url.'survey_submit', ['version' => 3, 'survey' => bantuanSurvey()])->assertOk();
-    expect(DB::table('bantuan_documents')->where('application_id', $id)->whereNull('used_at')->count())->toBe(0);
+    $evidence = DB::table('bantuan_documents')->where('application_id', $id)->pluck('used_at', 'id')->all();
+    $corrected = [...bantuanSurvey(), 'currentCondition' => 'Kondisi rumah sudah diperiksa dan dilengkapi.'];
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_submit', ['version' => 3, 'survey' => $corrected])
+        ->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
+    expect(Application::findOrFail($id)->survey['currentCondition'])->toBe($corrected['currentCondition']);
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->pluck('used_at', 'id')->all())->toBe($evidence);
+    $this->actingAs($reviewer, 'sanctum')->postJson($url.'survey_review_submit', ['version' => 4])
+        ->assertOk()->assertJsonPath('data.status', 'survey_submitted');
 });
 
 it('allows only the assigned verifier to decline with a reason and lets CC reassign', function () {
@@ -183,7 +186,7 @@ function bantuanUser(string $role): User
 function bantuanInput(): array
 {
     return ['source' => 'online', 'program' => 'Kesehatan', 'region' => 'Bandung',
-        'applicant' => ['name' => 'Pemohon Uji', 'nik' => '3271051234567890', 'birthPlace' => 'Bandung', 'birthDate' => '1980-01-01',
+        'applicant' => ['bypassKnowledge' => 'Kondisi telah diperiksa langsung', 'bypassCondition' => 'Kondisi telah diperiksa langsung', 'bypassHome' => 'Kondisi telah diperiksa langsung', 'bypassExpenses' => 'Kondisi telah diperiksa langsung', 'bypassEfforts' => 'Kondisi telah diperiksa langsung', 'bypassNeeds' => 'Kondisi telah diperiksa langsung', 'bypassRecommendation' => 'Kondisi telah diperiksa langsung', 'name' => 'Pemohon Uji', 'nik' => '3271051234567890', 'birthPlace' => 'Bandung', 'birthDate' => '1980-01-01',
             'gender' => 'laki_laki', 'maritalStatus' => 'Menikah', 'street' => 'Alamat uji', 'rtRw' => '01/02', 'village' => 'Desa',
             'district' => 'Kecamatan', 'city' => 'Bandung', 'housing' => 'Menumpang', 'job' => 'Buruh', 'income' => 1000000,
             'incomePeriod' => 'bulan', 'dependentCount' => 2, 'phone' => '08123456789', 'prayer' => 'Ya', 'smoking' => 'Tidak',
@@ -215,21 +218,19 @@ beforeEach(function () {
     $this->treasurer = bantuanUser('treasurer');
 });
 
-it('routes staff applications through Call Center then approver before assigning a verifier', function (string $source) {
+it('routes staff applications directly to approver before Call Center assigns a verifier', function (string $source) {
     $requester = bantuanUser('requester');
     $input = [...bantuanInput(), 'source' => $source, 'intakeRole' => 'call_center'];
     $id = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)
         ->assertCreated()->assertJsonPath('data.intakeRole', 'requester')->json('data.id');
     if ($source === 'walk_in') { bantuanDoc($id, 'ktp'); bantuanDoc($id, 'face'); }
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'screening');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'review1');
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertForbidden();
-    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 2])->assertConflict();
     $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version' => 2, 'surveyAddress' => 'Jalan Lokasi Survei 10, Bogor', 'verifierId' => $this->verifier->id])->assertConflict();
-    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->cc->id)->exists())->toBeTrue();
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertOk()->assertJsonPath('data.status', 'review1');
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version' => 3, 'surveyAddress' => 'Jalan Lokasi Survei 10, Bogor', 'verifierId' => $this->verifier->id])->assertConflict();
-    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 3])->assertOk()->assertJsonPath('data.status', 'survey_assignment');
-    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version' => 4, 'surveyAddress' => 'Jalan Lokasi Survei 10, Bogor', 'verifierId' => $this->verifier->id])->assertOk()->assertJsonPath('data.status', 'survey_assigned');
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->approver->id)->exists())->toBeTrue();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertConflict();
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 2])->assertOk()->assertJsonPath('data.status', 'survey_assignment');
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version' => 3, 'surveyAddress' => 'Jalan Lokasi Survei 10, Bogor', 'verifierId' => $this->verifier->id])->assertOk()->assertJsonPath('data.status', 'survey_assigned');
     $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertOk();
 })->with(['online', 'walk_in']);
 
@@ -243,10 +244,10 @@ it('lets staff see only their own applications and edit only drafts or returned 
     $this->putJson('/api/v1/bantuan/applications/'.$other, [...bantuanInput(), 'version' => 1])->assertNotFound();
     $this->postJson('/api/v1/bantuan/duplicate-check', ['nik' => bantuanInput()['applicant']['nik'], 'excludeId' => $id])->assertJsonPath('data.count', 0);
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
-    $this->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(), 'version' => 2])->assertForbidden();
-    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/request_data', ['version' => 2, 'reason' => 'Lengkapi kebutuhan pemohon.'])->assertOk();
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(), 'version' => 2])->assertConflict();
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/request_data', ['version' => 2, 'reason' => 'Lengkapi kebutuhan pemohon.'])->assertOk();
     $this->actingAs($requester, 'sanctum')->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(), 'version' => 3, 'intakeRole' => 'call_center'])->assertOk()->assertJsonPath('data.intakeRole', 'requester');
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 4])->assertOk()->assertJsonPath('data.status', 'screening');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 4])->assertOk()->assertJsonPath('data.status', 'review1');
 });
 
 it('preserves the creating role after new grants and legacy switches and forbids reviewing a staff application yourself', function () {
@@ -254,17 +255,17 @@ it('preserves the creating role after new grants and legacy switches and forbids
     $id = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     bantuanRoles($requester, ['requester', 'call_center']);
     $this->putJson('/api/v1/bantuan/active-role', ['role' => 'call_center'])->assertOk();
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'screening');
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertForbidden();
-    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk()->assertJsonPath('data.status', 'review1');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertConflict();
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 2])->assertConflict();
 });
 
-it('requires Call Center review again after staff rejections are reopened', function () {
+it('returns reopened staff rejections to Approver review', function () {
     $requester = bantuanUser('requester');
     $id = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
-    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_reject', ['version' => 2, 'reason' => 'Data perlu ditinjau kembali.'])->assertOk();
-    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version' => 3, 'reason' => 'Ada informasi baru dari pemohon.'])->assertOk()->assertJsonPath('data.status', 'screening');
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_reject', ['version' => 2, 'reason' => 'Data perlu ditinjau kembali.'])->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version' => 3, 'reason' => 'Ada informasi baru dari pemohon.'])->assertOk()->assertJsonPath('data.status', 'review1');
 });
 
 it('lets staff upload private intake photos and blocks bypass and operational decisions', function () {
@@ -280,14 +281,12 @@ it('lets staff upload private intake photos and blocks bypass and operational de
     }
 });
 
-it('allows staff cancellation before review and protects it after Call Center forwards to the approver', function () {
+it('allows staff cancellation in draft and protects applications already sent to Approver', function () {
     $requester = bantuanUser('requester');
     $id = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
-    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 2, 'reason' => 'Pemohon tidak melanjutkan.'])->assertOk();
-    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version' => 3, 'reason' => 'Pemohon melanjutkan kembali.'])->assertOk();
-    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/screen_pass', ['version' => 4])->assertOk();
-    $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 5, 'reason' => 'Tidak jadi melanjutkan.'])->assertForbidden();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 1, 'reason' => 'Pemohon tidak melanjutkan.'])->assertOk();
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version' => 2, 'reason' => 'Pemohon melanjutkan kembali.'])->assertOk()->assertJsonPath('data.status', 'review1');
+    $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version' => 3, 'reason' => 'Tidak jadi melanjutkan.'])->assertForbidden();
 });
 
 it('backfills the original intake role from the creation audit without resetting application data', function () {
@@ -398,7 +397,7 @@ it('allows a completed survey without a SKTM photo even when the applicant alrea
         'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan', 'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana',
         'stayDuration' => 5, 'stayUnit' => 'tahun', 'socialRecord' => 'Baik', 'recommendation' => 'layak'];
     $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 1, 'survey' => $survey])->assertUnprocessable();
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
     $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 1, 'survey' => $survey])->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
     expect(DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'sktm')->count())->toBe(0);
 });
@@ -566,7 +565,7 @@ it('completes the normal workflow only after the approved funding and mandatory 
         'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan', 'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana',
         'stayDuration' => 5, 'stayUnit' => 'tahun', 'socialRecord' => 'Baik', 'recommendation' => 'layak'];
     $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => $version, 'survey' => $survey])->assertUnprocessable();
-    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) {
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) {
         bantuanDoc($id, $kind);
     }
     $action($this->verifier, 'survey_submit', ['survey' => $survey]);
@@ -679,6 +678,28 @@ it('sends deadline reminders at most once per recipient per day', function () {
     expect(DB::table('bantuan_notifications')->count())->toBe($count)->and($count)->toBeGreaterThan(0);
 });
 
+it('warns only after the configurable survey deadline and ignores unrelated draft edits', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    DB::table('bantuan_events')->where('application_id', $id)->where('action', 'create')
+        ->update(['action' => 'assign_survey', 'created_at' => now()->subDays(4)]);
+    $this->actingAs(bantuanUser('admin'), 'sanctum');
+    $notices = fn () => DB::table('bantuan_notifications')->where('application_id', $id)->where('message', 'like', '%Survei belum selesai%');
+    app(Reminders::class)->send();
+    expect($notices()->count())->toBe(0);
+    DB::table('bantuan_events')->where('application_id', $id)->where('action', 'assign_survey')->update(['created_at' => now()->subDays(6)]);
+    app(Reminders::class)->send();
+    expect($notices()->pluck('user_id')->sort()->values()->all())->toBe(collect([$this->cc->id, $this->verifier->id])->sort()->values()->all());
+    app(Reminders::class)->send();
+    expect($notices()->count())->toBe(2);
+    $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
+    $settings['surveyReminderDays'] = 10;
+    DB::table('bantuan_settings')->where('key', 'general')->update(['value' => json_encode($settings)]);
+    $notices()->delete();
+    app(Reminders::class)->send();
+    expect($notices()->count())->toBe(0);
+});
+
 it('allows module admins and superadmins to edit and remove bantuan accounts', function (bool $superadmin) {
     $admin = bantuanUser('admin');
     if ($superadmin) $admin->forceFill(['is_superadmin' => true])->save();
@@ -747,7 +768,8 @@ it('supports simultaneous fund requester and verifier roles with immediate revoc
     $this->getJson('/api/v1/bantuan/applications/'.$rowId)->assertOk()->assertJsonPath('data.survey', null)->assertJsonPath('data.applicant.nik', '327105xxxxxxxxxx');
     $this->postJson('/api/v1/bantuan/applications/'.$rowId.'/actions/survey_save', ['version' => 4, 'survey' => []])->assertForbidden();
     Application::findOrFail($rowId)->forceFill(['amount' => null])->save();
-    $this->getJson('/api/v1/bantuan/applications/'.$rowId)->assertNotFound();
+    // Fund requesters can monitor ongoing cases, but never read private survey data.
+    $this->getJson('/api/v1/bantuan/applications/'.$rowId)->assertOk()->assertJsonPath('data.survey', null)->assertJsonPath('data.applicant.nik', '327105xxxxxxxxxx');
     $this->putJson('/api/v1/bantuan/active-role', ['role' => 'verifier'])->assertForbidden();
     expect(app(\App\Modules\Bantuan\Services\Access::class)->assigned($id, 'verifier'))->toBeFalse();
 });
@@ -984,8 +1006,8 @@ it('selects intake actors by source and keeps their provenance immutable', funct
         ->assertJsonPath('data.status', $stage)->assertJsonPath('data.intakeRole', $actor);
     expect(DB::table('bantuan_events')->where('application_id', $id)->where('action', 'submit')->value('actor_role'))->toBe($actor);
 })->with([
-    'verifier requester normal' => [['verifier', 'requester'], 'online', 'requester', 'screening'],
-    'requester verifier normal' => [['requester', 'verifier'], 'online', 'requester', 'screening'],
+    'verifier requester normal' => [['verifier', 'requester'], 'online', 'requester', 'review1'],
+    'requester verifier normal' => [['requester', 'verifier'], 'online', 'requester', 'review1'],
     'requester verifier bypass' => [['requester', 'verifier'], 'bypass', 'verifier', 'bypass_review'],
     'verifier requester bypass' => [['verifier', 'requester'], 'bypass', 'verifier', 'bypass_review'],
     'call center wins normal' => [['requester', 'call_center'], 'online', 'call_center', 'review1'],
@@ -1086,8 +1108,8 @@ it('matches task lists and badges to the union of verifier call center admin and
     }
 })->with([
     'secondary verifier restricts both' => [['fund_requester', 'verifier'], 1, 1],
-    'treasurer frees distribution only' => [['verifier', 'treasurer'], 1, 3],
-    'secondary treasurer frees distribution' => [['treasurer', 'verifier'], 1, 3],
+    'treasurer retains assigned distribution' => [['verifier', 'treasurer'], 1, 1],
+    'secondary verifier retains assigned distribution' => [['treasurer', 'verifier'], 1, 1],
     'secondary call center frees both' => [['verifier', 'call_center'], 3, 3],
     'admin frees both' => [['admin', 'verifier'], 3, 3],
 ]);
@@ -1232,4 +1254,130 @@ it('filters audit records across the entire log and preserves management access'
     $this->actingAs($admin, 'sanctum')->getJson('/api/v1/bantuan/audit?'.http_build_query(['search' => $number, 'role' => 'call_center', 'action' => 'create', 'from' => now()->toDateString()]))
         ->assertOk()->assertJsonPath('total', 1)->assertJsonPath('data.0.applicationNumber', $number)->assertJsonPath('data.0.actorName', $this->cc->name);
     $this->getJson('/api/v1/bantuan/audit?role=treasurer')->assertOk()->assertJsonPath('total', 0);
+});
+
+
+it('requires online identity documents only when sending survey and permits the assigned verifier to upload them', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    foreach (['survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    $url = '/api/v1/bantuan/applications/'.$id;
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url.'/actions/survey_save', ['version' => 1, 'survey' => bantuanSurvey()])->assertOk();
+    $this->postJson($url.'/actions/survey_submit', ['version' => 2, 'survey' => bantuanSurvey()])->assertUnprocessable();
+    expect(Application::findOrFail($id)->status)->toBe('survey_assigned');
+    $access = app(\App\Modules\Bantuan\Services\Access::class);
+    $request = \Illuminate\Http\Request::create('/');
+    $request->setUserResolver(fn () => $this->verifier);
+    $request->attributes->set('module_role', 'verifier');
+    foreach (['ktp', 'kk'] as $kind) {
+        expect($access->documentRole($request, Application::findOrFail($id), $kind))->toBe('verifier');
+        bantuanDoc($id, $kind);
+    }
+    $this->postJson($url.'/actions/survey_submit', ['version' => 2, 'survey' => bantuanSurvey()])->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
+});
+
+it('requires a detailed bypass assessment but no photos on submission', function () {
+    bantuanRoles($this->verifier, ['verifier'], true);
+    $input = [...bantuanInput(), 'source' => 'bypass', 'bypassReason' => 'Kondisi sudah diperiksa langsung'];
+    unset($input['applicant']['bypassNeeds']);
+    $id = $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $url = '/api/v1/bantuan/applications/'.$id;
+    $this->postJson($url.'/actions/submit', ['version' => 1])->assertUnprocessable();
+    $input['applicant']['bypassNeeds'] = 'Biaya obat Rp500.000 berdasarkan resep.';
+    $this->putJson($url, [...$input, 'version' => 1])->assertOk();
+    $this->postJson($url.'/actions/submit', ['version' => 2])->assertOk()->assertJsonPath('data.status', 'bypass_review');
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->count())->toBe(0);
+});
+
+
+it('accepts optional reporter and address details and preserves workflow during CC corrections', function () {
+    $input=bantuanInput();
+    foreach(['rtRw','city','district','village'] as $key)unset($input['applicant'][$key]);
+    $input['applicant']['reporterName']='Istri pemohon';
+    $input['applicant']['reporterPhone']='081234567890';
+    $input['applicant']['assessment_background']='Hasil wawancara awal';
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'fund_approved','amount'=>2500000,'verifier_id'=>$this->verifier->id,'distributor_id'=>$this->verifier->id])->save();
+    $input['applicant']['problem']='Keterangan diperbaiki oleh Call Center';
+    $this->putJson('/api/v1/bantuan/applications/'.$id,[...$input,'version'=>1])->assertOk()->assertJsonPath('data.status','fund_approved');
+    $row=Application::findOrFail($id);
+    expect($row->amount)->toBe(2500000)->and($row->distributor_id)->toBe($this->verifier->id)->and($row->applicant['reporterName'])->toBe('Istri pemohon');
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonPath('data.applicant.assessment_background','Hasil wawancara awal');
+    $this->actingAs($this->verifier,'sanctum')->putJson('/api/v1/bantuan/applications/'.$id,[...$input,'version'=>2])->assertForbidden();
+});
+
+it('automatically assigns the survey verifier as distributor after amount approval', function () {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'survey_submitted','verifier_id'=>$this->verifier->id])->save();
+    $this->actingAs($this->approver,'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/approve',['version'=>1,'amount'=>1200000])->assertOk()->assertJsonPath('data.status','fund_ready')->assertJsonPath('data.distributorId',$this->verifier->id);
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->where('user_id',$this->fund->id)->exists())->toBeTrue();
+});
+
+it('limits full report to admin and includes validated filter and private applicant fields',function(){
+    $input=bantuanInput();$input['applicant']['reporterName']='Pelapor uji';
+    $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated();
+    $this->getJson('/api/v1/bantuan/reports/full')->assertForbidden();
+    $this->actingAs(bantuanUser('admin'),'sanctum')->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data')->assertJsonPath('data.0.reporterName','Pelapor uji');
+    $this->getJson('/api/v1/bantuan/reports/full?status=completed')->assertOk()->assertJsonCount(0,'data');
+});
+
+
+it('prepares an overdue survey WhatsApp reminder only for the responsible CC and verifier',function(){
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id])->save();
+    DB::table('bantuan_staff')->updateOrInsert(['user_id'=>$this->verifier->id],['phone'=>Crypt::encryptString('081234567890')]);
+    DB::table('bantuan_events')->where('application_id',$id)->update(['action'=>'assign_survey','created_at'=>now()->subDays(6)]);
+    $url='/api/v1/bantuan/applications/'.$id.'/remind-survey';
+    $this->postJson($url)->assertOk()->assertJsonPath('data.url',fn($url)=>str_starts_with($url,'https://wa.me/6281234567890?text='));
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->where('user_id',$this->verifier->id)->count())->toBe(1);
+    $this->postJson($url)->assertOk();
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->where('user_id',$this->verifier->id)->count())->toBe(1);
+    $this->getJson('/api/v1/bantuan/applications?surveyOverdue=1')->assertJsonCount(1,'data');
+    $this->actingAs($this->verifier,'sanctum')->postJson($url)->assertForbidden();
+    Application::findOrFail($id)->forceFill(['status'=>'survey_cc_review'])->save();
+    $this->actingAs($this->cc,'sanctum')->postJson($url)->assertConflict();
+});
+
+it('counts personal achievements once per application and respects report filters',function(){
+ $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+ Application::findOrFail($id)->forceFill(['status'=>'completed','verifier_id'=>$this->verifier->id,'distributor_id'=>$this->verifier->id,'amount'=>2000000,'handover'=>['amount'=>1900000]])->save();
+ DB::table('bantuan_events')->where('application_id',$id)->update(['action'=>'survey_submit','actor_id'=>$this->verifier->id]);
+ $this->actingAs($this->verifier,'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.personal.surveyed',1)->assertJsonPath('data.personal.distributed',1)->assertJsonPath('data.personal.distributedAmount',1900000);
+ $this->getJson('/api/v1/bantuan/dashboard?program=TidakAda')->assertOk()->assertJsonPath('data.personal.surveyed',0);
+});
+
+
+it('serves authenticated cascading region choices and fails gracefully without requiring them',function(){
+    \Illuminate\Support\Facades\Cache::flush();
+    \Illuminate\Support\Facades\Http::fake(['*provinces.json'=>\Illuminate\Support\Facades\Http::response([['id'=>'32','name'=>'JAWA BARAT']]),'*regencies/32.json'=>\Illuminate\Support\Facades\Http::response([],503)]);
+    $this->actingAs($this->cc,'sanctum')->getJson('/api/v1/bantuan/regions/province')->assertOk()->assertJsonPath('data.0.name','Jawa Barat');
+    $this->getJson('/api/v1/bantuan/regions/city')->assertUnprocessable();
+    $this->getJson('/api/v1/bantuan/regions/city?parent=32')->assertStatus(503);
+    $this->getJson('/api/v1/bantuan/regions/city?parent=../secret')->assertUnprocessable();
+});
+
+it('stores optional education evidence privately for the assigned distributor',function(){
+    $input=bantuanInput();$input['program']='Pendidikan';
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'disbursed','distribution_type'=>'verifier','distributor_id'=>$this->verifier->id])->save();
+    $png=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
+    $url='/api/v1/bantuan/applications/'.$id.'/documents';
+    $data=['kind'=>'education_other','file'=>UploadedFile::fake()->createWithContent('bukti.png',$png),'caption'=>'Bukti pembelian perlengkapan'];
+    $this->post($url,$data,['Accept'=>'application/json'])->assertForbidden();
+    $doc=$this->actingAs($this->verifier,'sanctum')->post($url,$data,['Accept'=>'application/json'])->assertCreated()->json('data.id');
+    $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertContent($png);
+});
+
+it('limits treasury delivery tasks to direct handovers and their own verifier assignments', function () {
+    $user = bantuanUser('treasurer');
+    bantuanRoles($user, ['treasurer', 'verifier']);
+    foreach (['other', 'own', 'direct'] as $kind) {
+        $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status'=>'disbursed','amount'=>500000,'distribution_type'=>$kind==='direct'?'direct':'verifier','distributor_id'=>$kind==='own'?$user->id:$this->verifier->id])->save();
+    }
+    $this->actingAs($user, 'sanctum');
+    $this->getJson('/api/v1/bantuan/applications?task=distribution')->assertOk()->assertJsonPath('total', 2);
+    $this->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.taskCounts.distribution.disbursed', 2);
+    bantuanRoles($user, ['treasurer']);
+    $this->getJson('/api/v1/bantuan/applications?task=distribution')->assertOk()->assertJsonPath('total', 1);
 });

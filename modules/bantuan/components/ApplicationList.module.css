@@ -13,3 +13,10 @@
 @media(max-width:1050px){.pagination{align-items:flex-start;flex-direction:column;gap:15px}.pageControls{width:100%;justify-content:flex-end}.pageControls label{margin-right:auto}}
 @media(max-width:650px){.grid{grid-template-columns:minmax(0,1fr);padding:0 16px 20px;gap:14px}.application{padding:19px}.pagination{padding:18px 16px}.pageControls{flex-wrap:wrap;justify-content:space-between;gap:8px}.pageControls label{width:100%;margin-bottom:5px}.pageControls button{flex:1}.identity h3{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.application{transition:none}}
+
+.cardActions { display: grid; gap: 10px; margin-top: auto; }
+.cardActions .open { margin-top: 0; gap: 12px; min-height: 46px; padding: 12px 15px; font-size: 12px; line-height: 1.4; }
+.cardActions .open svg { flex-shrink: 0; color: inherit; }
+.cardActions .primaryAction, .cardActions .primaryAction:visited { background: #287746; color: #fff!important; }
+.cardActions .primaryAction:hover, .cardActions .primaryAction:active { background: #1e6037; color: #fff!important; }
+.cardActions .open:focus-visible { outline: 2px solid #287746; outline-offset: 3px; }

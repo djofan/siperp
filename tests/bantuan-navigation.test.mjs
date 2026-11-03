@@ -104,7 +104,7 @@ test("staff can create and follow their own applications without review fund or 
 test("the intake preview follows the original role rather than the WhatsApp or walk in source",()=>{
   const {intakeStage}=sandbox.exports;
   for(const source of ["online","walk_in"]){
-    assert.equal(intakeStage(source,"requester"),"screening");
+    assert.equal(intakeStage(source,"requester"),"review1");
     assert.equal(intakeStage(source,"call_center"),"review1");
   }
   assert.equal(intakeStage("bypass","verifier"),"bypass_review");

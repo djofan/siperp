@@ -109,6 +109,8 @@ class Access
     {
         $own = $row->created_by === $request->user()->id;
         $roles = match (true) {
+            in_array($kind, ['ktp', 'kk'], true) && $row->source === 'online'
+                && $row->status === 'survey_assigned' && $row->verifier_id === $request->user()->id => ['verifier'],
             in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true)
                 ? ['call_center', ...($own ? ['verifier'] : []), ...($own && $row->status !== 'screening' ? ['requester'] : [])] : [],
             str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned' && $row->verifier_id === $request->user()->id ? ['verifier'] : [],

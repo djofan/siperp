@@ -1,19 +1,21 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button, Dialog } from "./ui";
 import s from "./Workspace.module.css";
 
 export function ProcessSuccess({title,description,onContinue}:{title:string;description:string;onContinue?:()=>void}){
   const router=useRouter(),leaving=useRef(false);
+  const from=useSearchParams().get("from");
+  const destination=from!==null&&/^[a-z0-9-]*$/.test(from)?"/admin/bantuan/"+from:"/admin/bantuan/pengajuan";
   const proceed=useCallback(()=>{
     if(leaving.current)return;
     leaving.current=true;
     onContinue?.();
-    router.replace("/admin/bantuan/pengajuan");
+    router.replace(destination);
     router.refresh();
-  },[onContinue,router]);
+  },[onContinue,router,destination]);
   useEffect(()=>{
     const timer=setTimeout(proceed,2200);
     return()=>clearTimeout(timer);

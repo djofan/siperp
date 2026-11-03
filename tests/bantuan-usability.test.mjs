@@ -14,7 +14,7 @@ function load(filename){
   if(cache.has(full))return cache.get(full).exports;
   const module={exports:{}};cache.set(full,module);
   const localRequire=id=>{
-    if(id==="next/navigation")return {useRouter:()=>({push(){},replace(){},refresh(){}}),redirect:target=>{throw new Error("REDIRECT:"+target);},notFound:()=>{throw new Error("NOT_FOUND");}};
+    if(id==="next/navigation")return {useSearchParams:()=>new URLSearchParams(),usePathname:()=>"/admin/bantuan/pengajuan",useRouter:()=>({push(){},replace(){},refresh(){}}),redirect:target=>{throw new Error("REDIRECT:"+target);},notFound:()=>{throw new Error("NOT_FOUND");}};
     if(id==="@/lib/api")return {apiRequest:async target=>{if(target==="bantuan/viewer")return routeViewer;throw new Error("Unexpected API request: "+target);}};
     if(id==="next/link")return {__esModule:true,default:({children,...props})=>React.createElement("a",props,children)};
     if(id.endsWith(".css"))return {__esModule:true,default:new Proxy({},{get:(_target,key)=>String(key)})};
@@ -71,7 +71,7 @@ test("funding cards expose only permitted routes and replace individual decision
   for(const role of ["verifier","requester","call_center"])assert.equal(canViewRoute(viewer(role),["pengajuan-dana"]),false);
   const {FundingRequests}=load("modules/bantuan/components/FundingRequests.tsx");
   const html=renderToStaticMarkup(React.createElement(FundingRequests,{viewer:who}));
-  assert.match(html,/Buat kartu dana/);assert.match(html,/Memuat kartu dana/);assert.doesNotMatch(html,/Belum ada kartu yang sesuai/);
+  assert.match(html,/Tandai sedang diajukan/);assert.match(html,/Memuat bantuan/);assert.doesNotMatch(html,/Belum ada kartu yang sesuai/);
 });
 
 test("operational headers remove role switching and show the module launcher only with admin permission",()=>{
@@ -231,7 +231,7 @@ test("card and table views show the same application and preserve batch eligibil
     for(const label of ["Pemohon Contoh","BNT-TEST-001","Kesehatan","Online / WhatsApp","Petugas Survei","Selesai","3.500.000"])assert.ok(html.includes(label),view+": "+label);
     assert.match(html,/<input[^>]*type="checkbox"[^>]*disabled/);
     assert.match(html,/Menampilkan 1–1 dari 1 pengajuan/);
-    assert.match(html,/href="\/admin\/bantuan\/pengajuan\/application-one"/);
+    assert.match(html,/href="\/admin\/bantuan\/pengajuan\/application-one\?from=pengajuan"/);
     assert.equal(html.includes("<table"),view==="table");
     assert.equal(html.includes("<article"),view==="cards");
   }
@@ -264,6 +264,7 @@ test("sidebar uses a few informative primary menus while work counts include hid
   const workLink=html.match(/<a[^>]*href="\/admin\/bantuan\/proses"[\s\S]*?<\/a>/)?.[0];
   assert.match(workLink,/aria-label="10 pengajuan"/);
   const destinations=[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
-  assert.equal(destinations.length,8);
+  assert.equal(new Set(destinations).size,destinations.length);
+  assert.ok(destinations.includes("/admin/bantuan/berjalan"));
   for(const target of destinations)assert.equal(canViewRoute(viewer("call_center"),target.replace("/admin/bantuan","").split("/").filter(Boolean)),true);
 });

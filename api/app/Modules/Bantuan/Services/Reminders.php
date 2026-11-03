@@ -7,13 +7,23 @@ use Illuminate\Support\Facades\DB;
 
 class Reminders
 {
+    public function surveyDeadline(Application $row): ?array
+    {
+        if ($row->status !== 'survey_assigned' || !$row->verifier_id) return null;
+        $settings=json_decode(DB::table('bantuan_settings')->where('key','general')->value('value'),true);
+        $days=max(1,(int)($settings['surveyReminderDays']??5));
+        $assigned=DB::table('bantuan_events')->where('application_id',$row->id)->whereIn('action',['assign_survey','survey_return','survey_again'])->max('created_at');
+        if (!$assigned) return null;
+        $due=\Carbon\Carbon::parse($assigned)->addDays($days);
+        return ['assignedAt'=>$assigned,'dueAt'=>$due->toIso8601String(),'days'=>$days,'overdue'=>$due->lte(now())];
+    }
     public function send(): int
     {
         // Daily reminders for every actionable stage; Journal deduplicates per task/user/day.
         // Skip the two legacy fund reminders and overdue delivery below to avoid duplicates.
         $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
         $count = 0;
-        foreach (Application::whereIn('status', array_diff(array_keys(Whatsapp::TASKS), ['fund_ready', 'fund_submitted', 'disbursed']))->cursor() as $row) {
+        foreach (Application::whereIn('status', array_diff(array_keys(Whatsapp::TASKS), ['fund_ready', 'fund_submitted', 'disbursed', 'survey_assigned']))->cursor() as $row) {
             [$roles, $task] = Whatsapp::TASKS[$row->status];
             $users = match ($row->status) {
                 'needs_data' => [$row->created_by],
@@ -22,6 +32,16 @@ class Reminders
             };
             if (in_array($row->status, ['needs_data', 'survey_assigned'], true)) $roles = [];
             app(Journal::class)->notify($row, 'Pengingat: '.$task, $roles, $users, 'pending:'.$row->status.':'.now()->toDateString());
+            $count++;
+        }
+        $surveyDays = max(1, (int) ($settings['surveyReminderDays'] ?? 5));
+        foreach (Application::where('status', 'survey_assigned')->whereNotNull('verifier_id')->cursor() as $row) {
+            // Editing notes or uploading a draft photo must not restart the assignment clock.
+            $assigned = DB::table('bantuan_events')->where('application_id', $row->id)
+                ->whereIn('action', ['assign_survey', 'survey_return', 'survey_again'])
+                ->max('created_at');
+            if (! $assigned || \Carbon\Carbon::parse($assigned)->gt(now()->subDays($surveyDays))) continue;
+            app(Journal::class)->notify($row, 'Survei belum selesai setelah '.$surveyDays.' hari. Mohon tindak lanjuti penugasan.', ['call_center'], [$row->verifier_id], 'survey-overdue:'.now()->toDateString());
             $count++;
         }
         foreach (Application::where('status', 'disbursed')->where(function ($q) use ($settings) {

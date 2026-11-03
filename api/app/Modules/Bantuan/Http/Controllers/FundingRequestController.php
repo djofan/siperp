@@ -6,6 +6,7 @@ use App\Modules\Bantuan\Models\Application;
 use App\Modules\Bantuan\Services\Access;
 use App\Modules\Bantuan\Services\FundingRequests;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FundingRequestController
 {
@@ -42,9 +43,15 @@ class FundingRequestController
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$filters['search'].'%')->orWhere('number', 'like', '%'.$filters['search'].'%'));
         }
         $summary = ['count' => (clone $query)->count(), 'totalAmount' => (int) (clone $query)->sum('amount')];
-        $page = $query->orderBy('created_at')->orderBy('id')->paginate(50, ['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status']);
+        $page = $query->orderBy('created_at')->orderBy('id')->paginate(50, ['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status', 'applicant', 'survey', 'distributor_id', 'distribution_type']);
+        $distributors = DB::table('users')->whereIn('id', $page->getCollection()->pluck('distributor_id')->filter()->unique())->pluck('name', 'id');
 
-        return response()->json(['data' => $page->items(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'summary' => $summary]);
+        return response()->json(['data' => $page->getCollection()->map(fn ($row) => [
+            ...$row->only(['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status']),
+            ...FundingRequests::descriptionFields($row),
+            'distributorName' => $row->distribution_type === 'direct' ? 'Bendahara langsung'
+                : ($distributors[$row->distributor_id] ?? 'Belum ditetapkan'),
+        ]), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'summary' => $summary]);
     }
 
     public function show(Request $request, string $id, FundingRequests $service)
