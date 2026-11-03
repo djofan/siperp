@@ -43,7 +43,7 @@ class SantunanController
         $access->allow($request, ['treasurer']);
         $data = $request->validate([
             'frequency' => 'required|in:routine,non_routine',
-            'category' => ['required', Rule::in(['widow', 'orphan', 'foster_child'])],
+            'category' => ['required', Rule::in(['widow', 'orphan', 'foster_child', 'tahfidz'])],
             'period' => 'required|date_format:Y-m',
             'recipientName' => 'required|string|max:191',
             'volunteerId' => 'required|string|max:191',
