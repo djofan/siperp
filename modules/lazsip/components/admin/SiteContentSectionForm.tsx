@@ -36,21 +36,33 @@ export function SiteContentSectionForm({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
     setSuccess(false);
+    setError(null);
 
-    await fetch(`/api/lazsip/site-content/${sectionKey}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: values }),
-    });
-
-    setIsSubmitting(false);
-    setSuccess(true);
-    router.refresh();
+    try {
+      const response = await fetch(`/api/lazsip/site-content/${sectionKey}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: values }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        const details = data?.error?.details as Record<string, string[]> | undefined;
+        const message = details && Object.values(details).flat().find(Boolean);
+        throw new Error(message || data?.error?.message || "Gagal menyimpan. Coba lagi.");
+      }
+      setSuccess(true);
+      router.refresh();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Gagal menyimpan. Coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -99,6 +111,7 @@ export function SiteContentSectionForm({
             Tersimpan.
           </span>
         )}
+        {error && <span role="alert" className="text-sm text-red-500">{error}</span>}
       </div>
     </form>
   );

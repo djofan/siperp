@@ -3,6 +3,7 @@ import { Navbar } from "@/modules/lazsip/components/Navbar";
 import { Footer } from "@/modules/lazsip/components/Footer";
 import { FloatingWhatsApp } from "@/modules/lazsip/components/FloatingWhatsApp";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getWhatsAppNumber } from "@/modules/lazsip/api/contact";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-lazsip-sans",
@@ -33,6 +34,7 @@ export default async function LazsipPublicLayout({
           .map((line, i) => [`item-${i}`, line])
       )
     : null;
+  const whatsapp = getWhatsAppNumber(kontak?.phone);
 
   return (
     <div
@@ -43,9 +45,9 @@ export default async function LazsipPublicLayout({
       <Footer
         kontak={kontak ?? {}}
         legalitas={legalitasItems}
-        whatsapp={process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP}
+        whatsapp={whatsapp}
       />
-      <FloatingWhatsApp />
+      <FloatingWhatsApp number={whatsapp} />
     </div>
   );
 }

@@ -69,6 +69,22 @@ document.paths['/api/v1/bantuan/mobile/login'] = { post: {
     429: { ...error, headers: { 'Retry-After': { required: true, schema: { type: 'string' } } } },
   },
 } };
+
+// Bantuan mobile push registration and session lifecycle.
+const mobileNoContent = { description: 'Completed; empty response body' };
+document.paths['/api/v1/bantuan/mobile/devices'] = {
+  post: {
+    summary: 'Register or rotate the current mobile sessions FCM device',
+    description: 'Requires bantuan-mobile Sanctum token, active user and live Bantuan access. Device token is encrypted at rest. Upsert is idempotent; no token is returned.',
+    requestBody: { required: true, content: json({ type: 'object', required: ['token'], properties: { token: { type: 'string', minLength: 1, maxLength: 4096, writeOnly: true } } }) },
+    responses: { 204: mobileNoContent, 401: error, 403: error, 422: error, 429: error },
+  },
+  delete: { summary: 'Unregister devices belonging to the current mobile session', responses: { 204: mobileNoContent, 401: error, 403: error, 429: error } },
+};
+document.paths['/api/v1/bantuan/mobile/session'] = {
+  delete: { summary: 'Revoke the current mobile session and remove its devices', description: 'Requires a bantuan-mobile Sanctum token. Logout remains available after module access is revoked.', responses: { 204: mobileNoContent, 401: error, 403: error } },
+};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

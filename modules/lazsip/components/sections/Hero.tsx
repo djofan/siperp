@@ -9,10 +9,12 @@ export function Hero({
   hero,
   goldPricePerGram,
   fitrahPricePerJiwa,
+  whatsapp,
 }: {
   hero: HeroContent;
   goldPricePerGram: number;
   fitrahPricePerJiwa: number;
+  whatsapp?: string;
 }) {
   return (
     <section id="kalkulator-zakat" className="relative overflow-hidden bg-lazsip-primary-900">
@@ -57,7 +59,7 @@ export function Hero({
 
         <div className="flex w-full max-w-sm justify-self-center lg:max-w-md lg:justify-self-end">
           <div className="flex w-full flex-col justify-center rounded-3xl bg-white p-7 shadow-[0_25px_70px_-20px_rgba(0,0,0,0.45)] sm:p-8">
-            <HeroUtilityCard goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} />
+            <HeroUtilityCard goldPricePerGram={goldPricePerGram} fitrahPricePerJiwa={fitrahPricePerJiwa} whatsapp={whatsapp} />
           </div>
         </div>
       </div>
