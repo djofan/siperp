@@ -2,15 +2,17 @@ import { AdminPageHeader } from "@/modules/lazsip/components/admin/AdminPageHead
 import { KontenUmumTabs } from "@/modules/lazsip/components/admin/KontenUmumTabs";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
+import { getLazsipStatistics } from "@/modules/lazsip/api/statistics";
+import { formatNumber, formatRupiah } from "@/modules/lazsip/components/format";
 
 export default async function KontenUmumPage() {
-  const [hero, tentang, legalitas, kontak, zakatFitrah, transparansi] = await Promise.all([
+  const [hero, tentang, legalitas, kontak, zakatFitrah, statistics] = await Promise.all([
     getSiteContent("hero"),
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
     getSiteContent("kontak"),
     getSiteContent("zakatFitrah"),
-    getSiteContent("transparansi"),
+    getLazsipStatistics(),
   ]);
 
   return (
@@ -19,6 +21,30 @@ export default async function KontenUmumPage() {
         title="Konten Umum"
         description="Kelola teks dan angka yang tampil di halaman publik LAZSIP — perubahan langsung aktif tanpa deploy ulang."
       />
+      <section className="mb-6 rounded-2xl border border-lazsip-primary-100 bg-white p-5 dark:border-white/10 dark:bg-white/5">
+        <h2 className="text-base font-bold text-lazsip-primary-900 dark:text-white">Statistik otomatis</h2>
+        <p className="mt-1 text-sm text-lazsip-primary-800/70 dark:text-white/60">
+          Angka di beranda mengikuti database dan tidak perlu diisi manual.
+        </p>
+        <dl className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[
+            ["Total dana terkumpul", formatRupiah(statistics.totalDana)],
+            ["Donatur & muzakki", formatNumber(statistics.totalDonatur)],
+            ["Penerima manfaat", formatNumber(statistics.totalPenerima)],
+            ["Mitra kerja sama", formatNumber(statistics.totalMitra)],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-xs text-lazsip-primary-800/70 dark:text-white/60">{label}</dt>
+              <dd className="mt-1 text-lg font-bold text-lazsip-primary-900 dark:text-white">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-4 text-xs leading-relaxed text-lazsip-primary-800/60 dark:text-white/50">
+          Dana berasal dari donasi dan zakat yang sudah dibayar, ditambah penyesuaian saldo campaign, tanpa biaya admin.
+          Donatur dihitung sekali meski bertransaksi berulang. Penerima dan mitra mengikuti data terdaftar.
+          Jumlah verifikator diatur manual melalui tab Tentang LAZSIP.
+        </p>
+      </section>
       <KontenUmumTabs
         sections={[
           {
@@ -39,8 +65,7 @@ export default async function KontenUmumPage() {
               { key: "body", label: "Isi", multiline: true, rows: 4 },
               { key: "visi", label: "Visi", multiline: true, rows: 3 },
               { key: "misi", label: "Misi", multiline: true, rows: 4, hint: "Satu poin per baris." },
-              { key: "totalVerifikator", label: "Jumlah Verifikator Lapangan Terlatih", hint: "Angka saja." },
-              { key: "totalMitra", label: "Jumlah Mitra Kerja Sama", hint: "Angka saja." },
+              { key: "totalVerifikator", label: "Jumlah Verifikator Lapangan Terlatih", hint: "Isi jumlah verifikator yang ditampilkan di beranda. Angka saja." },
             ],
             initialValue: { ...LAZSIP_SITE_CONTENT_DEFAULTS.tentang, ...(tentang ?? {}) },
           },
@@ -73,17 +98,6 @@ export default async function KontenUmumPage() {
               { key: "pricePerJiwa", label: "Nominal per Jiwa (Rp)", hint: "Sesuaikan dengan harga makanan pokok setempat." },
             ],
             initialValue: { ...LAZSIP_SITE_CONTENT_DEFAULTS.zakatFitrah, ...(zakatFitrah ?? {}) },
-          },
-          {
-            sectionKey: "transparansi",
-            title: "Transparansi (Beranda)",
-            description: "Angka statistik di section Transparansi — diisi manual, bukan dihitung otomatis dari database.",
-            fields: [
-              { key: "totalDana", label: "Total Dana Terkumpul (Rp)", hint: "Angka saja." },
-              { key: "totalDonatur", label: "Jumlah Donatur & Muzakki", hint: "Angka saja." },
-              { key: "totalPenerima", label: "Jumlah Penerima Manfaat Terbantu", hint: "Angka saja." },
-            ],
-            initialValue: { ...LAZSIP_SITE_CONTENT_DEFAULTS.transparansi, ...(transparansi ?? {}) },
           },
         ]}
       />

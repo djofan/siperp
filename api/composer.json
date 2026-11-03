@@ -11,6 +11,7 @@
     "require": {
         "php": "^8.3",
         "calicastle/cuid": "^2.0",
+        "google/auth": "^1.55",
         "laravel/framework": "^13.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^3.0"
