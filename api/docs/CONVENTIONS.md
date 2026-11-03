@@ -141,3 +141,11 @@ ID ilustratif; test menggunakan CUID asli. Jalankan `php artisan test --filter=R
 
 ## Bantuan mobile push
 POST /api/v1/bantuan/mobile/devices mendaftarkan atau merotasi perangkat sesi mobile (token string maksimal 4096, respons 204). DELETE pada URI sama menghapus perangkat sesi saat ini (204). DELETE /api/v1/bantuan/mobile/session mencabut token sesi dan perangkatnya (204). Semua membutuhkan Sanctum bantuan-mobile; registrasi perangkat memeriksa user.active dan module.access:bantuan. Logout tetap tersedia saat akses modul dicabut. Tidak ada token yang dikembalikan. Error mengikuti ErrorResource. Registrasi dibatasi 60 request/menit. Kontrak dihasilkan oleh tools/export-openapi.mjs.
+
+## Periode santunan rutin
+
+`POST /api/v1/bantuan/santunan/periods` membuat kumpulan santunan rutin bulan berikutnya.
+Request `{sourcePeriod: "YYYY-MM"}`; admin/bendahara saja. Respons 201 melalui API Resource
+berisi `data.period` dan `data.createdCount`, Location menunjuk daftar santunan dengan filter
+`period`. 409 bila rutin bulan tujuan sudah ada; 422 bila sumber kosong atau penyalur tidak aktif.
+Penyalinan atomik dan diserialisasi pada registri modul; laporan, status, dan dokumen tidak disalin.
