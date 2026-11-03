@@ -1,6 +1,6 @@
 # PWA Bantuan SIP
 
-Branch pengembangan: `feature/pwa`.
+Branch pengembangan: `feature/pwa-pengajuan`.
 
 ## Akses
 
