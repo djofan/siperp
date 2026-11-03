@@ -1,4 +1,13 @@
-export interface SantunanCardValues { amount: number; verifier: string; recipient: string; date: string }
+import type { SantunanCategory } from "@/contracts/modules/bantuan";
+
+export const routineCardTemplates = {
+  widow: { label: "Janda dhuafa", image: "/bantuan/templates/janda-dhuafa-rutin.png" },
+  orphan: { label: "Anak yatim rutin", image: "/bantuan/templates/yatim-rutin.png" },
+  foster_child: { label: "Anak asuh", image: "/bantuan/templates/anak-asuh-rutin.png" },
+  tahfidz: { label: "Lembaga Tahfidz", image: "/bantuan/templates/lembaga-tahfidz.png" },
+} satisfies Record<SantunanCategory, {label:string;image:string}>;
+
+export interface SantunanCardValues { category: SantunanCategory; amount: number; verifier: string; recipient: string; date: string }
 
 function centered(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, maxWidth: number, size: number) {
   ctx.font = `900 ${size}px Arial, sans-serif`;
@@ -32,7 +41,7 @@ function name(ctx: CanvasRenderingContext2D, value: string, x: number) {
 }
 export async function renderSantunanCard(canvas: HTMLCanvasElement, values: SantunanCardValues) {
   const image = new Image();
-  image.src = "/bantuan/templates/yatim-rutin.png";
+  image.src = routineCardTemplates[values.category].image;
   await image.decode();
   canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
   const ctx = canvas.getContext("2d");

@@ -146,3 +146,12 @@ Request `{sourcePeriod: "YYYY-MM"}`; admin/bendahara saja. Respons 201 melalui A
 berisi `data.period` dan `data.createdCount`, Location menunjuk daftar santunan dengan filter
 `period`. 409 bila rutin bulan tujuan sudah ada; 422 bila sumber kosong atau penyalur tidak aktif.
 Penyalinan atomik dan diserialisasi pada registri modul; laporan, status, dan dokumen tidak disalin.
+
+## Kategori santunan dan kertas bantuan
+
+`POST /api/v1/bantuan/santunan` menerima kategori rutin `widow`, `orphan`,
+`foster_child`, dan `tahfidz` (Lembaga Tahfidz). Tidak rutin tetap hanya `orphan`.
+Kategori disimpan pada kolom string yang sudah ada, tanpa migration. Kontrak
+input diekspor oleh `node api/tools/export-santunan-openapi.mjs`. Template
+kertas bantuan merupakan aset statis tanpa data penerima; hasil terisi
+dibuat di browser dari data santunan yang sudah diotorisasi.

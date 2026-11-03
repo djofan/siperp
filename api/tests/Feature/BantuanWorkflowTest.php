@@ -1276,3 +1276,15 @@ it('copies fifty routine recipients and rejects inactive distributors without pa
     $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-10'])->assertCreated()->assertJsonPath('data.createdCount', 50);
     expect(\App\Modules\Bantuan\Models\Santunan::whereDate('period', '2026-11-01')->count())->toBe(50);
 });
+
+
+it('accepts routine card programs and restricts non-routine santunan to orphans', function (string $category) {
+    $distributor = bantuanUser('volunteer');
+    $input = ['frequency' => 'routine', 'category' => $category, 'period' => '2026-11',
+        'recipientName' => 'Penerima Program', 'volunteerId' => $distributor->id, 'amount' => 500000];
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', $input)
+        ->assertCreated()->assertJsonPath('data.category', $category);
+    $result = $this->postJson('/api/v1/bantuan/santunan', [...$input, 'frequency' => 'non_routine']);
+    if ($category === 'orphan') $result->assertCreated();
+    else $result->assertUnprocessable();
+})->with(['widow', 'orphan', 'foster_child', 'tahfidz']);

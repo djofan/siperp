@@ -168,16 +168,23 @@ isolasi hak akses, masker data, enkripsi file, draft, batch atomic,
 keputusan pertama, bukti wajib, role tunggal, dan pengingat.
 Tes memakai SQLite in-memory; database aplikasi tidak di-reset.
 
-## Kartu bantuan yatim rutin
+## Cetak kertas bantuan
 
-Tombol **Kartu bantuan** tersedia pada santunan rutin kategori anak yatim
-jika akun penyalur masih ditemukan dalam daftar tim. Pratinjau mengambil
-nominal, nama penyalur, dan penerima dari data santunan yang diizinkan.
-Tanggal default mengikuti laporan penyaluran, atau tanggal hari ini jika
-belum ada laporan, dan dapat dipilih tanpa mengubah laporan.
-Unduhan JPG/PDF dibuat di browser; hasil berisi data penerima tidak disimpan
-sebagai aset publik. Background statis `public/bantuan/templates/yatim-rutin.png`
-berasal dari template pengguna setelah nominal dan nama contoh dihapus.
-PDF satu halaman mengikuti ukuran template (842,25 × 595,5 pt), dengan gambar
-2800 px agar tata letak unduhan sama dengan pratinjau. Template ini khusus
-anak yatim rutin; program lain menunggu template yang sesuai.
+Tombol **Cetak kertas bantuan** tersedia pada setiap santunan rutin, untuk
+Janda dhuafa, Anak yatim, Anak asuh, dan Lembaga Tahfidz. Template dipilih
+otomatis berdasarkan kategori. Kategori tahfidz tersedia dalam form tambah
+santunan rutin; santunan tidak rutin tetap hanya untuk anak yatim dan tidak
+menggunakan template berjudul rutin.
+
+Nominal, nama penyalur/verifikator, serta nama penerima mengikuti data santunan.
+Tanggal mengikuti laporan jika tersedia, atau hari ini, dan dapat diganti
+sebelum mengunduh tanpa mengubah laporan. Jika nama penyalur tidak tersedia,
+tombol tetap terlihat dan dialog menjelaskan masalah; unduhan diblokir sampai
+identitas penyalur tersedia agar kartu tidak berisi nama yang salah.
+
+Pratinjau, JPG, dan PDF memakai gambar yang sama. Nama panjang dibungkus agar
+tetap di dalam kolom; nominal menyesuaikan lebar. PDF satu halaman berukuran
+842,25 x 595,5 pt memakai gambar 2800 px. Hasil dibuat di browser; data penerima
+tidak disimpan di aset publik. Background statis dalam
+`public/bantuan/templates/` berasal dari PDF pengguna setelah nama dan nominal
+contoh dihapus. Penambahan kategori ini tidak membutuhkan migration tabel.
