@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+export const metadata: Metadata = { title: "Kontak | LAZSIP", description: "Alamat kantor, email, dan nomor telepon resmi LAZSIP." };
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
 import { getWhatsAppNumber } from "@/modules/lazsip/api/contact";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
@@ -24,6 +27,7 @@ export default async function LazsipKontakPage() {
         kami.
       </p>
 
+      <p className="mt-5 text-sm leading-relaxed text-lazsip-secondary-700">Untuk kendala pembayaran, sertakan kode transaksi dan bukti pembayaran. Pelajari <Link href="/lazsip/refund-policy" className="font-semibold underline underline-offset-4">kebijakan pengembalian dana</Link> sebelum mengajukan refund.</p>
       <div className="mt-10 flex flex-col gap-5">
         {kontak?.address && (
           <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-6">
@@ -40,9 +44,9 @@ export default async function LazsipKontakPage() {
         <div className="rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
           <h2 className="text-base font-bold text-lazsip-primary-900">Kontak Langsung</h2>
           <ul className="mt-3 flex flex-col gap-2 text-sm text-lazsip-primary-800/75">
-            {kontak?.email && <li>{kontak.email}</li>}
-            {kontak?.phone && <li>{kontak.phone}</li>}
-            {!kontak?.email && !kontak?.phone && <li>Info kontak belum diisi lewat halaman admin Konten Umum.</li>}
+            {kontak?.email && <li><a className="break-all underline underline-offset-4" href={`mailto:${kontak.email}`}>{kontak.email}</a></li>}
+            {kontak?.phone && <li>Telepon: {kontak.phone}</li>}
+            {!kontak?.email && !kontak?.phone && <li>Informasi kontak sedang diperbarui.</li>}
           </ul>
           {whatsapp && (
             <a

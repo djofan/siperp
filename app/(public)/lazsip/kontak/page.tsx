@@ -1,1 +1,1 @@
-export { default } from "@/modules/lazsip/pages/kontak/page";
+export { default, metadata } from "@/modules/lazsip/pages/kontak/page";
