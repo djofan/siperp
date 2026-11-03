@@ -73,6 +73,7 @@ Daftar berikut membedakan endpoint aktif dari rancangan migrasi; tidak ada endpo
 
 | Endpoint | Metode | Keadaan | Alasan |
 | --- | --- | --- | --- |
+| `/api/v1/bantuan/mobile/login` | POST | Aktif | Login akun ERP melalui `LoginRequest` Core dan `throttle:login`; JSON `{code,password}`. Akun aktif dan akses Bantuan diperiksa sebelum `TokenIssuer` menerbitkan token `bantuan-mobile`. Respons 200 `{data:{token,expires_at}}` dengan `Cache-Control: no-store`, tanpa cookie. Error 401/403/422/429 memakai `ErrorResource`. Superadmin mengikuti pengecualian status modul Core; modul wajib terdaftar. |
 | `/api/v1/health` | GET | Aktif | Singleton diagnostik yang sudah disepakati; bukan koleksi atau aksi CRUD bisnis |
 | `/api/v1/auth/login` | POST | Placeholder 501 | Aksi autentikasi yang kelak menerbitkan token; password tidak boleh menjadi query GET |
 | `/api/v1/payment/transactions/{id}/checkout-sessions` | POST | Rancangan; belum aktif | Membuat sub-resource sesi checkout pada provider pembayaran; ada efek eksternal |

@@ -21,6 +21,7 @@ class BantuanServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Route::middleware('api')->prefix('api/v1/bantuan/mobile')->group(__DIR__.'/../routes/mobile.php');
         config(['modules.account_management.bantuan' => ['roles' => [], 'links' => [['label' => 'Kelola tim & peran Bantuan', 'href' => '/admin/bantuan/tim']]]]);
         Route::middleware(['api', 'auth:sanctum', 'user.active', 'module.access:bantuan'])->prefix('api/v1/bantuan')->group(__DIR__.'/../routes/api.php');
         Route::middleware(['api', 'auth:sanctum', 'user.active', 'module.access:bantuan'])->prefix('api/v1/bantuan')->group(__DIR__.'/../routes/whatsapp.php');
