@@ -24,7 +24,7 @@ Branch pengembangan: `feature/pwa-pengajuan`.
   juga bertugas sebagai penyalur perlu peran Penyalur pada akun yang sama.
 - Notifikasi: 50 terbaru, tandai satu/semua dibaca, dan buka pengajuan bagi
   pengguna yang memiliki menu Tugas. Badge disegarkan saat fokus dan setiap
-  60 detik selama layar terlihat. Ini notifikasi dalam aplikasi, bukan Web Push.
+  60 detik selama layar terlihat. Daftar dalam aplikasi tetap terpisah dari pengiriman Web Push.
 - Akun: nama, kode akun, peran, panduan pemasangan, dashboard web, dan keluar.
   Keluar mencabut sesi melalui Core dan membersihkan draft lokal akun tersebut.
 
@@ -66,10 +66,77 @@ ketika memperbarui offline shell atau ikon.
 - Uji penerimaan dengan backend Laravel aktif sebelum deployment: login dengan
   akun yang diotorisasi, upload foto, simpan/kirim survei, catat pencairan,
   lengkapi laporan santunan, sesi kedaluwarsa, pemasangan Android/iOS, update
-  aplikasi, dan logout. Tidak ada perubahan skema atau migration pada fitur ini.
+  aplikasi, dan logout. Push PWA menambahkan migration tabel registrasi perangkat
+  dan catatan pengiriman; jalankan migration saat deployment.
 
 ## Batas tahap pertama
 
-Belum ada Web Push/background notification atau dukungan transaksi offline
-penuh. Pengelolaan akun, master data, persetujuan lengkap, dan laporan lintas
+Web Push tersedia setelah Firebase Web/VAPID dikonfigurasi dan pengguna
+mengaktifkan izin. Dukungan transaksi offline penuh belum tersedia. Pengelolaan akun, master data, persetujuan lengkap, dan laporan lintas
 modul tetap tersedia melalui dashboard web.
+
+## Mengaktifkan push di VPS
+
+1. Pasang dependensi dari lockfile (`npm ci` pada frontend; `composer install`
+   jika dependensi backend berubah), jalankan migration Laravel setelah backup,
+   kemudian build dan restart layanan seperti deployment biasa.
+2. Di Firebase project yang sama dengan service account server, daftarkan Web
+   app dan ambil konfigurasi Web. Dari Cloud Messaging > Web Push certificates,
+   ambil/generate pasangan VAPID dan gunakan **public key** di konfigurasi ini.
+3. Isi `api/.env` (jangan masukkan ke Git):
+
+   ```dotenv
+   BANTUAN_FIREBASE_CREDENTIALS=/lokasi-privat/firebase-service-account.json
+   BANTUAN_FIREBASE_WEB_API_KEY=
+   BANTUAN_FIREBASE_WEB_PROJECT_ID=
+   BANTUAN_FIREBASE_WEB_SENDER_ID=
+   BANTUAN_FIREBASE_WEB_APP_ID=
+   BANTUAN_FIREBASE_WEB_VAPID_KEY=
+   ```
+
+   Firebase Web apiKey/projectId/senderId/appId dan VAPID public key memang
+   digunakan browser. File service-account dan private VAPID key tidak pernah
+   dikirim ke browser atau dimasukkan dalam public/. Ikuti pembatasan API key
+   Firebase yang sesuai project; jangan mengganti nilai dengan private key.
+4. Jalankan `php artisan optimize:clear`, `php artisan bantuan:push-check`,
+   dan `php artisan schedule:list`. `push-check` memeriksa OAuth/izin server,
+   bukan membuktikan browser menerima pesan. Scheduler sudah memanggil
+   `bantuan:push` tiap menit; pastikan cron VPS menjalankan Laravel
+   `schedule:run` setiap menit, sebagai user layanan yang punya izin storage.
+5. Pengguna membuka PWA melalui HTTPS, memuat ulang jika ada pembaruan, masuk,
+   lalu memilih **Aktifkan notifikasi** di Notifikasi atau Akun. Izin hanya
+   diminta setelah tombol ditekan. Pada iPhone gunakan PWA yang sudah dipasang
+   ke layar utama melalui Safari; dukungan tetap mengikuti versi perangkat.
+6. Buat notifikasi baru untuk akun tersebut **setelah registrasi**. Jangan
+   tandai dibaca sebelum tes. Tutup/minimalkan PWA lalu tunggu scheduler, atau
+   jalankan `php artisan bantuan:push` untuk mencoba antrean saat itu.
+   Output sekarang membedakan jumlah push mobile dan PWA. Nol kiriman bukan
+   bukti scheduler rusak: bisa tidak ada perangkat/notifikasi yang memenuhi syarat.
+
+Push PWA memakai Firebase SDK untuk memperoleh token dengan service worker
+`/bantuan-app/sw.js` yang sudah ada. Worker menangani Push API standar dan
+payload FCM data-only, sehingga tidak ada tampilan otomatis sebelum validasi
+sesi. Pesan Firebase Console tanpa binding aplikasi sengaja tidak ditampilkan.
+Notifikasi layar kunci bersifat umum; tidak memuat nama, lokasi, nominal, atau
+isi laporan penerima. Klik hanya menuju `/bantuan-app/notifikasi`.
+
+Registrasi diperbarui saat PWA dibuka/fokus jika pengguna sebelumnya memilih
+aktif. localStorage hanya menyimpan boolean preferensi, bukan token login.
+Firebase SDK mengelola token perangkatnya sendiri. Registrasi ulang identik
+menjaga tanggal awal dan tidak mengulang kiriman yang sudah tercatat.
+Nonaktifkan push menghapus registrasi sesi serta subscription browser; izin
+browser tidak dicabut otomatis. Logout menghapus registrasi PWA lalu mencabut
+sesi Core. Jika jaringan gagal saat pembersihan, sesi yang sudah dicabut tetap
+membuat pengirim menolak perangkat dan worker menolak pesan lama.
+
+Worker memeriksa sesi cookie dan binding untuk setiap push. Pesan yang sudah
+antre sebelum logout/ganti akun ditolak. Konsekuensinya, push tidak ditampilkan
+bila backend tidak terjangkau atau sesi kedaluwarsa; isi tetap tersedia saat
+login kembali. Pengiriman memiliki TTL singkat dan tidak dijamin saat perangkat
+memblokir notifikasi, offline terlalu lama, atau memberlakukan batas baterai.
+Token browser yang sama berpindah pemilik saat akun baru mengaktifkan push.
+
+Validasi akhir di HP sungguhan memerlukan konfigurasi Firebase/VAPID dan VPS
+HTTPS yang aktif. Uji juga izin ditolak, disable, logout, ganti akun, perubahan
+izin modul, sesi kedaluwarsa, dan klik notifikasi. Jangan kirim kunci atau token
+perangkat dalam tangkapan layar/log diagnostik.

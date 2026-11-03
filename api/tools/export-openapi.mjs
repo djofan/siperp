@@ -87,6 +87,17 @@ document.paths['/api/v1/bantuan/mobile/session'] = {
 
 
 document.paths['/api/v1/bantuan/santunan/periods'] = {post:{tags:['Bantuan'],summary:'Buat santunan rutin bulan berikutnya',description:'Admin/bendahara saja. Seluruh rutin bulan sumber disalin secara atomik; tidak rutin, laporan dan foto tidak disalin. Tujuan yang sudah memiliki rutin ditolak.',security:[{bearerAuth:[]}],requestBody:{required:true,content:{'application/json':{schema:{type:'object',required:['sourcePeriod'],properties:{sourcePeriod:{type:'string',pattern:'^[0-9]{4}-(0[1-9]|1[0-2])$'}}}}}},responses:{'201':{description:'Periode dibuat',headers:{Location:{schema:{type:'string'}}},content:{'application/json':{schema:{type:'object',required:['data'],properties:{data:{type:'object',required:['period','createdCount'],properties:{period:{type:'string'},createdCount:{type:'integer',minimum:1}}}}}}}},'403':{description:'Peran tidak diizinkan'},'409':{description:'Rutin bulan tujuan sudah ada'},'422':{description:'Input invalid, sumber kosong, atau penyalur tidak aktif'}}}};
+// Cookie-authenticated PWA registrations remain separate from native mobile sessions.
+const pwaContext = {type:'object',required:['enabled','registered','userId','binding','firebase','vapidKey'],additionalProperties:false,properties:{
+  enabled:{type:'boolean'},registered:{type:'boolean'},userId:{type:'string'},binding:{type:'string',pattern:'^[a-f0-9]{64}$'},
+  firebase:{anyOf:[{type:'null'},{type:'object',required:['apiKey','projectId','messagingSenderId','appId'],additionalProperties:false,properties:{apiKey:{type:'string'},projectId:{type:'string'},messagingSenderId:{type:'string'},appId:{type:'string'}}}]},
+  vapidKey:{type:['string','null']},
+}};
+document.paths['/api/v1/bantuan/pwa/push-context']={get:{summary:'Read public Firebase Web config and current PWA session binding',description:'Requires next-server session, active user and Bantuan access. No Sanctum token, service-account key or server file path is returned. Cookie callers use the normal Core session.',responses:{200:{description:'Private context; no-store',headers:{'Cache-Control':{schema:{type:'string'}}},content:json({type:'object',required:['data'],properties:{data:pwaContext}})},401:error,403:error,429:error}}};
+document.paths['/api/v1/bantuan/pwa/devices']={
+  post:{summary:'Register or rotate the current web sessions PWA FCM device',description:'Requires active next-server session, Bantuan access and configured Firebase Web/VAPID. Token encrypted at rest; one registration per web session. Repeat preserves registration start date; a shared browser token changes owner atomically.',requestBody:{required:true,content:json({type:'object',required:['token'],properties:{token:{type:'string',minLength:1,maxLength:4096,writeOnly:true}}})},responses:{204:mobileNoContent,401:error,403:error,422:error,429:error,503:error}},
+  delete:{summary:'Unregister the current web sessions PWA device',description:'Remains available after Bantuan access is revoked. Other sessions and native registrations remain untouched.',responses:{204:mobileNoContent,401:error,403:error,429:error}},
+};
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
