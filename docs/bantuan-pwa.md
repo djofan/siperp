@@ -66,7 +66,8 @@ ketika memperbarui offline shell atau ikon.
 - Uji penerimaan dengan backend Laravel aktif sebelum deployment: login dengan
   akun yang diotorisasi, upload foto, simpan/kirim survei, catat pencairan,
   lengkapi laporan santunan, sesi kedaluwarsa, pemasangan Android/iOS, update
-  aplikasi, dan logout. Tidak ada perubahan skema atau migration pada fitur ini.
+  aplikasi, dan logout. Push PWA menambahkan migration tabel registrasi perangkat
+  dan catatan pengiriman; jalankan migration saat deployment.
 
 ## Batas tahap pertama
 
