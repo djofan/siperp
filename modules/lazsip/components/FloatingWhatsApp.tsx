@@ -1,5 +1,4 @@
-export function FloatingWhatsApp() {
-  const number = process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP;
+export function FloatingWhatsApp({ number }: { number?: string }) {
   if (!number) return null;
 
   const message = encodeURIComponent("Assalamu'alaikum, saya ingin bertanya seputar LAZSIP.");

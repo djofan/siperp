@@ -1,5 +1,6 @@
 import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getWhatsAppNumber } from "@/modules/lazsip/api/contact";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { ZakatPaymentForm } from "@/modules/lazsip/components/sections/ZakatPaymentForm";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
@@ -11,10 +12,10 @@ export default async function LazsipZakatPage({
   searchParams: Promise<{ type?: string; amount?: string }>;
 }) {
   const { type, amount } = await searchParams;
-  const [feeRefs, legalitas] = await Promise.all([listPaymentFeeRefs(), getSiteContent("legalitas")]);
+  const [feeRefs, legalitas, kontak] = await Promise.all([listPaymentFeeRefs(), getSiteContent("legalitas"), getSiteContent("kontak")]);
 
   const legalitasBody = legalitas?.body || LAZSIP_SITE_CONTENT_DEFAULTS.legalitas.body;
-  const whatsapp = process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP;
+  const whatsapp = getWhatsAppNumber(kontak?.phone);
   const jemputMessage = encodeURIComponent(
     "Assalamu'alaikum, saya ingin menjadwalkan penjemputan zakat oleh tim LAZSIP."
   );

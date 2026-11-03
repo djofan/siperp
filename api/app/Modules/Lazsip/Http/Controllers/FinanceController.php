@@ -4,6 +4,7 @@ namespace App\Modules\Lazsip\Http\Controllers;
 
 use App\Modules\Lazsip\Models\LazsipBeneficiary;
 use App\Modules\Lazsip\Models\LazsipCampaign;
+use App\Modules\Lazsip\Models\LazsipCampaignAdjustment;
 use App\Modules\Lazsip\Models\LazsipDonation;
 use App\Modules\Lazsip\Models\LazsipPartner;
 use App\Modules\Lazsip\Models\LazsipProgramApplicant;
@@ -18,6 +19,7 @@ use App\Modules\Payment\Services\CheckoutService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class FinanceController
 {
@@ -75,9 +77,31 @@ class FinanceController
 
     public function totals(): JsonResponse
     {
-        return response()->json(['data' => [
+        return response()->json(['data' => $this->paidTotals()]);
+    }
+
+    private function paidTotals(): array
+    {
+        return [
             'donations' => (int) (LazsipDonation::where('status', 'paid')->sum('amount') + PaymentTransaction::where('module_source', 'lazsip')->where('source_type', 'campaign')->where('status', 'paid')->sum('amount')),
             'zakat' => (int) (LazsipZakatPayment::where('status', 'paid')->sum('amount') + PaymentTransaction::where('module_source', 'lazsip')->where('source_type', 'zakat')->where('status', 'paid')->sum('amount')),
+        ];
+    }
+
+    public function statistics(): JsonResponse
+    {
+        $totals = $this->paidTotals();
+        $donors = DB::table('payment_transactions')->select('donor_id')
+            ->where('module_source', 'lazsip')->where('status', 'paid')
+            ->whereIn('source_type', ['campaign', 'zakat'])->whereNotNull('donor_id')
+            ->union(DB::table('lazsip_donations')->select('donor_id')->where('status', 'paid')->whereNotNull('donor_id'))
+            ->union(DB::table('lazsip_zakat_payments')->select('donor_id')->where('status', 'paid')->whereNotNull('donor_id'));
+
+        return response()->json(['data' => [
+            'totalDana' => $totals['donations'] + $totals['zakat'] + (int) LazsipCampaignAdjustment::sum('amount'),
+            'totalDonatur' => DB::query()->fromSub($donors, 'paid_donors')->count(),
+            'totalPenerima' => LazsipBeneficiary::count(),
+            'totalMitra' => LazsipPartner::count(),
         ]]);
     }
 

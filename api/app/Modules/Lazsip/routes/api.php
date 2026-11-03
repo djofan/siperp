@@ -18,6 +18,7 @@ Route::middleware('module.public:lazsip')->group(function (): void {
     Route::post('transactions/history', [HistoryController::class, 'publicHistory'])->middleware('throttle:checkout');
     Route::post('donations', [FinanceController::class, 'legacyDonation'])->middleware('throttle:checkout');
     Route::get('totals', [FinanceController::class, 'totals']);
+    Route::get('statistics', [FinanceController::class, 'statistics']);
     Route::get('campaigns', [CampaignController::class, 'index']);
     Route::get('campaigns/{id}', [CampaignController::class, 'show']);
     Route::get('site-content/{key}', [ContentController::class, 'siteContent']);
