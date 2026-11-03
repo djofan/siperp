@@ -3,6 +3,7 @@
 namespace App\Modules\Sarsip\Http\Controllers;
 
 use App\Modules\Payment\Models\PaymentTransaction;
+use App\Modules\Sarsip\Http\Resources\ProfileResource;
 use App\Modules\Sarsip\Models\SarsipBeneficiary;
 use App\Modules\Sarsip\Models\SarsipEntry;
 use App\Modules\Sarsip\Models\SarsipPaymentMethod;
@@ -16,12 +17,25 @@ class ContentController
 {
     public function profile(): JsonResponse
     {
-        return response()->json(['data' => SarsipProfile::find('main') ?? ['id' => 'main', 'headline' => 'Bersama hadir, saat bantuan dibutuhkan.', 'description' => 'Tim SAR Solidaritas Insan Peduli. Pencarian, pertolongan, dan bantuan kemanusiaan untuk sesama.', 'contact' => null]]);
+        $profile = SarsipProfile::find('main') ?? (new SarsipProfile)->forceFill([
+            'id' => 'main',
+            'headline' => 'Bersama hadir, saat bantuan dibutuhkan.',
+            'description' => 'Tim SAR Solidaritas Insan Peduli. Pencarian, pertolongan, dan bantuan kemanusiaan untuk sesama.',
+            'contact' => null,
+            'heroImage' => null,
+        ]);
+
+        return (new ProfileResource($profile))->response();
     }
 
     public function updateProfile(Request $request): JsonResponse
     {
-        $data = $request->validate(['headline' => 'required|string|max:191', 'description' => 'required|string|max:10000', 'contact' => 'sometimes|nullable|string|max:191']);
+        $data = $request->validate([
+            'headline' => 'required|string|max:191',
+            'description' => 'required|string|max:10000',
+            'contact' => 'sometimes|nullable|string|max:191',
+            'heroImage' => ['sometimes', 'nullable', 'string', 'max:191', 'regex:~^/uploads/sarsip/[a-f0-9-]{36}\.(?:jpg|png|webp)$~i'],
+        ]);
         $row = SarsipProfile::find('main') ?? new SarsipProfile;
         $row->forceFill(['id' => 'main', ...$data])->save();
 

@@ -3,7 +3,7 @@ import {useState} from "react";
 import type {AidDetail,BantuanViewer} from "@/contracts/modules/bantuan";
 import {hasAnyRole} from "../permissions";
 import {request,day} from "../api/client";
-import s from "./Workspace.module.css";
+import s from "./SurveyReminder.module.css";
 export function SurveyReminder({row,viewer}:{row:AidDetail;viewer:BantuanViewer}){
  const [busy,setBusy]=useState(false),[error,setError]=useState(""),[link,setLink]=useState("");
  if(!row.surveyDeadline?.overdue)return null;

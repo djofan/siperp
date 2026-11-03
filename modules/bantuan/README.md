@@ -116,6 +116,10 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
   beralasan. Gagal salur dan pengembalian dana tercatat.
 - Dashboard dasar, ekspor ringkasan CSV yang bisa dibuka di Excel, audit
   hanya-baca, notifikasi internal, master data, dan pengingat tenggat.
+- Bendahara/admin dapat membuat periode bulan berikutnya dari seluruh santunan
+  rutin bulan sumber. Penerima, kategori, penyalur aktif, dan nominal disalin;
+  status, laporan, serta foto dimulai baru. Bulan tujuan yang sudah memiliki
+  santunan rutin ditolak agar tidak ganda. Santunan tidak rutin tidak disalin.
 - Foto di atas 2 MB dikompresi pada browser; server tetap memvalidasi
   format gambar dan maksimum 2 MB.
 
@@ -175,3 +179,23 @@ Tes memakai SQLite in-memory; database aplikasi tidak di-reset.
 - Sertifikat menggunakan tiga template PDF yang disediakan, dengan nama, nominal, tanggal dan petugas yang dapat disesuaikan. Unduhan sertifikat tidak menyelesaikan penyerahan secara otomatis.
 - Dashboard memuat kontribusi akun. Laporan admin dapat diekspor menjadi XLSX dengan ringkasan dan rincian, format nominal, filter dan header tetap. Lembar pertama Rekap permohonan mengikuti screenshot acuan: kop LAZSIP, hari/tanggal, nama/alamat pemohon, masalah, pelapor, tiga kolom status dan keterangan. Dibantu hanya untuk completed; Tidak dibantu untuk penolakan/pembatalan/dana kembali; Ditunda untuk needs_data. Tahap lain tetap kosong pada tiga kolom hasil, dijelaskan di Keterangan.
 - Kontrak tambahan: `api/docs/bantuan-settings.openapi.json`. Pilihan wilayah memakai layanan wilayah yang telah digunakan platform; jika layanan gagal, alamat lengkap tetap dapat disimpan.
+## Cetak kertas bantuan
+
+Tombol **Cetak kertas bantuan** tersedia pada setiap santunan rutin, untuk
+Janda dhuafa, Anak yatim, Anak asuh, dan Lembaga Tahfidz. Template dipilih
+otomatis berdasarkan kategori. Kategori tahfidz tersedia dalam form tambah
+santunan rutin; santunan tidak rutin tetap hanya untuk anak yatim dan tidak
+menggunakan template berjudul rutin.
+
+Nominal, nama penyalur/verifikator, serta nama penerima mengikuti data santunan.
+Tanggal mengikuti laporan jika tersedia, atau hari ini, dan dapat diganti
+sebelum mengunduh tanpa mengubah laporan. Jika nama penyalur tidak tersedia,
+tombol tetap terlihat dan dialog menjelaskan masalah; unduhan diblokir sampai
+identitas penyalur tersedia agar kartu tidak berisi nama yang salah.
+
+Pratinjau, JPG, dan PDF memakai gambar yang sama. Nama panjang dibungkus agar
+tetap di dalam kolom; nominal menyesuaikan lebar. PDF satu halaman berukuran
+842,25 x 595,5 pt memakai gambar 2800 px. Hasil dibuat di browser; data penerima
+tidak disimpan di aset publik. Background statis dalam
+`public/bantuan/templates/` berasal dari PDF pengguna setelah nama dan nominal
+contoh dihapus. Penambahan kategori ini tidak membutuhkan migration tabel.

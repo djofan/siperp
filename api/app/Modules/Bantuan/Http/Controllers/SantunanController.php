@@ -18,12 +18,16 @@ class SantunanController
         $access->allow($request, ['treasurer', 'volunteer', 'chair']);
         $filters = $request->validate([
             'frequency' => 'nullable|in:routine,non_routine',
+            'period' => 'nullable|date_format:Y-m',
             'transferStatus' => 'nullable|in:pending,transferred',
             'distributionStatus' => 'nullable|in:process,completed',
         ]);
         $query = Santunan::query()->latest('period')->latest('created_at');
         if (! $access->has($request, ['admin', 'treasurer', 'chair'])) {
             $query->where('volunteer_id', $request->user()->id);
+        }
+        if (! empty($filters['period'])) {
+            $query->whereDate('period', $filters['period'].'-01');
         }
         foreach (['frequency', 'transferStatus', 'distributionStatus'] as $key) {
             if (! empty($filters[$key])) {
@@ -39,7 +43,7 @@ class SantunanController
         $access->allow($request, ['treasurer']);
         $data = $request->validate([
             'frequency' => 'required|in:routine,non_routine',
-            'category' => ['required', Rule::in(['widow', 'orphan', 'foster_child'])],
+            'category' => ['required', Rule::in(['widow', 'orphan', 'foster_child', 'tahfidz'])],
             'period' => 'required|date_format:Y-m',
             'recipientName' => 'required|string|max:191',
             'volunteerId' => 'required|string|max:191',
@@ -65,6 +69,40 @@ class SantunanController
         $this->event($request, $access, $row, 'created');
 
         return response()->json(['data' => $this->payload($row)], 201);
+    }
+
+    public function nextPeriod(Request $request, Access $access)
+    {
+        $access->allow($request, ['treasurer']);
+        $data = $request->validate(['sourcePeriod' => 'required|date_format:Y-m']);
+        $sourceDate = \Carbon\CarbonImmutable::createFromFormat('!Y-m', $data['sourcePeriod']);
+        $targetDate = $sourceDate->addMonth();
+
+        return DB::transaction(function () use ($request, $access, $sourceDate, $targetDate) {
+            // Serialize period creation, including retries from another administrator.
+            DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
+            abort_if(Santunan::where('frequency', 'routine')->whereDate('period', $targetDate->toDateString())->exists(),
+                409, 'Santunan rutin untuk bulan tujuan sudah ada. Daftar tidak disalin lagi agar tidak ganda.');
+            $sources = Santunan::where('frequency', 'routine')->whereDate('period', $sourceDate->toDateString())->orderBy('id')->lockForUpdate()->get();
+            abort_if($sources->isEmpty(), 422, 'Tidak ada santunan rutin pada periode sumber.');
+            foreach ($sources as $source) {
+                abort_unless($access->assigned($source->volunteer_id, 'volunteer'),
+                    422, 'Ada penyalur yang tidak aktif atau tidak lagi memiliki akses. Periksa tim sebelum membuat periode baru.');
+                $row = new Santunan;
+                $row->forceFill([
+                    'id' => (string) Str::uuid(), 'number' => $this->nextNumber(),
+                    'frequency' => 'routine', 'category' => $source->category,
+                    'period' => $targetDate->toDateString(), 'recipient' => $source->recipient,
+                    'volunteer_id' => $source->volunteer_id, 'amount' => $source->amount,
+                    'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
+                ])->save();
+                $this->event($request, $access, $row, 'created', ['sourceId' => $source->id, 'sourcePeriod' => $sourceDate->format('Y-m')]);
+            }
+
+            return (new \Illuminate\Http\Resources\Json\JsonResource([
+                'period' => $targetDate->format('Y-m'), 'createdCount' => $sources->count(),
+            ]))->response()->setStatusCode(201)->header('Location', url('/api/v1/bantuan/santunan?period='.$targetDate->format('Y-m')));
+        });
     }
 
     public function transferred(Request $request, string $id, Access $access)

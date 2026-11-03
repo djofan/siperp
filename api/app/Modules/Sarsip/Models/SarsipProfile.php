@@ -16,7 +16,7 @@ class SarsipProfile extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = [];
+    protected array $fieldMap = ['heroImage' => 'hero_image'];
 
     protected $casts = [];
 

@@ -215,7 +215,7 @@ test("photo refresh does not unmount active forms or rehydrate entered values", 
   const refresh=workspace.match(/const reload=useCallback\(\(\)=>\{([^}]+)\}/)?.[1];
   assert.ok(refresh);
   assert.doesNotMatch(refresh,/setLoading/);
-  assert.match(workspace, /ActionPanel key=\{`\$\{row\.id\}:\$\{row\.status\}`\}/);
+  assert.match(workspace, /ActionPanel [^>]*key=\{`\$\{row\.id\}:\$\{row\.status\}:\$\{requestedAction\}`\}/);
   assert.doesNotMatch(workspace,/key=\{row\.id\+.*row\.version/);
   const photoRefresh=intake.match(/const refreshDocuments=useCallback\(async\(\)=>\{([\s\S]*?)\},\[\]\)/)?.[1];
   assert.ok(photoRefresh);
@@ -246,7 +246,7 @@ test("compact detail panels retain mounted forms when switching sections",()=>{
   assert.match(workspace,/role="tablist" aria-label="Bagian pengajuan"/);
   assert.match(workspace,/hidden=\{section!=="tindakan"\}/);
   assert.match(workspace,/hidden=\{section!=="dokumen"\}/);
-  assert.match(workspace,/ActionPanel key=\{`\$\{row\.id\}:\$\{row\.status\}`\}/);
+  assert.match(workspace,/ActionPanel [^>]*key=\{`\$\{row\.id\}:\$\{row\.status\}:\$\{requestedAction\}`\}/);
   assert.match(workspace,/\[\.\.\.row\.events\]\.reverse\(\)/);
   assert.match(css,/\.historyScroll\{[^}]*max-height:440px;overflow-y:auto/);
   assert.match(css,/\.casePanel\[hidden\]\{display:none\}/);

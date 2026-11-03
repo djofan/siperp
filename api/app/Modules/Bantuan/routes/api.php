@@ -46,6 +46,7 @@ Route::post('staff', [S::class, 'store']);
 Route::put('staff/{id}', [S::class, 'update']);
 Route::delete('staff/{id}', [S::class, 'destroy']);
 Route::get('santunan', [SantunanController::class, 'index']);
+Route::post('santunan/periods', [SantunanController::class, 'nextPeriod']);
 Route::post('santunan', [SantunanController::class, 'store']);
 Route::post('santunan/{id}/transferred', [SantunanController::class, 'transferred']);
 Route::post('santunan/{id}/documents', [SantunanController::class, 'document'])->middleware('throttle:60,1');

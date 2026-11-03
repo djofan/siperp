@@ -64,8 +64,10 @@ export interface AidDashboard {
   tickets: { distributor_id: string | null; distribution_type: string; total: number; amount: number }[];
 }
 export interface AidNotification { id: string; application_id: string; message: string; read_at: string | null; created_at: string }
+export const santunanCategoryLabels = { widow: "Janda dhuafa", orphan: "Anak yatim", foster_child: "Anak asuh", tahfidz: "Lembaga Tahfidz" };
+export type SantunanCategory = keyof typeof santunanCategoryLabels;
 export interface SantunanRecord {
-  id: string; number: string; frequency: "routine"|"non_routine"; category: "widow"|"orphan"|"foster_child";
+  id: string; number: string; frequency: "routine"|"non_routine"; category: SantunanCategory;
   period: string; recipientName: string; volunteerId: string; amount: number;
   transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
   transferredAt: string|null; completedAt: string|null; version: number;

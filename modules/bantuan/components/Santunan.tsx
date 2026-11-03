@@ -3,6 +3,7 @@ import { hasRole, hasAnyRole } from "../permissions";
 /* eslint-disable @next/next/no-img-element -- evidence uses authenticated private URLs */
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { santunanCategoryLabels } from "@/contracts/modules/bantuan";
 import type { BantuanStaff, BantuanViewer, SantunanRecord } from "@/contracts/modules/bantuan";
 import { day, money, request } from "../api/client";
 import { preparePhoto } from "../api/photos";
@@ -12,21 +13,30 @@ import { PageGuide } from "./PageGuide";
 import { LoadingState } from "./LoadingState";
 import { HandHeart, Plus, Search, Wallet, CheckCircle2, Clock3, ChevronDown, RefreshCw, ImagePlus } from "lucide-react";
 import { Button, Dialog, Toast } from "./ui";
+import { SantunanCard } from "./SantunanCard";
 import ft from "./ListTools.module.css";
 
-const categoryLabels={widow:"Janda dhuafa",orphan:"Anak yatim",foster_child:"Anak asuh"};
+const categoryLabels=santunanCategoryLabels;
 const today=()=>new Date().toLocaleDateString("en-CA");
 
 export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff[]}){
   const [rows,setRows]=useState<SantunanRecord[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[busy,setBusy]=useState("");
+  const [createFrequency,setCreateFrequency]=useState("routine");
   const [frequency,setFrequency]=useState(""),[distribution,setDistribution]=useState("");
   const [filters,setFilters]=useState({category:"",transfer:"",volunteer:"",periodFrom:"",periodTo:"",amountMin:"",amountMax:"",sort:"period"});
   const [showCreate,setShowCreate]=useState(false),[expanded,setExpanded]=useState(""),[search,setSearch]=useState(""),[success,setSuccess]=useState("");
   const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string}|null>(null);
+  const [card,setCard]=useState<SantunanRecord|null>(null);
+  const [showPeriod,setShowPeriod]=useState(false);
+  const routinePeriods=Array.from(new Set(rows.filter(row=>row.frequency==="routine").map(row=>row.period))).sort().reverse();
   const volunteers=useMemo(()=>staff.filter(person=>(person.roles??[person.role]).includes("volunteer")&&person.active),[staff]);
   const load=useCallback(async()=>{setError("");try{setRows(await request<SantunanRecord[]>("santunan"));}catch(e){setError(e instanceof Error?e.message:"Data santunan tidak dapat dimuat.");}finally{setLoading(false);}},[]);
   useEffect(()=>{let live=true;const controller=new AbortController();request<SantunanRecord[]>("santunan",{signal:controller.signal}).then(data=>{if(live){setRows(data);setLoading(false);}}).catch(err=>{if(live){setError(err instanceof Error?err.message:"Data santunan tidak dapat dimuat.");setLoading(false);}});return()=>{live=false;controller.abort();};},[]);
-  async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy("create");setError("");const element=e.currentTarget,form=new FormData(element);try{await request("santunan",{method:"POST",body:JSON.stringify(Object.fromEntries(form))});element.reset();setShowCreate(false);await load();setSuccess("Santunan berhasil ditambahkan.");}catch(err){setError(err instanceof Error?err.message:"Santunan gagal dibuat.");}finally{setBusy("");}}
+  async function create(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy("create");setError("");const element=e.currentTarget,form=new FormData(element);try{await request("santunan",{method:"POST",body:JSON.stringify(Object.fromEntries(form))});element.reset();setCreateFrequency("routine");setShowCreate(false);await load();setSuccess("Santunan berhasil ditambahkan.");}catch(err){setError(err instanceof Error?err.message:"Santunan gagal dibuat.");}finally{setBusy("");}}
+  async function nextPeriod(e:FormEvent<HTMLFormElement>){e.preventDefault();setBusy("period");setError("");const form=new FormData(e.currentTarget);try{
+    const result=await request<{period:string;createdCount:number}>("santunan/periods",{method:"POST",body:JSON.stringify({sourcePeriod:form.get("sourcePeriod")})});
+    await load();reset();setFrequency("routine");setFilters(current=>({...current,periodFrom:result.period,periodTo:result.period}));setShowPeriod(false);setSuccess(`${result.createdCount} santunan rutin dibuat untuk ${result.period}.`);
+  }catch(err){setError(err instanceof Error?err.message:"Periode baru gagal dibuat.");}finally{setBusy("");}}
   async function markTransferred(row:SantunanRecord){setBusy(row.id);setError("");try{await request(`santunan/${row.id}/transferred`,{method:"POST",body:JSON.stringify({version:row.version,transferredAt:today()})});setConfirm(null);await load();setSuccess("Dana berhasil ditandai sudah ditransfer.");}catch(err){setError(err instanceof Error?err.message:"Status transfer gagal diperbarui.");}finally{setBusy("");}}
   async function report(e:FormEvent<HTMLFormElement>,row:SantunanRecord){e.preventDefault();setBusy(row.id);setError("");const form=new FormData(e.currentTarget);try{
     for(const kind of ["aid_paper","recipient_photo"]){const file=form.get(kind);if(file instanceof File&&file.size){const body=new FormData();body.set("kind",kind);body.set("file",await preparePhoto(file));await request(`santunan/${row.id}/documents`,{method:"POST",body});}}
@@ -38,7 +48,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
   const completed=visible.filter(row=>row.distributionStatus==="completed").length;
   const reset=()=>{setFrequency("");setDistribution("");setSearch("");setFilters({category:"",transfer:"",volunteer:"",periodFrom:"",periodTo:"",amountMin:"",amountMax:"",sort:"period"});};
   return <div className={d.root}>
-    <div className={s.heading}><div><div className={s.eyebrow}>SANTUNAN LAZSIP</div><h1>Santunan rutin & tidak rutin</h1><p>Catat bantuan, pantau transfer, dan lengkapi laporan penyaluran dalam satu tempat.</p></div><div className={s.actions}><Button variant="secondary" disabled={loading||!!busy} onClick={()=>void load()} aria-label="Muat ulang santunan"><RefreshCw size={15}/></Button>{canManage&&<Button onClick={()=>setShowCreate(value=>!value)}><Plus size={16}/>{showCreate?"Tutup form":"Tambah santunan"}</Button>}</div></div>
+    <div className={s.heading}><div><div className={s.eyebrow}>SANTUNAN LAZSIP</div><h1>Santunan rutin & tidak rutin</h1><p>Catat bantuan, pantau transfer, dan lengkapi laporan penyaluran dalam satu tempat.</p></div><div className={s.actions}><Button variant="secondary" disabled={loading||!!busy} onClick={()=>void load()} aria-label="Muat ulang santunan"><RefreshCw size={15}/></Button>{canManage&&routinePeriods.length>0&&<Button variant="secondary" disabled={!!busy||loading} onClick={()=>{setError("");setShowPeriod(true);}}>Buat periode bulan berikutnya</Button>}{canManage&&<Button onClick={()=>setShowCreate(value=>!value)}><Plus size={16}/>{showCreate?"Tutup form":"Tambah santunan"}</Button>}</div></div>
     <div className={d.stats}>{[
       {label:"Total santunan",value:visible.length,hint:"Sesuai filter & akses Anda",icon:HandHeart},
       {label:"Menunggu transfer",value:pending,hint:"Dana belum ditandai dikirim",icon:Wallet},
@@ -48,8 +58,8 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     <PageGuide title="Cara mencatat dan menyelesaikan santunan" steps={canManage?["Tambah santunan: tentukan penerima, kategori, nominal, dan penyalur.","Setelah transfer dilakukan, tekan Tandai sudah ditransfer. Tombol ini hanya mencatat, bukan mengirim uang.","Penyalur membuka santunan, mengisi laporan, dan mengunggah dua foto bukti untuk menyelesaikan proses."]:["Buka santunan yang ditugaskan kepada Anda.","Setelah dana ditandai ditransfer, tekan Isi laporan.","Isi tanggal dan lokasi, unggah foto kertas bantuan serta foto bersama penerima, lalu simpan laporan."]}/>
     {error&&<div className={s.notice+" "+s.error} role="alert"><span>{error}</span><button type="button" onClick={()=>setError("")} aria-label="Tutup pesan">×</button></div>}
     {canManage&&<section className={s.card+" "+d.createCard} hidden={!showCreate}><div className={s.cardHeader}><div><h2>Tambahkan santunan</h2><p>Isi penerima, periode, nominal, dan penyalur.</p></div><span className={s.pill}>Data baru</span></div><form className={s.cardBody} onSubmit={create}><div className={s.formGrid}>
-      <label className={s.field}>Jenis santunan<select className={s.input} name="frequency" required><option value="routine">Rutin</option><option value="non_routine">Tidak rutin</option></select></label>
-      <label className={s.field}>Kategori<select className={s.input} name="category" required><option value="widow">Janda dhuafa</option><option value="orphan">Anak yatim</option><option value="foster_child">Anak asuh</option></select><small>Tidak rutin khusus kategori anak yatim.</small></label>
+      <label className={s.field}>Jenis santunan<select className={s.input} name="frequency" value={createFrequency} onChange={e=>setCreateFrequency(e.target.value)} required><option value="routine">Rutin</option><option value="non_routine">Tidak rutin</option></select></label>
+      <label className={s.field}>Kategori<select key={createFrequency} className={s.input} name="category" required>{Object.entries(categoryLabels).filter(([key])=>createFrequency==="routine"||key==="orphan").map(([key,label])=><option key={key} value={key}>{label}</option>)}</select><small>Tidak rutin khusus kategori anak yatim.</small></label>
       <label className={s.field}>Periode<input className={s.input} name="period" type="month" defaultValue={today().slice(0,7)} required/></label>
       <label className={s.field}>Nama penerima<input className={s.input} name="recipientName" maxLength={191} placeholder="Nama lengkap penerima" required/></label>
       <label className={s.field}>Penyalur<select className={s.input} name="volunteerId" required><option value="">Pilih penyalur</option>{volunteers.map(person=><option value={person.id} key={person.id}>{person.name}</option>)}</select></label>
@@ -66,8 +76,8 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
         <div className={d.cardTop}><span className={d.category}><HandHeart size={15}/>{categoryLabels[row.category]}</span><span className={d.period}>{row.period} · {row.frequency==="routine"?"Rutin":"Tidak rutin"}</span></div>
         <h3>{row.recipientName}</h3><p className={d.number}>{row.number}</p><strong className={d.amount}>{money(row.amount)}</strong>
         <div className={d.statuses}><div><small>Pengiriman dana</small><span className={s.badge+" "+(row.transferStatus==="transferred"?s.green:s.amber)}>{row.transferStatus==="transferred"?"Sudah ditransfer":"Belum ditransfer"}</span></div><div><small>Penyaluran</small><span className={s.badge+" "+(row.distributionStatus==="completed"?s.green:s.blue)}>{row.distributionStatus==="completed"?"Selesai":"Proses"}</span></div></div>
-        <div className={d.volunteer}><span>Penyalur</span><strong>{staff.find(person=>person.id===row.volunteerId)?.name??"Akun tidak ditemukan"}</strong></div>
-        <div className={d.cardActions}>{canManage&&row.transferStatus==="pending"&&<Button disabled={!!busy} onClick={()=>setConfirm(row)}><Wallet size={15}/>Tandai sudah ditransfer</Button>}<Button variant="secondary" aria-expanded={expanded===row.id} aria-controls={"santunan-detail-"+row.id} onClick={()=>setExpanded(current=>current===row.id?"":row.id)}>{(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"?"Isi laporan":"Buka santunan"}<ChevronDown size={15}/></Button></div>
+        <div className={d.volunteer}><span>Verifikator / Relawan penyalur</span><strong>{staff.find(person=>person.id===row.volunteerId)?.name??"Akun tidak ditemukan"}</strong></div>
+        <div className={d.cardActions}>{row.frequency==="routine"&&<Button variant="secondary" onClick={()=>setCard(row)}>Cetak kertas bantuan</Button>}{canManage&&row.transferStatus==="pending"&&<Button disabled={!!busy} onClick={()=>setConfirm(row)}><Wallet size={15}/>Tandai sudah ditransfer</Button>}<Button variant="secondary" aria-expanded={expanded===row.id} aria-controls={"santunan-detail-"+row.id} onClick={()=>setExpanded(current=>current===row.id?"":row.id)}>{(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"?"Isi laporan":"Buka santunan"}<ChevronDown size={15}/></Button></div>
         <div id={"santunan-detail-"+row.id} className={d.details} hidden={expanded!==row.id}>
           <p className={d.detailNote}>{row.transferStatus==="pending"?"Laporan penyaluran dapat diisi setelah dana ditandai sudah ditransfer.":row.distributionStatus==="completed"?"Laporan penyaluran sudah lengkap.":"Dana sudah ditransfer. Lengkapi laporan penyaluran dan dua foto bukti."}</p>
           {(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"&&<form onSubmit={e=>void report(e,row)}><div className={s.formGrid}>
@@ -83,7 +93,9 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
         </div>
       </article>)}</div>:<div className={d.empty}><HandHeart size={34} strokeWidth={1.3}/><h3>{rows.length?"Tidak ada hasil yang cocok":"Belum ada santunan"}</h3><p>{rows.length?"Coba kata pencarian atau filter yang lain.":canManage?"Tambahkan catatan santunan untuk memulai proses penyaluran.":"Catatan santunan yang ditugaskan kepada Anda akan tampil di sini."}</p>{canManage&&!rows.length&&<Button onClick={()=>setShowCreate(true)}><Plus size={15}/>Tambah santunan</Button>}</div>}
     </section>
+    {showPeriod&&<Dialog title="Buat periode bulan berikutnya" description="Seluruh santunan rutin pada bulan sumber akan disalin ke bulan berikutnya, termasuk penerima, kategori, penyalur, dan nominal. Status kembali Belum ditransfer / Proses; laporan dan foto tidak disalin. Filter daftar tidak membatasi penerima yang disalin." onClose={()=>!busy&&setShowPeriod(false)}><form onSubmit={nextPeriod}><label className={s.field}>Periode sumber<select className={s.input} name="sourcePeriod" required disabled={!!busy}>{routinePeriods.map(period=><option key={period} value={period}>{period}</option>)}</select></label><p>Jika santunan rutin bulan tujuan sudah ada, penyalinan akan ditolak untuk mencegah data ganda. Riwayat bulan sumber tetap tersimpan.</p>{error&&<p role="alert" className={s.fieldError}>{error}</p>}<div className={d.formActions}><Button type="button" variant="secondary" disabled={!!busy} onClick={()=>setShowPeriod(false)}>Batal</Button><Button disabled={!!busy}>{busy==="period"?"Membuat…":"Buat periode bulan berikutnya"}</Button></div></form></Dialog>}
     {confirm&&<Dialog title="Tandai dana sudah ditransfer?" description={"Pastikan transfer "+money(confirm.amount)+" untuk "+confirm.recipientName+" sudah dilakukan. Tindakan ini hanya mencatat status, bukan mengirim uang."} onClose={()=>!busy&&setConfirm(null)}><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markTransferred(confirm)}>{busy?"Menyimpan…":"Ya, sudah ditransfer"}</Button></div>{error&&<p role="alert" className={s.fieldError}>{error}</p>}</Dialog>}
+    {card&&<SantunanCard row={card} verifier={staff.find(person=>person.id===card.volunteerId)?.name??(card.volunteerId===viewer.id?viewer.name:"")} onClose={()=>setCard(null)}/>}
     {preview&&<Dialog title={preview.title} onClose={()=>setPreview(null)} wide><img className={s.largePhoto} src={preview.src} alt={preview.title}/></Dialog>}
     {success&&<Toast message={success} onClose={()=>setSuccess("")}/>}
   </div>;
