@@ -188,3 +188,9 @@ tetap di dalam kolom; nominal menyesuaikan lebar. PDF satu halaman berukuran
 tidak disimpan di aset publik. Background statis dalam
 `public/bantuan/templates/` berasal dari PDF pengguna setelah nama dan nominal
 contoh dihapus. Penambahan kategori ini tidak membutuhkan migration tabel.
+
+## Aplikasi mobile / PWA
+
+Aplikasi petugas tersedia di `/bantuan-app/beranda` dengan navigasi bawah dan
+login cookie Core. Menu mengikuti hak akses akun. Panduan pemasangan, perilaku
+cache privat, dan batas tahap pertama ada di `docs/bantuan-pwa.md`.
