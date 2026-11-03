@@ -27,7 +27,7 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
       onClose={onClose}
       onCancel={onClose}
       className={cn(
-        "fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-border bg-surface p-4 text-foreground shadow-xl backdrop:bg-black/40 sm:p-6",
+        "fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-border bg-surface p-4 text-foreground shadow-xl backdrop:bg-black/40 sm:p-6",
         className
       )}
     >

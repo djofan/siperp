@@ -34,3 +34,15 @@
 .pinLabel>strong{font-size:13px;line-height:1.45;font-weight:650;overflow-wrap:anywhere}
 .pinLabel>small{font-size:10px;line-height:1.5;color:#6d7971;max-width:180px;overflow-wrap:anywhere}
 @media(max-width:760px){.pinLabel{max-width:160px;padding:9px 11px}.pinLabel>strong{font-size:12px}.pinLabel>small{font-size:9px}}
+
+@media(max-width:600px){
+ .journeySummary{grid-template-columns:minmax(0,1fr);gap:16px;padding:20px}
+ .summaryIntro,.summaryMetric{min-width:0}.summaryMetric{justify-content:space-between;flex-wrap:wrap}
+ .summaryMetric>div{flex:1}.summaryMetric strong{font-size:22px}
+ .header{flex-wrap:wrap}.header>div{min-width:0}
+ .stop>div{min-width:0;overflow-wrap:anywhere}.searchField{flex-wrap:wrap}
+ .searchField input{flex:1 1 160px;min-width:0;font-size:16px}
+ .addressEditor>div{flex-wrap:wrap}.addressEditor textarea{font-size:16px}
+ .mapFrame{height:clamp(260px,48dvh,380px)}
+ .mode button,.card .secondary,.card .textButton{min-height:44px}
+}

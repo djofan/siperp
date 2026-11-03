@@ -55,7 +55,25 @@ export function Dashboard({viewer,dashboard,failed,onRetry}:{viewer:BantuanViewe
     {periodIssue&&<p className={ft.error} role="alert">{periodIssue}</p>}
     {!summary?summaryFailed?<section className={s.empty} role="alert"><h2>Ringkasan belum berhasil dimuat</h2><p>Periksa koneksi lalu coba lagi.</p><button className={s.secondary} type="button" onClick={()=>hasPeriod?setRetry(value=>value+1):onRetry()}>Coba lagi</button></section>:<LoadingState variant="cards" label="Memuat ringkasan dashboard…"/>:<>
       <div className={s.metrics}>{metrics.map(metric=><section className={s.metric} key={metric.label}><div className={s.metricHeading}><span>{metric.label}</span><span className={s.metricIcon}><metric.icon size={20} strokeWidth={1.6}/></span></div><strong>{metric.value}</strong><small>{metric.hint}</small></section>)}</div>
-      {summary.personal&&<section className={s.card}><div className={s.cardHeader}><div><h2>Kontribusi Anda</h2><p>Pencapaian pribadi sesuai periode pengajuan yang dipilih. Satu pengajuan dihitung sekali untuk survei.</p></div></div><div className={s.metrics}>{[{label:"Pengajuan dibuat",value:summary.personal.created},{label:"Survei dikirim",value:summary.personal.surveyed},{label:"Bantuan diserahkan",value:summary.personal.distributed},{label:"Dana disalurkan lewat Anda",value:"Rp "+summary.personal.distributedAmount.toLocaleString("id-ID")}].map(item=><div className={s.metric} key={item.label}><span>{item.label}</span><strong>{item.value}</strong></div>)}</div></section>}
+      {summary.personal && <section className={s.contribution} aria-labelledby="personal-contribution-title">
+        <header className={s.contributionHeader}>
+          <h2 id="personal-contribution-title">Kontribusi Anda</h2>
+          <p>Pencapaian pribadi sesuai periode pengajuan yang dipilih.</p>
+        </header>
+        <dl className={s.contributionGrid}>
+          {[
+            {label:"Pengajuan dibuat", value:summary.personal.created.toLocaleString("id-ID"), unit:"pengajuan"},
+            {label:"Survei dikirim", value:summary.personal.surveyed.toLocaleString("id-ID"), unit:"pengajuan"},
+            {label:"Bantuan diserahkan", value:summary.personal.distributed.toLocaleString("id-ID"), unit:"bantuan"},
+            {label:"Dana disalurkan lewat Anda", value:summary.personal.distributedAmount.toLocaleString("id-ID"), unit:"", money:true},
+          ].map(item => <div className={s.contributionItem} data-money={item.money || undefined} key={item.label}>
+            <dt>{item.label}</dt>
+            <dd>{item.money && <span className={s.currency}>Rp</span>}<strong>{item.value}</strong>{item.unit && <span>{item.unit}</span>}</dd>
+          </div>)}
+        </dl>
+        <p className={s.contributionNote}>Setiap pengajuan dihitung satu kali untuk kontribusi survei.</p>
+      </section>}
+
       <div className={s.columns}>
         <section className={s.card}>
           <div className={s.cardHeader}><div><h2>Perkembangan pengajuan</h2><p>Posisi pengajuan pada setiap tahap.</p></div><Link href={href("pengajuan")}>Lihat semua<ArrowRight size={14}/></Link></div>

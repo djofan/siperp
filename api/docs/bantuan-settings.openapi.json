@@ -131,6 +131,27 @@
           "422": {
             "description": "Verifier phone missing"
           }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "reminder",
+                      "assignment"
+                    ],
+                    "default": "reminder",
+                    "description": "assignment prepares immediate task details; reminder requires overdue survey."
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

@@ -4,7 +4,7 @@ import { panelClasses } from "@/components/ui/panel";
 
 export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className={panelClasses("overflow-x-auto")}>
+    <div role="region" aria-label="Tabel data, geser untuk melihat kolom lainnya" tabIndex={0} className={panelClasses("min-w-0 max-w-full overflow-x-auto overscroll-x-contain focus-visible:outline-2 focus-visible:outline-accent")}>
       <table className={cn("w-full text-left text-sm", className)} {...props} />
     </div>
   );

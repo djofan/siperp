@@ -2,3 +2,5 @@
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cards{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:760px){.listSection{padding:18px;border-radius:18px}.listHeading{align-items:flex-start;flex-wrap:wrap}.filters .search{flex-basis:100%}.filters>select{max-width:none;min-width:120px}.card{padding:18px}.stats{gap:10px}.stat{padding:16px}.root .formActions>button{flex:1}.cardActions>button{min-width:110px}}
 @media(prefers-reduced-motion:reduce){.root *{scroll-behavior:auto}}
+
+@media(max-width:420px){.stats,.statuses,.report{grid-template-columns:1fr}.filters .search,.filters>select{min-width:0;flex-basis:100%}.cardActions>button{min-width:0;flex-basis:100%}.volunteer{flex-wrap:wrap}.stat>strong{overflow-wrap:anywhere}}

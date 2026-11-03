@@ -67,3 +67,20 @@
 @media(max-width:900px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.header{align-items:flex-start;flex-wrap:wrap}.headerActions{justify-items:start;gap:12px}.headerActions>div{flex-direction:row}.header h1{font-size:28px}}
 @media(max-width:480px){.page{gap:16px}.header{padding:23px 20px;border-radius:18px;gap:18px}.headerActions{width:100%}.headerActions>div{width:100%}.headerActions a{flex:1;padding:11px 12px;font-size:11px}.metric{padding:16px}.metricHeading{align-items:flex-start;gap:6px;line-height:1.6}.metricIcon{width:29px;height:29px;border-radius:10px}.metricIcon svg{width:17px;height:17px}.metric>strong{font-size:28px}.metric>small{font-size:10px}.cardHeader{padding:20px;gap:10px}.cardHeader h2{font-size:13px}.progressBody{grid-template-columns:1fr;padding:0 20px 22px;gap:25px}.completion{display:flex;justify-content:center;gap:20px;padding:5px 0 0;text-align:left}.ring{width:108px;height:108px;flex-shrink:0}.ring strong{font-size:23px}.stages{gap:15px}.caption{padding-left:20px;padding-right:20px}.work{grid-template-columns:1fr}.footerLink{margin-left:16px;margin-right:16px}.metrics{gap:12px}}
 @media(prefers-reduced-motion:reduce){.primary,.secondary{transition:none}}
+
+/* Personal contribution is an inset summary, separate from the overview cards. */
+.contribution{min-width:0;padding:24px;background:#fff;border-radius:20px;container-type:inline-size}
+.contributionHeader h2{margin:0;color:#244d38;font-size:15px;font-weight:650;line-height:1.5}
+.contributionHeader p{margin:6px 0 0;color:#728476;font-size:12px;line-height:1.6}
+.contributionGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.4fr);gap:12px;margin:20px 0 0}
+.contributionItem{min-width:0;display:flex;flex-direction:column;gap:18px;padding:20px;border-radius:14px;background:#f6f8f3}
+.contributionItem[data-money]{background:#eaf2e3}
+.contributionItem dt{font-size:12px;line-height:1.6;color:#5d7463}
+.contributionItem dd{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:auto 0 0;min-width:0;color:#244d38}
+.contributionItem dd strong{font-size:28px;line-height:1.25;font-weight:650;letter-spacing:-.6px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;min-width:0}
+.contributionItem dd span{font-size:11px;color:#748772}
+.contributionItem dd .currency{font-size:16px;color:#446a4d}
+.contributionNote{margin:14px 0 0;color:#7b8b79;font-size:11px;line-height:1.6}
+@container(max-width:800px){.contributionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.contributionItem[data-money]{grid-column:auto}}
+@container(max-width:380px){.contributionGrid{grid-template-columns:1fr;gap:8px}.contributionItem{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;padding:16px}.contributionItem dt{flex:1}.contributionItem dd{margin:0;justify-content:flex-end;max-width:60%}.contributionItem dd strong{font-size:24px}}
+@media(max-width:480px){.contribution{padding:18px;border-radius:18px}}
