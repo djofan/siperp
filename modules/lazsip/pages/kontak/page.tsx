@@ -1,9 +1,11 @@
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getWhatsAppNumber } from "@/modules/lazsip/api/contact";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
 import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 
 export default async function LazsipKontakPage() {
   const kontak = await getSiteContent("kontak");
+  const whatsapp = getWhatsAppNumber(kontak?.phone);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
@@ -42,9 +44,9 @@ export default async function LazsipKontakPage() {
             {kontak?.phone && <li>{kontak.phone}</li>}
             {!kontak?.email && !kontak?.phone && <li>Info kontak belum diisi lewat halaman admin Konten Umum.</li>}
           </ul>
-          {process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP && (
+          {whatsapp && (
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP}?text=${encodeURIComponent(
+              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(
                 "Assalamu'alaikum, saya ingin bertanya seputar LAZSIP."
               )}`}
               target="_blank"

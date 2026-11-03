@@ -69,6 +69,23 @@ document.paths['/api/v1/bantuan/mobile/login'] = { post: {
     429: { ...error, headers: { 'Retry-After': { required: true, schema: { type: 'string' } } } },
   },
 } };
+
+// Bantuan mobile push registration and session lifecycle.
+const mobileNoContent = { description: 'Completed; empty response body' };
+document.paths['/api/v1/bantuan/mobile/devices'] = {
+  post: {
+    summary: 'Register or rotate the current mobile sessions FCM device',
+    description: 'Requires bantuan-mobile Sanctum token, active user and live Bantuan access. Device token is encrypted at rest. Upsert is idempotent; no token is returned.',
+    requestBody: { required: true, content: json({ type: 'object', required: ['token'], properties: { token: { type: 'string', minLength: 1, maxLength: 4096, writeOnly: true } } }) },
+    responses: { 204: mobileNoContent, 401: error, 403: error, 422: error, 429: error },
+  },
+  delete: { summary: 'Unregister devices belonging to the current mobile session', responses: { 204: mobileNoContent, 401: error, 403: error, 429: error } },
+};
+document.paths['/api/v1/bantuan/mobile/session'] = {
+  delete: { summary: 'Revoke the current mobile session and remove its devices', description: 'Requires a bantuan-mobile Sanctum token. Logout remains available after module access is revoked.', responses: { 204: mobileNoContent, 401: error, 403: error } },
+};
+
+
 document.paths['/api/v1/bantuan/santunan/periods'] = {post:{tags:['Bantuan'],summary:'Buat santunan rutin bulan berikutnya',description:'Admin/bendahara saja. Seluruh rutin bulan sumber disalin secara atomik; tidak rutin, laporan dan foto tidak disalin. Tujuan yang sudah memiliki rutin ditolak.',security:[{bearerAuth:[]}],requestBody:{required:true,content:{'application/json':{schema:{type:'object',required:['sourcePeriod'],properties:{sourcePeriod:{type:'string',pattern:'^[0-9]{4}-(0[1-9]|1[0-2])$'}}}}}},responses:{'201':{description:'Periode dibuat',headers:{Location:{schema:{type:'string'}}},content:{'application/json':{schema:{type:'object',required:['data'],properties:{data:{type:'object',required:['period','createdCount'],properties:{period:{type:'string'},createdCount:{type:'integer',minimum:1}}}}}}}},'403':{description:'Peran tidak diizinkan'},'409':{description:'Rutin bulan tujuan sudah ada'},'422':{description:'Input invalid, sumber kosong, atau penyalur tidak aktif'}}}};
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);

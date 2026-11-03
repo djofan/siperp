@@ -161,7 +161,9 @@ class ContentController
     public function updateSiteContent(Request $request, string $key): JsonResponse
     {
         abort_unless(in_array($key, ['hero', 'tentang', 'legalitas', 'kontak', 'zakatFitrah', 'transparansi'], true), 404);
-        $data = $request->validate(['content' => 'required|array', 'content.*' => 'string|max:1000000']);
+        $data = $request->validate(['content' => 'required|array', 'content.*' => 'nullable|string|max:1000000']);
+        // Blank optional fields become null in middleware; site content uses strings.
+        $data['content'] = array_map(static fn ($value) => $value ?? '', $data['content']);
         $row = LazsipSiteContent::where('section_key', $key)->first() ?? new LazsipSiteContent;
         $row->forceFill(['sectionKey' => $key, 'contentJson' => json_encode($data['content'], JSON_THROW_ON_ERROR)])->save();
 

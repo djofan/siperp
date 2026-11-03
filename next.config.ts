@@ -2,6 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "51mb" } },
+  async headers() {
+    return [{source:"/bantuan-app/:path*",headers:[
+      {key:"Cache-Control",value:"no-store, private"},
+      {key:"X-Robots-Tag",value:"noindex, nofollow"},
+      {key:"Referrer-Policy",value:"same-origin"},
+    ]}];
+  },
   async rewrites() {
     const backend = (process.env.LARAVEL_API_URL ?? "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
     return {
