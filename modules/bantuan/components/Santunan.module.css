@@ -4,3 +4,5 @@
 @media(prefers-reduced-motion:reduce){.root *{scroll-behavior:auto}}
 
 @media(max-width:420px){.stats,.statuses,.report{grid-template-columns:1fr}.filters .search,.filters>select{min-width:0;flex-basis:100%}.cardActions>button{min-width:0;flex-basis:100%}.volunteer{flex-wrap:wrap}.stat>strong{overflow-wrap:anywhere}}
+
+.bulkToolbar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:16px;margin:16px 0;border:1px solid #cbdcbc;border-radius:12px;background:#f5f9f1}.bulkToolbar label,.selectRecipient{display:flex;align-items:center;gap:8px;font-size:14px}.bulkToolbar input,.selectRecipient input{width:18px;height:18px;accent-color:#315b20}.selectRecipient{margin:12px 0}

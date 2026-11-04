@@ -120,6 +120,11 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
   rutin bulan sumber. Penerima, kategori, penyalur aktif, dan nominal disalin;
   status, laporan, serta foto dimulai baru. Bulan tujuan yang sudah memiliki
   santunan rutin ditolak agar tidak ganda. Santunan tidak rutin tidak disalin.
+- Bendahara/admin dapat memilih seluruh penerima yang belum ditransfer sesuai
+  filter daftar dan mencatat transfer sekaligus setelah konfirmasi jumlah dan
+  nominal. Ini hanya pencatatan, bukan pengiriman uang. Setiap catatan tetap
+  diperiksa izin dan versinya oleh Laravel; proses berhenti pada kegagalan
+  pertama dan menampilkan jumlah yang sudah berhasil, tanpa membatalkannya.
 - Foto di atas 2 MB dikompresi pada browser; server tetap memvalidasi
   format gambar dan maksimum 2 MB.
 
