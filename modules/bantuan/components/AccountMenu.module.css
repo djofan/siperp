@@ -22,3 +22,6 @@
 .panel button:disabled{opacity:.6;cursor:wait}
 .root button:focus-visible,.panel a:focus-visible{outline:2px solid #28784b;outline-offset:2px}
 @media(max-width:600px){.identity{display:none}.root .trigger{padding:4px;gap:5px}.avatar{width:36px;height:36px}}
+
+.mobileOptions{display:none}
+@media(max-width:760px){.mobileOptions{display:grid}.mobileOptions button span{display:inline!important}.root .trigger>svg{display:none}}
