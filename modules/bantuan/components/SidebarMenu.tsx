@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { canManageOwnPasswordInModule } from "../permissions";
 import { useEffect, useRef } from "react";
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";
 import { href, navigation, sidebarNavigation, menuGroups, type NavEntry } from "../policy";
@@ -23,5 +24,7 @@ export function SidebarMenu({viewer,dashboard,activeKey,onNavigate}:{viewer:Bant
     {groups.length>0&&<div className={s.sectionLabel}>TAHAP BANTUAN</div>}
     {groups.map(group=><Link key={group.key} href={href(group.key)} className={s.item} data-active={activeKey===group.key||group.entries.some(entry=>entry.key===activeKey)} aria-current={activeKey===group.key?"page":undefined} onClick={onNavigate}><Icon name={group.icon}/><span className={s.copy}><strong>{group.label}</strong><small>{group.description}</small></span><span className={s.count} title="Jumlah menu">{group.entries.length}</span></Link>)}
     {secondary.map((entry,index)=><div key={entry.key}>{secondary[index-1]?.group!==entry.group&&<div className={s.sectionLabel}>{entry.group}</div>}{item(entry)}</div>)}
+    {canManageOwnPasswordInModule(viewer)&&<><div className={s.sectionLabel}>AKUN</div>
+    <Link href="/admin/bantuan/akun" className={s.item} data-active={activeKey==="akun"} aria-current={activeKey==="akun"?"page":undefined} onClick={onNavigate}><Icon name="shield"/><span className={s.copy}><strong>Pengaturan akun</strong><small>Kelola password dan keamanan akun</small></span></Link></>}
   </nav>;
 }

@@ -6,7 +6,7 @@ import { bantuanRoles } from "@/contracts/modules/bantuan";
 import { hasAnyRole } from "../permissions";
 import { request } from "../api/client";
 import s from "./ApplicationReminder.module.css";
-const targets: Record<string,string> = {
+export const reminderTargets: Record<string,string> = {
   needs_data:"pembuat pengajuan", screening:"Call Center", review1:"Approver",
   survey_assignment:"Call Center", survey_assigned:"Verifikator", survey_cc_review:"Call Center",
   survey_submitted:"Approver", review2:"Approver", bypass_review:"Approver", approved:"Call Center",
@@ -19,7 +19,7 @@ export function ApplicationReminder({row,viewer}:{row:AidApplication;viewer:Bant
   const [busy,setBusy]=useState(false),[error,setError]=useState("");
   const [result,setResult]=useState<Result|null>(null);
   const [choices,setChoices]=useState<Choices|null>(null),[selected,setSelected]=useState<string[]>([]),[note,setNote]=useState("");
-  if(!hasAnyRole(viewer,["admin","call_center"])||!targets[row.status])return null;
+  if(!hasAnyRole(viewer,["admin","call_center"])||!reminderTargets[row.status])return null;
   async function open(){
     setBusy(true);setError("");setResult(null);
     try{
