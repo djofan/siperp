@@ -265,6 +265,72 @@
           }
         }
       }
+    },
+    "/application-reminders": {
+      "post": {
+        "summary": "Prepare grouped reminders for current task owners",
+        "description": "Call Center/admin only. Atomic batch; stale stages or missing recipients reject all. Creates daily deduplicated bell notifications. Does not send WhatsApp. Returns one message per recipient; copyRequired indicates a long message to paste manually.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "applications"
+                ],
+                "properties": {
+                  "applications": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "status"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "data.count; recipients: id, name, count, message, nullable url, copyRequired"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "409": {
+            "description": "Stale or closed application"
+          },
+          "422": {
+            "description": "Invalid selection or missing active recipient"
+          }
+        }
+      }
+    },
+    "/applications": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Paginated applications"
+          }
+        },
+        "description": "Paginated scoped applications. Each item additionally includes rejectionReason (string or null), derived from the latest transition into its current rejected status. Non-sensitive viewers receive the same numeric redaction as event history. Active applications return null."
+      }
     }
   },
   "components": {

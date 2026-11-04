@@ -52,7 +52,7 @@ beforeEach(function () {
     config(['bantuan.whatsapp_enabled' => true, 'bantuan.fonnte_token' => 'fake-test-token', 'bantuan.public_url' => 'https://bantuan.example.org']);
 });
 
-it('enqueues transactionally without network then sends only task number and link once', function () {
+it('enqueues transactionally then sends polite task details and link once without private contact data', function () {
     $user = waMember();
     $row = waApplication($user);
     waNotify($row, $user, 'same-event');
@@ -66,7 +66,8 @@ it('enqueues transactionally without network then sends only task number and lin
         && $request['target'] === '628123456789' && $request['countryCode'] === '0'
         && str_contains($request['message'], $row->number)
         && str_contains($request['message'], 'https://bantuan.example.org/admin/bantuan/pengajuan/'.$row->id)
-        && ! str_contains($request['message'], 'PRIVATE') && ! str_contains($request['message'], '081999999999'));
+        && str_contains($request['message'], 'Yth. Bapak/Ibu') && str_contains($request['message'], $row->name)
+        && ! str_contains($request['message'], '081999999999'));
 });
 
 it('rolls back the outbox with the workflow transaction', function () {

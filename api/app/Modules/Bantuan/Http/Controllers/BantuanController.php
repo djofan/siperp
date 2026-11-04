@@ -62,6 +62,11 @@ class BantuanController
         $data = $listing->filters($request);
         $query = $listing->build($request, $access, $data);
         $rows = $listing->ordered(clone $query, $data)->paginate($data['perPage'] ?? 20);
+        $rejected = $rows->getCollection()->filter(fn ($row) => str_starts_with($row->status, 'rejected'));
+        $rejections = $rejected->isEmpty() ? collect() : DB::table('bantuan_events')
+            ->whereIn('application_id', $rejected->pluck('id'))->where('to_status', 'like', 'rejected%')
+            ->whereColumn('from_status', '!=', 'to_status')->orderByDesc('created_at')->orderByDesc('id')
+            ->get(['application_id', 'to_status', 'details'])->groupBy('application_id');
         $scope = $access->scope(Application::query(), $request);
         $options = ['programs' => (clone $scope)->whereNotNull('program')->distinct()->orderBy('program')->pluck('program'),
             'regions' => (clone $scope)->whereNotNull('region')->where('region', '!=', '')->distinct()->orderBy('region')->pluck('region')];
@@ -73,7 +78,12 @@ class BantuanController
             'completedAmount' => (int) (clone $query)->where('status', 'completed')->cursor()->sum(fn ($row) => $row->handover['amount'] ?? $row->amount),
             'overdue' => (clone $query)->where('status', 'disbursed')->where('disbursed_at', '<', now()->subDays($this->settings()['distributionDays']))->count(),
         ] : null;
-        return response()->json(['data' => $rows->getCollection()->map(fn ($row) => $this->summary($row)), 'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'total' => $rows->total(), 'per_page' => $rows->perPage(), 'filterOptions' => $options, 'summary' => $summary]);
+        return response()->json(['data' => $rows->getCollection()->map(function ($row) use ($rejections, $access, $request) {
+            $event = $rejections->get($row->id)?->firstWhere('to_status', $row->status);
+            $reason = $event ? (json_decode(Crypt::decryptString($event->details), true)['reason'] ?? null) : null;
+            if ($reason && !$access->sensitive($request, $row)) $reason = preg_replace('/[0-9]{7,}/', '********', $reason);
+            return [...$this->summary($row), 'rejectionReason'=>$reason];
+        }), 'current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'total' => $rows->total(), 'per_page' => $rows->perPage(), 'filterOptions' => $options, 'summary' => $summary]);
     }
 
     public function show(Request $request, string $id, Access $access)

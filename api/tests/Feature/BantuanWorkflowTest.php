@@ -1494,6 +1494,44 @@ it('removes funding snapshots and recalculates shared groups without deleting ot
 });
 
 
+it('shows the rejection decision on application lists without exposing unrelated event notes', function () {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    $row=Application::findOrFail($id);
+    $row->forceFill(['status'=>'rejected_t1'])->save();
+    DB::table('bantuan_events')->insert(['id'=>(string) Str::uuid(),'application_id'=>$id,'actor_id'=>$this->approver->id,'actor_role'=>'approver','action'=>'review1_reject','from_status'=>'review1','to_status'=>'rejected_t1','details'=>Crypt::encryptString(json_encode(['reason'=>'Kebutuhan sudah ditangani program lain.'])),'created_at'=>now()]);
+    DB::table('bantuan_events')->insert(['id'=>(string) Str::uuid(),'application_id'=>$id,'actor_id'=>$this->cc->id,'actor_role'=>'call_center','action'=>'note','from_status'=>'rejected_t1','to_status'=>'rejected_t1','details'=>Crypt::encryptString(json_encode(['reason'=>'Catatan lain bukan alasan penolakan.'])),'created_at'=>now()->addSecond()]);
+    $data=$this->getJson('/api/v1/bantuan/applications')->assertOk()->json('data');
+    expect(collect($data)->firstWhere('id',$id)['rejectionReason'])->toBe('Kebutuhan sudah ditangani program lain.');
+    $row->forceFill(['status'=>'review1'])->save();
+    $data=$this->getJson('/api/v1/bantuan/applications')->assertOk()->json('data');
+    expect(collect($data)->firstWhere('id',$id)['rejectionReason'])->toBeNull();
+});
+
+it('groups bulk reminders by responsible recipient and rolls back stale batches', function () {
+    $items=[];
+    foreach (['review1','review1','survey_assigned'] as $status) {
+        $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status'=>$status,'verifier_id'=>$this->verifier->id])->save();
+        $items[]=['id'=>$id,'status'=>$status];
+    }
+    $url='/api/v1/bantuan/application-reminders';
+    $this->actingAs($this->approver,'sanctum')->postJson($url,['applications'=>$items])->assertForbidden();
+    $stale=$items;
+    $stale[2]['status']='fund_ready';
+    $this->actingAs($this->cc,'sanctum')->postJson($url,['applications'=>$stale])->assertConflict();
+    expect(DB::table('bantuan_notifications')->count())->toBe(0);
+    $data=$this->postJson($url,['applications'=>$items])->assertOk()->assertJsonCount(2,'data.recipients')->json('data');
+    $groups=collect($data['recipients'])->keyBy('id');
+    expect($groups[$this->approver->id]['count'])->toBe(2);
+    expect($groups[$this->verifier->id]['count'])->toBe(1);
+    foreach (array_slice($items,0,2) as $item) expect($groups[$this->approver->id]['message'])->toContain(Application::findOrFail($item['id'])->number);
+    expect($groups[$this->approver->id]['message'])->not->toContain(Application::findOrFail($items[2]['id'])->number);
+    $this->postJson($url,['applications'=>$items])->assertOk();
+    expect(DB::table('bantuan_notifications')->count())->toBe(3);
+    expect(DB::table('bantuan_whatsapp_outbox')->count())->toBe(0);
+    $this->postJson($url,['applications'=>[$items[0],$items[0]]])->assertUnprocessable();
+});
+
 it('sends card reminders only to the responsible active task recipients', function (string $status, string $recipient) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     \App\Modules\Bantuan\Models\Application::findOrFail($id)->forceFill(['status'=>$status, 'verifier_id'=>$this->verifier->id, 'distribution_type'=>'verifier', 'distributor_id'=>$this->verifier->id])->save();

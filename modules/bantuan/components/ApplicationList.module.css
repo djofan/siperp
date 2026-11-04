@@ -20,3 +20,4 @@
 .cardActions .primaryAction, .cardActions .primaryAction:visited { background: #287746; color: #fff!important; }
 .cardActions .primaryAction:hover, .cardActions .primaryAction:active { background: #1e6037; color: #fff!important; }
 .cardActions .open:focus-visible { outline: 2px solid #287746; outline-offset: 3px; }
+.rejection{padding:16px;background:#fff2ed;border-radius:14px;color:#823d2f;min-width:0}.rejection strong{font-size:12px}.rejection p{margin:7px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}

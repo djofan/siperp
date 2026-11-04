@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { canManageOwnPasswordInModule } from "../permissions";
 import { useEffect, useRef } from "react";
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";
-import { href, navigation, sidebarNavigation, menuGroups, type NavEntry } from "../policy";
+import { finalStates, href, navigation, sidebarNavigation, menuGroups, type NavEntry } from "../policy";
 import { isWorkItem, queueCount } from "../workspace-guide";
 import { Icon } from "./ui";
 import s from "./SidebarMenu.module.css";
@@ -17,11 +18,13 @@ export function SidebarMenu({viewer,dashboard,activeKey,onNavigate}:{viewer:Bant
   const groups=menuGroups.map(group=>({...group,entries:navigation(viewer).filter(item=>item.group===group.group)})).filter(group=>group.entries.length);
   const allWork=navigation(viewer).filter(item=>item.states?.length&&isWorkItem(viewer,item));
   function count(items:NavEntry[]){const counts=items.map(item=>queueCount(viewer,dashboard,item));return counts.some(value=>value===null)?null:counts.reduce<number>((sum,value)=>sum+(value??0),0);}
-  function item(entry:NavEntry,child=false){const total=entry.states?queueCount(viewer,dashboard,entry):entry.key==="pengajuan"?dashboard?.total:entry.key==="proses"?count(allWork):undefined;return <Link href={href(entry.key)} key={entry.key} className={`${s.item} ${child?s.child:""}`} data-active={activeKey===entry.key} aria-current={activeKey===entry.key?"page":undefined} onClick={onNavigate} title={entry.description??shortCopy[entry.key]}><Icon name={entry.icon}/><span className={s.copy}><strong>{entry.label}</strong><small>{shortCopy[entry.key]??entry.description}</small></span>{total!==undefined&&<span className={s.count} aria-label={total===null?"Jumlah belum dimuat":`${total} pengajuan`}>{total??"—"}</span>}</Link>;}
+  function item(entry:NavEntry,child=false){const total=entry.states?queueCount(viewer,dashboard,entry):entry.key==="berjalan"?(dashboard?Object.entries(dashboard.byStatus).reduce((sum,[status,total])=>sum+(status!=="draft"&&!finalStates.includes(status)?Number(total):0),0):null):entry.key==="pengajuan"?dashboard?.total:entry.key==="proses"?count(allWork):undefined;return <Link href={href(entry.key)} key={entry.key} className={`${s.item} ${child?s.child:""}`} data-active={activeKey===entry.key} aria-current={activeKey===entry.key?"page":undefined} onClick={onNavigate} title={entry.description??shortCopy[entry.key]}><Icon name={entry.icon}/><span className={s.copy}><strong>{entry.label}</strong><small>{shortCopy[entry.key]??entry.description}</small></span>{total!==undefined&&<span className={s.count} aria-label={total===null?"Jumlah belum dimuat":`${total} pengajuan`}>{total??"—"}</span>}</Link>;}
   return <nav ref={ref} className={s.nav} aria-label="Navigasi modul">
     <div className={s.primary}>{primary.map(entry=>item(entry))}</div>
     {groups.length>0&&<div className={s.sectionLabel}>TAHAP BANTUAN</div>}
     {groups.map(group=><Link key={group.key} href={href(group.key)} className={s.item} data-active={activeKey===group.key||group.entries.some(entry=>entry.key===activeKey)} aria-current={activeKey===group.key?"page":undefined} onClick={onNavigate}><Icon name={group.icon}/><span className={s.copy}><strong>{group.label}</strong><small>{group.description}</small></span><span className={s.count} title="Jumlah menu">{group.entries.length}</span></Link>)}
     {secondary.map((entry,index)=><div key={entry.key}>{secondary[index-1]?.group!==entry.group&&<div className={s.sectionLabel}>{entry.group}</div>}{item(entry)}</div>)}
+    {canManageOwnPasswordInModule(viewer)&&<><div className={s.sectionLabel}>AKUN</div>
+    <Link href="/admin/bantuan/akun" className={s.item} data-active={activeKey==="akun"} aria-current={activeKey==="akun"?"page":undefined} onClick={onNavigate}><Icon name="shield"/><span className={s.copy}><strong>Pengaturan akun</strong><small>Kelola password dan keamanan akun</small></span></Link></>}
   </nav>;
 }

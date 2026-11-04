@@ -1,4 +1,4 @@
-import { rolesOf, type RoleViewer } from "./permissions";
+import { canManageOwnPasswordInModule, rolesOf, type RoleViewer } from "./permissions";
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
 
 export const homeByRole: Record<string, string> = {
@@ -78,7 +78,10 @@ export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypas
     verifier:["survei","penyaluran"],approver:["review-tahap-1","review-tahap-2"],chair:["review-tahap-1","review-tahap-2"],
     fund_requester:["dana-siap","dana-diajukan"],treasurer:["pencairan","penyaluran"],
   };
-  return navigation(viewer).filter(item=>main.includes(item.key)||rolesOf(viewer).some(role=>(priorities[role]??[]).includes(item.key)));
+  const entries=navigation(viewer).filter(item=>main.includes(item.key)||rolesOf(viewer).some(role=>(priorities[role]??[]).includes(item.key)));
+  const running=entries.findIndex(item=>item.key==="berjalan"),all=entries.findIndex(item=>item.key==="pengajuan");
+  if(running>=0&&all>=0)[entries[running],entries[all]]=[entries[all],entries[running]];
+  return entries;
 }
 export function processInfo(view:string):NavEntry|undefined {
   if(view==="review")return {key:view,label:"Antrean persetujuan",icon:"check",group:"02 · Persetujuan",states:["review1","survey_submitted","review2","bypass_review"],description:"Pilih pengajuan untuk meninjau dan mencatat keputusan."};
@@ -102,7 +105,8 @@ function canViewSingleRoute(viewer:Pick<BantuanViewer,"role"|"canBypass">,route:
   if(route[0]==="dana")return ["admin","fund_requester"].includes(viewer.role);
   return navigation(viewer).some(item=>item.key===route[0]);
 }
-export function canViewRoute(viewer:RoleViewer&Pick<BantuanViewer,"canBypass">,route:string[]):boolean{
+export function canViewRoute(viewer:RoleViewer&Pick<BantuanViewer,"canBypass"|"canChooseModules">,route:string[]):boolean{
+  if(route[0]==="akun")return route.length===1&&canManageOwnPasswordInModule(viewer);
   if(route[0]==="mustahiq")return route.length<=2&&rolesOf(viewer).some(role=>["admin","requester","call_center","approver","chair","treasurer","fund_requester"].includes(role));
   const group=route.length===1?menuGroups.find(item=>item.key===route[0]):undefined;
   if(group)return navigation(viewer).some(item=>item.group===group.group);

@@ -39,6 +39,8 @@ export default async function DashboardLayout({
     groups.push({heading: 'Pengelolaan', items: [{href: '/admin/akun-modul', label: 'Akun operasional'}]});
   }
 
+  groups.push({heading:"Akun",items:[{href:"/admin/pengaturan-akun",label:"Pengaturan akun"}]});
+
   return (
     <CoreChrome groups={groups} userName={session.name} isSuperadmin={session.isSuperadmin}>
       {children}

@@ -38,6 +38,7 @@ export interface BantuanSettings { programs: string[]; regions: string[]; housin
 export interface BantuanViewer { id: string; name: string; code?: string; role: string; roles?: string[]; canChooseModules?: boolean; canBypass: boolean; settings: BantuanSettings }
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface AidApplication {
+  rejectionReason?: string | null;
   id: string; number: string; name: string; status: string; program: string; region: string; source: string; createdBy: string; intakeRole?: string | null;
   amount: number | null; verifierId: string | null; distributorId: string | null; distributionType: string | null;
   version: number; createdAt: string; updatedAt: string; disbursedAt: string | null; completedAt: string | null;
