@@ -1447,3 +1447,48 @@ it('prepares immediate survey assignment details only for call center with an ac
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();
     $this->actingAs($this->cc,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertConflict();
 });
+
+it('lets module admins permanently delete every stage with explicit confirmation and version protection', function (string $status) {
+    Storage::fake('local');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['status' => $status])->save();
+    $doc = bantuanDoc($id, 'ktp');
+    $path = 'bantuan/'.$id.'/test.enc';
+    DB::table('bantuan_documents')->where('id', $doc)->update(['path' => $path]);
+    Storage::disk('local')->put($path, 'test');
+    $url = '/api/v1/bantuan/applications/'.$id;
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertConflict();
+    $this->actingAs(bantuanUser('admin'), 'sanctum');
+    $this->deleteJson($url, ['version' => 99, 'confirmation' => $row->number])->assertConflict();
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => 'wrong'])->assertUnprocessable();
+    $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertOk();
+    $this->assertDatabaseMissing('bantuan_applications', ['id' => $id]);
+    $this->assertDatabaseMissing('bantuan_documents', ['application_id' => $id]);
+    $this->assertDatabaseMissing('bantuan_events', ['application_id' => $id]);
+    $this->assertDatabaseMissing('bantuan_notifications', ['application_id' => $id]);
+    Storage::disk('local')->assertMissing($path);
+})->with(['draft', 'survey_assigned', 'fund_submitted', 'disbursed', 'completed', 'cancelled']);
+
+it('removes funding snapshots and recalculates shared groups without deleting other applications', function () {
+    $ids = [];
+    for ($i=0; $i<2; $i++) $ids[] = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $group = (string) Str::uuid();
+    DB::table('bantuan_funding_requests')->insert(['id'=>$group,'number'=>'TEST-DELETE','title'=>'Uji','total_amount'=>300,'created_by'=>$this->cc->id,'created_at'=>now(),'updated_at'=>now()]);
+    foreach ($ids as $i=>$id) {
+        $row = Application::findOrFail($id);
+        $row->forceFill(['status'=>'completed'])->save();
+        DB::table('bantuan_funding_request_items')->insert(['id'=>(string) Str::uuid(),'funding_request_id'=>$group,'application_id'=>$id,'number'=>$row->number,'name'=>'Uji','program'=>'Uji','region'=>'Bogor','amount'=>($i+1)*100,'submitted_version'=>1]);
+    }
+    $this->actingAs(bantuanUser('admin'), 'sanctum');
+    foreach ($ids as $i=>$id) {
+        $row = Application::findOrFail($id);
+        $this->deleteJson('/api/v1/bantuan/applications/'.$id,['version'=>1,'confirmation'=>$row->number])->assertOk();
+        if ($i===0) {
+            $this->assertDatabaseHas('bantuan_applications',['id'=>$ids[1]]);
+            $this->assertDatabaseHas('bantuan_funding_requests',['id'=>$group,'total_amount'=>200,'version'=>2]);
+        }
+    }
+    $this->assertDatabaseMissing('bantuan_funding_requests',['id'=>$group]);
+    expect(DB::table('bantuan_funding_request_items')->where('funding_request_id',$group)->count())->toBe(0);
+});

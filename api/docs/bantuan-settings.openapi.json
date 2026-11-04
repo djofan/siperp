@@ -397,5 +397,18 @@
     "format": "SIP001–SIP999",
     "allocation": "Nomor kosong terkecil dipakai kembali setelah akun eksklusif bantuan dihapus. Akun bersama modul lain tetap memiliki kode aktifnya.",
     "administrators": "AMSIP dan SASIP tidak berubah."
+  },
+  "x-application-permanent-deletion": {
+    "endpoint": "DELETE /api/v1/bantuan/applications/{id}",
+    "description": "Module admin (including superadmin) may permanently delete any status. Non-admins may only delete their own drafts. Requires current version; non-draft deletion also requires confirmation equal to application number. Deletes documents/files, notifications, WhatsApp outbox, events and funding items; recalculates remaining group totals and removes empty groups.",
+    "request": {
+      "version": "integer >= 1",
+      "confirmation": "application number required for non-drafts"
+    },
+    "errors": {
+      "403": "Unauthorized",
+      "409": "Stale version or non-admin processed application",
+      "422": "Confirmation mismatch"
+    }
   }
 }
