@@ -56,5 +56,8 @@ Route::get('santunan-documents/{documentId}', [SantunanController::class, 'downl
 Route::get('regions/{level}', \App\Modules\Bantuan\Http\Controllers\RegionController::class)->middleware('throttle:60,1');
 
 Route::post('applications/{id}/remind-survey', \App\Modules\Bantuan\Http\Controllers\SurveyReminderController::class)->middleware('throttle:10,1');
+Route::post('applications/{id}/reminders', \App\Modules\Bantuan\Http\Controllers\ApplicationReminderController::class)->middleware('throttle:10,1');
 
 Route::get('reports/full', \App\Modules\Bantuan\Http\Controllers\ReportController::class)->middleware('throttle:5,1');
+
+Route::get('applications/{id}/reminder-recipients', [\App\Modules\Bantuan\Http\Controllers\ApplicationReminderController::class, 'recipients'])->middleware('throttle:30,1');

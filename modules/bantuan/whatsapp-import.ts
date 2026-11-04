@@ -3,6 +3,33 @@ import type { AidValues } from "@/contracts/modules/bantuan";
 export interface MessageImport { applicant: AidValues; survey: AidValues; warnings: string[] }
 const clean = (s:string) => s.replace(/[\uFE0F\u20E3]/g,"").replace(/^[^\p{L}]+/u,"").replace(/[*_]/g,"").trim();
 const key = (s:string) => clean(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu," ").trim();
+// Match explicit labels, not words inside the applicant's story.
+const aliases: [RegExp,string][] = [
+  [/^(nama lengkap|nama pemohon|nama penerima(?: manfaat)?)$/, "nama"],
+  [/^(no(?:mor)? (?:ktp|nik)|nomor induk kependudukan)$/, "nik"],
+  [/^(telp|telepon|hp|wa|whatsapp|no(?:mor)? (?:hp|telp|telepon|wa|whatsapp))(?: yang bisa dihubungi)?$/, "no hp"],
+  [/^(alamat|alamat domisili|domisili|alamat sekarang)$/, "alamat lengkap"],
+  [/^(ttl|tempat tgl lahir|tempat dan tanggal lahir)$/, "tempat tanggal lahir"],
+  [/^(status|status perkawinan)$/, "status pernikahan"],
+  [/^(tempat tinggal|kepemilikan rumah|status rumah)$/, "status tempat tinggal"],
+  [/^(kerja|profesi)$/, "pekerjaan"],
+  [/^(pendapatan|gaji)(?: per (hari|minggu|bulan))?$/, "penghasilan"],
+  [/^(biaya (?:kontrak|kontrakan|sewa)|sewa rumah)$/, "berapa biaya sewa"],
+  [/^(tanggungan|jml tanggungan)$/, "jumlah tanggungan"],
+  [/^(kendala|permasalahan|masalah|keluhan)$/, "masalah yang dihadapi"],
+  [/^(sumber informasi|info dari)$/, "asal mendapat informasi"],
+  [/^(salat|shalat)(?: 5 waktu)?$/, "sholat"],
+  [/^(pernah dibantu|bantuan sebelumnya)$/, "apakah sudah pernah dibantu"],
+  [/^(punya sktm|memiliki sktm|sktm)$/, "sudah memiliki sktm"],
+  [/^(izin publikasi|bersedia dipublikasikan)$/, "bersedia dipublikasi"],
+  [/^(upaya|usaha yang dilakukan)$/, "usaha serta upaya"],
+  [/^(kondisi rumah|pengamatan rumah)$/, "pengamatan visual"],
+  [/^(kebutuhan|bantuan yang diperlukan)$/, "kebutuhan bantuan"],
+  [/^(saran verifikator|saran)$/, "kritik serta saran"],
+  [/^(tgl survei|tanggal survei|tgl verifikasi)$/, "tanggal verifikasi"],
+  [/^(catatan|keterangan tambahan)$/, "catatan tambahan"],
+];
+const canonical = (label:string) => aliases.find(([pattern])=>pattern.test(label))?.[1] ?? label;
 const textFields: [RegExp,string][] = [
   [/^nama$/, "name"], [/^nik$/, "nik"], [/^status (?:menikah|pernikahan)/,"maritalStatus"],
   [/^alamat lengkap/,"street"], [/^status tempat tinggal/,"housing"], [/^pekerjaan/,"job"],
@@ -22,8 +49,38 @@ function money(value:string):number|undefined {
   return Number.isSafeInteger(n)&&n>=0?n:undefined;
 }
 function bool(value:string):boolean|undefined {
-  if(/^(ya|sudah|bersedia|pernah)\b/i.test(value))return true;
-  if(/^(tidak|belum|ga|gak)\b/i.test(value))return false;
+  const v=key(value).replace(/^(?:alhamdulillah\s+)?(?:(?:saya|pemohon|beliau)\s+)?/,"");
+  if(/\b(?:atau)\b|\//.test(value.toLowerCase()) || /\bbelum tahu\b|\btidak tahu\b|\bmungkin\b|\bragu\b/.test(v))return;
+  if(/\b(tapi|tetapi|namun)\b/.test(v))return;
+  if(/^(sudah|udah) (tidak|tdk|nggak|gak|ga|tak)\b/.test(v))return false;
+  if(/^(tidak|tdk|tak|belum|blm|ga|gak|nggak|enggak|ngga|gk|no|n|tak pernah)\b/.test(v))return false;
+  if(/^(ya|iya|iyah|y|yes|sudah|sdh|udah|sudah pernah|bersedia|setuju|boleh|mau|pernah|punya|ada)\b/.test(v))return true;
+}
+function frequency(value:string):string|undefined {
+  const v=key(value);
+  if(/\batau\b|\//.test(value.toLowerCase()))return;
+  if(/^(jarang|kadang|kadang kadang|sesekali|terkadang|tidak rutin|belum rutin|tidak selalu|tidak setiap hari)\b/.test(v))return "Jarang";
+  if(/^(bukan perokok|sudah berhenti|udah berhenti)\b/.test(v))return "Tidak";
+  const b=bool(value);if(b!==undefined)return b?"Ya":"Tidak";
+  if(/^(rutin|selalu|setiap hari|lima waktu|5 waktu)\b/.test(v))return "Ya";
+}
+function marital(value:string):string|undefined {
+  const v=key(value);
+  if(/\batau\b|\//.test(value))return;
+  if(/^(belum (?:menikah|kawin)|lajang|single|bujang|perjaka|gadis)$/.test(v))return "Belum menikah";
+  if(/^(sudah )?(menikah|kawin|berkeluarga)$/.test(v))return "Menikah";
+  if(/^(janda mati|janda ditinggal mati|janda suami meninggal)$/.test(v))return "Janda mati";
+  if(/^janda(?: cerai)?$/.test(v))return "Janda";
+  if(/^duda(?: cerai| ditinggal mati)?$/.test(v))return "Duda";
+}
+function housing(value:string):string|undefined {
+  const v=key(value);
+  if(/\batau\b|\//.test(value))return;
+  if(/^(ngontrak|kontrak|kontrak sewa|kontrakan|sewa|kos|kost)(?:\b)/.test(v))return "Kontrak-sewa";
+  if(/^(milik sendiri|rumah sendiri|punya sendiri|sendiri)$/.test(v))return "Milik sendiri";
+  if(/^(tinggalan orang tua|rumah orang tua|milik orang tua|ikut orang tua|bersama orang tua|tinggal dengan orang tua)$/.test(v))return "Tinggalan orang tua";
+  if(/^(menumpang|numpang|ikut saudara|ikut kerabat)/.test(v))return "Menumpang";
+  if(/^lainnya$/.test(v))return "Lainnya";
 }
 function date(value:string):string|undefined {
   const months=["januari","februari","maret","april","mei","juni","juli","agustus","september","oktober","november","desember"];
@@ -41,16 +98,20 @@ export function parseWhatsappMessage(message:string):MessageImport {
   let reporter=false;
   const entries:{label:string;value:string;reporter:boolean}[]=[];
   for(const raw of message.replace(/\r/g,"").split("\n")){
-    const line=clean(raw);
+    const line=raw.replace(/[\uFE0F\u20E3]/g,"").replace(/^\s*(?:[0-9]+[.)]?\s+(?=\p{L})|[🚨📝🔰📌*•#-]+\s*)/u,"").replace(/[*_]/g,"").trim();
     if(/data pelapor/i.test(line)){reporter=true;continue;}
     if(/data pemohon/i.test(line)){reporter=false;continue;}
-    const colon=line.indexOf(":");
-    if(colon>=0){entries.push({label:key(line.slice(0,colon)),value:line.slice(colon+1).trim(),reporter});}
+    const parts=line.match(/^(.+?)\s*(?::|：|=|\s[-–—]\s)\s*(.*)$/);
+    if(parts){entries.push({label:reporter?key(parts[1]):canonical(key(parts[1].replace(/\([^)]*\)/g,""))),value:parts[2].trim(),reporter});}
     else if(entries.length&&line&&!/form |data pemohon|sip\/lazsip/i.test(line)){entries[entries.length-1].value+="\n"+raw.trim();}
   }
+  const seen=new Set<string>();
   for(const entry of entries){
     const {label,value}=entry;
     if(!value||/^[.\s…_-]+$/.test(value)||/^(tahun|laki laki\/perempuan|ya\/tidak|ya\/jarang\/tidak)$/i.test(value))continue;
+    const entryKey=`${entry.reporter}:${label}`;
+    if(seen.has(entryKey)){result.warnings.push(`Kolom “${label}” muncul lebih dari sekali. Isian pertama dipertahankan; periksa pesan sumber.`);continue;}
+    seen.add(entryKey);
     const a=result.applicant,s=result.survey;
     if(entry.reporter){
       const field=({nama:"reporterName",status:"reporterRelationship","yayasan lembaga perorangan":"reporterOrganization",alamat:"reporterAddress","no telp":"reporterPhone","program bantuan":"reporterProgram"} as Record<string,string>)[label];
@@ -60,8 +121,8 @@ export function parseWhatsappMessage(message:string):MessageImport {
     const field=textFields.find(([pattern])=>pattern.test(label));
     if(field){
       if(field[1]==="nik"){const nik=value.replace(/\s/g,"");if(/^\d{16}$/.test(nik))a.nik=nik;else result.warnings.push("NIK belum valid 16 digit; isi secara manual.");}
-      else if(field[1]==="maritalStatus"){const statuses=["Janda mati","Belum menikah","Menikah","Duda","Janda"];const found=statuses.find(x=>value.toLowerCase()===x.toLowerCase());if(found)a.maritalStatus=found;else result.warnings.push("Status pernikahan perlu dipilih manual.");}
-      else if(field[1]==="housing"){const v=value.toLowerCase();a.housing=/kontrak|sewa/.test(v)?"Kontrak-sewa":/sendiri/.test(v)?"Milik sendiri":/orang tua/.test(v)?"Tinggalan orang tua":/menumpang/.test(v)?"Menumpang":"Lainnya";}
+      else if(field[1]==="maritalStatus"){const found=marital(value);if(found)a.maritalStatus=found;else result.warnings.push("Status pernikahan perlu dipilih manual.");}
+      else if(field[1]==="housing"){const found=housing(value);if(found)a.housing=found;else result.warnings.push("Status tempat tinggal belum pasti; pilih sesuai kondisi pemohon.");}
       else a[field[1]]=value;
       continue;
     }
@@ -69,8 +130,13 @@ export function parseWhatsappMessage(message:string):MessageImport {
     if(/^tempat tanggal lahir/.test(label)){
       const found=date(value);if(found)a.birthDate=found;else result.warnings.push("Tanggal lahir perlu diperiksa dan diisi manual.");
       const place=value.split(/,|\d/)[0].trim();if(place)a.birthPlace=place;
-    }else if(/^usia/.test(label)){
-      if(/perempuan/i.test(value))a.gender="perempuan";else if(/laki/i.test(value))a.gender="laki_laki";
+    }else if(/^usia|^umur|^jenis kelamin$|^gender$/.test(label)){
+      const v=key(value).replace(/^\d+\s*(tahun|thn|th)\s*/,"");
+      if(/^(perempuan|wanita|cewek|p)$/.test(v))a.gender="perempuan";else if(/^(laki laki|pria|cowok|l)$/.test(v))a.gender="laki_laki";
+      else if(/jenis kelamin|gender/.test(label))result.warnings.push("Jenis kelamin belum pasti; pilih manual.");
+    }else if(/^(periode penghasilan|periode pendapatan)$/.test(label)){
+      const v=key(value);const period=/^(?:per )?(?:hari|harian)$/.test(v)?"hari":/^(?:per )?(?:pekan|minggu|mingguan)$/.test(v)?"pekan":/^(?:per )?(?:bulan|bulanan)$/.test(v)?"bulan":undefined;
+      if(period)a.incomePeriod=period;else result.warnings.push("Periode penghasilan belum pasti; pilih manual.");
     }else if(/^penghasilan/.test(label)){
       const n=money(value);if(n!==undefined)a.income=n;
       if(/hari/i.test(value))a.incomePeriod="hari";else if(/pekan|minggu/i.test(value))a.incomePeriod="pekan";else if(/bulan/i.test(value))a.incomePeriod="bulan";
@@ -79,13 +145,13 @@ export function parseWhatsappMessage(message:string):MessageImport {
     }else if(/^jumlah tanggungan/.test(label)){
       const n=value.match(/^\d+/);if(n)a.dependentCount=Number(n[0]);if(value.length>(n?.[0].length??0))a.dependents=value;
     }else if(/^sholat|^merokok/.test(label)){
-      const v=value.match(/^(ya|jarang|tidak)\b/i)?.[0];if(v)a[/^sholat/.test(label)?"prayer":"smoking"]=v[0].toUpperCase()+v.slice(1).toLowerCase();
+      const v=frequency(value);if(v)a[/^sholat/.test(label)?"prayer":"smoking"]=v;else result.warnings.push(`Jawaban “${label}” belum pasti; periksa dan pilih manual.`);
     }else if(/^apakah sudah pernah dibantu/.test(label)){
-      const b=bool(value);if(b!==undefined)a.previousAid=b;a.previousAidNotes=value;
+      const b=bool(value);if(b!==undefined)a.previousAid=b;else result.warnings.push("Riwayat bantuan belum pasti; periksa pilihan Ya/Tidak.");a.previousAidNotes=value;
     }else if(/^bersedia dipublikasi|^bersedia mengurus sktm/.test(label)){
-      const b=bool(value);if(b!==undefined)a[/dipublikasi/.test(label)?"publicationConsent":"willingSktm"]=b;
+      const b=bool(value);if(b!==undefined)a[/dipublikasi/.test(label)?"publicationConsent":"willingSktm"]=b;else result.warnings.push(`Jawaban “${label}” belum pasti; periksa pilihan Ya/Tidak.`);
     }else if(/^sudah memiliki sktm/.test(label)){
-      const b=bool(value);if(b!==undefined){a.hasSktm=b;s.hasSktm=b;}if(b===false)s.sktmExplanation=value;
+      const b=bool(value);if(b!==undefined){a.hasSktm=b;s.hasSktm=b;}else result.warnings.push("Kepemilikan SKTM belum pasti; periksa pilihan Ya/Tidak.");if(b===false)s.sktmExplanation=value;
     }else if(/^sudah berapa lama tinggal/.test(label)){
       const n=value.match(/\d+/);if(n)s.stayDuration=Number(n[0]);if(/tahun|bulan/i.test(value))s.stayUnit=/tahun/i.test(value)?"tahun":"bulan";
     }else if(/^tanggal verifikasi/.test(label)){const d=date(value);if(d)s.date=d;else result.warnings.push("Tanggal verifikasi belum dikenali.");}

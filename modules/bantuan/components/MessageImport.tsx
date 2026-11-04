@@ -16,7 +16,7 @@ export function MessageImport({applicant,survey,labels,onApply}:{applicant:AidVa
     setPreview(null);setText("");setNotice("Isian diterapkan. Periksa dan lengkapi form sebelum menyimpan.");
   }
   return <details className={s.root}><summary>Isi otomatis dari pesan WhatsApp <span>Tempel pesan → periksa → terapkan</span></summary>
-    <div className={s.body}><p>Tempel form yang sudah diisi. Proses dilakukan di perangkat ini. Data tidak langsung dikirim sebagai pengajuan.</p>
+    <div className={s.body}><p>Tempel pesan yang sudah diisi. Urutan kolom boleh berbeda; variasi seperti “ngontrak”, “blm punya”, dan “kadang-kadang” akan disesuaikan ke pilihan form. Periksa hasil sebelum menerapkan. Proses dilakukan di perangkat ini.</p>
     <label>Pesan WhatsApp<textarea maxLength={40000} rows={6} value={text} onChange={e=>{setText(e.target.value);setPreview(null);setNotice("");}} placeholder="Tempel data pemohon atau hasil verifikasi di sini…"/></label>
     <button type="button" disabled={!text.trim()} onClick={()=>{setPreview(parseWhatsappMessage(text));setNotice("");}}>Periksa hasil impor</button>
     {preview&&<><div className={s.preview}><strong>{entries.length} kolom dikenali</strong>{entries.length===0?<p>Belum ada isian yang dikenali. Gunakan format Nama : isi dan kolom lainnya.</p>:<dl>{entries.map(({group,k,v})=><div key={group+k}><dt>{labels[k]??k}{occupied(group,k)&&<small>Sudah terisi</small>}</dt><dd>{typeof v==="boolean"?(v?"Ya":"Tidak"):String(v)}</dd></div>)}</dl>}</div>

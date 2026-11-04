@@ -29,5 +29,39 @@ test('does not turn empty placeholders or workflow instructions into application
   assert.equal(result.applicant.birthDate, undefined);
   assert.equal(result.applicant.role, undefined);
   assert.equal(result.applicant.status, undefined);
-  assert.equal(result.warnings.length, 2);
+  assert.equal(result.warnings.length, 3);
+});
+
+
+test('accepts informal choices without changing the available form options', () => {
+  const r = parse('Nama lengkap = Siti\nStatus perkawinan: lajang\nTempat tinggal: ngontrak\nMerokok: nggak merokok\nShalat 5 waktu: kadang-kadang\nPunya SKTM: blm punya\nIzin publikasi: saya bersedia\nJenis kelamin: wanita\nPeriode penghasilan: mingguan');
+  assert.equal(r.applicant.name, 'Siti');
+  assert.equal(r.applicant.maritalStatus, 'Belum menikah');
+  assert.equal(r.applicant.housing, 'Kontrak-sewa');
+  assert.equal(r.applicant.smoking, 'Tidak');
+  assert.equal(r.applicant.prayer, 'Jarang');
+  assert.equal(r.applicant.hasSktm, false);
+  assert.equal(r.applicant.publicationConsent, true);
+  assert.equal(r.applicant.gender, 'perempuan');
+  assert.equal(r.applicant.incomePeriod, 'pekan');
+});
+test('does not guess ambiguous choices or overwrite a repeated identity', () => {
+  const r = parse('Nama: Ahmad\nNama lengkap: Budi\nSKTM: belum tahu\nIzin publikasi: ya/tidak\nTempat tinggal: belum jelas\nStatus: duda atau menikah');
+  assert.equal(r.applicant.name, 'Ahmad');
+  for (const field of ['hasSktm','publicationConsent','housing','maritalStatus']) assert.equal(r.applicant[field], undefined);
+  assert.ok(r.warnings.length >= 4);
+});
+test('recognizes a stopped habit as no and preserves numeric multiline values', () => {
+  const r = parse('Merokok: sudah berhenti\nNIK:\n3201010101010001\nTelp - 081234567890');
+  assert.equal(r.applicant.smoking, 'Tidak');
+  assert.equal(r.applicant.nik, '3201010101010001');
+  assert.equal(r.applicant.phone, '081234567890');
+});
+
+
+test('normalizes yes/no alternatives and negative statements without assuming uncertain answers', () => {
+  for (const answer of ['iya', 'sdh punya', 'udah ada', 'alhamdulillah sudah']) assert.equal(parse(`SKTM (ya/tidak): ${answer}`).applicant.hasSktm,true,answer);
+  for (const answer of ['tdk ada', 'blm punya', 'ngga', 'sudah tidak punya']) assert.equal(parse(`SKTM: ${answer}`).applicant.hasSktm,false,answer);
+  for (const answer of ['belum tahu', 'mungkin', 'ya atau tidak', 'iya tapi belum pasti']) assert.equal(parse(`SKTM: ${answer}`).applicant.hasSktm,undefined,answer);
+  assert.equal(parse('Merokok: sudah tidak merokok').applicant.smoking,'Tidak');
 });

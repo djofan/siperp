@@ -1447,3 +1447,86 @@ it('prepares immediate survey assignment details only for call center with an ac
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();
     $this->actingAs($this->cc,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertConflict();
 });
+
+it('lets module admins permanently delete every stage with explicit confirmation and version protection', function (string $status) {
+    Storage::fake('local');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['status' => $status])->save();
+    $doc = bantuanDoc($id, 'ktp');
+    $path = 'bantuan/'.$id.'/test.enc';
+    DB::table('bantuan_documents')->where('id', $doc)->update(['path' => $path]);
+    Storage::disk('local')->put($path, 'test');
+    $url = '/api/v1/bantuan/applications/'.$id;
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertConflict();
+    $this->actingAs(bantuanUser('admin'), 'sanctum');
+    $this->deleteJson($url, ['version' => 99, 'confirmation' => $row->number])->assertConflict();
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => 'wrong'])->assertUnprocessable();
+    $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertOk();
+    $this->assertDatabaseMissing('bantuan_applications', ['id' => $id]);
+    $this->assertDatabaseMissing('bantuan_documents', ['application_id' => $id]);
+    $this->assertDatabaseMissing('bantuan_events', ['application_id' => $id]);
+    $this->assertDatabaseMissing('bantuan_notifications', ['application_id' => $id]);
+    Storage::disk('local')->assertMissing($path);
+})->with(['draft', 'survey_assigned', 'fund_submitted', 'disbursed', 'completed', 'cancelled']);
+
+it('removes funding snapshots and recalculates shared groups without deleting other applications', function () {
+    $ids = [];
+    for ($i=0; $i<2; $i++) $ids[] = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $group = (string) Str::uuid();
+    DB::table('bantuan_funding_requests')->insert(['id'=>$group,'number'=>'TEST-DELETE','title'=>'Uji','total_amount'=>300,'created_by'=>$this->cc->id,'created_at'=>now(),'updated_at'=>now()]);
+    foreach ($ids as $i=>$id) {
+        $row = Application::findOrFail($id);
+        $row->forceFill(['status'=>'completed'])->save();
+        DB::table('bantuan_funding_request_items')->insert(['id'=>(string) Str::uuid(),'funding_request_id'=>$group,'application_id'=>$id,'number'=>$row->number,'name'=>'Uji','program'=>'Uji','region'=>'Bogor','amount'=>($i+1)*100,'submitted_version'=>1]);
+    }
+    $this->actingAs(bantuanUser('admin'), 'sanctum');
+    foreach ($ids as $i=>$id) {
+        $row = Application::findOrFail($id);
+        $this->deleteJson('/api/v1/bantuan/applications/'.$id,['version'=>1,'confirmation'=>$row->number])->assertOk();
+        if ($i===0) {
+            $this->assertDatabaseHas('bantuan_applications',['id'=>$ids[1]]);
+            $this->assertDatabaseHas('bantuan_funding_requests',['id'=>$group,'total_amount'=>200,'version'=>2]);
+        }
+    }
+    $this->assertDatabaseMissing('bantuan_funding_requests',['id'=>$group]);
+    expect(DB::table('bantuan_funding_request_items')->where('funding_request_id',$group)->count())->toBe(0);
+});
+
+
+it('sends card reminders only to the responsible active task recipients', function (string $status, string $recipient) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    \App\Modules\Bantuan\Models\Application::findOrFail($id)->forceFill(['status'=>$status, 'verifier_id'=>$this->verifier->id, 'distribution_type'=>'verifier', 'distributor_id'=>$this->verifier->id])->save();
+    $url='/api/v1/bantuan/applications/'.$id.'/reminders';
+    $this->postJson($url,['status'=>$status])->assertOk()->assertJsonCount(1,'data.recipients')->assertJsonPath('data.recipients.0.id',$this->{$recipient}->id)->assertJsonPath('data.recipients.0.url',null);
+    $this->postJson($url,['status'=>$status])->assertOk();
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->count())->toBe(1);
+    expect(DB::table('bantuan_whatsapp_outbox')->where('application_id',$id)->count())->toBe(0);
+    expect(\App\Modules\Bantuan\Models\Application::findOrFail($id)->status)->toBe($status);
+})->with([['review1','approver'],['survey_assigned','verifier'],['fund_ready','fund'],['fund_submitted','fund'],['fund_approved','treasurer'],['disbursed','verifier']]);
+
+it('rejects unauthorized stale and closed card reminders', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row=\App\Modules\Bantuan\Models\Application::findOrFail($id);
+    $row->forceFill(['status'=>'review1'])->save();
+    $url='/api/v1/bantuan/applications/'.$id.'/reminders';
+    $this->actingAs($this->approver,'sanctum')->postJson($url,['status'=>'review1'])->assertForbidden();
+    $this->actingAs($this->cc,'sanctum')->postJson($url,['status'=>'fund_ready'])->assertConflict();
+    $row->forceFill(['status'=>'completed'])->save();
+    $this->postJson($url,['status'=>'completed'])->assertConflict();
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->count())->toBe(0);
+});
+
+
+it('lists involved reminder recipients without sending and accepts only explicitly related members', function () {
+    $id = $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    \App\Modules\Bantuan\Models\Application::findOrFail($id)->forceFill(['status'=>'fund_ready','verifier_id'=>$this->verifier->id])->save();
+    bantuanRoles($this->verifier,['verifier']);
+    DB::table('bantuan_staff')->where('user_id',$this->verifier->id)->update(['phone'=>\Illuminate\Support\Facades\Crypt::encryptString('081234567890')]);
+    $base='/api/v1/bantuan/applications/'.$id;
+    $this->getJson($base.'/reminder-recipients?status=fund_ready')->assertOk()->assertJsonCount(2,'data.recipients');
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->count())->toBe(0);
+    $this->postJson($base.'/reminders',['status'=>'fund_ready','recipientIds'=>[$this->treasurer->id]])->assertUnprocessable();
+    $this->postJson($base.'/reminders',['status'=>'fund_ready','recipientIds'=>[$this->verifier->id],'note'=>'Mohon koordinasi kesiapan penyaluran.'])->assertOk()->assertJsonCount(1,'data.recipients')->assertJsonPath('data.recipients.0.id',$this->verifier->id);
+    expect(DB::table('bantuan_notifications')->where('application_id',$id)->pluck('user_id')->all())->toBe([$this->verifier->id]);
+});
