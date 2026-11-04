@@ -158,3 +158,19 @@ Kategori disimpan pada kolom string yang sudah ada, tanpa migration. Kontrak
 input diekspor oleh `node api/tools/export-santunan-openapi.mjs`. Template
 kertas bantuan merupakan aset statis tanpa data penerima; hasil terisi
 dibuat di browser dari data santunan yang sudah diotorisasi.
+
+## Push PWA Bantuan
+
+- `GET /api/v1/bantuan/pwa/push-context`: sesi web `next-server`, akun aktif,
+  akses Bantuan. Respons Resource 200 berisi konfigurasi Firebase Web publik,
+  VAPID publik, status registrasi dan binding sesi HMAC, dengan no-store.
+  Kunci service account, token Sanctum, dan path server tidak dikirim.
+- `POST /api/v1/bantuan/pwa/devices`: `{token}` FCM Web, 204 tanpa body,
+  validasi 422, akses 401/403, server belum dikonfigurasi 503. Upsert per sesi,
+  token dienkripsi. Token browser yang sama berpindah ke sesi pemilik baru.
+- `DELETE /api/v1/bantuan/pwa/devices`: hapus registrasi sesi web saat ini,
+  204 tanpa body; tetap tersedia setelah akses modul dicabut. Cookie mutasi
+  memakai pemeriksaan Origin Core. Endpoint native mobile tidak dilonggarkan.
+- `bantuan:push` mengirim kanal mobile dan PWA. PWA menggunakan pesan data-only
+  generik dengan binding sesi; service worker memeriksa konteks sesi langsung
+  sebelum menampilkan notifikasi dan hanya membuka halaman notifikasi internal.

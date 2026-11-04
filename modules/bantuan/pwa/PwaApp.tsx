@@ -1,6 +1,7 @@
 "use client";
 import { useCallback,useEffect,useState,type ReactNode } from "react";
 import Link from "next/link";
+import { PwaPushControl } from "./PwaPushControl";
 import { Home,ClipboardList,HandHeart,Bell,User,HeartHandshake,ArrowUpRight,ArrowLeft,ChevronRight,RefreshCw,LogOut,Search,Wallet,CheckCircle2,Clock,Smartphone,ExternalLink } from "lucide-react";
 import type { AidApplication,AidDashboard,AidDetail,AidNotification,AidPage,BantuanStaff,BantuanViewer,SantunanRecord } from "@/contracts/modules/bantuan";
 import { bantuanStatuses } from "@/contracts/modules/bantuan";
@@ -27,8 +28,10 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
   const retry=()=>setRevision(value=>value+1);
   useEffect(()=>{
     const expired=()=>window.location.replace("/bantuan-app/login");
+    const pushed=()=>setRevision(value=>value+1);
+    window.addEventListener("bantuan-push-received",pushed);
     window.addEventListener("bantuan-session-expired",expired);
-    return()=>window.removeEventListener("bantuan-session-expired",expired);
+    return()=>{window.removeEventListener("bantuan-session-expired",expired);window.removeEventListener("bantuan-push-received",pushed);};
   },[]);
   useEffect(()=>{
     const controller=new AbortController();
@@ -44,6 +47,8 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
   async function logout(){
     if(loggingOut)return;setLoggingOut(true);setLogoutError("");
     try {
+      const { disablePwaPush }=await import("./push-client");
+      await disablePwaPush().catch(()=>undefined);
       const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
       if(!response.ok&&response.status!==401)throw new Error("Keluar belum berhasil. Periksa koneksi dan coba lagi.");
       clearPhotoMemory(viewer.id);await clearDrafts(viewer.id).catch(()=>undefined);
@@ -56,12 +61,13 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
     <header className={s.header}><Link href={`${pwaRoot}/beranda`} className={s.brand}><span className={s.mark}><HeartHandshake size={23}/></span><span>Bantuan <b>SIP</b><small>Solidaritas Insan Peduli</small></span></Link><Link href={`${pwaRoot}/notifikasi`} className={s.bell} aria-label={`Notifikasi${unread!==null?`, ${unread} belum dibaca`:""}`}><Bell size={21}/>{unread!==null&&unread>0&&<span>{unread>99?"99+":unread}</span>}</Link></header>
     <main id="pwa-content" className={s.content}>
       {tab!=="beranda"&&tab!=="santunan"&&<div className={s.pageTitle}><span className={s.eyebrow}>BANTUAN SIP</span><h1>{title}</h1></div>}
+      <PwaPushControl viewerId={viewer.id} showControls={tab==="akun"||tab==="notifikasi"}/>
       {staffError&&<ErrorNotice message={`Daftar tim belum dapat dimuat: ${staffError}`} retry={retry}/>}
       {tab==="beranda"&&<HomeScreen viewer={viewer} revision={revision} retry={retry}/>}
       {tab==="tugas"&&(route[1]?staff?<TaskDetail id={route[1]} viewer={viewer} staff={staff}/>:!staffError&&<Loading/>:<TaskList viewer={viewer}/>)}
       {tab==="santunan"&&access.santunan&&(staff?<div className={s.santunan}><Santunan viewer={viewer} staff={staff}/></div>:!staffError&&<Loading/>)}
-      {tab==="notifikasi"&&<Notifications viewer={viewer} onRead={retry}/>}
-      {tab==="akun"&&<><section className={s.profile}><span className={s.avatar}>{viewer.name.slice(0,1)}</span><h2>{viewer.name}</h2><p>{roleLabel(viewer)}</p><dl><div><dt>Kode akun</dt><dd>{viewer.code??"Hubungi pengelola"}</dd></div><div><dt>Akses</dt><dd>Modul Bantuan</dd></div></dl></section><section className={s.panel}><h2><Smartphone size={19}/>Pasang di HP</h2><p>Android: buka menu browser lalu pilih Pasang aplikasi atau Tambahkan ke layar utama. iPhone: buka di Safari, tekan Bagikan, lalu Tambahkan ke Layar Utama.</p><p>Aplikasi memerlukan internet untuk membaca dan mengirim data. Notifikasi tersedia saat aplikasi dibuka.</p></section><Link href="/admin/bantuan" className={s.rowLink}><ExternalLink size={18}/>Dashboard web lengkap<ChevronRight size={17}/></Link>{logoutError&&<div role="alert" className={s.error}>{logoutError}</div>}<button className={s.logout} onClick={()=>void logout()} disabled={loggingOut}><LogOut size={19}/>{loggingOut?"Sedang keluar…":"Keluar dari akun"}</button></>}
+      {tab==="notifikasi"&&<Notifications viewer={viewer} onRead={retry} refreshKey={revision}/>}
+      {tab==="akun"&&<><section className={s.profile}><span className={s.avatar}>{viewer.name.slice(0,1)}</span><h2>{viewer.name}</h2><p>{roleLabel(viewer)}</p><dl><div><dt>Kode akun</dt><dd>{viewer.code??"Hubungi pengelola"}</dd></div><div><dt>Akses</dt><dd>Modul Bantuan</dd></div></dl></section><section className={s.panel}><h2><Smartphone size={19}/>Pasang di HP</h2><p>Android: buka menu browser lalu pilih Pasang aplikasi atau Tambahkan ke layar utama. iPhone: buka di Safari, tekan Bagikan, lalu Tambahkan ke Layar Utama.</p><p>Aplikasi memerlukan internet untuk membaca dan mengirim data. Aktifkan Notifikasi di HP untuk menerima push. Izin serta dukungan perangkat diperlukan.</p></section><Link href="/admin/bantuan" className={s.rowLink}><ExternalLink size={18}/>Dashboard web lengkap<ChevronRight size={17}/></Link>{logoutError&&<div role="alert" className={s.error}>{logoutError}</div>}<button className={s.logout} onClick={()=>void logout()} disabled={loggingOut}><LogOut size={19}/>{loggingOut?"Sedang keluar…":"Keluar dari akun"}</button></>}
     </main>
     <nav className={s.nav} aria-label="Navigasi aplikasi" style={{gridTemplateColumns:`repeat(${tabs.length},1fr)`}}>{tabs.map(item=>{const Icon=icons[item.key];return <Link key={item.key} href={`${pwaRoot}/${item.key}`} aria-current={tab===item.key?"page":undefined}><span><Icon size={21}/>{item.key==="notifikasi"&&unread!==null&&unread>0&&<i/>}</span>{item.label}</Link>;})}</nav>
   </div>;
@@ -120,9 +126,9 @@ function TaskDetail({id,viewer,staff}:{id:string;viewer:BantuanViewer;staff:Bant
   return <><Link className={s.back} href={`${pwaRoot}/tugas`}><ArrowLeft size={18}/>Kembali ke tugas</Link>{error&&<ErrorNotice message={error} retry={reload}/>} {!row?!error&&<Loading/>:<div className={s.detail}><section className={s.panel}><Status value={row.status}/><h2>{row.name}</h2><p>{row.number} · {row.program}</p><strong>{row.amount!==null?money(row.amount):"Nominal belum ditetapkan"}</strong><dl>{[["Alamat",[row.applicant.street,row.applicant.village,row.applicant.district,row.applicant.city].filter(Boolean).join(", ")],["Petugas survei",staff.find(person=>person.id===row.verifierId)?.name],["Penyalur",staff.find(person=>person.id===row.distributorId)?.name]].map(([label,value])=><div key={String(label)}><dt>{label}</dt><dd>{value||"Belum dicatat"}</dd></div>)}</dl></section><ActionPanel key={`${row.id}:${row.status}`} row={row} viewer={viewer} staff={staff} reload={reload}/><details className={s.documents}><summary>Dokumen & foto bukti ({row.documents.length})</summary><DocumentUpload row={row} viewer={viewer} reload={reload}/></details><details className={s.documents}><summary>Riwayat proses</summary><div className={s.history}>{[...row.events].reverse().map(event=><div key={event.id}><strong>{event.actorName??"Petugas"}</strong><p>{bantuanStatuses[event.to_status]??event.to_status}</p>{event.reason&&<p>{event.reason}</p>}<small>{day(event.created_at)}</small></div>)}</div></details></div>}</>;
 }
 
-function Notifications({viewer,onRead}:{viewer:BantuanViewer;onRead:()=>void}) {
+function Notifications({viewer,onRead,refreshKey}:{viewer:BantuanViewer;onRead:()=>void;refreshKey:number}) {
   const [notes,setNotes]=useState<AidNotification[]|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(""),[revision,setRevision]=useState(0);
-  useEffect(()=>{const controller=new AbortController();pwaRequest<AidNotification[]>("notifications",{signal:controller.signal}).then(data=>{setNotes(data);setError("");}).catch(err=>{if(!controller.signal.aborted)setError(err.message);});return()=>controller.abort();},[revision]);
+  useEffect(()=>{const controller=new AbortController();pwaRequest<AidNotification[]>("notifications",{signal:controller.signal}).then(data=>{setNotes(data);setError("");}).catch(err=>{if(!controller.signal.aborted)setError(err.message);});return()=>controller.abort();},[revision,refreshKey]);
   async function mark(note?:AidNotification){setBusy(note?.id??"all");setError("");try{await pwaRequest(note?`notifications/${note.id}/read`:"notifications/read-all",{method:"PUT"});setNotes(current=>current?.map(item=>!note||item.id===note.id?{...item,read_at:new Date().toISOString()}:item)??null);onRead();}catch(err){setError(err instanceof Error?err.message:"Notifikasi belum dapat diperbarui.");}finally{setBusy("");}}
   return <>{error&&<ErrorNotice message={error} retry={()=>setRevision(value=>value+1)}/>}<p className={s.muted}>50 notifikasi terbaru. Pemberitahuan diperbarui saat aplikasi dibuka.</p>{notes?.some(note=>!note.read_at)&&<button className={s.outline} disabled={!!busy} onClick={()=>void mark()}>Tandai semua dibaca</button>}{!notes?!error&&<Loading/>:!notes.length?<Empty title="Belum ada notifikasi">Tugas baru dan perubahan status akan tampil di sini.</Empty>:notes.map(note=><article className={s.notification} data-unread={!note.read_at} key={note.id}><div className={s.noteIcon}><Bell size={18}/></div><div><p>{note.message}</p><small>{day(note.created_at)}</small><div className={s.notificationActions}>{!note.read_at&&<button disabled={!!busy} onClick={()=>void mark(note)}>{busy===note.id?"Menyimpan…":"Tandai dibaca"}</button>}{pwaAccess(viewer).tasks&&<Link href={`${pwaRoot}/tugas/${encodeURIComponent(note.application_id)}`}>Buka pengajuan<ChevronRight size={15}/></Link>}</div></div></article>)}</>;
 }

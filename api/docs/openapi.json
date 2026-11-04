@@ -411,6 +411,70 @@
           }
         }
       },
+      "SantunanInput": {
+        "type": "object",
+        "required": [
+          "frequency",
+          "category",
+          "period",
+          "recipientName",
+          "volunteerId",
+          "amount"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "non_routine"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "widow",
+              "orphan",
+              "foster_child",
+              "tahfidz"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          },
+          "recipientName": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "volunteerId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9000000000000
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "frequency": {
+                  "const": "non_routine"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "category": {
+                  "const": "orphan"
+                }
+              }
+            }
+          }
+        ]
+      },
       "SarsipProfile": {
         "type": "object",
         "additionalProperties": false,
@@ -536,70 +600,6 @@
             }
           }
         }
-      },
-      "SantunanInput": {
-        "type": "object",
-        "required": [
-          "frequency",
-          "category",
-          "period",
-          "recipientName",
-          "volunteerId",
-          "amount"
-        ],
-        "properties": {
-          "frequency": {
-            "type": "string",
-            "enum": [
-              "routine",
-              "non_routine"
-            ]
-          },
-          "category": {
-            "type": "string",
-            "enum": [
-              "widow",
-              "orphan",
-              "foster_child",
-              "tahfidz"
-            ]
-          },
-          "period": {
-            "type": "string",
-            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
-          },
-          "recipientName": {
-            "type": "string",
-            "maxLength": 191
-          },
-          "volunteerId": {
-            "type": "string",
-            "maxLength": 191
-          },
-          "amount": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 9000000000000
-          }
-        },
-        "allOf": [
-          {
-            "if": {
-              "properties": {
-                "frequency": {
-                  "const": "non_routine"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "category": {
-                  "const": "orphan"
-                }
-              }
-            }
-          }
-        ]
       }
     }
   },
@@ -1070,6 +1070,41 @@
         }
       }
     },
+    "/api/v1/bantuan/santunan": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Tambah santunan rutin atau tidak rutin",
+        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SantunanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+          },
+          "403": {
+            "description": "Peran tidak diizinkan"
+          },
+          "422": {
+            "description": "Kategori atau penyalur tidak valid"
+          }
+        }
+      }
+    },
     "/api/v1/sarsip/profile": {
       "get": {
         "summary": "Read public SARSIP profile and hero image",
@@ -1480,37 +1515,247 @@
         }
       }
     },
-    "/api/v1/bantuan/santunan": {
-      "post": {
-        "tags": [
-          "Bantuan"
-        ],
-        "summary": "Tambah santunan rutin atau tidak rutin",
-        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
-        "security": [
-          {
-            "bearerAuth": []
+    "/api/v1/bantuan/pwa/push-context": {
+      "get": {
+        "summary": "Read public Firebase Web config and current PWA session binding",
+        "description": "Requires next-server session, active user and Bantuan access. No Sanctum token, service-account key or server file path is returned. Cookie callers use the normal Core session.",
+        "responses": {
+          "200": {
+            "description": "Private context; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "enabled",
+                        "registered",
+                        "userId",
+                        "binding",
+                        "firebase",
+                        "vapidKey"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "registered": {
+                          "type": "boolean"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "binding": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "firebase": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "apiKey",
+                                "projectId",
+                                "messagingSenderId",
+                                "appId"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "apiKey": {
+                                  "type": "string"
+                                },
+                                "projectId": {
+                                  "type": "string"
+                                },
+                                "messagingSenderId": {
+                                  "type": "string"
+                                },
+                                "appId": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "vapidKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        ],
+        }
+      }
+    },
+    "/api/v1/bantuan/pwa/devices": {
+      "post": {
+        "summary": "Register or rotate the current web sessions PWA FCM device",
+        "description": "Requires active next-server session, Bantuan access and configured Firebase Web/VAPID. Token encrypted at rest; one registration per web session. Repeat preserves registration start date; a shared browser token changes owner atomically.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SantunanInput"
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "writeOnly": true
+                  }
+                }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Peran tidak diizinkan"
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Kategori atau penyalur tidak valid"
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister the current web sessions PWA device",
+        "description": "Remains available after Bantuan access is revoked. Other sessions and native registrations remain untouched.",
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
