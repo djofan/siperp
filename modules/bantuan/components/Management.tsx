@@ -13,6 +13,7 @@ import mf from "./ManagementForm.module.css";
 
 export function Management({ tab,viewer,staff,reload,loading=false }: {tab:string;viewer:BantuanViewer;staff:BantuanStaff[];reload:()=>void;loading?:boolean}) {
   const mutationLock=useRef(false);
+  const [phone,setPhone]=useState("");
   const [deleting,setDeleting]=useState<BantuanStaff|null>(null);
   const [error,setError]=useState(""),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false);
   const [editing,setEditing]=useState<BantuanStaff|null|"new">(null),[roles,setRoles]=useState<string[]>(["call_center"]),[bypass,setBypass]=useState(false);
@@ -25,7 +26,7 @@ export function Management({ tab,viewer,staff,reload,loading=false }: {tab:strin
   const permitted=(viewer.roles??[viewer.role]).includes("admin")||tab==="audit"&&(viewer.roles??[viewer.role]).includes("chair");
   useEffect(()=>{if(!permitted||tab!=="audit")return;let live=true;const controller=new AbortController(),params=new URLSearchParams({page:String(page),...auditFilters});request<{data:typeof events;last_page:number;total:number}>(`audit?${params}`,{signal:controller.signal},false).then(v=>{if(live){setEvents(v.data);setLast(v.last_page);setAuditTotal(v.total);setAuditPage(auditKey);}}).catch(e=>{if(live)setError(e.message);});return()=>{live=false;controller.abort();};},[tab,page,auditFilters,auditKey,permitted]);
   if(!permitted)return <div className={s.empty}><h2>Akses terbatas</h2><p>Menu ini tidak tersedia untuk peran Anda.</p></div>;
-  function open(person:BantuanStaff|"new"){setEditing(person);setRoles(person==="new"?["call_center"]:person.roles??[person.role]);setBypass(person==="new"?false:!!person.canBypass);setError("");setNotice("");}
+  function open(person:BantuanStaff|"new"){setEditing(person);setPhone(person==="new"?"":person.phone??"");setRoles(person==="new"?["call_center"]:person.roles??[person.role]);setBypass(person==="new"?false:!!person.canBypass);setError("");setNotice("");}
   async function saveStaff(e:FormEvent<HTMLFormElement>){e.preventDefault();if(mutationLock.current)return;mutationLock.current=true;setBusy(true);setError("");const values=Object.fromEntries(new FormData(e.currentTarget));try{const result=await request<{id?:string;code?:string}>(editing==="new"?"staff":`staff/${(editing as BantuanStaff).id}`,{method:editing==="new"?"POST":"PUT",body:JSON.stringify({...values,roles,canBypass:bypass,whatsappEnabled:values.whatsappEnabled==="on",active:values.active!=="false",...(values.password?{}:{password:null})})});setEditing(null);setNotice(result.code?`Akun berhasil dibuat. Kode login: ${result.code}. Bagikan kode ini dan password kepada pemilik akun.`:"Data tim berhasil disimpan.");reload();}catch(err){setError(err instanceof Error?err.message:"Gagal menyimpan akun.");}finally{mutationLock.current=false;setBusy(false);}}
   async function deleteStaff(){
     if(!deleting||mutationLock.current)return;
@@ -54,7 +55,7 @@ export function Management({ tab,viewer,staff,reload,loading=false }: {tab:strin
           </section>
           <section className={mf.section}>
             <h3>Notifikasi WhatsApp</h3>
-            <label className={mf.field}><span>Nomor WhatsApp <small>Opsional</small></span><input className={s.input} name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={30} placeholder="08… atau +628…" defaultValue={editing==="new"?"":editing.phone??""}/><small>Gunakan nomor anggota yang telah menyetujui pengingat tugas. Nomor hanya terlihat oleh admin.</small></label>
+            <label className={mf.field}><span>Nomor WhatsApp <small>Opsional</small></span><input className={s.input} name="phone" type="tel" inputMode="tel" autoComplete="tel" maxLength={30} placeholder="08… atau +628…" value={phone} onChange={e=>setPhone(e.target.value)}/><small>Gunakan nomor anggota yang telah menyetujui pengingat tugas. Nomor hanya terlihat oleh admin.</small></label>
             <label className={mf.permission}><input type="checkbox" name="whatsappEnabled" defaultChecked={editing!=="new"&&!!editing.whatsappEnabled}/><span><strong>Aktifkan pengingat WhatsApp</strong><small>Anggota menyetujui notifikasi tugas Bantuan ke nomor ini. Pengiriman mengikuti pengaturan layanan.</small></span></label>
           </section>
           <fieldset className={mf.section}>
