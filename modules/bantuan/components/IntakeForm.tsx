@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { discardLocalPhotos, pausePhotos, photoSnapshot } from "../api/photo-queue";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, ChevronLeft, ChevronRight, CloudCheck, LoaderCircle, Save } from "lucide-react";
@@ -117,6 +117,8 @@ type LocalDraft={form:IntakeState;saved:AidApplication|null;updatedAt:string};
 const labels=["Data pemohon","Kondisi & kebutuhan","Foto & dokumen","Periksa & kirim"];
 export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;initial?:AidDetail;direct?:boolean}){
   const router=useRouter();
+  const origin=useSearchParams().get("from");
+  const originQuery=origin!==null&&/^[a-z0-9-]*$/.test(origin)?`?from=${encodeURIComponent(origin)}`:"";
   const restoreViewer=useRef(viewer);
   const editingProcessed=!!initial&&!(["draft","needs_data"].includes(initial.status))&&hasAnyRole(viewer,["admin","call_center"]);
   const formId=useId();
@@ -193,7 +195,7 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
             if(!canRestoreIntake(row.status,!!initial)&&!(initial&&hasAnyRole(viewer,["admin","call_center"]))){
               await removeDraft(viewer.id,vaultKey);
               if(!live)return;
-              if(initial){stopping.current=true;router.replace(`/admin/bantuan/pengajuan/${row.id}`);return;}
+              if(initial){stopping.current=true;router.replace(`/admin/bantuan/pengajuan/${row.id}${originQuery}`);return;}
               savedRef.current=null;lastPayload.current="";setSaved(null);setDocuments([]);
               setForm(current=>({...current,applicant:{incomePeriod:"bulan"},step:0,draftKey:crypto.randomUUID()}));
               setToast("Draft sebelumnya sudah diproses. Form baru siap diisi.");return;
@@ -211,7 +213,7 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
       }else if(live)setError(e.message);
     }).finally(()=>{if(live)setLoaded(true);});
     return()=>{live=false;};
-  },[viewer.id,vaultKey,router]);
+  },[viewer.id,vaultKey,router,originQuery]);
   useEffect(()=>{
     if(!loaded||busy||result||manualDraft||cancelled||stopping.current||operation.current!=="idle")return;
     const timer=setTimeout(()=>{
