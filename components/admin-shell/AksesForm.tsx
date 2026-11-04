@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Layers3 } from "lucide-react";
-import { bantuanRoles } from "@/contracts/modules/bantuan";
 import styles from "./AccountForm.module.css";
 
 export interface AccountModuleOption {
@@ -15,18 +14,10 @@ export type AccountAccess = Record<string, { enabled: boolean; role: string }>;
 export function initialAccountAccess(modules: AccountModuleOption[], entries: { moduleId: string; role: string }[] = []): AccountAccess {
   return Object.fromEntries(modules.map(module => {
     const granted = entries.find(entry => entry.moduleId === module.id);
-    return [module.id, { enabled: Boolean(granted), role: granted?.role ?? "admin" }];
+    return [module.id, { enabled: Boolean(granted), role: "admin" }];
   }));
 }
-function rolesFor(slug?: string): Record<string, string> {
-  if (slug === "bantuan") return bantuanRoles;
-  if (slug === "teknisi") return { admin: "Admin", manager: "Manajer", technician: "Teknisi", monitoring: "Monitoring" };
-  if (slug === "academy") return { admin: "Admin", editor: "Editor", teacher: "Pengajar" };
-  if (slug === "tanwir" || slug === "ojol") return { admin: "Admin", guru: "Guru", peserta: "Peserta" };
-  return { admin: "Admin", editor: "Editor" };
-}
-
-export function AksesForm({ modules, access, onChange, disabled, editing = false }: {
+export function AksesForm({ modules, access, onChange, disabled }: {
   modules: AccountModuleOption[];
   access: AccountAccess;
   onChange: (access: AccountAccess) => void;
@@ -37,7 +28,6 @@ export function AksesForm({ modules, access, onChange, disabled, editing = false
     <div className={styles.moduleGrid}>
       {modules.map(module => {
         const state = access[module.id];
-        const roleId = `account-role-${module.id}`;
         return (
           <div key={module.id} className={styles.moduleCard} data-selected={state.enabled}>
             <label className={styles.moduleChoice}>
@@ -51,13 +41,7 @@ export function AksesForm({ modules, access, onChange, disabled, editing = false
               <span className={styles.moduleName}>{module.name}</span>
               <span className={styles.moduleHint}>{module.isActive === false ? "Modul sedang nonaktif" : state.enabled ? "Akses diaktifkan" : "Klik untuk memberi akses"}</span>
             </label>
-            {state.enabled && (editing ? <div className={styles.roleField}>
-              <label htmlFor={roleId}>Peran</label>
-              <select id={roleId} value={state.role} disabled={disabled}
-                onChange={event => onChange({ ...access, [module.id]: { ...state, role: event.target.value } })}>
-                {Object.entries(rolesFor(module.slug)).map(([role, label]) => <option key={role} value={role}>{label}</option>)}
-              </select>
-            </div> : <span className={styles.adminRole}>Admin modul</span>)}
+            {state.enabled && <span className={styles.adminRole}>Admin modul</span>}
           </div>
         );
       })}

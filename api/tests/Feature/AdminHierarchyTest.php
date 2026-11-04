@@ -91,13 +91,25 @@ it('allocates increasing AMSIP admin codes and preserves them across edits', fun
     expect($first->fresh()->code)->toBe('AMSIP0001');
 });
 
-it('changes an existing operational identity to AMSIP when the superadmin grants an admin role', function () {
+it('prevents Core from granting operational accounts access while preserving identity edits', function () {
+    Sanctum::actingAs(hierarchyAccount(true));
     $person = new User;
     $person->forceFill(['name' => 'Operasional', 'password_hash' => Hash::make('hierarchy-password')])->save();
+    DB::table('module_access')->insert(['id' => 'operational-access', 'user_id' => $person->id, 'module_id' => 'hierarchy-bantuan', 'role' => 'call_center']);
     $old = $person->code;
-    app(UserService::class)->setAccess($person->id, [['moduleId' => 'hierarchy-sip', 'role' => 'admin']]);
-    expect($person->fresh()->code)->toBe('AMSIP0001')->and(AccountCodes::find('AMSIP0001')->id)->toBe($person->id)
-        ->and(AccountCodes::find($old))->toBeNull();
+    foreach ([[], [['moduleId' => 'hierarchy-sip', 'role' => 'admin']], [['moduleId' => 'hierarchy-bantuan', 'role' => 'admin']]] as $entries) {
+        $this->putJson('/api/v1/super/akun/'.$person->id, ['name' => 'Forbidden', 'entries' => $entries])->assertUnprocessable();
+    }
+    expect($person->fresh()->code)->toBe($old)->and($person->fresh()->name)->toBe('Operasional');
+    expect(DB::table('module_access')->where('user_id', $person->id)->value('role'))->toBe('call_center');
+    $this->putJson('/api/v1/super/akun/'.$person->id, ['name' => 'Nama diperbaiki'])->assertOk();
+});
+
+it('does not turn Core admins into operational roles through grants', function () {
+    $admin = hierarchyAccount(false, ['hierarchy-bantuan']);
+    expect(fn () => app(UserService::class)->setAccess($admin->id, [['moduleId' => 'hierarchy-bantuan', 'role' => 'call_center']]))
+        ->toThrow(ValidationException::class);
+    expect(DB::table('module_access')->where('user_id', $admin->id)->value('role'))->toBe('admin');
 });
 
 it('lets module admins create only operational roles within their assigned module', function (string $slug) {

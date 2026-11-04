@@ -34,6 +34,24 @@ class AccountCodes
         }, 3);
     }
 
+    /** Caller holds the bantuan module lock through user creation. */
+    public static function nextBantuan(): string
+    {
+        for ($number = 1; $number <= 999; $number++) {
+            $code = 'SIP'.str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+            if (! DB::table('user_login_codes')->where('code', $code)->exists()
+                && ! User::where('code', $code)->exists()) return $code;
+        }
+        throw ValidationException::withMessages(['code' => 'Seluruh kode SIP001–SIP999 sudah digunakan.']);
+    }
+
+    public static function releaseBantuan(User $user): void
+    {
+        if (! preg_match('/^SIP[0-9]{3}$/D', $user->code)) return;
+        $user->code = 'ARCH-'.strtoupper(substr(hash('sha256', $user->id), 0, 24));
+        $user->save();
+    }
+
     public static function register(string $userId, string $code): void
     {
         $code = self::normalize($code);

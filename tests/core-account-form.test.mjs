@@ -92,3 +92,15 @@ test("double clicking save cannot create two accounts", async () => {
   release(); await first;
   assert.equal(harness.routes.length, 1);
 });
+
+test("operational accounts have no module choices and submit only identity", async () => {
+  const account = { id: "staff", code: "SIP001", name: "Petugas", isSuperadmin: false, access: [{ moduleId: "bantuan", role: "call_center" }] };
+  const { AccountForm } = load("components/admin-shell/AccountForm.tsx");
+  const html = renderToStaticMarkup(React.createElement(AccountForm, { modules, account }));
+  assert.doesNotMatch(html, /type="checkbox"/);
+  assert.match(html, /Modul akun operasional/);
+  const calls = [];
+  const harness = formHarness(async (url, options) => { calls.push(JSON.parse(options.body)); return { ok: true }; }, account);
+  await harness.submit();
+  assert.deepEqual(calls, [{ name: "Admin Baru" }]);
+});
