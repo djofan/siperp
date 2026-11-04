@@ -125,3 +125,21 @@ it('backfills existing users and all legacy codes without changing passwords or 
     $migration->up();
     expect(DB::table('users')->where('id', 'plain')->value('code'))->toBe($code)->and(DB::table('user_login_codes')->count())->toBe(3);
 });
+
+
+it('allocates three digit bantuan codes in order and reuses released numbers', function () {
+    $first = codeAccount(['code' => AccountCodes::nextBantuan()]);
+    $second = codeAccount(['code' => AccountCodes::nextBantuan()]);
+    expect($first->code)->toBe('SIP001')->and($second->code)->toBe('SIP002');
+    AccountCodes::releaseBantuan($first);
+    $replacement = codeAccount(['code' => AccountCodes::nextBantuan()]);
+    expect($replacement->code)->toBe('SIP001')
+        ->and(AccountCodes::find('SIP001')->id)->toBe($replacement->id)
+        ->and($first->fresh()->code)->not->toBe('SIP001');
+});
+
+it('does not reuse a bantuan code still registered as a login alias', function () {
+    $user = codeAccount();
+    AccountCodes::register($user->id, 'SIP001');
+    expect(AccountCodes::nextBantuan())->toBe('SIP002');
+});

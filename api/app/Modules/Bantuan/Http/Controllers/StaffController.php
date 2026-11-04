@@ -6,6 +6,7 @@ use App\Modules\Bantuan\Services\Access;
 use App\Modules\Bantuan\Services\Journal;
 use App\Modules\Bantuan\Services\Whatsapp;
 use App\Modules\Core\Models\User;
+use App\Modules\Core\Auth\AccountCodes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Crypt;
@@ -61,7 +62,7 @@ class StaffController
             $module = DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
             if (in_array('approver', $input['roles'], true)) $this->validateApprover('approver', $module->id);
             $user = new User;
-            $user->forceFill(['name' => $input['name'], 'email' => $input['email'] ?? null, 'password_hash' => Hash::make($input['password']), 'is_active' => true, 'is_superadmin' => false])->save();
+            $user->forceFill(['code' => AccountCodes::nextBantuan(), 'name' => $input['name'], 'email' => $input['email'] ?? null, 'password_hash' => Hash::make($input['password']), 'is_active' => true, 'is_superadmin' => false])->save();
             DB::table('module_access')->insert(['id' => (string) Str::uuid(), 'user_id' => $user->id, 'module_id' => $module->id, 'role' => $input['role']]);
             $this->profile($user->id, $input);
             $journal->record($request, null, 'create_staff', null, ['userId' => $user->id, 'role' => $input['role'], 'canBypass' => $input['canBypass']]);
@@ -132,6 +133,7 @@ class StaffController
             DB::table('bantuan_notifications')->where('user_id', $id)->delete();
             $shared = DB::table('module_access')->where('user_id', $id)->exists();
             if (! $shared) {
+                AccountCodes::releaseBantuan($user);
                 $user->is_active = false;
                 $user->save();
                 $user->tokens()->delete();

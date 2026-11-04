@@ -39,6 +39,9 @@ export function AccountForm({ modules, account }: { modules: AccountModuleOption
   const [access, setAccess] = useState(() => initialAccountAccess(modules, account?.access));
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const operational = Boolean(account && !account.isSuperadmin
+    && !/^AMSIP[0-9]+$/.test(account.code)
+    && !account.access.some(entry => entry.role === "admin"));
   const selected = Object.values(access).filter(entry => entry.enabled).length;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -54,7 +57,7 @@ export function AccountForm({ modules, account }: { modules: AccountModuleOption
         method: account ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(account
-          ? { name: name.trim(), password: password || undefined, ...(account.isSuperadmin ? {} : { entries }) }
+          ? { name: name.trim(), password: password || undefined, ...(account.isSuperadmin || operational ? {} : { entries }) }
           : { name: name.trim(), password, moduleIds: entries.map(entry => entry.moduleId) }),
       });
       if (!response.ok) throw new Error(responseError(await response.json().catch(() => null)));
@@ -112,16 +115,20 @@ export function AccountForm({ modules, account }: { modules: AccountModuleOption
         <section className={styles.panel} aria-labelledby="account-modules">
           <div className={styles.sectionHeader}>
             <span className={styles.sectionIcon}><Layers3 size={20} strokeWidth={1.7} /></span>
-            <div><h2 id="account-modules">Modul yang bisa diakses</h2><p>{account?.isSuperadmin ? "Superadmin memiliki akses penuh ke seluruh modul." : "Pilih modul yang boleh dibuka dan dikelola akun ini."}</p></div>
-            <span className={styles.count}>{account?.isSuperadmin ? "Semua modul" : `${selected} dipilih`}</span>
+            <div><h2 id="account-modules">{operational ? "Modul akun operasional" : "Modul yang bisa diakses"}</h2><p>{operational ? "Akun ini khusus untuk bekerja di modul asalnya." : account?.isSuperadmin ? "Superadmin memiliki akses penuh ke seluruh modul." : "Pilih modul yang boleh dibuka dan dikelola akun ini."}</p></div>
+            <span className={styles.count}>{operational ? "Akses tetap" : account?.isSuperadmin ? "Semua modul" : `${selected} dipilih`}</span>
           </div>
-          {account?.isSuperadmin ? <div className={styles.fullAccess}><ShieldCheck size={28} /><h3>Akses penuh superadmin</h3><p>Akun ini dapat mengelola semua modul dan pengaturan platform.</p></div>
+          {operational ? <div className={styles.fullAccess}>
+            <ShieldCheck size={28} />
+            <h3>{modules.filter(module => account?.access.some(entry => entry.moduleId === module.id)).map(module => module.name).join(", ") || "Akun operasional"}</h3>
+            <p>Peran dan penugasan dikelola melalui menu akun di modul terkait. Akun ini tidak dapat diberi akses ke modul lain melalui Core.</p>
+          </div> : account?.isSuperadmin ? <div className={styles.fullAccess}><ShieldCheck size={28} /><h3>Akses penuh superadmin</h3><p>Akun ini dapat mengelola semua modul dan pengaturan platform.</p></div>
             : <AksesForm modules={modules} access={access} onChange={setAccess} disabled={isSubmitting} editing={Boolean(account)} />}
         </section>
       </div>
       {error && <div role="alert" className={styles.error}>{error}</div>}
       <div className={styles.footer}>
-        <div className={styles.footerNote}><Check size={17} /><p>{account?.isSuperadmin ? "Perubahan hanya berlaku untuk identitas dan password akun." : selected ? `${selected} modul akan dapat diakses oleh akun ini.` : "Belum ada modul dipilih. Akses dapat diatur kembali nanti."}</p></div>
+        <div className={styles.footerNote}><Check size={17} /><p>{operational || account?.isSuperadmin ? "Perubahan hanya berlaku untuk identitas dan password akun." : selected ? `${selected} modul akan dapat diakses oleh akun ini.` : "Belum ada modul dipilih. Akses dapat diatur kembali nanti."}</p></div>
         <div className={styles.actions}>
           <Link href="/admin/super/akun" aria-disabled={isSubmitting} onClick={event => { if (isSubmitting) event.preventDefault(); }} className={styles.cancel}><ArrowLeft size={16} />Batal</Link>
           <button type="submit" disabled={isSubmitting} className={styles.save}>{isSubmitting ? <LoaderCircle className={styles.spinner} size={17} /> : <Save size={17} />}{isSubmitting ? "Menyimpan…" : account ? "Simpan perubahan" : "Simpan akun"}</button>

@@ -29,14 +29,14 @@ export default async function DashboardLayout({
         { href: "/admin/super/kontak", label: "Kontak Terpadu" },
         { href: "/admin/super/keuangan", label: "Keuangan & Rekonsiliasi" },
         { href: "/admin/super/backup", label: "Backup & Pemulihan" },
-        { href: "/admin/super/akun", label: "Kelola Akun" },
+        { href: "/admin/super/akun", label: "Akun admin modul" },
         { href: "/admin/super/modul", label: "Modul Terdaftar" },
         { href: "/admin/super/rekening-payment", label: "Rekening Pembayaran" },
       ],
     });
   }
   if (session.isSuperadmin || Object.values(session.moduleRoles ?? {}).includes('admin')) {
-    groups.push({heading: 'Pengelolaan', items: [{href: '/admin/akun-modul', label: 'Akun modul'}]});
+    groups.push({heading: 'Pengelolaan', items: [{href: '/admin/akun-modul', label: 'Akun operasional'}]});
   }
 
   return (

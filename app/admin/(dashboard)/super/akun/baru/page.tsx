@@ -13,7 +13,7 @@ export default async function TambahAkunPage() {
           href="/admin/super/akun"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/50 hover:text-foreground"
         >
-          ← Kembali ke Kelola Akun
+          ← Kembali ke akun admin modul
         </Link>
         <PageHeader
           title="Tambah admin"

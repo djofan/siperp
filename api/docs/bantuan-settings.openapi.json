@@ -392,5 +392,10 @@
         "type": "object"
       }
     }
+  },
+  "x-bantuan-account-codes": {
+    "format": "SIP001–SIP999",
+    "allocation": "Nomor kosong terkecil dipakai kembali setelah akun eksklusif bantuan dihapus. Akun bersama modul lain tetap memiliki kode aktifnya.",
+    "administrators": "AMSIP dan SASIP tidak berubah."
   }
 }

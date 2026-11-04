@@ -96,6 +96,16 @@ class UserService
         DB::transaction(function () use ($id, $entries): void {
             $user = User::whereKey($id)->lockForUpdate()->firstOrFail();
             $previous = DB::table('module_access')->where('user_id', $id)->pluck('role', 'module_id');
+            if ($user->is_superadmin) {
+                throw ValidationException::withMessages(['entries' => 'Superadmin otomatis memiliki akses penuh ke semua modul.']);
+            }
+            if (! preg_match('/^AMSIP[0-9]+$/D', $user->code) && ! $previous->contains('admin')) {
+                throw ValidationException::withMessages(['entries' => 'Akun operasional terikat ke modul asal. Kelola perannya melalui modul terkait.']);
+            }
+            if (collect($entries)->contains(fn ($entry) => $entry['role'] !== 'admin')) {
+                throw ValidationException::withMessages(['entries' => 'Core hanya mengatur akses admin modul. Buat akun operasional melalui modul terkait.']);
+            }
+
             $modules = DB::table('modules')->whereIn('id', array_column($entries, 'moduleId'))->get()->keyBy('id');
             foreach ($entries as $entry) {
                 $module = $modules->get($entry['moduleId']);

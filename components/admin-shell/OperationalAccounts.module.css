@@ -1,0 +1,10 @@
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px}
+.card{display:flex;flex-direction:column;gap:12px;min-width:0;padding:26px;border-radius:20px;background:var(--color-surface);color:var(--foreground);text-decoration:none;transition:transform .18s,box-shadow .18s}
+.card:hover{transform:translateY(-3px);box-shadow:0 10px 26px #0002}.card:focus-visible{outline:2px solid var(--color-accent);outline-offset:4px}
+.icon{display:grid;place-items:center;width:44px;height:44px;border-radius:13px;background:var(--color-accent-soft);color:var(--color-accent)}
+.card h2{font-size:17px;font-weight:650;margin:5px 0 0}.card p{font-size:13px;opacity:.65;margin:0}
+.metrics{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:14px 0}.metrics strong{font-size:28px}.metrics small{font-size:12px;font-weight:400;margin-left:8px;opacity:.65}.metrics span{font-size:12px;opacity:.65}
+.open{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:600;color:var(--color-accent)}
+.heading{display:flex;flex-wrap:wrap;align-items:center;gap:20px}.heading a,.heading span{display:flex;align-items:center;gap:8px;font-size:13px}.heading h2{font-size:20px;font-weight:650}.heading span{margin-left:auto;opacity:.65}
+@media(max-width:540px){.grid{grid-template-columns:1fr}.card{padding:22px}}
+@media(prefers-reduced-motion:reduce){.card{transition:none}.card:hover{transform:none}}

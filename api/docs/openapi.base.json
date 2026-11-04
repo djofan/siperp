@@ -979,5 +979,8 @@
         }
       }
     }
+  },
+  "x-core-account-access-policy": {
+    "description": "Core module access grants are only for module administrators (AMSIP or existing admin access), and entries must use role admin. Operational accounts retain their home-module roles; Core identity updates must omit entries. Attempts to change their access return 422. Superadmin access is automatic."
   }
 }

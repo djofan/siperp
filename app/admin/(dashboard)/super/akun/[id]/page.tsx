@@ -34,7 +34,7 @@ export default async function DetailAkunPage({
           href="/admin/super/akun"
           className={styles.back}
         >
-          <ArrowLeft size={15} /> Kembali ke Kelola Akun
+          <ArrowLeft size={15} /> Kembali ke akun admin modul
         </Link>
         <PageHeader title="Kelola akun" description={`${user.name} · ${user.code}`} />
       </div>
