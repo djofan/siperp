@@ -1,0 +1,17 @@
+.content{display:grid;gap:22px;min-width:0;color:#234536}
+.application{display:flex;align-items:center;gap:14px;padding:16px;background:#f5f7f2;border-radius:16px;min-width:0}
+.icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:13px;background:#faeae5;color:#b54335}
+.application>div{display:grid;gap:5px;min-width:0;overflow-wrap:anywhere}
+.application strong{font-size:16px;line-height:1.4}
+.application span:not(.icon){font-size:12px;color:#748073}
+.explanation{font-size:13px;line-height:1.75}
+.explanation strong{font-size:13px;color:#334b3d}
+.explanation p{margin:8px 0 0;color:#6b786d}
+.confirmation{display:grid;gap:10px;font-size:13px;line-height:1.6}
+.confirmation strong{font-weight:600;overflow-wrap:anywhere}
+.content .confirmation input{box-sizing:border-box;width:100%;min-width:0;min-height:48px;padding:12px 14px;border:1px solid #dce4d8;border-radius:12px;background:#fff;color:#234536;font:inherit;outline:none}
+.content .confirmation input:focus{border-color:#40805a;box-shadow:0 0 0 3px #40805a14}
+.actions{display:flex;justify-content:flex-end;gap:10px;padding-top:4px}
+.content .actions button{min-height:46px;white-space:normal}
+.error{margin:0;padding:12px 14px;border-radius:12px;background:#fff0eb;color:#a13b2f;font-size:13px;line-height:1.6}
+@media(max-width:480px){.content{gap:18px}.actions{display:grid;grid-template-columns:1fr 1fr}.content .actions button{width:100%;padding:12px;font-size:12px}}
