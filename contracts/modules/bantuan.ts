@@ -3,6 +3,7 @@ export const bantuanRoles: Record<string, string> = {
   volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan",
 };
 export const bantuanActionLabels: Record<string, string> = {
+  prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
   update_mustahiq: "Profil mustahiq diperbarui", sync_mustahiq: "Profil diselaraskan dari review survei",
   create: "Pengajuan dibuat", edit_intake: "Data pengajuan diperbarui", submit: "Pengajuan dikirim",
   screen_pass: "Lolos review Call Center", screen_reject: "Ditolak Call Center", request_data: "Diminta melengkapi data",
