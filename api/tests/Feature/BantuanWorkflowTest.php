@@ -1458,7 +1458,13 @@ it('prepares immediate survey assignment details only for call center with an ac
     DB::table('bantuan_staff')->updateOrInsert(['user_id'=>$this->verifier->id],['phone'=>Crypt::encryptString('081234567890')]);
     $url='/api/v1/bantuan/applications/'.$id.'/remind-survey';
     $this->postJson($url)->assertConflict();
-    $this->postJson($url,['purpose'=>'assignment'])->assertOk()->assertJsonPath('data.message',fn($message)=>str_contains($message,'Jalan Melati Nomor 10, Bogor') && str_contains($message,'Anda mendapat tugas survei'));
+    $response = $this->postJson($url,['purpose'=>'assignment'])->assertOk();
+    $message = $response->json('data.message');
+    $row = Application::findOrFail($id);
+    expect($message)->toContain('Jalan Melati Nomor 10, Bogor', 'Bapak/Ibu mendapat penugasan survei bantuan',
+        $this->verifier->name, $row->number, $row->name, $row->program, 'Mohon konfirmasi kesiapan kunjungan');
+    expect($message)->toContain('No. HP calon penerima: '.$row->applicant['phone']);
+    expect($response->json('data.url'))->toBe('https://wa.me/6281234567890?text='.rawurlencode($message));
     $this->actingAs($this->verifier,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertForbidden();
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();
     $this->actingAs($this->cc,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertConflict();
