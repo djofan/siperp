@@ -1,7 +1,12 @@
-// Error bisnis Tanwir — pesannya aman ditampilkan ke pengguna. Dipisah dari access.ts supaya
-// logika inti tidak bergantung pada next/navigation (bisa diuji di luar Next).
+import { ApiError } from "@/lib/api";
+
+// Error bisnis Tanwir dan validasi API yang aman ditampilkan ke pengguna.
 export class TanwirError extends Error {}
 
 export function errorMessage(error: unknown, fallback = "Data belum dapat disimpan. Coba lagi."): string {
-  return error instanceof TanwirError ? error.message : fallback;
+  if (error instanceof TanwirError) return error.message;
+  if (error instanceof ApiError && error.status >= 400 && error.status < 500) {
+    return Object.values(error.details ?? {}).flat().find((message) => message.trim()) || error.message || fallback;
+  }
+  return fallback;
 }

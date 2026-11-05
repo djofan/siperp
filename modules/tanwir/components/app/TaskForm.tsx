@@ -67,7 +67,9 @@ export function TaskForm({
   }
 
   return (
-    <form action={formAction} className="crud-form space-y-6">
+    // React resets a resolved action even when it returns validation errors.
+    // Keep both the draft fields and the selected task type available for retry.
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form space-y-6">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
 
       <Field label="Judul tugas" htmlFor="task-title">

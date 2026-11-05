@@ -24,7 +24,11 @@ class LearningFileStore
             return ['mime' => 'image/webp', 'ext' => 'webp', 'kind' => 'image'];
         }
         if (str_starts_with($bytes, "\x1a\x45\xdf\xa3")) {
-            return ['mime' => 'video/webm', 'ext' => 'webm', 'kind' => 'video'];
+            $types = $this->webmTrackTypes($file);
+            abort_unless(in_array(1, $types, true) || in_array(2, $types, true), 422, 'File media tidak valid.');
+            $kind = in_array(1, $types, true) ? 'video' : 'audio';
+
+            return ['mime' => $kind.'/webm', 'ext' => 'webm', 'kind' => $kind];
         }
         if (str_starts_with($bytes, 'OggS')) {
             return ['mime' => 'audio/ogg', 'ext' => 'ogg', 'kind' => 'audio'];
@@ -46,6 +50,80 @@ class LearningFileStore
             return ['mime' => $brand === 'qt  ' ? 'video/quicktime' : 'video/mp4', 'ext' => $brand === 'qt  ' ? 'mov' : 'mp4', 'kind' => 'video'];
         }
         abort(422, 'Format file tidak didukung.');
+    }
+
+    private function webmTrackTypes(UploadedFile $file): array
+    {
+        // EBML VINT sizes (RFC 8794); inspect Tracks/TrackEntry/TrackType,
+        // skipping payloads rather than reading a whole 50 MB recording.
+        $stream = fopen($file->getRealPath(), 'rb');
+        abort_unless($stream, 422, 'File tidak dapat dibaca.');
+        $types = [];
+        $docType = null;
+        $remaining = 10000;
+        $vint = function (int $end, bool $id = false) use ($stream): array {
+            abort_if(ftell($stream) >= $end, 422, 'File media tidak valid.');
+            $first = ord(fread($stream, 1));
+            $mask = 0x80;
+            $length = 1;
+            while ($mask && ! ($first & $mask)) {
+                $mask >>= 1;
+                $length++;
+            }
+            abort_if(! $mask || $length > ($id ? 4 : 8) || ftell($stream) + $length - 1 > $end, 422, 'File media tidak valid.');
+            $value = $id ? $first : ($first & ($mask - 1));
+            $unknown = ! $id && $value === $mask - 1;
+            for ($index = 1; $index < $length; $index++) {
+                $byte = ord(fread($stream, 1));
+                $value = ($value << 8) | $byte;
+                $unknown = $unknown && $byte === 0xFF;
+            }
+
+            return [$value, $unknown];
+        };
+        $walk = function (int $start, int $end, string $parent = '') use (&$walk, $stream, $vint, &$types, &$docType, &$remaining): void {
+            for ($offset = $start; $offset < $end;) {
+                abort_if(--$remaining < 0, 422, 'File media tidak valid.');
+                fseek($stream, $offset);
+                [$id] = $vint($end, true);
+                [$size, $unknown] = $vint($end);
+                $body = ftell($stream);
+                // MediaRecorder leaves the Segment size unknown while streaming.
+                abort_if($unknown && ($id !== 0x18538067 || $parent !== ''), 422, 'File media tidak valid.');
+                $size = $unknown ? $end - $body : $size;
+                abort_if($size > $end - $body, 422, 'File media tidak valid.');
+                $next = $body + $size;
+                if (($parent === '' && $id === 0x1A45DFA3) || ($parent === '' && $id === 0x18538067)
+                    || ($parent === 'segment' && $id === 0x1654AE6B) || ($parent === 'tracks' && $id === 0xAE)) {
+                    $child = match ($id) {
+                        0x1A45DFA3 => 'header', 0x18538067 => 'segment', 0x1654AE6B => 'tracks', default => 'entry',
+                    };
+                    $walk($body, $next, $child);
+                    if ($child === 'tracks') {
+                        return;
+                    }
+                } elseif ($parent === 'header' && $id === 0x4282 && $size > 0 && $size <= 16) {
+                    $docType = fread($stream, $size);
+                } elseif ($parent === 'entry' && $id === 0x83 && $size > 0 && $size <= 8) {
+                    $type = 0;
+                    for ($index = 0; $index < $size; $index++) {
+                        $type = ($type << 8) | ord(fread($stream, 1));
+                    }
+                    $types[] = $type;
+                } elseif ($parent === 'segment' && $id === 0x1F43B675) {
+                    // Tracks must precede media clusters; no need to scan media bytes.
+                    return;
+                }
+                $offset = $next;
+            }
+        };
+        try {
+            $walk(0, $file->getSize());
+        } finally {
+            fclose($stream);
+        }
+
+        return $docType === 'webm' ? $types : [];
     }
 
     private function mp4Handlers(UploadedFile $file): array
