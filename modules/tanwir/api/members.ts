@@ -1,4 +1,5 @@
 import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import { prepareProfileForm } from "./profile-form";
 import type * as Domain from "@/contracts/modules/tanwir";
 import type { TanwirMemberRole } from "./access";
 export interface AddressInput {
@@ -24,7 +25,7 @@ export async function setMemberActive(memberId: string, isActive: boolean): Prom
 export type DeleteMemberResult = void;
 export async function deleteMember(memberId: string, _role: TanwirMemberRole): Promise<DeleteMemberResult> { await apiRequest(`tanwir/members/${encodeURIComponent(memberId)}`, { method: "DELETE" }); }
 export type UpdateOwnProfileResult = void;
-export async function updateOwnProfile(memberId: string, form: FormData): Promise<UpdateOwnProfileResult> { await apiRequest("tanwir/profile", { method: "PUT", body: form }); }
+export async function updateOwnProfile(memberId: string, form: FormData): Promise<UpdateOwnProfileResult> { await apiRequest("tanwir/profile", { method: "PUT", body: prepareProfileForm(form) }); }
 export type ChangeOwnPasswordResult = void;
 export async function changeOwnPassword(userId: string, form: FormData): Promise<ChangeOwnPasswordResult> { await apiRequest("tanwir/profile/password", { method: "PUT", body: form }); }
 export type ListMembersResult = {

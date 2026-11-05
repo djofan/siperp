@@ -11,7 +11,7 @@ export function ReviewForm({ action }: { action: (state: ActionState, form: Form
   const [decision, setDecision] = useState<"approved" | "rejected">("approved");
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="space-y-4">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       <input type="hidden" name="decision" value={decision} />
       <div className="grid grid-cols-2 gap-2">
