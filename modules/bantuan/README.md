@@ -42,6 +42,13 @@ LAZSIP atau Payment. Identitas, login, dan izin modul menggunakan Core.
 
 ## Survei, peta, dan review Call Center
 
+- Jika verifikator yang ditugaskan juga memiliki peran Call Center, pengiriman
+  hasil surveinya tetap menuju `survey_cc_review`. Ia dapat memeriksa dan
+  mengoreksi hasilnya sendiri, lalu mengirim ke `survey_submitted` untuk Approver.
+  Pemeriksaan foto dan kelengkapan tetap berlaku; larangan menyetujui pengajuan
+  atau survei sendiri tetap berlaku. Survei oleh petugas tanpa peran Call Center
+  tetap melalui `survey_cc_review`.
+
 - Hasil survei masuk `survey_cc_review`. Call Center memeriksa dan dapat
   menyimpan koreksi hasil survei maupun data pemohon, lalu mengirimnya ke
   `survey_submitted` untuk keputusan Approver. Bukti kunjungan asli dipertahankan.

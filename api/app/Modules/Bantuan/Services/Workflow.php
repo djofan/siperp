@@ -82,7 +82,8 @@ class Workflow
                 $reason = $request->validate(['reason' => 'required|string|min:5|max:5000'])['reason'];
             }
             if (in_array($action, ['survey_review_save', 'survey_review_submit', 'survey_return'], true)) {
-                abort_if($role !== 'admin' && $row->verifier_id === $request->user()->id, 403, 'Review Call Center harus dilakukan petugas selain pelaksana survei.');
+                // Call Center may review their own survey when holding both roles.
+                // Approval decisions still require an independent Approver.
             }
             if (in_array($action, ['review1_approve', 'review1_reject', 'approve', 'review_reject', 'survey_again'], true)) {
                 abort_if($role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');

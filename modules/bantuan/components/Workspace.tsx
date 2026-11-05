@@ -1,4 +1,5 @@
 "use client";
+import { ChangePassword } from "@/modules/core/ChangePassword";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,8 +32,10 @@ import { getAvailableActions, getActionSectionLabel } from "./ActionPanel";
 import { ApplicantHistory } from "./ApplicantHistory";
 import { ApplicationFilters } from "./ApplicationFilters";
 import { DisbursementGroups } from "./DisbursementGroups";
+import { useListView } from "../use-list-view";
 import { ApplicationList } from "./ApplicationList";
 import { SidebarMenu } from "./SidebarMenu";
+import { AccountMenu } from "./AccountMenu";
 import { activeFilterChips, applicationParams, defaultFilters, type ListFilters } from "../list-filters";
 import { Icon } from "./ui";
 import { clearDrafts } from "../api/vault";
@@ -57,7 +60,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   useEffect(()=>{const timer=setTimeout(()=>setSearchState({tab,value:filters.search}),250);return()=>clearTimeout(timer);},[tab,filters.search]);
   const serializedFilters=JSON.stringify({...filters,search:searchState.tab===tab?searchState.value:""});
   const [selection,setSelection]=useState<{key:string;ids:Record<string,boolean>}>({key:"",ids:{}}),[batchAction,setBatchAction]=useState(""),[batchBusy,setBatchBusy]=useState(false),[revision,setRevision]=useState(0);
-  const [view,setView]=useState<"cards"|"table">("cards");
+  const [view,setView]=useListView(viewer?.id);
   const listKey=JSON.stringify([key,number,serializedFilters,revision]);
   const page=loadedListKey&&JSON.parse(loadedListKey)[0]===key?pageData:null;
   const selected=selection.key===listKey?selection.ids:{};
@@ -80,7 +83,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     return()=>{live=false;controller.abort();};
   },[revision]);
   useEffect(()=>{
-    if(!viewerId||!viewerRole||isNew||menuGroups.some(group=>group.key===tab)||["mustahiq","tim","pengaturan","audit","proses","santunan","pengajuan-dana",""].includes(tab))return;
+    if(!viewerId||!viewerRole||isNew||menuGroups.some(group=>group.key===tab)||["akun","mustahiq","tim","pengaturan","audit","proses","santunan","pengajuan-dana",""].includes(tab))return;
     let live=true;const controller=new AbortController();
     if(tab==="pengajuan"&&applicationId){
       void request<AidDetail>(`applications/${encodeURIComponent(applicationId)}`,{signal:controller.signal})
@@ -118,7 +121,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     catch(err){setError(err instanceof Error?err.message:"Notifikasi belum dapat ditandai.");}
     finally{setMarkingAll(false);}
   }
-  async function markRead(note:AidNotification){try{await request(`notifications/${note.id}/read`,{method:"PUT"});setShowNotifications(false);router.push(`/admin/bantuan/pengajuan/${note.application_id}`);reload();}catch(err){setError(String(err));}}
+  async function markRead(note:AidNotification){try{await request(`notifications/${note.id}/read`,{method:"PUT"});setShowNotifications(false);router.push(`/admin/bantuan/pengajuan/${note.application_id}?from=${encodeURIComponent(navTab)}`);reload();}catch(err){setError(String(err));}}
   async function batch(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!page||!batchAction)return;setBatchBusy(true);setError("");const form=new FormData(e.currentTarget);try{
     if(batchAction==="disburse"){const file=form.get("file");if(file instanceof File&&file.size){const prepared=await preparePhoto(file);for(const row of page.data.filter(r=>selected[r.id])){const upload=new FormData();upload.set("kind","transfer");upload.set("file",prepared);await request(`applications/${row.id}/documents`,{method:"POST",body:upload});}}}
     await request("batch",{method:"POST",body:JSON.stringify({action:batchAction,reason:form.get("reason"),reference:form.get("reference"),transferDate:form.get("transferDate"),account:form.get("account"),totalAmount:Number(form.get("totalAmount")),items:page.data.filter(r=>selected[r.id]).map(r=>({id:r.id,version:r.version,amount:Number(amounts[r.id]??r.amount??0),transferAmount:r.amount}))})});setSelected({});setBatchAction("");setBatchSuccess(true);
@@ -135,14 +138,14 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   }
   const allLinks=viewer?navigation(viewer):[];
   const links=viewer?sidebarNavigation(viewer):[];
-  const origin=tab==="pengajuan"&&applicationId&&!isNew?allLinks.find(link=>link.key===searchParams.get("from")):undefined;
+  const origin=tab==="pengajuan"&&applicationId&&!isNew?[...allLinks,...links].find(link=>link.key===searchParams.get("from")):undefined;
   const navTab=origin?.key??tab,navKey=origin?.key??key;
   const activeLink=menuGroups.find(group=>group.key===navTab)??links.find(l=>l.key===navKey)??links.find(l=>l.key===navTab)??allLinks.find(l=>l.key===navTab)??(processInfo(navTab)?links.find(l=>l.key==="proses"):undefined);
   const queue=processInfo(tab);
   const sidebarActiveKey=menuGroups.find(group=>group.key===navTab||allLinks.some(entry=>entry.key===navKey&&entry.group===group.group))?.key??(links.some(link=>link.key===activeLink?.key)?activeLink!.key:queue?"proses":activeLink?.key??"");
   const queueStates=viewer?defaultListStates(viewer,tab):[];
-  const newHref="/admin/bantuan/pengajuan/"+(!!viewer&&!hasAnyRole(viewer,["admin","call_center","requester"])&&hasRole(viewer,"verifier")?"langsung":"baru");
-  const listTitle:Record<string,string>={...(queue?{[tab]:queue.label}:{}),pengajuan:!!viewer&&rolesOf(viewer).every(role=>role==="requester")?"Pengajuan saya":"Semua pengajuan",review:"Antrean persetujuan",survei:queue?.label??"Tugas lapangan",dana:"Pengajuan dana",pencairan:queue?.label??"Pencairan & penyaluran",penyaluran:queue?.label??"Penyerahan bantuan",screening:queue?.label??"Antrean screening",laporan:"Laporan bantuan"};
+  const newHref="/admin/bantuan/pengajuan/"+(!!viewer&&!hasAnyRole(viewer,["admin","call_center","requester"])&&hasRole(viewer,"verifier")?"langsung":"baru")+"?from="+encodeURIComponent(navTab);
+  const listTitle:Record<string,string>={berjalan:"Pengajuan Berjalan",...(queue?{[tab]:queue.label}:{}),pengajuan:!!viewer&&rolesOf(viewer).every(role=>role==="requester")?"Pengajuan saya":"Semua pengajuan",review:"Antrean persetujuan",survei:queue?.label??"Tugas lapangan",dana:"Pengajuan dana",pencairan:queue?.label??"Pencairan & penyaluran",penyaluran:queue?.label??"Penyerahan bantuan",screening:queue?.label??"Antrean screening",laporan:"Laporan bantuan"};
   const isDetail=tab==="pengajuan"&&applicationId&&!isNew;
   const isEdit=isDetail&&route[2]==="edit";
   const selectedRows=page?.data.filter(r=>selected[r.id])??[];
@@ -154,14 +157,15 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     {batchSuccess&&<ProcessSuccess title="Proses massal berhasil" description="Seluruh pengajuan yang dipilih sudah diproses." onContinue={finishBatch}/>}
     {mobile&&<button className={s.mobileOverlay} aria-label="Tutup navigasi" onClick={()=>setMobile(false)}/>}
     <aside className={s.sidebar} data-open={mobile}><Link href="/admin/bantuan" className={s.brand}><span className={s.brandLabel}>LAZSIP</span><strong>Pengajuan bantuan</strong></Link>
-      {viewer&&<SidebarMenu viewer={viewer} dashboard={dashboard} activeKey={sidebarActiveKey} onNavigate={()=>setMobile(false)}/>}
+      {viewer&&<SidebarMenu viewer={viewer} dashboard={dashboard} activeKey={tab==="akun"?"akun":sidebarActiveKey} onNavigate={()=>setMobile(false)}/>}
       <div className={s.sidebarHelp}><Icon name="shield"/><div><strong>Ruang kerja internal</strong><p>Data pribadi hanya untuk petugas berwenang.</p></div></div>
       <div className={s.sidebarFooter}><span className={s.avatar}>{viewer?.name.slice(0,2).toUpperCase()??"…"}</span><div style={{minWidth:0}}><strong style={{fontSize:12}}>{viewer?.name??"Memuat akun…"}</strong><div className={s.tiny}>{viewer?roleLabel(viewer):""}</div></div><button className={s.iconButton} aria-label="Keluar dari akun" title="Keluar" onClick={()=>void logout()} disabled={loggingOut}><Icon name="logout"/></button></div>
     </aside>
-    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{origin?.label??queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}><Link href="/bantuan-app/beranda" className={s.platformButton} title="Aplikasi mobile Bantuan"><Icon name="hand"/><span>Aplikasi mobile</span></Link>{viewer&&<><HelpButton viewer={viewer}/></>}{viewer&&(viewer.canChooseModules??hasRole(viewer,"admin"))&&<Link href="/admin/modul" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link>}<span className={s.pill}>Internal</span><button className={s.iconButton} aria-label={`Notifikasi, ${notifications.filter(n=>!n.read_at).length} belum dibaca`} aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.notificationCount}>{notifications.filter(n=>!n.read_at).length}</span>}</button><div className={s.topProfile}><span className={s.avatar}>{viewer?.name.slice(0,1)??"S"}</span><div><strong>{viewer?.name}</strong><small>{viewer?roleLabel(viewer):""}</small></div></div></div></header>
+    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{tab==="akun"?"Pengaturan akun":origin?.label??queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}><Link href="/bantuan-app/beranda" className={s.platformButton} title="Aplikasi mobile Bantuan"><Icon name="hand"/><span>Aplikasi mobile</span></Link>{viewer&&<><HelpButton viewer={viewer}/></>}{viewer&&(viewer.canChooseModules??hasRole(viewer,"admin"))&&<Link href="/admin/modul" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link>}<span className={s.pill}>Internal</span><button className={s.iconButton} aria-label={`Notifikasi, ${notifications.filter(n=>!n.read_at).length} belum dibaca`} aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.notificationCount}>{notifications.filter(n=>!n.read_at).length}</span>}</button><AccountMenu viewer={viewer} loggingOut={loggingOut} onLogout={()=>void logout()}/></div></header>
     {showNotifications&&<section className={s.popover}><div className={s.cardHeader} style={{padding:"0 0 14px"}}><h2>Notifikasi</h2><button type="button" className={s.link} disabled={markingAll||!notifications.some(n=>!n.read_at)} onClick={()=>void markAllRead()}>{markingAll?"Menandai…":"Tandai semua dibaca"}</button><button className={s.link} onClick={()=>setShowNotifications(false)}>Tutup</button></div>{notifications.length?notifications.map(n=><button key={n.id} className={s.notification} onClick={()=>markRead(n)} style={{fontWeight:n.read_at?400:600}}>{n.message}<small>{day(n.created_at)}</small></button>):<p className={s.tiny}>Belum ada notifikasi baru.</p>}</section>}
     <main className={s.main}>{error&&<div className={`${s.notice} ${s.error}`} role="alert"><span>{error}</span><button aria-label="Tutup pesan" onClick={()=>setError("")}>×</button></div>}
       {!viewer?loading?<LoadingState variant="detail" label="Menyiapkan ruang kerja…"/>:<div className={s.empty}><p>Akses modul belum tersedia. Pastikan Anda mendapat izin dari superadmin.</p><Link className={s.button} href="/admin">Kembali ke platform</Link></div>:
+      tab==="akun"?<section className={s.accountSettings}><div className={s.heading}><div><h1>Pengaturan akun</h1><p>Kelola keamanan akun Anda.</p></div></div><ChangePassword initiallyOpen/></section>:
       tab==="pengajuan-dana"?<FundingRequests viewer={viewer} onChanged={reload}/>:
       isNew?canCreate?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} direct={applicationId==="langsung"}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
       isDetail?!detail&&!error?<LoadingState variant="detail" label="Memuat detail pengajuan…"/>:detail?isEdit?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} initial={detail}/>:<Detail origin={origin} key={`${detail.id}:${detail.status}`} row={detail} viewer={viewer} staff={staff} reload={reload}/>:<div className={s.empty}><h3>Pengajuan belum dapat dimuat</h3><button type="button" className={s.button} onClick={reload}>Coba lagi</button></div>:

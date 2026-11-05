@@ -27,6 +27,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::delete('/{module}/participants/{id}', [ParticipantController::class, 'destroy'])->where('module', 'academy|teknisi');
     Route::get('/auth/me', [SessionController::class, 'show']);
     Route::post('/auth/logout', [SessionController::class, 'destroy']);
+    Route::put('/auth/password', [SessionController::class, 'password'])->middleware('throttle:5,1');
     Route::get('/core/module-accounts', [ManagedAccountController::class, 'index']);
     Route::post('/core/module-accounts', [ManagedAccountController::class, 'store']);
     Route::get('/{module}/viewer', [ModuleSessionController::class, 'viewer'])->where('module', 'tanwir|ojol|academy|teknisi');

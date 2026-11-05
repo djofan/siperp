@@ -14,3 +14,5 @@ export function intakeViewer(viewer: BantuanViewer, direct = false): BantuanView
 export function canEditIntake(viewer: BantuanViewer, row: AidApplication): boolean {
   return hasAnyRole(viewer, ["admin", "call_center"]) || ["draft", "needs_data", "screening"].includes(row.status) && (hasAnyRole(viewer, ["admin", "call_center"]) || row.createdBy === viewer.id && (hasRole(viewer, "requester") && row.source !== "bypass" && ["draft", "needs_data"].includes(row.status) || hasRole(viewer, "verifier") && row.source === "bypass"));
 }
+
+export function canManageOwnPasswordInModule(viewer: RoleViewer & {canChooseModules?:boolean}):boolean { return !viewer.canChooseModules && !hasRole(viewer,"admin"); }

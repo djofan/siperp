@@ -58,6 +58,7 @@ const today=()=>new Date().toLocaleDateString("en-CA");
 export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer: BantuanViewer; reload: () => void }) {
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const kinds=Object.keys(documentLabels).filter(k=>rolesOf(viewer).some(role=>{
+    if(["survey_assigned","survey_cc_review"].includes(row.status)&&(k.startsWith("survey_")||["sktm","ktp","kk","supporting"].includes(k)))return role==="admin"||role==="call_center"||role==="verifier"&&row.verifierId===viewer.id;
     if(k.startsWith("survey_")||k==="sktm"||k==="transfer"||["handover","certificate","receipt","education_other"].includes(k))return false;
     if(["completed","returned","cancelled"].includes(row.status))return false;
     if(role==="admin")return true;
@@ -84,7 +85,6 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
     .filter(a=>viewer.role!=="requester"||row.createdBy===viewer.id&&row.source!=="bypass"&&["draft","needs_data",...(a.key==="cancel"?["screening"]:[])].includes(row.status))
     .filter(a=>viewer.role==="admin"||!(row.intakeRole==="requester"&&row.createdBy===viewer.id&&["screen_pass","screen_reject"].includes(a.key)))
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
-    .filter(a=>viewer.role==="admin"||!(["survey_review_submit","survey_return"].includes(a.key)&&row.verifierId===viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
 }
@@ -125,7 +125,7 @@ const actionHelp:Record<string,string>={
   review1_approve:"Setujui pengajuan ini untuk survei? Setelah disimpan, Call Center dapat menugaskan Verifikator.",
   review1_reject:"Tulis alasan penolakan. Keputusan dan alasannya akan tercatat pada riwayat pengajuan.",
   assign_survey:"Pilih petugas yang akan mengunjungi pemohon dan mengisi hasil survei.",
-  survey_submit:"Lengkapi hasil kunjungan dan foto wajib. Hasilnya dikirim ke Call Center untuk diperiksa sebelum diteruskan ke Approver.",
+  survey_submit:"Lengkapi hasil kunjungan dan foto wajib. Hasil dikirim untuk diperiksa Call Center. Jika Anda juga Call Center, Anda dapat memeriksanya sendiri lalu mengirim ke Approver.",
   survey_decline:"Tulis alasan tidak dapat menjalankan survei. Call Center akan menerima pemberitahuan dan menugaskan petugas lain.",
   survey_review_submit:"Periksa dan koreksi hasil survei serta data pemohon. Kirim setelah lengkap agar Approver dapat meninjau keputusan nominal.",
   survey_return:"Jelaskan bagian survei yang perlu dilengkapi. Hasilnya dikembalikan kepada Verifikator yang ditugaskan.",

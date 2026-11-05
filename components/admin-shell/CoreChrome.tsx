@@ -11,6 +11,7 @@ import dark from "./CoreDark.module.css";
 import { AdminGradientBackground } from "./AdminGradientBackground";
 
 const menuInfo:Record<string,{description:string;icon:typeof Layers3}>={
+  "/admin/pengaturan-akun":{description:"Password dan keamanan akun",icon:ShieldCheck},
   "/admin":{description:"Ringkasan ruang kerja",icon:LayoutDashboard},
   "/admin/modul":{description:"Pilih modul untuk bekerja",icon:Layers3},
   "/admin/super":{description:"Operasional lintas modul",icon:Building2},

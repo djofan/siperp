@@ -53,7 +53,7 @@ export function AppShell({ root, roleLabel, nav, user, children, logoutHref = "/
           <div><div className="lg:hidden"><Wordmark href={root} /></div><p className="hidden text-xs text-ojol-muted lg:block">Ojol Mengaji / {roleLabel.split(" · ")[0]} / <span className="text-ojol-ink">{current?.label ?? "Beranda"}</span></p></div>
           <div className="flex items-center gap-3">
             <div className="hidden items-center gap-3 sm:flex"><Avatar name={user.name} src={user.photo} size={36} /><div><p className="text-xs font-medium">{user.name}</p><p className="text-xs text-ojol-muted">{user.code} · {roleLabel.split(" · ")[0]}</p></div></div>
-            <button type="button" onClick={logout} disabled={leaving} className="flex items-center gap-2 rounded-full px-3 py-2 text-xs text-ojol-muted hover:bg-ojol-primary-soft disabled:opacity-50"><Icon name="logout" className="h-4 w-4" />Keluar</button>
+            <Link href="/akun/password" className="rounded-full px-3 py-2 text-xs">Ubah password</Link><button type="button" onClick={logout} disabled={leaving} className="flex items-center gap-2 rounded-full px-3 py-2 text-xs text-ojol-muted hover:bg-ojol-primary-soft disabled:opacity-50"><Icon name="logout" className="h-4 w-4" />Keluar</button>
           </div>
         </header>
         <main id="ojol-content" className="learning-content px-4 pb-32 pt-7 sm:px-8 lg:pb-12 lg:pt-9">{children}</main>
