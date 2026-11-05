@@ -23,6 +23,24 @@ function bantuanSurvey(): array
         'socialRecord' => 'Baik', 'recommendation' => 'layak'];
 }
 
+it('allows a Call Center verifier to review their own survey before forwarding to an independent approver', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    bantuanRoles($this->verifier, ['verifier', 'call_center']);
+    Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
+    $url = '/api/v1/bantuan/applications/'.$id.'/actions/';
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_submit', ['version' => 1, 'survey' => bantuanSurvey()])
+        ->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
+    $this->postJson($url.'survey_review_save', ['version' => 2, 'survey' => ['background' => 'Koreksi hasil sendiri']])
+        ->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
+    $this->postJson($url.'survey_review_submit', ['version' => 3])
+        ->assertOk()->assertJsonPath('data.status', 'survey_submitted');
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->approver->id)->exists())->toBeTrue();
+    bantuanRoles($this->verifier, ['verifier', 'call_center', 'approver']);
+    $this->postJson($url.'approve', ['version' => 4, 'amount' => 100])->assertForbidden();
+    expect(Application::findOrFail($id)->status)->toBe('survey_submitted');
+});
+
 it('reviews and corrects a full survey and applicant before explicitly forwarding without new evidence', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
@@ -59,7 +77,7 @@ it('reviews and corrects a full survey and applicant before explicitly forwardin
     expect($event->actor_role)->toBe('call_center')->and($details['applicant']['name'])->toBe('Nama dikoreksi');
 });
 
-it('protects CC survey review from self review and unauthorized roles across multiple grants', function (string $relationship) {
+it('protects CC survey review from unauthorized roles across multiple grants', function (string $relationship) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     $user = bantuanUser('verifier');
     bantuanRoles($user, ['verifier', 'call_center', 'approver']);
@@ -67,8 +85,6 @@ it('protects CC survey review from self review and unauthorized roles across mul
     foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) bantuanDoc($id, $kind);
     DB::table('bantuan_documents')->where('application_id', $id)->update(['used_at' => now()]);
     foreach (['survey_review_save', 'survey_review_submit', 'survey_return'] as $action) {
-        $this->actingAs($user, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action,
-            ['version' => 1, 'reason' => 'Perbaiki informasi survei.', 'role' => 'admin'])->assertForbidden();
         $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action,
             ['version' => 1, 'reason' => 'Perbaiki informasi survei.'])->assertForbidden();
     }
@@ -1442,7 +1458,13 @@ it('prepares immediate survey assignment details only for call center with an ac
     DB::table('bantuan_staff')->updateOrInsert(['user_id'=>$this->verifier->id],['phone'=>Crypt::encryptString('081234567890')]);
     $url='/api/v1/bantuan/applications/'.$id.'/remind-survey';
     $this->postJson($url)->assertConflict();
-    $this->postJson($url,['purpose'=>'assignment'])->assertOk()->assertJsonPath('data.message',fn($message)=>str_contains($message,'Jalan Melati Nomor 10, Bogor') && str_contains($message,'Anda mendapat tugas survei'));
+    $response = $this->postJson($url,['purpose'=>'assignment'])->assertOk();
+    $message = $response->json('data.message');
+    $row = Application::findOrFail($id);
+    expect($message)->toContain('Jalan Melati Nomor 10, Bogor', 'Bapak/Ibu mendapat penugasan survei bantuan',
+        $this->verifier->name, $row->number, $row->name, $row->program, 'Mohon konfirmasi kesiapan kunjungan');
+    expect($message)->toContain('No. HP calon penerima: '.$row->applicant['phone']);
+    expect($response->json('data.url'))->toBe('https://wa.me/6281234567890?text='.rawurlencode($message));
     $this->actingAs($this->verifier,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertForbidden();
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();
     $this->actingAs($this->cc,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertConflict();

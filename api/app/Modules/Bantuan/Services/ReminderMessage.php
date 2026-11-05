@@ -19,9 +19,19 @@ class ReminderMessage
     {
         $address = $row->status === 'survey_assigned' ? ($row->survey_location['address'] ?? null) : null;
         $address = $address ?: ($row->applicant['street'] ?? $row->region ?? 'Belum dicatat');
+        $contact = '';
+        if ($row->status === 'survey_assigned') {
+            $contact = "\nNo. HP calon penerima: ".(trim((string) ($row->applicant['phone'] ?? '')) ?: 'Belum dicatat; mohon hubungi Call Center');
+            $reporterPhone = trim((string) ($row->applicant['reporterPhone'] ?? ''));
+            if ($reporterPhone !== '') {
+                $contact .= "\nKontak pelapor: ".($row->applicant['reporterName'] ?? 'Pelapor')." (".$reporterPhone.")";
+            }
+            $contact .= "\nMohon hubungi calon penerima atau pelapor untuk memastikan alamat dan waktu kunjungan sebelum berangkat.";
+        }
         return "Nomor pengajuan: ".$row->number."\nNama pemohon: ".$row->name."\nProgram bantuan: ".$row->program
             ."\nTugas: ".(Whatsapp::TASKS[$row->status][1] ?? $row->status)
             ."\nAlamat".($row->status === 'survey_assigned' ? ' survei' : '').': '.$address
+            .$contact
             ."\nKebutuhan / masalah: ".($row->applicant['problem'] ?? 'Silakan periksa data pengajuan')
             ."\nNominal bantuan: ".($row->amount !== null ? 'Rp '.number_format($row->amount, 0, ',', '.') : 'Belum ditetapkan');
     }
