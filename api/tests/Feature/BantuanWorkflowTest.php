@@ -23,6 +23,19 @@ function bantuanSurvey(): array
         'socialRecord' => 'Baik', 'recommendation' => 'layak'];
 }
 
+it('keeps Call Center monitoring separate from their own verifier tasks', function () {
+    bantuanRoles($this->cc, ['call_center', 'verifier']);
+    foreach ([$this->cc->id, $this->verifier->id] as $verifier) {
+        $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $verifier])->save();
+    }
+    $this->getJson('/api/v1/bantuan/dashboard')->assertOk()
+        ->assertJsonPath('data.byStatus.survey_assigned', 2)
+        ->assertJsonPath('data.taskCounts.survey.survey_assigned', 1);
+    $this->getJson('/api/v1/bantuan/applications?states=survey_assigned&task=survey')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/bantuan/applications?states=survey_assigned')->assertOk()->assertJsonCount(2, 'data');
+});
+
 it('allows assigned verifier and call center to append missing survey documents during CC review', function (string $kind) {
     Storage::fake('local');
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
@@ -1153,7 +1166,7 @@ it('matches task lists and badges to the union of verifier call center admin and
     'secondary verifier restricts both' => [['fund_requester', 'verifier'], 1, 1],
     'treasurer retains assigned distribution' => [['verifier', 'treasurer'], 1, 1],
     'secondary verifier retains assigned distribution' => [['treasurer', 'verifier'], 1, 1],
-    'secondary call center frees both' => [['verifier', 'call_center'], 3, 3],
+    'secondary call center retains own field tasks' => [['verifier', 'call_center'], 1, 1],
     'admin frees both' => [['admin', 'verifier'], 3, 3],
 ]);
 

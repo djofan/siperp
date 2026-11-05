@@ -76,7 +76,7 @@ class ApplicationQuery
 
     public function task(Builder $query, Request $request, Access $access, string $task): Builder
     {
-        if (! $access->has($request, ['admin', 'call_center'])) {
+        if (! $access->has($request, ['admin'])) {
             if ($task === 'distribution') {
                 $query->where(function ($assigned) use ($request, $access) {
                     $assigned->whereRaw('1 = 0');
