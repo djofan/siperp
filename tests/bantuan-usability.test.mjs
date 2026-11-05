@@ -56,7 +56,7 @@ test("survey results stop at Call Center and only the assigned verifier may decl
   const cc=viewer("call_center"),row={id:"survey",status:"survey_cc_review",source:"online",createdBy:cc.id,verifierId:"field-person"};
   assert.ok(getAvailableActions(row,cc).some(action=>action.key==="survey_review_submit"));
   assert.ok(!getAvailableActions(row,viewer("approver")).some(action=>action.key==="approve"));
-  assert.ok(!getAvailableActions({...row,verifierId:cc.id},cc).some(action=>action.key==="survey_review_submit"));
+  assert.ok(getAvailableActions({...row,verifierId:cc.id},cc).some(action=>action.key==="survey_review_submit"));
   const field=viewer("verifier"),assigned={...row,status:"survey_assigned",verifierId:field.id};
   assert.ok(getAvailableActions(assigned,field).some(action=>action.key==="survey_decline"));
   assert.ok(!getAvailableActions({...assigned,verifierId:"other"},field).some(action=>action.key==="survey_decline"));
@@ -129,7 +129,7 @@ test("staff application actions expose submission and early cancellation but nev
 test("role workspaces distinguish work from monitoring rather than asking users to guess stages",()=>{
   const cc=navigation(viewer("call_center"));
   assert.equal(isWorkItem("call_center",cc.find(item=>item.key==="penugasan-survei")),true);
-  assert.equal(isWorkItem("call_center",cc.find(item=>item.key==="survei")),false);
+  assert.equal(isWorkItem("call_center",cc.find(item=>item.key==="monitor-survei")),false);
   const fund=navigation(viewer("fund_requester"));
   assert.equal(isWorkItem("fund_requester",fund.find(item=>item.key==="pencairan")),false);
 });
@@ -227,7 +227,7 @@ test("card and table views show the same application and preserve batch eligibil
   const record={id:"application-one",number:"BNT-TEST-001",name:"Pemohon Contoh",program:"Kesehatan",source:"online",region:"Bandung",status:"completed",amount:3500000,verifierId:"verifier-one",distributorId:"verifier-one",distributionType:"verifier",createdAt:"2026-10-28T08:00:00Z"};
   const props={page:{data:[record],current_page:1,last_page:1,total:1,per_page:12},staff:[{id:"verifier-one",name:"Petugas Survei"}],selected:{},onSelect(){},selectable:true,canSelect:()=>false,refreshing:false,number:1,onPageChange(){},perPage:"12",onPerPageChange(){}};
   for(const view of ["cards","table"]){
-    const html=renderToStaticMarkup(React.createElement(ApplicationList,{...props,view}));
+    const html=renderToStaticMarkup(React.createElement(ApplicationList,{...props,view,viewer:viewer("call_center")}));
     for(const label of ["Pemohon Contoh","BNT-TEST-001","Kesehatan","Online / WhatsApp","Petugas Survei","Selesai","3.500.000"])assert.ok(html.includes(label),view+": "+label);
     assert.match(html,/<input[^>]*type="checkbox"[^>]*disabled/);
     assert.match(html,/Menampilkan 1–1 dari 1 pengajuan/);

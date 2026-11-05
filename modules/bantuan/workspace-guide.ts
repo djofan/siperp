@@ -1,6 +1,6 @@
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";
 import type { NavEntry } from "./policy";
-import { rolesOf, hasRole, hasAnyRole, type RoleViewer } from "./permissions";
+import { rolesOf, hasRole, type RoleViewer } from "./permissions";
 
 const tasks: Record<string, string[]> = {
   requester: ["perlu-dilengkapi", "draft"],
@@ -17,7 +17,7 @@ export function isWorkItem(role: string | RoleViewer, item: NavEntry): boolean {
 }
 export function queueCount(viewer: BantuanViewer, dashboard: AidDashboard | null, item: NavEntry): number | null {
   if (!dashboard) return null;
-  const assigned = !hasAnyRole(viewer,["admin","call_center"]) && (item.task==="distribution"||hasRole(viewer,"verifier"));
+  const assigned = !hasRole(viewer,"admin") && (item.task==="distribution"||hasRole(viewer,"verifier"));
   const counts = assigned && item.task ? dashboard.taskCounts?.[item.task] : dashboard.byStatus;
   return counts ? (item.states ?? []).reduce((sum, state) => sum + Number(counts[state] ?? 0), 0) : null;
 }
