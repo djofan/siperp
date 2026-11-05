@@ -52,7 +52,7 @@ test("santunan uses compact cards without changing its transfer and two evidence
   assert.match(page,/className=\{d.cards\}/);
   assert.match(page,/hidden=\{!showCreate\}/);
   assert.match(page,/hidden=\{expanded!==row.id\}/);
-  assert.match(page,/for\(const kind of \["aid_paper","recipient_photo"\]\)/);
+  assert.match(page,/for\(const kind of \["aid_paper","recipient_photo","transfer_receipt"\]\)/);
   assert.match(page,/santunan\/\$\{row.id\}\/transferred/);
   assert.match(page,/santunan\/\$\{row.id\}\/complete/);
   assert.match(page,/version:row.version/);

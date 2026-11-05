@@ -7,7 +7,7 @@ export const routineCardTemplates = {
   tahfidz: { label: "Lembaga Tahfidz", image: "/bantuan/templates/lembaga-tahfidz.png" },
 } satisfies Record<SantunanCategory, {label:string;image:string}>;
 
-export interface SantunanCardValues { category: SantunanCategory; amount: number; verifier: string; recipient: string; date: string }
+export interface SantunanCardValues { category: SantunanCategory; frequency: "routine"|"non_routine"; amount: number; verifier: string; recipient: string; date: string }
 
 function centered(ctx: CanvasRenderingContext2D, value: string, x: number, y: number, maxWidth: number, size: number) {
   ctx.font = `900 ${size}px Arial, sans-serif`;
@@ -49,6 +49,12 @@ export async function renderSantunanCard(canvas: HTMLCanvasElement, values: Sant
   ctx.drawImage(image, 0, 0);
   ctx.scale(canvas.width / 842.25, canvas.height / 595.5);
   ctx.fillStyle = "#00671a"; ctx.textAlign = "center";
+  if (values.frequency === "non_routine") {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(140, 176, 560, 48);
+    ctx.fillStyle = "#00671a";
+    centered(ctx, "BANTUAN YATIM TIDAK RUTIN", 421, 216, 700, 34);
+  }
   centered(ctx, `Rp ${new Intl.NumberFormat("id-ID").format(values.amount)}`, 421, 331, 685, 82);
   name(ctx, values.verifier, 215);
   name(ctx, values.recipient, 494);
