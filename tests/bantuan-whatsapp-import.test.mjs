@@ -8,6 +8,30 @@ vm.runInNewContext(ts.transpileModule(readFileSync('modules/bantuan/whatsapp-imp
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS },
 }).outputText, sandbox);
 const parse = sandbox.exports.parseWhatsappMessage;
+
+test('does not append unpunctuated contact and notes headings to survey needs', () => {
+  const r=parse('📝 Kebutuhan Bantuan yang diperlukan : Modal usaha\n*2️⃣ 5️⃣ Kerabat atau Tetangga yang Bisa Dihubungi*\nBapak Rahmat 081234567890\n*2️⃣ 6️⃣ Catatan Catatan yang Perlu Ditambahkan*\nMemiliki dua anak.\n📌 Nama Relawan Verifikator : Suparta');
+  assert.equal(r.survey.needs,'Modal usaha');
+  assert.ok(r.survey.notes.includes('Memiliki dua anak.'));
+  assert.ok(!r.survey.needs.includes('Kerabat'));
+});
+
+test('separates survey headings without colons and spaced emoji numbers', () => {
+  const r=parse('📝 Kebutuhan Bantuan yang diperlukan\nBantuan modal usaha.\nSehingga kebutuhan keluarga terpenuhi.\n2️⃣ 0️⃣ Usaha serta Upaya yang Telah Dilakukan\nBerjualan telur gulung.\n2️⃣1️⃣ Pengamatan Visual kondisi tempat tinggal menurut Verifikator\nRumah kontrakan sederhana.\n2️⃣2️⃣ Sudah Berapa Lama Tinggal di Tempat Sekarang\n5 tahun\n2️⃣3️⃣ Track Record Serta kondisi Sosial di Masyarakat\nHubungan tetangga baik.\n📌 Nama Relawan Verifikator\nSuparta');
+  assert.equal(r.survey.needs,'Bantuan modal usaha.\nSehingga kebutuhan keluarga terpenuhi.');
+  assert.equal(r.survey.efforts,'Berjualan telur gulung.');
+  assert.equal(r.survey.homeObservation,'Rumah kontrakan sederhana.');
+  assert.equal(r.survey.stayDuration,5);
+  assert.equal(r.survey.socialRecord,'Hubungan tetangga baik.');
+  assert.ok(!JSON.stringify(r.survey).includes('Suparta'));
+});
+
+test('keeps narrative lines as answers and stops at unknown numbered questions', () => {
+  const r=parse('Latar belakang\nKeluarga berpenghasilan rendah.\nUsaha keluarga sedang sepi.\n99. Pertanyaan baru yang tidak dikenal\nJawaban tidak boleh masuk latar belakang\nKondisi saat ini\nMemerlukan bantuan.');
+  assert.equal(r.survey.background,'Keluarga berpenghasilan rendah.\nUsaha keluarga sedang sepi.');
+  assert.equal(r.survey.currentCondition,'Memerlukan bantuan.');
+  assert.equal(r.warnings.length,1);
+});
 test('keeps applicant and optional reporter identities separate', () => {
   const result = parse('📝 Data Pemohon calon penerima Manfaat\n1️⃣ Nama : Ahmad\n2️⃣ NIK : 3201010101010001\n📝 Data pelapor.\n*️⃣ Nama : Siti\n*️⃣ No Telp : 081234567890');
   assert.equal(result.applicant.name, 'Ahmad');

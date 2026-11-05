@@ -23,6 +23,23 @@ function bantuanSurvey(): array
         'socialRecord' => 'Baik', 'recommendation' => 'layak'];
 }
 
+it('allows assigned verifier and call center to append missing survey documents during CC review', function (string $kind) {
+    Storage::fake('local');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_cc_review', 'verifier_id' => $this->verifier->id])->save();
+    $old = bantuanDoc($id, 'survey_front');
+    DB::table('bantuan_documents')->where('id', $old)->update(['used_at' => now()]);
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
+    foreach ([$this->verifier, $this->cc] as $actor) {
+        $this->actingAs($actor, 'sanctum')->post('/api/v1/bantuan/applications/'.$id.'/documents',
+            ['kind' => $kind, 'file' => UploadedFile::fake()->createWithContent('tambahan.png', $png)], ['Accept' => 'application/json'])->assertCreated();
+    }
+    expect(DB::table('bantuan_documents')->where('id', $old)->value('deleted_at'))->toBeNull();
+    expect(Application::findOrFail($id)->status)->toBe('survey_cc_review');
+    $this->actingAs(bantuanUser('verifier'), 'sanctum')->post('/api/v1/bantuan/applications/'.$id.'/documents',
+        ['kind' => $kind, 'file' => UploadedFile::fake()->createWithContent('lain.png', $png)], ['Accept' => 'application/json'])->assertStatus(404);
+})->with(['sktm', 'survey_other', 'ktp', 'kk', 'supporting']);
+
 it('allows a Call Center verifier to review their own survey before forwarding to an independent approver', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     bantuanRoles($this->verifier, ['verifier', 'call_center']);
