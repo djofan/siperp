@@ -58,6 +58,7 @@ const today=()=>new Date().toLocaleDateString("en-CA");
 export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer: BantuanViewer; reload: () => void }) {
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const kinds=Object.keys(documentLabels).filter(k=>rolesOf(viewer).some(role=>{
+    if(["survey_assigned","survey_cc_review"].includes(row.status)&&(k.startsWith("survey_")||["sktm","ktp","kk","supporting"].includes(k)))return role==="admin"||role==="call_center"||role==="verifier"&&row.verifierId===viewer.id;
     if(k.startsWith("survey_")||k==="sktm"||k==="transfer"||["handover","certificate","receipt","education_other"].includes(k))return false;
     if(["completed","returned","cancelled"].includes(row.status))return false;
     if(role==="admin")return true;

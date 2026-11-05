@@ -97,13 +97,25 @@ export function parseWhatsappMessage(message:string):MessageImport {
   const result:MessageImport={applicant:{},survey:{},warnings:[]};
   let reporter=false;
   const entries:{label:string;value:string;reporter:boolean}[]=[];
+  let current:typeof entries[number]|undefined;
   for(const raw of message.replace(/\r/g,"").split("\n")){
     const line=raw.replace(/[\uFE0F\u20E3]/g,"").replace(/^\s*(?:[0-9]+[.)]?\s+(?=\p{L})|[🚨📝🔰📌*•#-]+\s*)/u,"").replace(/[*_]/g,"").trim();
-    if(/data pelapor/i.test(line)){reporter=true;continue;}
-    if(/data pemohon/i.test(line)){reporter=false;continue;}
+    if(/^data pelapor/i.test(clean(line))){reporter=true;current=undefined;continue;}
+    if(/^data pemohon/i.test(clean(line))){reporter=false;current=undefined;continue;}
     const parts=line.match(/^(.+?)\s*(?::|：|=|\s[-–—]\s)\s*(.*)$/);
-    if(parts){entries.push({label:reporter?key(parts[1]):canonical(key(parts[1].replace(/\([^)]*\)/g,""))),value:parts[2].trim(),reporter});}
-    else if(entries.length&&line&&!/form |data pemohon|sip\/lazsip/i.test(line)){entries[entries.length-1].value+="\n"+raw.trim();}
+    if(parts){current={label:reporter?key(parts[1]):canonical(key(parts[1].replace(/\([^)]*\)/g,""))),value:parts[2].trim(),reporter};entries.push(current);}
+    else {
+      const label=canonical(key(line.replace(/\([^)]*\)/g,"")));
+      const marked=/^\s*(?:\d{1,2}[.)]\s+|\d[\d\s\uFE0F\u20E3]*\u20E3|[📝📌])/u.test(raw);
+      const recognized=[...textFields,...surveyFields].some(([pattern])=>pattern.test(label))||/^(?:tempat tanggal lahir|usia|umur|jenis kelamin|penghasilan|berapa biaya|jumlah tanggungan|sholat|merokok|apakah sudah pernah dibantu|bersedia dipublikasi|bersedia mengurus sktm|sudah memiliki sktm|sudah berapa lama tinggal|tanggal verifikasi|kerabat atau tetangga)/.test(label);
+      const plainHeading=/^(?:latar belakang|kondisi saat ini|kebutuhan bantuan(?: yang (?:diperlukan|dibutuhkan))?|usaha serta upaya(?: yang telah dilakukan)?|pengamatan visual kondisi tempat tinggal(?: menurut verifikator)?|catatan tambahan)$/i.test(label);
+      if(recognized&&(marked||plainHeading)){
+        current={label,value:"",reporter};entries.push(current);
+      }else if(marked){
+        current=undefined;
+        result.warnings.push(`Judul “${clean(line)}” belum dikenali. Periksa dan isi kolom terkait secara manual.`);
+      }else if(current&&line&&!/^form\b/i.test(clean(line))){current.value+=(current.value?"\n":"")+raw.trim();}
+    }
   }
   const seen=new Set<string>();
   for(const entry of entries){
