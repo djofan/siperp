@@ -109,7 +109,7 @@ export function parseWhatsappMessage(message:string):MessageImport {
       const marked=/^\s*(?:\d{1,2}[.)]\s+|\d[\d\s\uFE0F\u20E3]*\u20E3|[📝📌])/u.test(raw);
       const recognized=[...textFields,...surveyFields].some(([pattern])=>pattern.test(label))||/^(?:tempat tanggal lahir|usia|umur|jenis kelamin|penghasilan|berapa biaya|jumlah tanggungan|sholat|merokok|apakah sudah pernah dibantu|bersedia dipublikasi|bersedia mengurus sktm|sudah memiliki sktm|sudah berapa lama tinggal|tanggal verifikasi|kerabat atau tetangga)/.test(label);
       const plainHeading=/^(?:latar belakang|kondisi saat ini|kebutuhan bantuan(?: yang (?:diperlukan|dibutuhkan))?|usaha serta upaya(?: yang telah dilakukan)?|pengamatan visual kondisi tempat tinggal(?: menurut verifikator)?|catatan tambahan)$/i.test(label);
-      if(recognized&&(marked||plainHeading)){
+      if(recognized&&(marked||plainHeading||/^(?:kerabat atau tetangga|catatan catatan|apa kritik|kritik serta saran|sudah berapa lama tinggal|track record|pengamatan visual|usaha serta upaya)/.test(label))){
         current={label,value:"",reporter};entries.push(current);
       }else if(marked){
         current=undefined;

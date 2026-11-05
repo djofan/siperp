@@ -9,6 +9,13 @@ vm.runInNewContext(ts.transpileModule(readFileSync('modules/bantuan/whatsapp-imp
 }).outputText, sandbox);
 const parse = sandbox.exports.parseWhatsappMessage;
 
+test('does not append unpunctuated contact and notes headings to survey needs', () => {
+  const r=parse('📝 Kebutuhan Bantuan yang diperlukan : Modal usaha\n*2️⃣ 5️⃣ Kerabat atau Tetangga yang Bisa Dihubungi*\nBapak Rahmat 081234567890\n*2️⃣ 6️⃣ Catatan Catatan yang Perlu Ditambahkan*\nMemiliki dua anak.\n📌 Nama Relawan Verifikator : Suparta');
+  assert.equal(r.survey.needs,'Modal usaha');
+  assert.ok(r.survey.notes.includes('Memiliki dua anak.'));
+  assert.ok(!r.survey.needs.includes('Kerabat'));
+});
+
 test('separates survey headings without colons and spaced emoji numbers', () => {
   const r=parse('📝 Kebutuhan Bantuan yang diperlukan\nBantuan modal usaha.\nSehingga kebutuhan keluarga terpenuhi.\n2️⃣ 0️⃣ Usaha serta Upaya yang Telah Dilakukan\nBerjualan telur gulung.\n2️⃣1️⃣ Pengamatan Visual kondisi tempat tinggal menurut Verifikator\nRumah kontrakan sederhana.\n2️⃣2️⃣ Sudah Berapa Lama Tinggal di Tempat Sekarang\n5 tahun\n2️⃣3️⃣ Track Record Serta kondisi Sosial di Masyarakat\nHubungan tetangga baik.\n📌 Nama Relawan Verifikator\nSuparta');
   assert.equal(r.survey.needs,'Bantuan modal usaha.\nSehingga kebutuhan keluarga terpenuhi.');
