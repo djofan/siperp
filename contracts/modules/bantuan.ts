@@ -73,5 +73,5 @@ export interface SantunanRecord {
   transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
   transferredAt: string|null; completedAt: string|null; version: number;
   report: { distributionDate:string; location:string; recipient:string; description:string }|null;
-  documents: { id:string; kind:"aid_paper"|"recipient_photo"; created_at:string }[];
+  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; created_at:string }[];
 }

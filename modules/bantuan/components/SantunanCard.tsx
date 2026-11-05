@@ -18,13 +18,13 @@ export function SantunanCard({row,verifier,onClose}:{row:SantunanRecord;verifier
     if (!target || !date || !verifier) return;
     // Render offscreen so an older image load cannot overwrite a newer date.
     const buffer = document.createElement("canvas");
-    renderSantunanCard(buffer,{category:row.category,amount:row.amount,verifier,recipient:row.recipientName,date}).then(()=>{
+    renderSantunanCard(buffer,{category:row.category,frequency:row.frequency,amount:row.amount,verifier,recipient:row.recipientName,date}).then(()=>{
       if (!live) return;
       target.width=buffer.width;target.height=buffer.height;
       target.getContext("2d")?.drawImage(buffer,0,0);setReady(true);
     }).catch(()=>{if(live){setError("Kartu belum dapat dibuat. Tutup lalu coba lagi.");setReady(false);}});
     return ()=>{live=false;};
-  },[row.category,row.amount,row.recipientName,verifier,date]);
+  },[row.frequency,row.category,row.amount,row.recipientName,verifier,date]);
   async function download(format:"jpg"|"pdf") {
     if (!canvas.current || !ready || !verifier) return;
     setBusy(true);setError("");
@@ -36,7 +36,7 @@ export function SantunanCard({row,verifier,onClose}:{row:SantunanRecord;verifier
       link.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
     } catch {setError("Unduhan gagal. Coba kembali.");} finally {setBusy(false);}
   }
-  return <Dialog title={`Kertas bantuan - ${routineCardTemplates[row.category].label}`} description="Nominal, verifikator, dan penerima mengikuti data santunan. Pilih tanggal yang akan dicetak; pilihan ini tidak mengubah laporan penyaluran." onClose={onClose} wide>
+  return <Dialog title={`Kertas bantuan - ${row.frequency==="non_routine"?"Anak yatim tidak rutin":routineCardTemplates[row.category].label}`} description="Nominal, verifikator, dan penerima mengikuti data santunan. Pilih tanggal yang akan dicetak; pilihan ini tidak mengubah laporan penyaluran." onClose={onClose} wide>
     <label className={s.field}>Tanggal pada kartu<input className={s.input} type="date" required value={date} onChange={e=>{setReady(false);setError("");setDate(e.target.value);}}/></label>
     {!verifier&&<p className={s.fieldError} role="alert">Nama penyalur tidak ditemukan. Periksa akun pada Tim & akses, lalu muat ulang daftar santunan.</p>}
     {error&&<p className={s.fieldError} role="alert">{error}</p>}

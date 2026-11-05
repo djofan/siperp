@@ -98,6 +98,14 @@ document.paths['/api/v1/bantuan/pwa/devices']={
   post:{summary:'Register or rotate the current web sessions PWA FCM device',description:'Requires active next-server session, Bantuan access and configured Firebase Web/VAPID. Token encrypted at rest; one registration per web session. Repeat preserves registration start date; a shared browser token changes owner atomically.',requestBody:{required:true,content:json({type:'object',required:['token'],properties:{token:{type:'string',minLength:1,maxLength:4096,writeOnly:true}}})},responses:{204:mobileNoContent,401:error,403:error,422:error,429:error,503:error}},
   delete:{summary:'Unregister the current web sessions PWA device',description:'Remains available after Bantuan access is revoked. Other sessions and native registrations remain untouched.',responses:{204:mobileNoContent,401:error,403:error,429:error}},
 };
+// Private santunan evidence: only the two original photos are mandatory.
+document.paths['/api/v1/bantuan/santunan/{id}/documents'] = {post:{
+  tags:['Bantuan'], summary:'Upload private santunan evidence',
+  description:'Assigned volunteer or module admin; only after transfer and before completion. transfer_receipt is optional and never replaces aid_paper or recipient_photo. One file per kind; encrypted storage.',
+  security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}}],
+  requestBody:{required:true,content:{'multipart/form-data':{schema:{type:'object',required:['kind','file'],properties:{kind:{type:'string',enum:['aid_paper','recipient_photo','transfer_receipt']},file:{type:'string',format:'binary',description:'JPEG, PNG or WEBP; maximum 2048 KiB'}}}}}},
+  responses:{201:{description:'Evidence uploaded',content:json({type:'object',required:['data'],properties:{data:{type:'object',required:['id','kind'],properties:{id:{type:'string',format:'uuid'},kind:{type:'string',enum:['aid_paper','recipient_photo','transfer_receipt']}}}}})},401:error,403:error,404:error,409:error,422:error,503:error},
+}};
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
