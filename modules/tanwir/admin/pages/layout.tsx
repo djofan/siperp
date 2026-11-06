@@ -19,6 +19,7 @@ export default async function TanwirAdminLayout({ children }: { children: React.
         { href: "/admin/tanwir/guru", label: "Guru", icon: "user" },
         { href: "/admin/tanwir/peserta", label: "Peserta", icon: "students" },
         { href: "/admin/tanwir/kelompok", label: "Kelompok", icon: "map" },
+        { href: "/admin/tanwir/laporan", label: "Laporan", icon: "tasks" },
         { href: "/admin/tanwir/tugas", label: "Monitor Tugas", icon: "tasks" },
         { href: "/admin/tanwir/anak-didik", label: "Anak Didik", icon: "students" },
         { href: "/admin", label: "Kembali ke Core", icon: "arrowLeft" },

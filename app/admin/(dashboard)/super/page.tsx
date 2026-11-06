@@ -1,3 +1,4 @@
+import { LearningDashboardReport } from "@/components/learning-reports/ReportPage";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatCard } from "@/components/ui/StatCard";
 import { UsersIcon, ShieldIcon, GridIcon } from "@/components/ui/icons";
@@ -33,6 +34,8 @@ export default async function SuperadminOverviewPage({ searchParams }: { searchP
         <StatCard icon={<GridIcon className="h-5 w-5" />} label="Perubahan akses (7 hari)" value={accessChanges7d} />
       </div>
 
+      <LearningDashboardReport module="tanwir" from={period.from} to={period.to}/>
+      <LearningDashboardReport module="ojol" from={period.from} to={period.to}/>
       <OperationalOverview from={period.from} to={period.to} />
       <div className="mt-8">
         <h2 className="mb-3 text-sm font-medium text-foreground/60">Aktivitas Terbaru</h2>

@@ -1,3 +1,4 @@
+import { LearningDashboardReport } from "@/components/learning-reports/ReportPage";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { buttonVariants } from "@/components/ui/Button";
@@ -8,8 +9,9 @@ import { adminSummary, mapPoints, recentMembers } from "@/modules/tanwir/api/das
 import { SpreadMap } from "@/modules/tanwir/components/admin/SpreadMap";
 import { Avatar, formatDate } from "@/modules/tanwir/components/ui";
 
-export default async function TanwirAdminDashboard() {
+export default async function TanwirAdminDashboard({searchParams}:{searchParams:Promise<{from?:string;to?:string}>}) {
   const viewer = await requireTanwirAdmin();
+  const period=await searchParams;
   const [summary, points, recent] = await Promise.all([adminSummary(), mapPoints(), recentMembers()]);
 
   return (
@@ -19,6 +21,8 @@ export default async function TanwirAdminDashboard() {
         description="Pembinaan hafalan guru ngaji TPQ. Kelola guru, peserta, dan kelompok; pantau tugas dan setoran."
       />
 
+      <form className="flex flex-wrap items-end gap-3 text-sm"><label>Periode tugas dari<input type="date" name="from" defaultValue={period.from} className="block rounded-lg bg-surface p-2"/></label><label>Sampai<input type="date" name="to" defaultValue={period.to} className="block rounded-lg bg-surface p-2"/></label><button className="rounded-lg bg-surface px-4 py-2">Terapkan periode</button></form>
+      <LearningDashboardReport module="tanwir" from={period.from} to={period.to}/>
       <div className="tanwir-dashboard-primary">
       <DirectorySummary items={[
         { label: "Guru", value: summary.guru, detail: "Guru pembimbing terdaftar", icon: "user" },

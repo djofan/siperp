@@ -7,7 +7,7 @@ import palette from "./palette.module.css";
 
 export default function OjolSiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className={styles.site}>
       <header className={`program-header ${palette.theme} ${styles.header}`}>
         <div className={styles.inner}>
           <Link href="/ojol" className={styles.brand} aria-label="Ojol Mengaji — beranda"><Icon name="mic" className={styles.brandIcon} /><span className={styles.brandText}>Ojol Mengaji</span></Link>
@@ -41,49 +41,12 @@ export default function OjolSiteLayout({ children }: { children: React.ReactNode
 
       <main className="flex-1">{children}</main>
 
-      <footer className={`program-footer ${palette.theme} ${footer.footer}`}>
-        <div className={footer.grid}>
-          <div>
-            <Link href="/ojol" className={footer.brand}><Icon name="mic" />Ojol Mengaji</Link>
-            <p className={footer.description}>
-              Ruang belajar Al-Qur’an untuk driver ojek online.
-              <span className={footer.institution}>Program LAZ Solidaritas Insan Peduli</span>
-            </p>
-          </div>
-          <nav aria-label="Navigasi footer" className={footer.navigation}>
-            <ul className={footer.links}>
-              {SITE_NAV.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="transition-colors hover:text-white">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            <ul className={`${footer.links} ${footer.access}`}>
-              <li>
-                <Link href="/ojol/masuk" className="transition-colors hover:text-white">
-                  Masuk
-                </Link>
-              </li>
-              <li>
-                <a href={whatsappAdminHref()} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white">
-                  Hubungi admin
-                </a>
-              </li>
-              <li>
-                <Link href="/lazsip" className="transition-colors hover:text-white">
-                  LAZ SIP
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        </div>
-        <div className={footer.bottom}>
-          <span>© {new Date().getFullYear()} LAZ Solidaritas Insan Peduli</span>
-          <span>Belajar di sela perjalanan.</span>
-        </div>
-      </footer>
-    </>
+      <footer className={footer.footer}><div className={footer.grid}>
+        <div className={footer.intro}><Link href="/ojol" className={footer.brand}><Icon name="mic"/>Ojol Mengaji</Link><p>Belajar di sela perjalanan.</p><small>Pembinaan Al-Qur’an untuk driver ojek online, bersama LAZ Solidaritas Insan Peduli.</small><Link href="/lazsip" className={footer.institution}>Kenali LAZSIP <Icon name="arrowRight"/></Link></div>
+        <nav className={footer.column} aria-label="Navigasi footer"><h2>Jelajahi program</h2>{SITE_NAV.map(item=><Link key={item.href} href={item.href}>{item.label}</Link>)}</nav>
+        <div className={footer.column}><h2>Ruang belajar</h2><Link href="/ojol/masuk">Masuk dengan kode akun</Link><Link href="/ojol#fitur">Setoran & bimbingan</Link><Link href="/ojol#bergabung">Panduan bergabung</Link><small>Peserta: POM…<br/>Guru: GOM…</small></div>
+        <div className={footer.help}><h2>Belum memiliki akun?</h2><p>Admin membantu pendaftaran, penempatan kelompok, dan kendala akses akun.</p><a href={whatsappAdminHref()} className={footer.contact}><Icon name="whatsapp"/>Hubungi admin <Icon name="arrowRight"/></a></div>
+        </div><div className={footer.bottom}><span>© {new Date().getFullYear()} Ojol Mengaji · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP ↗</Link></div></footer>
+    </div>
   );
 }

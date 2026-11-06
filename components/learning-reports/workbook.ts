@@ -1,0 +1,14 @@
+import type { LearningModule, ParticipantReport } from "./types";
+import { engagement } from "./types";
+export async function buildReportWorkbook(module:LearningModule,query:string,all:ParticipantReport[]){
+  const {Workbook}=await import("exceljs");const workbook=new Workbook();workbook.creator="SIP ERP";
+      const sheet=workbook.addWorksheet("Performa peserta",{views:[{state:"frozen",ySplit:5,xSplit:3}],pageSetup:{orientation:"landscape",paperSize:9,fitToPage:true,fitToWidth:1,fitToHeight:0}});
+      sheet.columns=[{width:7},{width:15},{width:30},{width:26},...Array.from({length:14},()=>({width:18}))];
+      sheet.mergeCells("A1:R1");sheet.getCell("A1").value=`LAPORAN PERFORMA PESERTA · ${module==="tanwir"?"TANWIR QURANI":"OJOL MENGAJI"}`;sheet.getCell("A1").font={bold:true,size:16,color:{argb:"FFFFFFFF"}};sheet.getCell("A1").fill={type:"pattern",pattern:"solid",fgColor:{argb:"FF21634D"}};sheet.getRow(1).height=34;
+      sheet.mergeCells("A2:R2");sheet.getCell("A2").value=`Filter: ${new URLSearchParams(query).toString()||"Semua periode dan peserta sesuai akses"} | Dibuat ${new Date().toLocaleString("id-ID")}`;sheet.getCell("A2").alignment={wrapText:true};sheet.getRow(2).height=32;
+      sheet.mergeCells("A3:R3");sheet.getCell("A3").value="Periode berdasarkan tanggal pembuatan tugas (WIB); kelompok saat ini. Konsisten = minimal 80% tugas dikumpulkan tepat waktu. Nilai hanya dari kuis.";sheet.getCell("A3").alignment={wrapText:true};sheet.getRow(3).height=32;
+      sheet.addTable({name:"PerformaPeserta",ref:"A5",headerRow:true,totalsRow:false,style:{theme:"TableStyleMedium4",showRowStripes:true},columns:["No","Kode","Nama peserta","Kelompok","Status akun","Tugas diterima","Dikumpulkan","Selesai","Menunggu koreksi","Perlu diulang","Belum dikumpulkan","Lewat tenggat","Tepat waktu","Terlambat","Rata-rata kuis","Penyelesaian (%)","Keaktifan","Pengumpulan terakhir"].map(name=>({name,filterButton:true})),rows:all.map((r,i)=>[i+1,r.code,r.name,r.group_name??"Belum ada",Number(r.active)?"Aktif":"Nonaktif",Number(r.assigned),Number(r.submitted),Number(r.approved),Number(r.pending),Number(r.rejected),Number(r.missing),Number(r.overdue),Number(r.on_time),Number(r.late),r.score===null?null:Number(r.score),r.completion===null?null:Number(r.completion),engagement(r),r.last_submission?new Date(r.last_submission.replace(" ","T")+(/[Z+]$/.test(r.last_submission)?"":"Z")).toLocaleString("id-ID",{timeZone:"Asia/Jakarta"}):"Belum pernah"])});
+      sheet.eachRow((row,index)=>{if(index>=5){row.height=index===5?42:32;row.eachCell({includeEmpty:true},cell=>{cell.alignment={vertical:"middle",wrapText:true};cell.border={top:{style:"thin",color:{argb:"FFDCE6DD"}},bottom:{style:"thin",color:{argb:"FFDCE6DD"}},left:{style:"thin",color:{argb:"FFDCE6DD"}},right:{style:"thin",color:{argb:"FFDCE6DD"}}};});}});
+      sheet.getColumn(15).numFmt="0.0";sheet.getColumn(16).numFmt="0.0";
+      return workbook.xlsx.writeBuffer();
+}

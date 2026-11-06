@@ -212,3 +212,25 @@ it('updates the own profile and changes a password only with valid current crede
     $this->putJson('/api/v1/tanwir/profile/password', ['currentPassword' => 'password-tanwir-test', 'password' => 'new-password-test', 'passwordConfirm' => 'new-password-test'])->assertOk();
     expect(Hash::check('new-password-test', $this->student->user->fresh()->password_hash))->toBeTrue();
 });
+
+
+it('reports scoped participant metrics and keeps students out of reports', function () {
+    $task = $this->actingAs($this->teacher->user, 'sanctum')->postJson('/api/v1/tanwir/tasks', tanwirTaskInput())->json('data.id');
+    $this->actingAs($this->student->user, 'sanctum')->getJson('/api/v1/tanwir/reports/participants')->assertForbidden();
+    $this->post('/api/v1/tanwir/submissions', ['taskId' => $task, 'file' => tanwirAudio()], ['Accept' => 'application/json'])->assertOk();
+    $report = $this->actingAs($this->teacher->user, 'sanctum')->getJson('/api/v1/tanwir/reports/participants')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.name', 'peserta')->assertJsonPath('data.0.assigned', 1)->assertJsonPath('data.0.pending', 1)->assertJsonPath('data.0.score', null)->assertJsonPath('meta.total', 1);
+    $this->actingAs($this->otherTeacher->user, 'sanctum')->getJson('/api/v1/tanwir/reports/participants?teacher='.$this->teacher->id)->assertOk()->assertJsonCount(0, 'data');
+    $this->actingAs($this->admin, 'sanctum')->getJson('/api/v1/tanwir/reports/participants')->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/v1/tanwir/reports/participants?min_score=101')->assertUnprocessable();
+    $this->getJson('/api/v1/tanwir/reports/participants?from=2026-12-01&to=2026-01-01')->assertUnprocessable();
+});
+
+it('reports missing overdue tasks, filters and weighted quiz scores without inventing grades', function () {
+    $task = $this->actingAs($this->teacher->user, 'sanctum')->postJson('/api/v1/tanwir/tasks', tanwirTaskInput())->json('data.id');
+    $this->travel(2)->days();
+    $this->getJson('/api/v1/tanwir/reports/participants?engagement=none')->assertOk()->assertJsonPath('data.0.overdue', 1)->assertJsonPath('data.0.missing', 1)->assertJsonPath('summary.overdue', 1);
+    $this->getJson('/api/v1/tanwir/reports/participants?type=quiz')->assertOk()->assertJsonPath('data.0.assigned', 0);
+    $this->getJson('/api/v1/tanwir/reports/participants?q=not-a-participant')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/api/v1/tanwir/reports/participants?from=2099-01-01')->assertOk()->assertJsonPath('data.0.assigned', 0);
+    $this->getJson('/api/v1/tanwir/reports/participants?per_page=101')->assertUnprocessable();
+});

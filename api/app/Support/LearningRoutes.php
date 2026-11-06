@@ -20,6 +20,7 @@ class LearningRoutes
         }
         Route::middleware(['auth:sanctum', 'user.active'])->group(function () use ($module): void {
             $routes = [
+                ['get', 'reports/participants', \App\Support\LearningControllers\ReportController::class, 'index'],
                 ['get', 'members', MemberController::class, 'index'], ['get', 'members/{id}', MemberController::class, 'show'],
                 ['post', 'members', MemberController::class, 'store'], ['put', 'members/{id}', MemberController::class, 'update'],
                 ['put', 'members/{id}/status', MemberController::class, 'status'], ['delete', 'members/{id}', MemberController::class, 'destroy'],
