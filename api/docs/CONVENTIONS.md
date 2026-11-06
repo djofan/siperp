@@ -174,3 +174,11 @@ dibuat di browser dari data santunan yang sudah diotorisasi.
 - `bantuan:push` mengirim kanal mobile dan PWA. PWA menggunakan pesan data-only
   generik dengan binding sesi; service worker memeriksa konteks sesi langsung
   sebelum menampilkan notifikasi dan hanya membuka halaman notifikasi internal.
+
+## Bukti santunan
+
+`POST /api/v1/bantuan/santunan/{id}/documents` menerima multipart `kind` dan `file`
+(JPEG/PNG/WEBP, maksimal 2048 KiB). `aid_paper` dan `recipient_photo` wajib untuk
+menyelesaikan laporan; `transfer_receipt` opsional. Ketiganya disimpan terenkripsi
+dan hanya dapat dibaca lewat endpoint privat dengan otorisasi santunan yang sama.
+Unggah hanya setelah transfer dan sebelum selesai; satu dokumen per jenis.

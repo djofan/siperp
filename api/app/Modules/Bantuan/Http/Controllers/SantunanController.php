@@ -126,7 +126,7 @@ class SantunanController
     {
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
-        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
         $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
 
         return DB::transaction(function () use ($request, $row, $data, $access) {

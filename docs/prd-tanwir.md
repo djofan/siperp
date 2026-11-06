@@ -193,8 +193,9 @@ guru, peserta, dan kelompok di platform baru. Repo lama hanya dipakai sebagai re
 Status 26 Oktober 2026: fitur utama tersedia. Tes regresi API memakai Pest/Laravel
 (`npm run test:tanwir`), bukan lagi script Prisma/MySQL lama. Lihat cakupan dan
 langkah uji di `docs/tanwir-demo.md`. Daftar di bawah mencatat implementasi;
-tidak berarti seluruh perangkat/browser telah diuji. Tersisa: uji perekaman
-langsung di HP sungguhan dan pemeriksaan tampilan browser pada versi ini.
+tidak berarti seluruh perangkat/browser telah diuji. QA browser 5 November 2026
+telah memverifikasi alur utama dan tampilan mobile perwakilan (lihat hasil di
+`docs/tanwir-demo.md`). Tersisa: uji perekaman langsung di HP sungguhan.
 
 
 - [x] Admin bisa membuat guru, peserta, kelompok (dengan PIC) — kode akun terbit otomatis.

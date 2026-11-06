@@ -30,7 +30,7 @@ class SubmissionController extends BaseController
             $row = DB::transaction(function () use ($request, $input, $member, $detected, $files, &$path, &$before) {
                 $task = $this->taskForStudent($request, $input['taskId'], $member);
                 abort_unless($task->type !== 'quiz', 422, 'Kuis dikerjakan langsung di halaman tugas.');
-                $matches = $task->type === 'video' ? $detected['kind'] === 'video' : ($detected['kind'] === 'audio' || $detected['ext'] === 'webm');
+                $matches = $task->type === 'video' ? $detected['kind'] === 'video' : $detected['kind'] === 'audio';
                 abort_unless($matches, 422, 'Format file tidak sesuai tipe tugas.');
                 $existing = $task->submissions()->where('student_id', $member->id)->lockForUpdate()->first();
                 abort_unless(! $existing || $existing->status === 'rejected', 409, 'Tugas ini sudah dikumpulkan.');

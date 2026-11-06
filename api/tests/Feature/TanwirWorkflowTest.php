@@ -46,6 +46,19 @@ function tanwirMp4(array $handlers, string $brand = 'isom'): UploadedFile
     return UploadedFile::fake()->createWithContent('recording.mp4', $box('ftyp', $brand.str_repeat("\0", 4).'isom').$box('moov', $tracks));
 }
 
+function tanwirWebm(array $types): UploadedFile
+{
+    $element = fn (string $id, string $body) => $id.chr(0x80 | strlen($body)).$body;
+    $tracks = '';
+    foreach ($types as $index => $type) {
+        $tracks .= $element("\xae", $element("\xd7", chr($index + 1)).$element("\x83", chr($type)));
+    }
+    $header = $element("\x1a\x45\xdf\xa3", $element("\x42\x82", 'webm'));
+
+    // MediaRecorder uses an unknown-sized Segment until recording finishes.
+    return UploadedFile::fake()->createWithContent('recording.webm', $header."\x18\x53\x80\x67\x01".str_repeat("\xff", 7).$element("\x16\x54\xae\x6b", $tracks));
+}
+
 beforeEach(function () {
     Storage::fake('local');
     $this->travelTo(now()->startOfMinute()->addSeconds(25));
@@ -161,6 +174,18 @@ it('recognizes MP4 audio tracks independently of brands and rejects video for vo
     $this->post('/api/v1/tanwir/submissions', ['taskId' => $id, 'file' => UploadedFile::fake()->createWithContent('fake.mp4', 'not a media file')], ['Accept' => 'application/json'])->assertUnprocessable();
     $this->post('/api/v1/tanwir/submissions', ['taskId' => $id, 'file' => tanwirMp4(['soun'])], ['Accept' => 'application/json'])->assertOk();
     expect(TanwirSubmission::where('task_id', $id)->value('file_mime'))->toBe('audio/mp4');
+});
+
+it('distinguishes WebM audio from video tracks and rejects fake WebM headers', function () {
+    $voice = $this->actingAs($this->teacher->user, 'sanctum')->postJson('/api/v1/tanwir/tasks', tanwirTaskInput())->assertCreated()->json('data.id');
+    $video = $this->postJson('/api/v1/tanwir/tasks', tanwirTaskInput(['type' => 'video']))->assertCreated()->json('data.id');
+    $this->actingAs($this->student->user, 'sanctum')->post('/api/v1/tanwir/submissions', ['taskId' => $voice, 'file' => tanwirWebm([1, 2])], ['Accept' => 'application/json'])->assertUnprocessable();
+    $this->post('/api/v1/tanwir/submissions', ['taskId' => $voice, 'file' => UploadedFile::fake()->createWithContent('fake.webm', "\x1a\x45\xdf\xa3".str_repeat("\0", 32))], ['Accept' => 'application/json'])->assertUnprocessable();
+    $this->post('/api/v1/tanwir/submissions', ['taskId' => $video, 'file' => tanwirWebm([2])], ['Accept' => 'application/json'])->assertUnprocessable();
+    $this->post('/api/v1/tanwir/submissions', ['taskId' => $voice, 'file' => tanwirWebm([2])], ['Accept' => 'application/json'])->assertOk();
+    expect(TanwirSubmission::where('task_id', $voice)->value('file_mime'))->toBe('audio/webm');
+    $this->post('/api/v1/tanwir/submissions', ['taskId' => $video, 'file' => tanwirWebm([1, 2])], ['Accept' => 'application/json'])->assertOk();
+    expect(TanwirSubmission::where('task_id', $video)->value('file_mime'))->toBe('video/webm');
 });
 
 it('scopes child records and photos to their owner teacher and admin', function () {
