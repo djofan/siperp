@@ -13,6 +13,7 @@ import "./central-theme.css";
 import "./operator-theme.css";
 import styles from "./WorkspaceIdentity.module.css";
 import { selectedServiceMenu } from "../api/workflow";
+import { LayoutDashboard, Wrench, Clock3, CircleCheck, PackageCheck, CircleX, ChartNoAxesCombined, Store, UsersRound, UserRound, ListFilter, ChevronRight } from "lucide-react";
 
 export function Workspace({ name, roleLabel, outletName, accountCode, root, admin = false, children }: { name: string; roleLabel: string; outletName: string; accountCode?: string; root: string; admin?: boolean; children: React.ReactNode }) {
   const path = usePathname(), query = useSearchParams();
@@ -36,6 +37,8 @@ export function Workspace({ name, roleLabel, outletName, accountCode, root, admi
     { href: `${root}/outlet`, label: admin ? "Outlet" : "Informasi outlet" },
     ...(admin ? [{ href: `${root}/teknisi`, label: "Akun teknisi" }] : [{ href: `${root}/profil`, label: "Profil saya" }]),
   ];
+  const menuIcons = [LayoutDashboard,ListFilter,Clock3,Wrench,PackageCheck,CircleCheck,CircleX,ChartNoAxesCombined,Store,admin?UsersRound:UserRound];
+
   function active(href: string) {
     const selected=selectedServiceMenu(path, root, query.get("status"));
     if (href.includes("?")) return selected === href.split("status=")[1];
@@ -60,15 +63,13 @@ export function Workspace({ name, roleLabel, outletName, accountCode, root, admi
     {open && <button className="tech-backdrop" aria-label="Tutup menu" onClick={() => setOpen(false)} />}
     <aside ref={drawer} role={open ? "dialog" : undefined} aria-modal={open ? true : undefined} aria-label="Navigasi Teknisi HP" onKeyDown={keys} className={`tech-sidebar ${styles.sidebar} ${open ? "is-open" : ""}`}>
       <Link href={root} className="tech-brand">Teknisi<span>HP</span></Link><p className="tech-subtitle">{admin ? "Pusat pengelolaan" : "Workspace teknisi"}</p>
-      <div className={styles.identity}>
-        <span className={styles.avatar} aria-hidden="true">{name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase()}</span>
-        <div className={styles.person}><small>{roleLabel}</small><strong>{name}</strong><span>{accountCode ?? "Akun pengelola"}</span></div>
-        <div className={styles.outlet}><small>{admin ? "Cakupan akses" : "Outlet aktif"}</small><span>{outletName}</span></div>
-      </div>
       <button className="tech-mobile-close" aria-label="Tutup menu" onClick={() => setOpen(false)}>×</button>
-      <nav aria-label="Menu Teknisi HP">{links.map(item => <Link key={item.href} href={item.href} onClick={() => setOpen(false)} className={active(item.href) ? "is-active" : ""} aria-current={active(item.href) ? "page" : undefined}>{item.label}</Link>)}</nav>
-      <div className="tech-account"><span>{admin ? "Kontrol lintas outlet" : "Operasional outlet"}</span>{admin && <Link href="/admin">← Kembali ke Core</Link>}</div>
+      <nav aria-label="Menu Teknisi HP">{links.map((item,index) => {const MenuIcon=menuIcons[index];return <div className={styles.navItem} key={item.href}>
+        {[0,2,7].includes(index)&&<p className={styles.groupLabel}>{index===0?"Ruang kerja":index===2?"Antrean servis":"Pengelolaan"}</p>}
+        <Link href={item.href} onClick={() => setOpen(false)} className={`${styles.navLink} ${active(item.href)?"is-active":""}`} aria-current={active(item.href) ? "page" : undefined}><MenuIcon size={17} strokeWidth={1.7} aria-hidden="true"/><span className={styles.navText}><span>{item.label.replace("Ready · siap diambil","Siap diambil").replace("Finish · sudah diambil","Selesai diambil")}</span></span>{active(item.href)&&<ChevronRight size={13} aria-hidden="true"/>}</Link>
+      </div>;})}</nav>
+      <div className={`tech-account ${styles.footer}`}>{admin ? <Link href="/admin" className={styles.coreButton}><LayoutDashboard size={16} aria-hidden="true"/>Kembali ke Core<ChevronRight size={14} aria-hidden="true"/></Link>:<span>Operasional outlet</span>}</div>
     </aside>
-    <div className="tech-frame"><header className={`tech-topbar ${styles.header}`}><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button>{!admin&&<div className={styles.context} aria-label="Halaman dan outlet aktif"><span className={styles.contextLabel}>Workspace teknisi<span aria-hidden="true"> / </span><strong>{pageLabel}</strong></span><span className={styles.contextOutlet} title={outletName}>{outletName}</span></div>}<div className={styles.actions}>{!admin&&<Link href="/akun/password">Ubah password</Link>}<Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
+    <div className="tech-frame"><header className={`tech-topbar ${styles.header}`}><button className="tech-mobile-menu" aria-label="Buka menu" aria-expanded={open} onClick={() => setOpen(true)}>☰</button>{!admin&&<div className={styles.context} aria-label="Halaman dan outlet aktif"><span className={styles.contextLabel}>Workspace teknisi<span aria-hidden="true"> / </span><strong>{pageLabel}</strong></span><span className={styles.contextOutlet} title={outletName}>{outletName}</span></div>}<div className={styles.actions}><details className={styles.accountMenu}><summary><span className={styles.accountAvatar} aria-hidden="true">{name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join("").toUpperCase()}</span><span className={styles.accountName}><strong>{name}</strong><small>{roleLabel}</small></span><ChevronRight size={13} aria-hidden="true"/></summary><div className={styles.accountDropdown}><strong>{name}</strong><small>{accountCode??roleLabel}</small><span><Store size={14}/>{outletName}</span></div></details>{!admin&&<Link href="/akun/password">Ubah password</Link>}<Link href="/teknisi">Lihat website ↗</Link><button disabled={leaving} onClick={logout}>{leaving ? "Memproses…" : "Keluar"}</button></div></header>{error && <p role="alert">{error}</p>}<main id="tech-main" className="tech-main">{children}</main></div>
   </div>;
 }
