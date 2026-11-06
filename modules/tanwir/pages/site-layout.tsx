@@ -1,90 +1,20 @@
 import Link from "next/link";
 import { Wordmark } from "@/modules/tanwir/components/Wordmark";
 import { Icon } from "@/modules/tanwir/components/icons";
-import { buttonClass } from "@/modules/tanwir/components/ui";
 import { SITE_NAV, whatsappAdminHref } from "@/modules/tanwir/components/site/content";
+import s from "./site.module.css";
+import f from "./footer.module.css";
 
-export default function TanwirSiteLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <header className="program-header sticky top-0 z-40 bg-tanwir-paper/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
-          <Wordmark />
-          <nav aria-label="Navigasi situs" className="hidden items-center gap-8 text-sm text-tanwir-muted md:flex">
-            {SITE_NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="transition-colors hover:text-tanwir-ink">
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-2">
-            <Link href="/tanwir/masuk" className={buttonClass("primary", "h-10 px-4")}>
-              Masuk
-            </Link>
-            {/* Menu HP tanpa JavaScript: <details> */}
-            <details className="group relative md:hidden">
-              <summary aria-label="Buka menu" className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-tanwir-ink hover:bg-tanwir-surface [&::-webkit-details-marker]:hidden">
-                <Icon name="menu" />
-              </summary>
-              <div className="absolute right-0 top-12 w-52 rounded-2xl bg-tanwir-surface p-2  ring-1 ring-tanwir-line">
-                {SITE_NAV.map((item) => (
-                  <Link key={item.href} href={item.href} className="block rounded-xl px-3 py-2.5 text-sm hover:bg-tanwir-paper">
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </details>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1">{children}</main>
-
-      <footer className="program-footer mt-24 bg-tanwir-ink text-white/70">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <Wordmark inverted />
-            <p className="mt-4 max-w-sm text-sm leading-relaxed">
-              Program pembinaan hafalan Qur&apos;an untuk guru ngaji TPQ, bagian dari program pemberdayaan LAZ Solidaritas Insan Peduli.
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">Jelajahi</p>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              {SITE_NAV.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className="transition-colors hover:text-white">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-white/40">Akses</p>
-            <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/tanwir/masuk" className="transition-colors hover:text-white">
-                  Masuk dengan kode akun
-                </Link>
-              </li>
-              <li>
-                <a href={whatsappAdminHref()} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-white">
-                  Hubungi admin
-                </a>
-              </li>
-              <li>
-                <Link href="/lazsip" className="transition-colors hover:text-white">
-                  LAZ SIP
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div className="mx-auto max-w-6xl px-4 pb-8 text-xs text-white/40 sm:px-6">
-          © {new Date().getFullYear()} LAZ Solidaritas Insan Peduli · Tanwir Qurani
-        </div>
-      </footer>
-    </>
-  );
-}
+export default function TanwirSiteLayout({children}:{children:React.ReactNode}){return <div className={s.site}>
+  <header className={s.header}><div className={s.navigation}><Wordmark className={s.brand}/><nav className={s.desktopNav} aria-label="Navigasi situs">{SITE_NAV.map(item=><Link href={item.href} key={item.href}>{item.label}</Link>)}</nav><div className={s.navActions}><Link href="/tanwir/masuk" className={s.login}>Masuk akun <Icon name="arrowRight"/></Link><details className={s.mobileMenu}><summary aria-label="Buka menu navigasi"><Icon name="menu"/></summary><nav aria-label="Navigasi situs seluler">{SITE_NAV.map(item=><Link key={item.href} href={item.href}>{item.label}</Link>)}</nav></details></div></div></header>
+  <main className={s.main}>{children}</main>
+  <footer className={f.footer}><div className={f.inner}>
+    <div className={f.grid}>
+      <div className={f.identity}><Link href="/tanwir" className={f.wordmark}>Tanwir <span>Qurani</span></Link><p>Pembinaan Qur’an untuk guru ngaji TPQ.</p><small>Merawat hafalan bersama pembimbing dan mendukung perkembangan santri yang Anda ajar.</small><Link href="/lazsip" className={f.institution}>Program LAZ Solidaritas Insan Peduli <Icon name="arrowRight"/></Link></div>
+      <nav className={f.column} aria-label="Informasi program Tanwir"><h2>Program</h2>{SITE_NAV.map(item=><Link key={item.href} href={item.href}>{item.label}</Link>)}<Link href="/tanwir#alur">Cara bergabung</Link></nav>
+      <nav className={f.column} aria-label="Akses akun Tanwir"><h2>Akses belajar</h2><Link href="/tanwir/masuk">Masuk akun <Icon name="arrowRight"/></Link><Link href="/tanwir#fitur">Fitur pembelajaran</Link><div className={f.codes}><span>Peserta <code>PTQ…</code></span><span>Guru PIC <code>GTQ…</code></span></div><small>Gunakan kode dan password dari admin.</small></nav>
+      <div className={f.help}><span className={f.helpIcon}><Icon name="whatsapp"/></span><h2>Perlu bantuan?</h2><p>Informasi pendaftaran, kode akun, atau lupa password? Hubungi pengelola program.</p><a href={whatsappAdminHref()} className={f.contact}>Hubungi admin <Icon name="arrowRight"/></a></div>
+    </div>
+    <div className={f.bottom}><span>© {new Date().getFullYear()} Tanwir Qurani · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP <Icon name="arrowRight"/></Link></div>
+  </div></footer>
+</div>;}
