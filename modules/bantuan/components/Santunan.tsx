@@ -8,6 +8,7 @@ import type { BantuanStaff, BantuanViewer, SantunanRecord } from "@/contracts/mo
 import { day, money, request } from "../api/client";
 import { preparePhoto } from "../api/photos";
 import s from "./Workspace.module.css";
+import { PhotoViewer } from "./PhotoViewer";
 import d from "./Santunan.module.css";
 import { PageGuide } from "./PageGuide";
 import { LoadingState } from "./LoadingState";
@@ -120,7 +121,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     {bulkConfirm&&<Dialog title="Catat transfer santunan terpilih?" description={`${bulkConfirm.length} santunan dengan total ${money(bulkConfirm.reduce((sum,row)=>sum+row.amount,0))} akan ditandai sudah ditransfer. Pastikan seluruh transfer tersebut benar-benar sudah dilakukan. Tombol ini hanya mencatat status, bukan mengirim uang.`} onClose={()=>!busy&&setBulkConfirm(null)}><p>Jika ada catatan yang gagal, proses berhenti. Catatan yang sudah berhasil tetap tersimpan.</p><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setBulkConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markSelectedTransferred()}>{busy?"Mencatat transfer…":"Ya, semua sudah ditransfer"}</Button></div></Dialog>}
     {confirm&&<Dialog title="Tandai dana sudah ditransfer?" description={"Pastikan transfer "+money(confirm.amount)+" untuk "+confirm.recipientName+" sudah dilakukan. Tindakan ini hanya mencatat status, bukan mengirim uang."} onClose={()=>!busy&&setConfirm(null)}><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markTransferred(confirm)}>{busy?"Menyimpan…":"Ya, sudah ditransfer"}</Button></div>{error&&<p role="alert" className={s.fieldError}>{error}</p>}</Dialog>}
     {card&&<SantunanCard row={card} verifier={staff.find(person=>person.id===card.volunteerId)?.name??(card.volunteerId===viewer.id?viewer.name:"")} onClose={()=>setCard(null)}/>}
-    {preview&&<Dialog title={preview.title} onClose={()=>setPreview(null)} wide><img className={s.largePhoto} src={preview.src} alt={preview.title}/></Dialog>}
+    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} onClose={()=>setPreview(null)}/>}
     {success&&<Toast message={success} onClose={()=>setSuccess("")}/>}
   </div>;
 }

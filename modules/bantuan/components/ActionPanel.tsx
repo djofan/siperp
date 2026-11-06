@@ -1,5 +1,6 @@
 "use client";
 import { SurveyReminder } from "./SurveyReminder";
+import { VerifierPicker } from "./VerifierPicker";
 import Link from "next/link";
 import { rolesOf } from "../permissions";
 
@@ -285,7 +286,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
         {active==="approve"&&<ApprovalAmount row={row}/>}
         {["assign_survey","assign_distributor"].includes(active)&&<>
           {active==="assign_distributor"&&<label className={s.field}>Jenis penyalur<select className={s.input} name="distributionType" value={distributionType} onChange={e=>setDistributionType(e.target.value)}><option value="verifier">Verifikator</option>{row.source==="bypass"&&<option value="direct">Bendahara langsung ke penerima</option>}</select></label>}
-          {(active==="assign_survey"||distributionType==="verifier")&&<label className={s.field}>Verifikator *<select className={s.input} name={active==="assign_survey"?"verifierId":"distributorId"} required defaultValue={active==="assign_survey"?row.verifierId??"":row.distributorId??""}><option value="">Pilih petugas</option>{staff.filter(p=>(p.roles??[p.role]).includes("verifier")&&p.active).map(p=><option key={p.id} value={p.id}>{p.name}{p.region?` · ${p.region}`:""}</option>)}</select></label>}
+          {(active==="assign_survey"||distributionType==="verifier")&&<VerifierPicker key={active} staff={staff} name={active==="assign_survey"?"verifierId":"distributorId"} initialId={active==="assign_survey"?row.verifierId??"":row.distributorId??""}/>}
           {active==="assign_survey"&&<SurveyAssignmentAddress row={row}/>}
           {active==="assign_survey"&&row.verifierId&&<label className={`${s.field} ${s.wide}`}>Alasan mengganti Verifikator<textarea className={s.input} name="reason" minLength={5} maxLength={5000} placeholder="Jelaskan alasan perubahan tugas…"/><small>Riwayat penugasan sebelumnya tetap tersimpan.</small></label>}
           {row.status==="disbursed"&&<label className={`${s.field} ${s.wide}`}>Alasan penggantian *<textarea className={s.input} name="reason" required minLength={5}/><small>Unggah bukti pengembalian dari penyalur lama. Setelah diganti, pencairan ulang wajib dicatat Bendahara.</small></label>}

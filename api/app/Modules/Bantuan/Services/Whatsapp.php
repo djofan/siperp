@@ -150,7 +150,7 @@ class Whatsapp
                 continue;
             }
             $name = DB::table('users')->where('id', $item->user_id)->value('name') ?? 'Petugas';
-            $message = ReminderMessage::greeting($name)."Ada tugas bantuan yang memerlukan tindak lanjut Bapak/Ibu.\n\n".ReminderMessage::details($row)."\n\nBuka pengajuan: ".$this->publicUrl().'/admin/bantuan/pengajuan/'.rawurlencode($row->id)."\n\n".ReminderMessage::closing();
+            $message = ReminderMessage::greeting($name)."Ada tugas bantuan yang memerlukan tindak lanjut Bapak/Ibu.\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
             try {
                 $response = Http::asForm()->withHeaders(['Authorization' => (string) config('bantuan.fonnte_token')])
                     ->connectTimeout(3)->timeout(10)->withoutRedirecting()->post('https://api.fonnte.com/send', [
