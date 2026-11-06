@@ -16,6 +16,7 @@ export default async function GuruLayout({ children }: { children: React.ReactNo
       nav={[
         { href: "/tanwir/guru", label: "Beranda", icon: "home" },
         { href: "/tanwir/guru/koreksi", label: "Koreksi", icon: "review", badge: pending },
+        { href: "/tanwir/guru/laporan", label: "Laporan", icon: "tasks" },
         { href: "/tanwir/guru/tugas", label: "Tugas", icon: "tasks" },
         { href: "/tanwir/guru/anak-didik", label: "Anak Didik", icon: "students" },
         { href: "/tanwir/guru/profil", label: "Profil", icon: "user" },

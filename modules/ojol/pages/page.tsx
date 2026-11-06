@@ -1,59 +1,25 @@
 import Link from "next/link";
-import { Icon } from "@/modules/ojol/components/icons";
-import { FAQ, JOIN_STEPS, PRINCIPLES, ROUTE_STOPS } from "@/modules/ojol/components/site/content";
-import styles from "./landing.module.css";
-import palette from "./palette.module.css";
+import { Icon, type IconName } from "@/modules/ojol/components/icons";
+import { FAQ, JOIN_STEPS, whatsappAdminHref } from "@/modules/ojol/components/site/content";
+import s from "./landing.module.css";
 
-export default function OjolHomePage() {
-  return (
-    <div className={`${palette.theme} ${styles.landing}`}>
-      <section className={styles.hero}>
-        <div className={`${styles.container} ${styles.heroGrid}`}>
-          <div>
-            <span className={styles.badge}>Program pembinaan Al-Qur’an · LAZ SIP</span>
-            <h1>Perjalanan tetap jalan.<br /><span>Mengaji tetap dekat.</span></h1>
-            <p>Ruang belajar untuk driver ojek online. Kirim hafalan, ikuti kuis, dan dapatkan bimbingan guru—langsung dari HP Anda.</p>
-            <div className={styles.actions}>
-              <Link href="/ojol/masuk" className={styles.primary}>Masuk ruang belajar <Icon name="arrowRight" /></Link>
-              <Link href="/ojol/cara-bergabung" className={styles.secondary}>Cara bergabung</Link>
-            </div>
-            <ul className={styles.checks}>{PRINCIPLES.map(item => <li key={item.title}><Icon name="check" />{item.title}</li>)}</ul>
-          </div>
-          <div className={styles.infoPanel}>
-            <p className={styles.panelEyebrow}>BELAJAR SESUAI RITMEMU</p>
-            <h2>Mulai dari satu setoran.</h2>
-            <div className={styles.infoList}>
-              <article><Icon name="mic" /><div><h3>Setoran suara & video</h3><p>Rekam langsung dari HP atau unggah hafalan Anda.</p></div></article>
-              <article><Icon name="quiz" /><div><h3>Kuis pilihan ganda</h3><p>Kerjakan kuis sesuai tugas dari guru pembimbing.</p></div></article>
-              <article><Icon name="review" /><div><h3>Catatan dari guru</h3><p>Lihat hasil tinjauan dan bagian yang perlu diperbaiki.</p></div></article>
-            </div>
-            <div className={styles.accountInfo}><span>Akses dengan kode akun</span><div><span><strong>POM</strong> Peserta</span><span><strong>GOM</strong> Guru</span></div><p>Akun dan kelompok dibuatkan oleh admin.</p></div>
-          </div>
-        </div>
-      </section>
+const benefits:{icon:IconName;title:string;body:string}[]=[
+ {icon:"mic",title:"Setoran dari HP",body:"Suara atau video, sesuai tugas guru."},
+ {icon:"clock",title:"Di sela aktivitas",body:"Atur waktu belajar sebelum tenggat."},
+ {icon:"review",title:"Ada bimbingan",body:"Perbaiki bacaan lewat catatan guru."},
+ {icon:"review",title:"Progres tercatat",body:"Lihat hasil dan riwayat koreksi."},
+];
+function RiderIllustration(){return <svg viewBox="0 0 400 300" fill="none" aria-hidden="true"><ellipse cx="202" cy="275" rx="133" ry="14" fill="#1a422f" opacity=".08"/><path d="M107 255c1-58 27-88 93-88s92 30 94 88" fill="#35694d"/><path d="m166 175 34 42 33-42" fill="#e3e9dc"/><path d="m173 181 27 36-23 27-27-58M227 181l-27 36 23 27 27-58" fill="#54815f"/><path d="M158 117c0-37 17-59 43-59s43 22 43 59v18c0 35-18 56-43 56s-43-21-43-56z" fill="#d0b99c"/><path d="M143 123V99c0-43 24-67 58-67s58 24 58 67v24h-17V98c-20 12-48 18-82 13v12z" fill="#1c4935"/><path d="M144 91c4-34 25-53 57-53 30 0 52 19 56 53" stroke="#527c5b" strokeWidth="9"/><path d="m203 43-2 44" stroke="#a7c893" strokeWidth="7"/><path d="M169 135c8 8 20 12 32 12s25-4 33-12" stroke="#f2efe3" strokeWidth="5" strokeLinecap="round"/><path d="m147 226 52 20 55-20v42l-54 17-53-17z" fill="#f7f5e9"/><path d="m199 246 1 39" stroke="#c9d4bc" strokeWidth="2"/><path d="m159 244 29 10M159 254l29 10M212 254l29-10M212 264l29-10" stroke="#afbea0" strokeWidth="3" strokeLinecap="round"/><rect x="263" y="189" width="27" height="45" rx="5" transform="rotate(10 263 189)" fill="#253a2e"/><path d="m270 196 12 2" stroke="#90b27f" strokeWidth="2"/></svg>;}
+export default function OjolHomePage(){return <div className={s.landing}>
+  <section className={s.hero}><span className={s.badge}><span/> PROGRAM PEMBINAAN QUR’AN · LAZSIP</span><h1>Istirahat narik.<br/><em>Lanjut mengaji.</em></h1><p>Satu ruang belajar untuk driver ojek online. Kirim hafalan, ikuti kuis, dan dapatkan arahan guru pembimbing di sela perjalanan Anda.</p><div className={s.actions}><Link href="/ojol/masuk" className={s.primary}>Masuk ruang belajar <Icon name="arrowRight"/></Link><Link href="/ojol/cara-bergabung" className={s.secondary}>Cara bergabung <Icon name="arrowRight"/></Link></div><small>Akun dan kelompok dibuatkan oleh admin. Masuk dengan kode akun Anda.</small>
+  <div className={s.heroVisual}><div className={s.visualStory}><span className={s.visualLabel}>BELAJAR DI SELA PERJALANAN</span><h2>Jeda sebentar.<br/>Bawa pulang<br/><em>lebih banyak manfaat.</em></h2><RiderIllustration/></div><div className={s.learningPanel}><div className={s.panelHeading}><span className={s.miniBrand}><Icon name="mic"/></span><div><strong>Ruang belajar Anda</strong><small>Ilustrasi fitur Ojol Mengaji</small></div><span className={s.liveDot}/></div><div className={s.panelWelcome}><small>LANGKAH KECIL HARI INI</small><h3>Mulai dari satu setoran.</h3><p>Buka tugas kelompok dan ikuti petunjuk guru.</p></div><div className={s.previewTasks}>{[["mic","Setoran hafalan","Rekam suara atau unggah video"],["quiz","Kuis pembelajaran","Jawab soal langsung di web"],["review","Catatan pembimbing","Lihat arahan dan hasil koreksi"]].map(([icon,title,body])=><div key={title}><span><Icon name={icon as IconName}/></span><div><strong>{title}</strong><small>{body}</small></div><Icon name="chevronRight"/></div>)}</div><div className={s.panelFooter}><Icon name="lock"/><span>Akses pribadi dengan kode akun</span><span>POM / GOM</span></div></div></div>
+  </section>
+  <section className={s.benefits} aria-label="Manfaat pembinaan">{benefits.map(item=><article key={item.title}><span><Icon name={item.icon}/></span><h2>{item.title}</h2><p>{item.body}</p></article>)}</section>
+  <section className={s.section}><div className={s.sectionTitle}><span className={s.pill}>Ruang belajar yang sederhana</span><h2>Sedikit demi sedikit.<br/>Tetap dekat dengan Al-Qur’an.</h2><p>Pembinaan yang bisa Anda lanjutkan lewat web, tanpa harus menunggu waktu luang yang panjang.</p></div><div className={s.facts}>{[["3","Pilihan tugas","Suara, video, dan kuis"],["1","Kode akun","Untuk masuk ruang belajar"],["50 MB","Batas file setoran","Maksimal setiap unggahan"]].map(([value,title,body])=><div key={title}><strong>{value}</strong><span>{title}</span><small>{body}</small></div>)}</div></section>
+  <section id="fitur" className={s.featureSection}><div className={s.mockup}><span className={s.mockLabel}>ILUSTRASI ALUR SETORAN</span><div className={s.recordCard}><span className={s.recordIcon}><Icon name="mic"/></span><h3>Hafalan siap dikirim?</h3><p>Dengarkan ulang sebelum mengumpulkan.</p><div className={s.wave} aria-hidden="true">{[12,25,18,34,22,40,28,19,32,41,24,15,29,36,20,12].map((height,i)=><i key={i} style={{height}}/>)}</div><span className={s.mockChip}><Icon name="upload"/>Rekam atau unggah file</span></div><div className={s.smallNote}><Icon name="review"/><span>Diperiksa guru pembimbing<br/><small>Catatan membantu Anda memperbaiki bacaan.</small></span></div></div><div className={s.featureCopy}><span className={s.pill}>Setoran & bimbingan</span><h2>Belajarnya fleksibel.<br/>Arahnya tetap jelas.</h2><p>Guru memberikan tugas kepada kelompok. Anda mengirim suara atau video, lalu menunggu tinjauan dan arahan perbaikan.</p><div className={s.chips}><span><Icon name="mic"/>Suara & video</span><span><Icon name="clock"/>Tenggat jelas</span><span><Icon name="review"/>Riwayat koreksi</span></div><Link href="/ojol/tentang" className={s.textLink}>Kenali program <Icon name="arrowRight"/></Link></div></section>
+  <section className={`${s.featureSection} ${s.reverse}`}><div className={s.featureCopy}><span className={s.pill}>Progres pembelajaran</span><h2>Tahu yang sudah baik.<br/>Paham yang perlu dilatih.</h2><p>Hasil kuis dan catatan setoran tersimpan dalam akun Anda. Jika setoran perlu diulang, periksa arahan guru dan kirim perbaikannya sebelum tenggat.</p><div className={s.featurePoints}><span><Icon name="quiz"/>Kuis dinilai otomatis</span><span><Icon name="review"/>Koreksi dari guru</span><span><Icon name="tasks"/>Status setiap tugas</span><span><Icon name="user"/>Profil & kelompok</span></div></div><div className={s.progressVisual}><span className={s.mockLabel}>ALUR PEMBELAJARAN</span><div className={s.progressCard}><span className={s.progressIcon}><Icon name="tasks"/></span><h3>Setiap langkah tercatat.</h3><div className={s.journey}>{[["01","Kirim tugas","Rekaman atau jawaban kuis"],["02","Periksa hasil","Nilai atau catatan pembimbing"],["03","Lanjutkan latihan","Perbaiki dan jaga konsistensi"]].map(([number,title,body])=><div key={number}><span>{number}</span><div><strong>{title}</strong><small>{body}</small></div><Icon name="check"/></div>)}</div></div></div></section>
+  <section className={s.section} id="bergabung"><div className={s.sectionTitle}><span className={s.pill}>Mulai dari sini</span><h2>Siap belajar bersama?</h2><p>Belum ada akun? Pengelola akan membantu proses pendaftaran dan penempatan kelompok.</p></div><ol className={s.steps}>{JOIN_STEPS.map((step,i)=><li key={step.title}><span className={s.stepNumber}>0{i+1}</span><Icon name={(["whatsapp","students","lock","mic"] as const)[i]}/><h3>{step.title}</h3><p>{step.body}</p></li>)}</ol><a href={whatsappAdminHref("Assalamu'alaikum, saya ingin mengetahui cara bergabung dalam program Ojol Mengaji.")} className={s.joinButton}>Tanya admin tentang program <Icon name="arrowRight"/></a></section>
+  <section className={s.section}><div className={s.sectionTitle}><span className={s.pill}>Tanya jawab</span><h2>Yang perlu Anda ketahui.</h2><p>Informasi singkat sebelum memulai pembinaan.</p></div><div className={s.faq}>{FAQ.slice(0,5).map(item=><details key={item.q}><summary>{item.q}<Icon name="plus"/></summary><p>{item.a}</p></details>)}</div><Link href="/ojol/faq" className={s.moreFaq}>Lihat semua pertanyaan <Icon name="arrowRight"/></Link></section>
+  <section className={s.cta}><span>OJOL MENGAJI · LAZ SOLIDARITAS INSAN PEDULI</span><h2>Jadikan jeda hari ini<br/>lebih berarti.</h2><p>Lanjutkan hafalan dan lihat catatan guru dalam satu ruang belajar.</p><Link href="/ojol/masuk" className={s.primary}>Masuk dengan kode akun <Icon name="arrowRight"/></Link><small>Peserta: POM… · Guru pembimbing: GOM…</small></section>
+</div>;}
 
-      <div className={styles.container}>
-        <section className={styles.benefits} aria-label="Manfaat program">
-          {PRINCIPLES.map((item, i) => <article key={item.title}><Icon name={(["students", "clock", "tasks"] as const)[i]} /><div><h2>{item.title}</h2><p>{item.body}</p></div></article>)}
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>BELAJAR BERSAMA OJOL MENGAJI</p><h2>Setoran sederhana. Bimbingan yang terarah.</h2></div><Link href="/ojol/tentang" className={styles.link}>Tentang program <Icon name="arrowRight" /></Link></div>
-          <div className={styles.flow}>{ROUTE_STOPS.map((item, i) => <article key={item.title}><span className={styles.number}>0{i + 1}</span><h3>{item.title}</h3><p>{item.body}</p></article>)}</div>
-        </section>
-
-        <section className={styles.join}>
-          <div><p className={styles.eyebrow}>MULAI DARI SINI</p><h2>Belum punya<br />kode akun?</h2><p>Peserta dan guru didaftarkan oleh admin. Ikuti langkah berikut untuk mulai belajar bersama.</p><Link href="/ojol/cara-bergabung" className={styles.greenButton}>Panduan bergabung <Icon name="arrowRight" /></Link></div>
-          <ol>{JOIN_STEPS.map((item, i) => <li key={item.title}><span>{i + 1}</span><div><h3>{item.title}</h3><p>{item.body}</p></div></li>)}</ol>
-        </section>
-
-        <section className={`${styles.section} ${styles.faqSection}`}>
-          <div><p className={styles.eyebrow}>TANYA JAWAB</p><h2>Informasi sebelum<br />Anda memulai.</h2><Link href="/ojol/faq" className={styles.link}>Semua pertanyaan <Icon name="arrowRight" /></Link></div>
-          <div className={styles.faq}>{FAQ.slice(0, 4).map(item => <details key={item.q}><summary>{item.q}<Icon name="plus" /></summary><p>{item.a}</p></details>)}</div>
-        </section>
-
-        <section className={styles.cta}><div><p className={styles.ctaLabel}>RUANG BELAJAR OJOL MENGAJI</p><h2>Jadikan jeda hari ini lebih berarti.</h2><p>Lanjutkan setoran dan lihat catatan guru dalam satu tempat.</p></div><div className={styles.ctaActions}><Link href="/ojol/masuk" className={styles.greenButton}>Masuk ruang belajar <Icon name="arrowRight" /></Link><span>Gunakan kode akun dari admin.</span></div></section>
-      </div>
-    </div>
-  );
-}

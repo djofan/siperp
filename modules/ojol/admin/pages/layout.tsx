@@ -19,6 +19,7 @@ export default async function OjolAdminLayout({ children }: { children: React.Re
         { href: "/admin/ojol/guru", label: "Guru", icon: "user" },
         { href: "/admin/ojol/peserta", label: "Peserta", icon: "students" },
         { href: "/admin/ojol/kelompok", label: "Kelompok", icon: "map" },
+        { href: "/admin/ojol/laporan", label: "Laporan", icon: "tasks" },
         { href: "/admin/ojol/tugas", label: "Monitor Tugas", icon: "tasks" },
         { href: "/admin", label: "Kembali ke Core", icon: "arrowLeft" },
       ]}>

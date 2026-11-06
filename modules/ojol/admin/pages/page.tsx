@@ -1,3 +1,4 @@
+import { LearningDashboardReport } from "@/components/learning-reports/ReportPage";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { buttonVariants } from "@/components/ui/Button";
@@ -8,8 +9,9 @@ import { adminSummary, mapPoints, recentMembers } from "@/modules/ojol/api/dashb
 import { SpreadMap } from "@/modules/ojol/components/admin/SpreadMap";
 import { Avatar, formatDate } from "@/modules/ojol/components/ui";
 
-export default async function OjolAdminDashboard() {
+export default async function OjolAdminDashboard({searchParams}:{searchParams:Promise<{from?:string;to?:string}>}) {
   await requireOjolAdmin();
+  const period=await searchParams;
   const [summary, points, recent] = await Promise.all([adminSummary(), mapPoints(), recentMembers()]);
 
   return (
@@ -19,6 +21,8 @@ export default async function OjolAdminDashboard() {
         description="Setoran hafalan driver ojek online. Kelola guru, peserta, dan kelompok; pantau tugas dan setoran."
       />
 
+      <form className="flex flex-wrap items-end gap-3 text-sm"><label>Periode tugas dari<input type="date" name="from" defaultValue={period.from} className="block rounded-lg bg-surface p-2"/></label><label>Sampai<input type="date" name="to" defaultValue={period.to} className="block rounded-lg bg-surface p-2"/></label><button className="rounded-lg bg-surface px-4 py-2">Terapkan periode</button></form>
+      <LearningDashboardReport module="ojol" from={period.from} to={period.to}/>
       <div className="ojol-dashboard-primary">
       <DirectorySummary items={[
         { label: "Guru", value: summary.guru, detail: "Pembimbing dan musyrif", icon: "user" },
