@@ -1,0 +1,5 @@
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.stage{width:min(100%,58dvh);aspect-ratio:1;margin-inline:auto;display:grid;place-items:center;background:#f3f5f1;border-radius:16px;overflow:hidden}
+.stage img{display:block;max-width:100%;max-height:100%;width:auto;height:auto;min-width:0;min-height:0;object-fit:contain;transition:transform .22s ease}
+.hint{margin:14px 0 0;font-size:12px;line-height:1.6;color:#687b70}
+@media(prefers-reduced-motion:reduce){.stage img{transition:none}}

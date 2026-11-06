@@ -1491,9 +1491,10 @@ it('prepares immediate survey assignment details only for call center with an ac
     $response = $this->postJson($url,['purpose'=>'assignment'])->assertOk();
     $message = $response->json('data.message');
     $row = Application::findOrFail($id);
-    expect($message)->toContain('Jalan Melati Nomor 10, Bogor', 'Bapak/Ibu mendapat penugasan survei bantuan',
-        $this->verifier->name, $row->number, $row->name, $row->program, 'Mohon konfirmasi kesiapan kunjungan');
-    expect($message)->toContain('No. HP calon penerima: '.$row->applicant['phone']);
+    expect($message)->toContain('Bapak/Ibu mendapat penugasan survei bantuan',
+        $this->verifier->name, $row->number, $row->name, 'Mohon konfirmasi kesiapan kunjungan',
+        '/admin/bantuan/pengajuan/'.$id, 'Lihat selengkapnya:');
+    expect($message)->not->toContain('Jalan Melati Nomor 10, Bogor', 'No. HP calon penerima:', 'Kebutuhan / masalah:');
     expect($response->json('data.url'))->toBe('https://wa.me/6281234567890?text='.rawurlencode($message));
     $this->actingAs($this->verifier,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertForbidden();
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();

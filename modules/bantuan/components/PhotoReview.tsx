@@ -3,8 +3,8 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { documentLabels, type AidDetail } from "@/contracts/modules/bantuan";
 import { emptyPhotos, photoSnapshot, subscribePhotos } from "../api/photo-queue";
-import { Dialog } from "./ui";
 import s from "./Workspace.module.css";
+import { PhotoViewer } from "./PhotoViewer";
 
 export function PhotoReview({owner,applicationId,documents,allDocuments=false}:{owner:string;applicationId:string;documents:AidDetail["documents"];allDocuments?:boolean}){
   const subscribe=useCallback((listener:()=>void)=>subscribePhotos(owner,applicationId,listener),[owner,applicationId]);
@@ -19,5 +19,5 @@ export function PhotoReview({owner,applicationId,documents,allDocuments=false}:{
     <button type="button" disabled={!photo.src} onClick={()=>setPreview({src:photo.src,title:documentLabels[photo.kind]})} aria-label={`Perbesar ${documentLabels[photo.kind]} ${i+1}`}>
       {photo.src?<img src={photo.src} alt={`${documentLabels[photo.kind]} ${i+1}`}/>:<span>Menyiapkan foto…</span>}
     </button><div><strong>{documentLabels[photo.kind]}</strong><small>{photo.status}</small>{photo.caption&&<p>{photo.caption}</p>}</div>
-  </article>)}</div>{preview&&<Dialog title={preview.title} onClose={()=>setPreview(null)} wide><img className={s.largePhoto} src={preview.src} alt={preview.title}/></Dialog>}</>;
+  </article>)}</div>{preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} onClose={()=>setPreview(null)}/>}</>;
 }

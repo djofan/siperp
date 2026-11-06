@@ -8,6 +8,7 @@ import type { BantuanStaff, BantuanViewer, SantunanRecord } from "@/contracts/mo
 import { day, money, request } from "../api/client";
 import { preparePhoto } from "../api/photos";
 import s from "./Workspace.module.css";
+import { PhotoViewer } from "./PhotoViewer";
 import d from "./Santunan.module.css";
 import { PageGuide } from "./PageGuide";
 import { LoadingState } from "./LoadingState";
@@ -96,7 +97,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     {showPeriod&&<Dialog title="Buat periode bulan berikutnya" description="Seluruh santunan rutin pada bulan sumber akan disalin ke bulan berikutnya, termasuk penerima, kategori, penyalur, dan nominal. Status kembali Belum ditransfer / Proses; laporan dan foto tidak disalin. Filter daftar tidak membatasi penerima yang disalin." onClose={()=>!busy&&setShowPeriod(false)}><form onSubmit={nextPeriod}><label className={s.field}>Periode sumber<select className={s.input} name="sourcePeriod" required disabled={!!busy}>{routinePeriods.map(period=><option key={period} value={period}>{period}</option>)}</select></label><p>Jika santunan rutin bulan tujuan sudah ada, penyalinan akan ditolak untuk mencegah data ganda. Riwayat bulan sumber tetap tersimpan.</p>{error&&<p role="alert" className={s.fieldError}>{error}</p>}<div className={d.formActions}><Button type="button" variant="secondary" disabled={!!busy} onClick={()=>setShowPeriod(false)}>Batal</Button><Button disabled={!!busy}>{busy==="period"?"Membuat…":"Buat periode bulan berikutnya"}</Button></div></form></Dialog>}
     {confirm&&<Dialog title="Tandai dana sudah ditransfer?" description={"Pastikan transfer "+money(confirm.amount)+" untuk "+confirm.recipientName+" sudah dilakukan. Tindakan ini hanya mencatat status, bukan mengirim uang."} onClose={()=>!busy&&setConfirm(null)}><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markTransferred(confirm)}>{busy?"Menyimpan…":"Ya, sudah ditransfer"}</Button></div>{error&&<p role="alert" className={s.fieldError}>{error}</p>}</Dialog>}
     {card&&<SantunanCard row={card} verifier={staff.find(person=>person.id===card.volunteerId)?.name??(card.volunteerId===viewer.id?viewer.name:"")} onClose={()=>setCard(null)}/>}
-    {preview&&<Dialog title={preview.title} onClose={()=>setPreview(null)} wide><img className={s.largePhoto} src={preview.src} alt={preview.title}/></Dialog>}
+    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} onClose={()=>setPreview(null)}/>}
     {success&&<Toast message={success} onClose={()=>setSuccess("")}/>}
   </div>;
 }
