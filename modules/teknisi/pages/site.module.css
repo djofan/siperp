@@ -17,3 +17,34 @@
 .site:has([data-teknisi-landing])>footer .brand{color:#fff}
 .site:has([data-teknisi-landing])>footer .brand span{color:#b6d299}
 @media(max-width:640px){.site:has([data-teknisi-landing])>header{padding:14px 14px 0}.site:has([data-teknisi-landing]) .navigation{padding:14px 16px;border-radius:20px;gap:12px}.site:has([data-teknisi-landing]) .navigation nav{gap:10px 16px;flex:1 1 100%;justify-content:space-between;font-size:10px}.site:has([data-teknisi-landing]) .trackButton{font-size:10px;padding:9px 12px}.site:has([data-teknisi-landing])>footer{padding:24px 20px}}
+
+/* Public service landing: quiet navigation matching the editorial hero. */
+.site:has([data-teknisi-landing]){background:#f8f7f3;color:#1e3020}
+.site:has([data-teknisi-landing])>header{background:#f8f7f3;padding:0}
+.site:has([data-teknisi-landing]) .navigation{max-width:1180px;border-radius:0;background:transparent;padding:27px 40px}
+.site:has([data-teknisi-landing]) .navigation .brand{font-size:23px;color:#36562b}
+.site:has([data-teknisi-landing]) .trackButton{background:#e5edcf;color:#355927;padding:10px 16px}
+.site:has([data-teknisi-landing])>footer{background:#eef1e4;color:#6c7d5a;padding:28px max(22px,calc((100% - 1100px)/2))}
+.site:has([data-teknisi-landing])>footer .brand{color:#36562b}
+.site:has([data-teknisi-landing])>footer .brand span{color:#6e9b32}
+@media(max-width:640px){.site:has([data-teknisi-landing]) .navigation{padding:20px 22px;gap:16px}.site:has([data-teknisi-landing]) .navigation nav{gap:10px 16px;justify-content:flex-start}.site:has([data-teknisi-landing]) .navigation .brand{font-size:21px}}
+
+.site:has([data-teknisi-landing])>header{position:sticky;top:0;z-index:40;background:#f8f7f3f5;backdrop-filter:blur(12px);box-shadow:0 1px 0 #243f1510}
+.site:has([data-teknisi-landing]) main [id]{scroll-margin-top:100px}
+@media(max-width:640px){.site:has([data-teknisi-landing]) main [id]{scroll-margin-top:140px}}
+
+.mobileMenu{display:none;position:relative}.desktopLink{display:inline-flex}
+.site:has([data-teknisi-landing]) .navigation{padding-block:12px;min-height:64px}
+.site:has([data-teknisi-landing]) .navigation .brand{font-size:21px}
+.site:has([data-teknisi-landing]) main [id]{scroll-margin-top:80px}
+@media(max-width:640px){
+.site:has([data-teknisi-landing]) .navigation{min-height:60px;padding:10px 20px;flex-wrap:nowrap;gap:12px}
+.site:has([data-teknisi-landing]) .navigation .brand{font-size:19px}
+.site:has([data-teknisi-landing]) .navigation nav{flex:0 0 auto;flex-wrap:nowrap;gap:10px}
+.site:has([data-teknisi-landing]) .navigation .desktopLink{display:none}
+.site:has([data-teknisi-landing]) .trackButton{padding:9px 12px;font-size:10px}
+.mobileMenu{display:block}.mobileMenu>summary{list-style:none;display:grid;place-items:center;width:34px;height:34px;cursor:pointer;border-radius:8px;background:#e9eddf}.mobileMenu>summary::-webkit-details-marker{display:none}
+.mobileMenu>div{position:absolute;right:0;top:calc(100% + 13px);min-width:210px;background:#fff;color:#304626;box-shadow:0 12px 35px #293d1720;border-radius:13px;padding:8px;display:grid;gap:3px}
+.mobileMenu>div>a{padding:12px;font-size:12px;border-radius:8px}.mobileMenu>div>a:hover{background:#f0f3e9}
+.site:has([data-teknisi-landing]) main [id]{scroll-margin-top:76px}
+}
