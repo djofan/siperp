@@ -1,13 +1,15 @@
 "use client";
+import { useRef } from "react";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { normalizeDonorPhone } from "@/modules/payment/api/donorIdentity";
-import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
+import { calculateFee } from "@/lib/payments/feeCalculation";
 const money = (v: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(v);
 type Method = { method: string; feeAmount: number | null; feePercentage: number | null };
 
 export function DonationForm({ campaignId, methods }: { campaignId: string; methods: Method[] }) {
   const router = useRouter();
+  const checkoutKey = useRef<string | null>(null);
   const [amount, setAmount] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -29,12 +31,12 @@ export function DonationForm({ campaignId, methods }: { campaignId: string; meth
     setBusy(true); setError("");
     try {
       const response = await fetch("/api/payment/checkout", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutKey.current ??= crypto.randomUUID() },
         body: JSON.stringify({ moduleSource: "sarsip", sourceType: "campaign", sourceId: campaignId, fundType: "donasi",
           donorName: name, donorPhone: phone, donorEmail: email, amount: nominal, paymentMethod: method, isAnonymous: anonymous, coversFee }),
       });
       const data = await response.json();
-      if (!response.ok || typeof data.transactionId !== "string") throw new Error(data.error ?? "Gagal membuat transaksi.");
+      if (!response.ok || typeof data.transactionId !== "string") throw new Error(data.error?.message ?? data.error ?? "Gagal membuat transaksi.");
       router.push(`/payment/checkout/${data.transactionId}`);
     } catch (err) { setError(err instanceof Error ? err.message : "Koneksi gagal. Coba kembali."); }
     finally { setBusy(false); }

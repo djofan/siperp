@@ -28,7 +28,7 @@ export function StudentForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="crud-form space-y-5">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form space-y-5">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {owners && (
         <Field label="Peserta (guru ngaji)" htmlFor="student-owner" hint="Santri ini tercatat sebagai anak didik peserta tersebut.">

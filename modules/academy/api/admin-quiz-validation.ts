@@ -29,7 +29,7 @@ export function quizInput(form: FormData) {
   const closesAt = rawClose ? new Date(rawClose + ":00+07:00") : null;
   if (closesAt && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(rawClose) || !Number.isFinite(closesAt.getTime()) || quizDateInput(closesAt) !== rawClose || (quizDate && closesAt <= quizDate))) throw new AcademyError("Batas evaluasi WIB harus valid dan setelah waktu buka.");
   const isActive = form.get("isActive") === "on";
-  if (isActive && !isPublished) throw new AcademyError("Publikasikan kuis sebelum mengaktifkannya.");
+  if (isActive && !isPublished) throw new AcademyError("Publikasikan ujian sebelum mengaktifkannya.");
   return {
     releaseDay: form.has("releaseDay") ? integer(form, "releaseDay", "Hari evaluasi", 1, 30) : 1,
     title: textField(form, "title", "Judul"),

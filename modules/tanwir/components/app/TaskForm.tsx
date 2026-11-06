@@ -41,12 +41,14 @@ export function TaskForm({
   minDeadline,
   questionsLocked = false,
   typeLocked = false,
+  deadlineLocked = false,
 }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   initial?: TaskFormValues;
   minDeadline: string;
   questionsLocked?: boolean;
   typeLocked?: boolean;
+  deadlineLocked?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [type, setType] = useState<TaskType>(initial?.type ?? "voice_note");
@@ -65,7 +67,9 @@ export function TaskForm({
   }
 
   return (
-    <form action={formAction} className="crud-form space-y-6">
+    // React resets a resolved action even when it returns validation errors.
+    // Keep both the draft fields and the selected task type available for retry.
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form space-y-6">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
 
       <Field label="Judul tugas" htmlFor="task-title">
@@ -111,7 +115,8 @@ export function TaskForm({
       </Field>
 
       <Field label="Tenggat (WIB)" htmlFor="task-deadline" hint="Setelah lewat, tugas terkunci. Anda bisa memperpanjang tenggat dari halaman hasil tugas.">
-        <input id="task-deadline" name="deadline" type="datetime-local" required min={minDeadline} defaultValue={initial?.deadline} className={cn(inputClass, "sm:max-w-xs")} />
+        <input id="task-deadline" name="deadline" type="datetime-local" required readOnly={deadlineLocked} min={deadlineLocked ? undefined : minDeadline} defaultValue={initial?.deadline} className={cn(inputClass, "sm:max-w-xs")} />
+        {deadlineLocked && <p className="mt-2 text-xs text-tanwir-muted">Tenggat dikunci karena sudah ada pengumpulan. Gunakan Perpanjang di halaman hasil tugas setelah tenggat lewat.</p>}
       </Field>
 
       {type === "quiz" && (

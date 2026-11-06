@@ -3,7 +3,7 @@
   "info": {
     "title": "Siperp API",
     "version": "1.0.0",
-    "description": "Foundation only. The checked-in contract is authoritative for frontend/backend integration."
+    "description": "Partial API contract. Includes Core foundation and Academy participant registration; other runtime endpoints are defined by their module routes and tests."
   },
   "servers": [
     {
@@ -256,6 +256,350 @@
           "links"
         ],
         "additionalProperties": false
+      },
+      "AcademyParticipantCreate": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "password",
+          "gender",
+          "cohortId"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "cohortId": {
+            "type": "string",
+            "description": "Existing cohort ID; required for admin creation."
+          },
+          "courseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional existing course; if cohort-bound it must belong to the chosen cohort."
+          }
+        }
+      },
+      "AcademyPublicRegistration": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "password",
+          "gender",
+          "email",
+          "confirmPassword"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 191
+          },
+          "confirmPassword": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "Must equal password."
+          }
+        }
+      },
+      "AcademyParticipantUpdate": {
+        "type": "object",
+        "required": [
+          "name",
+          "address",
+          "phone",
+          "gender"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 100
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "phone": {
+            "type": "string",
+            "description": "Indonesian mobile number; local 08 prefix is normalized to 628."
+          },
+          "password": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 10,
+            "writeOnly": true,
+            "description": "Maximum 72 bytes."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ]
+          },
+          "cohortId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional cohort change, subject to previous cohort completion rules."
+          },
+          "courseId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Optional existing course; if cohort-bound it must belong to the chosen cohort."
+          }
+        }
+      },
+      "SantunanInput": {
+        "type": "object",
+        "required": [
+          "frequency",
+          "category",
+          "period",
+          "recipientName",
+          "volunteerId",
+          "amount"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "non_routine"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "widow",
+              "orphan",
+              "foster_child",
+              "tahfidz"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          },
+          "recipientName": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "volunteerId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9000000000000
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "frequency": {
+                  "const": "non_routine"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "category": {
+                  "const": "orphan"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "SarsipProfile": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "headline",
+          "description",
+          "contact",
+          "heroImage"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "contact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "heroImage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191,
+            "pattern": "^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$",
+            "description": "Image URL returned by the authenticated SARSIP upload endpoint. Null uses the built-in illustration. Omission on update preserves the saved photo for older clients."
+          }
+        }
+      },
+      "SarsipProfileUpdate": {
+        "type": "object",
+        "required": [
+          "headline",
+          "description"
+        ],
+        "properties": {
+          "headline": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000
+          },
+          "contact": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "heroImage": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191,
+            "pattern": "^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$",
+            "description": "Image URL returned by the authenticated SARSIP upload endpoint. Null uses the built-in illustration. Omission on update preserves the saved photo for older clients."
+          }
+        }
+      },
+      "BantuanMobileLogin": {
+        "type": "object",
+        "required": [
+          "code",
+          "password"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 32,
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$",
+            "description": "Existing ERP account code; outer whitespace is trimmed and lookup is case-insensitive."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 72,
+            "writeOnly": true
+          }
+        }
+      },
+      "BantuanMobileToken": {
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": [
+              "token",
+              "expires_at"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "token": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -304,13 +648,13 @@
     },
     "/api/v1/auth/login": {
       "post": {
-        "operationId": "loginPlaceholder",
+        "operationId": "loginWithAccountCode",
         "tags": [
           "Foundation"
         ],
         "security": [],
-        "summary": "Login placeholder; does not issue tokens yet",
-        "description": "Explicit POST action exception. Five attempts per minute per normalized email/IP. Returns 501 after valid input.",
+        "summary": "Login with account code and password",
+        "description": "Issues an HttpOnly Sanctum session cookie. Five attempts per minute per normalized code/IP. Email login is not supported.",
         "requestBody": {
           "required": true,
           "content": {
@@ -318,18 +662,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": {
+                  "code": {
                     "type": "string",
-                    "format": "email",
-                    "maxLength": 191
+                    "minLength": 3,
+                    "maxLength": 32,
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$"
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "maxLength": 72
                   }
                 },
                 "required": [
-                  "email",
+                  "code",
                   "password"
                 ],
                 "additionalProperties": true
@@ -338,8 +684,21 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Authenticated; data contains userId, name, code, isSuperadmin, moduleSlugs and moduleRoles. Set-Cookie issues the HttpOnly session."
+          },
           "400": {
             "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect account code or password, or inactive account",
             "content": {
               "application/json": {
                 "schema": {
@@ -385,9 +744,1260 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/participants": {
+      "post": {
+        "summary": "Create an Academy participant as an authorized administrator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participant account and profile created atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "userId",
+                        "nip"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "nip": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
           },
-          "501": {
-            "description": "Not implemented; internal details omitted",
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/register": {
+      "post": {
+        "summary": "Register in the currently open Academy cohort.",
+        "description": "The server selects the open cohort and ignores caller-provided cohortId and courseId. Returns 409 when registration closes; no program is required.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyPublicRegistration"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Participant account and profile created atomically.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "userId",
+                        "nip"
+                      ],
+                      "properties": {
+                        "userId": {
+                          "type": "string"
+                        },
+                        "nip": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/participants/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          },
+          "description": "Participant profile ID."
+        }
+      ],
+      "put": {
+        "summary": "Update an Academy participant as an authorized administrator.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected (401)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected (403)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected (404)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected (409)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected (422)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected (429)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Tambah santunan rutin atau tidak rutin",
+        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SantunanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+          },
+          "403": {
+            "description": "Peran tidak diizinkan"
+          },
+          "422": {
+            "description": "Kategori atau penyalur tidak valid"
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/profile": {
+      "get": {
+        "summary": "Read public SARSIP profile and hero image",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Public profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/SarsipProfile"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Save SARSIP profile and optional hero image",
+        "description": "Requires an active user with SARSIP access. Older clients may omit heroImage to keep the current photo; send null to return to the built-in illustration.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SarsipProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "ok"
+                  ],
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/mobile/login": {
+      "post": {
+        "summary": "Log in to Bantuan mobile using an existing ERP account",
+        "security": [],
+        "description": "Core credentials and live Bantuan module access are checked before issuing a bantuan-mobile Sanctum token. Expiration follows Core TokenIssuer. No session cookie is created or changed. Use the token as Bearer authorization on the existing Bantuan notifications endpoint. Uses the shared throttle:login limiter (5 attempts per minute per normalized account code and IP).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BantuanMobileLogin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mobile token issued",
+            "headers": {
+              "Cache-Control": {
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "pattern": "(^|,\\s*)no-store(,|$)"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BantuanMobileToken"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/mobile/devices": {
+      "post": {
+        "summary": "Register or rotate the current mobile sessions FCM device",
+        "description": "Requires bantuan-mobile Sanctum token, active user and live Bantuan access. Device token is encrypted at rest. Upsert is idempotent; no token is returned.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister devices belonging to the current mobile session",
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/mobile/session": {
+      "delete": {
+        "summary": "Revoke the current mobile session and remove its devices",
+        "description": "Requires a bantuan-mobile Sanctum token. Logout remains available after module access is revoked.",
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan/periods": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Buat santunan rutin bulan berikutnya",
+        "description": "Admin/bendahara saja. Seluruh rutin bulan sumber disalin secara atomik; tidak rutin, laporan dan foto tidak disalin. Tujuan yang sudah memiliki rutin ditolak.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourcePeriod"
+                ],
+                "properties": {
+                  "sourcePeriod": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Periode dibuat",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "period",
+                        "createdCount"
+                      ],
+                      "properties": {
+                        "period": {
+                          "type": "string"
+                        },
+                        "createdCount": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Peran tidak diizinkan"
+          },
+          "409": {
+            "description": "Rutin bulan tujuan sudah ada"
+          },
+          "422": {
+            "description": "Input invalid, sumber kosong, atau penyalur tidak aktif"
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/pwa/push-context": {
+      "get": {
+        "summary": "Read public Firebase Web config and current PWA session binding",
+        "description": "Requires next-server session, active user and Bantuan access. No Sanctum token, service-account key or server file path is returned. Cookie callers use the normal Core session.",
+        "responses": {
+          "200": {
+            "description": "Private context; no-store",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "enabled",
+                        "registered",
+                        "userId",
+                        "binding",
+                        "firebase",
+                        "vapidKey"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "registered": {
+                          "type": "boolean"
+                        },
+                        "userId": {
+                          "type": "string"
+                        },
+                        "binding": {
+                          "type": "string",
+                          "pattern": "^[a-f0-9]{64}$"
+                        },
+                        "firebase": {
+                          "anyOf": [
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "object",
+                              "required": [
+                                "apiKey",
+                                "projectId",
+                                "messagingSenderId",
+                                "appId"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "apiKey": {
+                                  "type": "string"
+                                },
+                                "projectId": {
+                                  "type": "string"
+                                },
+                                "messagingSenderId": {
+                                  "type": "string"
+                                },
+                                "appId": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "vapidKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/pwa/devices": {
+      "post": {
+        "summary": "Register or rotate the current web sessions PWA FCM device",
+        "description": "Requires active next-server session, Bantuan access and configured Firebase Web/VAPID. Token encrypted at rest; one registration per web session. Repeat preserves registration start date; a shared browser token changes owner atomically.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096,
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unregister the current web sessions PWA device",
+        "description": "Remains available after Bantuan access is revoked. Other sessions and native registrations remain untouched.",
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan/{id}/documents": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Upload private santunan evidence",
+        "description": "Assigned volunteer or module admin; only after transfer and before completion. transfer_receipt is optional and never replaces aid_paper or recipient_photo. One file per kind; encrypted storage.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "file"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "aid_paper",
+                      "recipient_photo",
+                      "transfer_receipt"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG or WEBP; maximum 2048 KiB"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Evidence uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "kind"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "aid_paper",
+                            "recipient_photo",
+                            "transfer_receipt"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/survey_submit": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Submit an assigned survey",
+        "description": "Requires the assigned verifier (or module admin). Completeness and evidence checks remain mandatory. All survey submissions enter survey_cc_review. Call Center officers may review their own assigned surveys and explicitly forward them with survey_review_submit to survey_submitted for independent Approver review. Self approval remains forbidden.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "survey"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "survey": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "applicant": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey recorded with current application status and version"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
             "content": {
               "application/json": {
                 "schema": {
@@ -399,5 +2009,8 @@
         }
       }
     }
+  },
+  "x-core-account-access-policy": {
+    "description": "Core module access grants are only for module administrators (AMSIP or existing admin access), and entries must use role admin. Operational accounts retain their home-module roles; Core identity updates must omit entries. Attempts to change their access return 422. Superadmin access is automatic."
   }
 }

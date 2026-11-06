@@ -6,7 +6,7 @@ export function ProgressSummary({ value }: { value: {
   completedLessons: number; totalLessons: number; passedQuizzes: number; totalQuizzes: number; percent: number; isEligible: boolean;
 } }) {
   return <div className="space-y-2 text-sm text-foreground">
-    <p>{value.completedLessons}/{value.totalLessons} materi selesai · {value.passedQuizzes}/{value.totalQuizzes} kuis lulus</p>
+    <p>{value.completedLessons}/{value.totalLessons} materi selesai · {value.passedQuizzes}/{value.totalQuizzes} ujian lulus</p>
     <progress className="h-2 w-full max-w-sm accent-accent" value={value.percent} max={100} aria-label="Persentase materi selesai" />
     <p className={value.isEligible ? "font-semibold text-success" : "text-foreground/60"}>{value.isEligible ? "Memenuhi syarat kelulusan" : "Belum memenuhi syarat kelulusan"}</p>
   </div>;

@@ -10,11 +10,13 @@ export function SipImageUploadField({
   onChange,
   label = "Gambar",
   required = false,
+  onUploadingChange,
 }: {
   initialUrl?: string | null;
   onChange: (url: string | null) => void;
   label?: string;
   required?: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
 }) {
   const [preview, setPreview] = useState<string | null>(initialUrl ?? null);
   const [uploading, setUploading] = useState(false);
@@ -36,23 +38,28 @@ export function SipImageUploadField({
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
     setUploading(true);
+    onUploadingChange?.(true);
 
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await fetch("/api/sip/upload", { method: "POST", body: formData });
-    setUploading(false);
-
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/sip/upload", { method: "POST", body: formData });
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengunggah gambar.");
+      if (!response.ok || typeof data?.url !== "string" || !data.url) {
+        const message = data?.error?.message ?? data?.error;
+        throw new Error(typeof message === "string" ? message : "Gagal mengunggah gambar.");
+      }
+      setPreview(data.url);
+      onChange(data.url);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Gagal mengunggah gambar. Periksa koneksi lalu coba lagi.");
       setPreview(initialUrl ?? null);
-      return;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+      setUploading(false);
+      onUploadingChange?.(false);
     }
-
-    const data = await response.json();
-    setPreview(data.url);
-    onChange(data.url);
   }
 
   return (

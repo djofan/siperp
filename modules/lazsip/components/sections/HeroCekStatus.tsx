@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatRupiah, formatDateTime } from "@/modules/lazsip/components/format";
+import styles from "./HeroCekStatus.module.css";
 
 interface StatusResult {
   found: boolean;
@@ -29,6 +30,7 @@ interface StatusMeta {
 }
 
 const STATUS_META: Record<string, StatusMeta> = {
+  escrow: { label: "Sudah dibayar · Escrow", amountLabel: "Pembayaran diterima iPaymu", headerBg: "bg-amber-50", iconBg: "bg-amber-100", iconColor: "text-amber-600", note: "Dana masih ditahan iPaymu dan belum tersedia untuk disalurkan. Anda tidak perlu membayar ulang.", noteClass: "bg-amber-50 text-amber-800" },
   paid: {
     label: "Success",
     amountLabel: "Total Dibayarkan",
@@ -74,7 +76,7 @@ function StatusIcon({ status, className }: { status?: string; className?: string
       </svg>
     );
   }
-  if (status === "pending") {
+  if (status === "pending" || status === "escrow") {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={className}>
         <circle cx="12" cy="12" r="9" />
@@ -117,7 +119,7 @@ export function HeroCekStatus() {
     const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
     const dialog = document.querySelector('[aria-label="Status transaksi"]');
-    const buttons = dialog?.querySelectorAll<HTMLElement>("button, a[href]");
+    const buttons = dialog?.querySelectorAll<HTMLElement>('button, a[href], [tabindex="0"]');
     buttons?.[0]?.focus();
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -223,7 +225,7 @@ export function HeroCekStatus() {
             role="dialog"
             aria-modal="true"
             aria-label="Status transaksi"
-            className={`relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl bg-white text-left shadow-xl transition-all duration-200 ${
+            className={`${styles.dialog} relative text-left shadow-xl transition-all duration-200 ${
               isModalVisible ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"
             }`}
           >
@@ -231,7 +233,7 @@ export function HeroCekStatus() {
               type="button"
               onClick={closeModal}
               aria-label="Tutup"
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/70 text-lazsip-primary-800/80 transition-colors hover:bg-white hover:text-lazsip-primary-900"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-lazsip-primary-800/80 transition-colors hover:bg-white hover:text-lazsip-primary-900"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
@@ -240,11 +242,11 @@ export function HeroCekStatus() {
 
             {result.found && result.status ? (
               <>
-                <div className={`px-6 pb-6 pt-8 text-center ${meta.headerBg}`}>
-                  <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${meta.iconBg} ${meta.iconColor}`}>
-                    <StatusIcon status={result.status} className="h-7 w-7" />
+                <div className={`shrink-0 px-12 py-5 text-center ${meta.headerBg}`}>
+                  <span className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full ${meta.iconBg} ${meta.iconColor}`}>
+                    <StatusIcon status={result.status} className="h-5 w-5" />
                   </span>
-                  <p className="mt-3 text-base font-bold text-lazsip-primary-900">{meta.label}</p>
+                  <p className="mt-2 text-base font-bold text-lazsip-primary-900">{meta.label}</p>
                   {result.code && (
                     <button
                       type="button"
@@ -267,7 +269,7 @@ export function HeroCekStatus() {
                   )}
                 </div>
 
-                <div className="p-6">
+                <div className={styles.body} tabIndex={0} aria-label="Detail transaksi">
                   <div className="rounded-2xl bg-lazsip-primary-50/60 p-4 text-center">
                     <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/75">{meta.amountLabel}</p>
                     <p className="mt-1 text-2xl font-extrabold text-lazsip-primary-900">{formatRupiah(result.amount ?? 0)}</p>
@@ -275,7 +277,7 @@ export function HeroCekStatus() {
 
                   <div className="my-5 border-t border-dashed border-lazsip-primary-200" />
 
-                  <dl className="flex flex-col gap-3 text-sm">
+                  <dl className={`${styles.details} flex flex-col gap-3 text-sm`}>
                     <div className="flex items-center justify-between gap-3">
                       <dt className="text-lazsip-primary-800/80">{result.type === "donasi" ? "Campaign" : "Jenis"}</dt>
                       <dd className="text-right font-semibold text-lazsip-primary-900">{result.label}</dd>
@@ -302,26 +304,10 @@ export function HeroCekStatus() {
                     <div className={`mt-5 rounded-xl p-3 text-xs leading-relaxed ${meta.noteClass}`}>{meta.note}</div>
                   )}
 
-                  {result.status === "pending" && result.checkoutId && (
-                    <a
-                      href={`/payment/checkout/${result.checkoutId}`}
-                      className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-lazsip-primary-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-lazsip-primary-800"
-                    >
-                      Lanjutkan Pembayaran (Lihat Kode VA/QRIS)
-                    </a>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={closeModal}
-                    className="mt-6 w-full rounded-full border border-lazsip-primary-200 px-4 py-2.5 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400"
-                  >
-                    Tutup
-                  </button>
                 </div>
               </>
             ) : (
-              <div className="p-7 text-center">
+              <div className={`${styles.body} text-center`}>
                 <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
@@ -331,15 +317,12 @@ export function HeroCekStatus() {
                 <p className="mt-1.5 text-sm leading-relaxed text-lazsip-primary-800/80">
                   Periksa kembali kode transaksi Anda, atau hubungi CS kami kalau masih bermasalah.
                 </p>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="mt-6 w-full rounded-full border border-lazsip-primary-200 px-4 py-2.5 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400"
-                >
-                  Tutup
-                </button>
               </div>
             )}
+            <div className={styles.footer}>
+              {result.found && result.status === "pending" && result.checkoutId && <a href={`/payment/checkout/${result.checkoutId}`} className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-lazsip-primary-900 px-4 py-3 text-center text-sm font-semibold leading-snug text-white transition-colors hover:bg-lazsip-primary-800">Lanjutkan Pembayaran</a>}
+              <button type="button" onClick={closeModal} className="min-h-10 w-full rounded-full border border-lazsip-primary-200 px-4 py-2.5 text-sm font-semibold text-lazsip-primary-800 transition-colors hover:border-lazsip-primary-400">Tutup</button>
+            </div>
           </div>
         </div>, document.body
       )}

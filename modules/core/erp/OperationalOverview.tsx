@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { apiRequest } from "@/lib/api";
+import type { OverviewResponse } from "./contracts";
 import { bankDate } from "./policy";
 const rp = (n: number) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
 export async function OperationalOverview({ from, to }: { from?: string; to?: string }) {
@@ -8,20 +9,7 @@ export async function OperationalOverview({ from, to }: { from?: string; to?: st
   let start: Date, end: Date;
   try { start = bankDate(since); end = new Date(bankDate(until).getTime()+86400000); if (end <= start) throw new Error(); }
   catch { return <p className="mt-5 text-red-600">Rentang tanggal tidak valid. <Link href="/admin/super" className="underline">Reset filter</Link></p>; }
-  const [income, expenses, pending, applications, courses, enrollments, unanswered, unmatched, beneficiaryLaz, beneficiarySar, contacts, recent] = await Promise.all([
-    prisma.paymentTransaction.groupBy({ by: ["moduleSource", "fundType"], where: { status: "paid", gateway: { notIn: ["simulation", "midtrans_sandbox"] }, paidAt: { gte: start, lt: end } }, _sum: { amount: true, adminFee: true }, _count: true }),
-    prisma.coreExpense.aggregate({ where: { spentAt: { gte: start, lt: end } }, _sum: { amount: true }, _count: true }),
-    prisma.paymentTransaction.count({ where: { status: "pending", gateway: { notIn: ["simulation", "midtrans_sandbox"] } } }),
-    prisma.lazsipProgramApplicant.count({ where: { status: { in: ["baru", "diproses"] } } }),
-    prisma.zakatAcademyCourse.findMany({ where: { isSimulation: false }, select: { id: true, title: true, quota: true, isPublished: true, registrationOpen: true, _count: { select: { enrollments: true } } }, orderBy: { createdAt: "desc" }, take: 8 }),
-    prisma.zakatAcademyEnrollment.count({ where: { course: { isSimulation: false } } }),
-    prisma.academyDiscussion.count({ where: { answer: null, course: { isSimulation: false } } }),
-    prisma.coreBankLine.count({ where: { paymentId: null, expenseId: null } }),
-    prisma.lazsipBeneficiary.count({ where: { createdAt: { gte: start, lt: end } } }),
-    prisma.sarsipBeneficiary.count({ where: { archivedAt: null, receivedAt: { gte: start, lt: end } } }),
-    prisma.coreContact.count(),
-    prisma.paymentTransaction.findMany({ where: { status: "paid", gateway: { notIn: ["simulation", "midtrans_sandbox"] }, paidAt: { gte: start, lt: end } }, select: { id: true, trackingCode: true, amount: true, moduleSource: true, fundType: true, paidAt: true }, orderBy: { paidAt: "desc" }, take: 6 }),
-  ]);
+  const {income, expenses, pending, applications, courses, enrollments, unanswered, unmatched, beneficiaryLaz, beneficiarySar, contacts, recent} = await apiRequest<OverviewResponse>(`super/erp/overview?from=${since}&to=${until}`);
   const cards = [
     { label: "Dana diterima pada periode", value: rp(income.reduce((n,v) => n+(v._sum.amount ?? 0),0)), href: "/admin/super/keuangan" },
     { label: "Pengeluaran tercatat pada periode", value: rp(expenses._sum.amount ?? 0), href: "/admin/super/keuangan" },

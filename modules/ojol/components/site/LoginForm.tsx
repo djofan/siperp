@@ -13,6 +13,7 @@ export function LoginForm() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     const data = new FormData(event.currentTarget);
     setPending(true);
     setError("");
@@ -20,11 +21,11 @@ export function LoginForm() {
       const response = await fetch("/api/ojol/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: data.get("code"), password: data.get("password") }),
+        body: JSON.stringify({ code: String(data.get("code")).trim().toUpperCase(), password: data.get("password") }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setError(body?.error ?? "Tidak dapat masuk.");
+        setError((body?.error?.message ?? body?.error) ?? "Tidak dapat masuk.");
         return;
       }
       router.replace(body?.redirectTo ?? "/ojol");
@@ -47,7 +48,7 @@ export function LoginForm() {
           autoCapitalize="characters"
           onChange={event => { event.currentTarget.value = event.currentTarget.value.toUpperCase(); }}
           spellCheck={false}
-          maxLength={20}
+          maxLength={32}
           className={`${inputClass} uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal`}
         />
       </Field>

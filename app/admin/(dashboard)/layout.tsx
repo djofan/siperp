@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { listAccessibleModules, listModules, accountPanelRedirect } from "@/modules/core/modules";
+import { accountPanelRedirect } from "@/modules/core/modules";
 import { type NavGroup } from "@/components/admin-shell/Sidebar";
-import { AdminShellChrome } from "@/components/admin-shell/AdminShellChrome";
+import { CoreChrome } from "@/components/admin-shell/CoreChrome";
 
 export default async function DashboardLayout({
   children,
@@ -17,24 +17,9 @@ export default async function DashboardLayout({
   const destination = await accountPanelRedirect(session);
   if (destination) redirect(destination);
 
-  // Superadmin juga melihat modul nonaktif (ditandai) supaya modul yang masih dikembangkan
-  // tetap bisa dibuka & dites dari sidebar; admin biasa hanya melihat modul aktif yang diizinkan.
-  const accessibleModules = session.isSuperadmin ? await listModules() : await listAccessibleModules(session);
-
   const groups: NavGroup[] = [
-    { items: [{ href: "/admin", label: "Dashboard" }] },
+    { items: [{ href: "/admin", label: "Dashboard" }, { href: "/admin/modul", label: "Modul" }] },
   ];
-
-  if (accessibleModules.length > 0) {
-    groups.push({
-      heading: "Modul",
-      collapsible: true,
-      items: accessibleModules.map((module) => ({
-        href: `/admin/${module.slug}`,
-        label: module.isActive ? module.name : `${module.name} (nonaktif)`,
-      })),
-    });
-  }
 
   if (session.isSuperadmin) {
     groups.push({
@@ -44,16 +29,21 @@ export default async function DashboardLayout({
         { href: "/admin/super/kontak", label: "Kontak Terpadu" },
         { href: "/admin/super/keuangan", label: "Keuangan & Rekonsiliasi" },
         { href: "/admin/super/backup", label: "Backup & Pemulihan" },
-        { href: "/admin/super/akun", label: "Kelola Akun" },
+        { href: "/admin/super/akun", label: "Akun admin modul" },
         { href: "/admin/super/modul", label: "Modul Terdaftar" },
         { href: "/admin/super/rekening-payment", label: "Rekening Pembayaran" },
       ],
     });
   }
+  if (session.isSuperadmin || Object.values(session.moduleRoles ?? {}).includes('admin')) {
+    groups.push({heading: 'Pengelolaan', items: [{href: '/admin/akun-modul', label: 'Akun operasional'}]});
+  }
+
+  groups.push({heading:"Akun",items:[{href:"/admin/pengaturan-akun",label:"Pengaturan akun"}]});
 
   return (
-    <AdminShellChrome groups={groups} userName={session.name}>
+    <CoreChrome groups={groups} userName={session.name} isSuperadmin={session.isSuperadmin}>
       {children}
-    </AdminShellChrome>
+    </CoreChrome>
   );
 }

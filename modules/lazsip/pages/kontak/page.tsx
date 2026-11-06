@@ -1,16 +1,24 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+export const metadata: Metadata = { title: "Kontak | LAZSIP", description: "Alamat kantor, email, dan nomor telepon resmi LAZSIP." };
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
+import { getWhatsAppNumber } from "@/modules/lazsip/api/contact";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 
 export default async function LazsipKontakPage() {
   const kontak = await getSiteContent("kontak");
+  const whatsapp = getWhatsAppNumber(kontak?.phone);
 
   return (
     <div className="mx-auto max-w-2xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
+      <PageIntroRow>
       <BackLink href="/lazsip">Kembali ke Beranda</BackLink>
 
       <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
         Kontak
       </span>
+      </PageIntroRow>
       <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
         Hubungi Kami
       </h1>
@@ -19,6 +27,7 @@ export default async function LazsipKontakPage() {
         kami.
       </p>
 
+      <p className="mt-5 text-sm leading-relaxed text-lazsip-secondary-700">Untuk kendala pembayaran, sertakan kode transaksi dan bukti pembayaran. Pelajari <Link href="/lazsip/refund-policy" className="font-semibold underline underline-offset-4">kebijakan pengembalian dana</Link> sebelum mengajukan refund.</p>
       <div className="mt-10 flex flex-col gap-5">
         {kontak?.address && (
           <div className="rounded-2xl border border-lazsip-primary-100 bg-white p-6">
@@ -35,13 +44,13 @@ export default async function LazsipKontakPage() {
         <div className="rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
           <h2 className="text-base font-bold text-lazsip-primary-900">Kontak Langsung</h2>
           <ul className="mt-3 flex flex-col gap-2 text-sm text-lazsip-primary-800/75">
-            {kontak?.email && <li>{kontak.email}</li>}
-            {kontak?.phone && <li>{kontak.phone}</li>}
-            {!kontak?.email && !kontak?.phone && <li>Info kontak belum diisi lewat halaman admin Konten Umum.</li>}
+            {kontak?.email && <li><a className="break-all underline underline-offset-4" href={`mailto:${kontak.email}`}>{kontak.email}</a></li>}
+            {kontak?.phone && <li>Telepon: {kontak.phone}</li>}
+            {!kontak?.email && !kontak?.phone && <li>Informasi kontak sedang diperbarui.</li>}
           </ul>
-          {process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP && (
+          {whatsapp && (
             <a
-              href={`https://wa.me/${process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP}?text=${encodeURIComponent(
+              href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(
                 "Assalamu'alaikum, saya ingin bertanya seputar LAZSIP."
               )}`}
               target="_blank"

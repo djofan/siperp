@@ -28,16 +28,17 @@ const TOOLS: { value: Tool; label: string; icon: string }[] = [
 export function HeroUtilityCard({
   goldPricePerGram,
   fitrahPricePerJiwa,
+  whatsapp,
 }: {
   goldPricePerGram: number;
   fitrahPricePerJiwa: number;
+  whatsapp?: string;
 }) {
   const [tool, setTool] = usePersistedPreference<Tool>(
     "lazsip-hero-utility:tool",
     TOOLS.map((t) => t.value),
     "kalkulator"
   );
-  const whatsapp = process.env.NEXT_PUBLIC_LAZSIP_WHATSAPP;
   const jemputMessage = encodeURIComponent(
     "Assalamu'alaikum, saya ingin menjadwalkan penjemputan zakat oleh tim LAZSIP."
   );

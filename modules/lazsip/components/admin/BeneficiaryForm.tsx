@@ -15,6 +15,8 @@ interface BeneficiaryFormValues {
   gender: string;
   referralSource: string;
   photo: string;
+  handoverPhoto: string;
+  certificatePhoto: string;
   needs: string;
   aidType: string;
   amountReceived: string;
@@ -48,6 +50,10 @@ const textareaClass =
 const adminTextareaClass =
   "rounded-2xl border border-rose-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-rose-300 dark:border-rose-500/30 dark:bg-white/5 dark:text-white dark:focus:ring-rose-400/40";
 
+function RemovePhotoButton({label,disabled,onClick}:{label:string;disabled?:boolean;onClick:()=>void}){
+  return <button type="button" disabled={disabled} onClick={onClick} aria-label={label} className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-medium text-red-700 transition-colors hover:border-red-300 hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-400/20 dark:bg-red-400/5 dark:text-red-300 dark:hover:bg-red-400/10"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>Hapus foto</button>;
+}
+
 export function BeneficiaryForm({
   beneficiaryId,
   initialValues,
@@ -67,6 +73,8 @@ export function BeneficiaryForm({
     gender: initialValues?.gender ?? "perempuan",
     referralSource: initialValues?.referralSource ?? "",
     photo: initialValues?.photo ?? "",
+    handoverPhoto: initialValues?.handoverPhoto ?? "",
+    certificatePhoto: initialValues?.certificatePhoto ?? "",
     needs: initialValues?.needs ?? "",
     aidType: initialValues?.aidType ?? "kebutuhan_pokok",
     amountReceived: initialValues?.amountReceived ?? "",
@@ -81,6 +89,9 @@ export function BeneficiaryForm({
   });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploads, setUploads] = useState<Record<string,boolean>>({});
+  const uploading = Object.values(uploads).some(Boolean);
+  function uploadState(field:string,busy:boolean){setUploads(previous=>({...previous,[field]:busy}));}
 
   const age = useMemo(() => hitungUmur(values.birthDate), [values.birthDate]);
 
@@ -91,6 +102,7 @@ export function BeneficiaryForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (uploading) { setError("Tunggu sampai semua foto selesai diunggah."); return; }
 
     if (!isEdit && !values.photo) {
       setError("Foto penerima manfaat wajib diunggah.");
@@ -150,7 +162,8 @@ export function BeneficiaryForm({
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <ImageUploadField label="Foto" initialUrl={values.photo} onChange={(url) => set("photo", url ?? "")} required={!isEdit} />
+            <ImageUploadField label="Foto wajah penerima manfaat" initialUrl={values.photo} onChange={(url) => set("photo", url ?? "")} onUploadingChange={busy=>uploadState("photo",busy)} required={!isEdit} />
+            <p className="mt-2 text-xs text-lazsip-primary-800/55 dark:text-white/50">Foto utama untuk profil dan kartu penerima manfaat.</p>
           </div>
 
           <div className="flex items-center justify-between rounded-2xl bg-lazsip-primary-50/60 dark:bg-white/5 px-4 py-3.5 sm:col-span-2">
@@ -181,8 +194,8 @@ export function BeneficiaryForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Cara Mengetahui LAZSIP</label>
-            <input value={values.referralSource} onChange={(e) => set("referralSource", e.target.value)} className={inputClass} />
+            <label htmlFor="beneficiary-referral-source" className="text-sm font-medium text-lazsip-primary-900 dark:text-white">Sumber Informasi LAZSIP</label>
+            <input id="beneficiary-referral-source" value={values.referralSource} onChange={(e) => set("referralSource", e.target.value)} placeholder="Contoh: tetangga, relawan, atau media sosial" className={inputClass} />
           </div>
 
           <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -226,6 +239,15 @@ export function BeneficiaryForm({
           </div>
         </div>
       </div>
+
+      <section className={panelClasses("p-5")} aria-label="Foto pendukung penyaluran">
+        <h3 className="text-base font-bold text-lazsip-primary-900 dark:text-white">Dokumentasi penyaluran</h3>
+        <p className="mb-5 mt-2 text-xs leading-6 text-lazsip-primary-800/60 dark:text-white/55">Opsional. Kedua foto ditampilkan ke publik di bawah informasi verifikator. Pastikan sertifikat tidak memperlihatkan NIK atau data pribadi sensitif.</p>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div><ImageUploadField key={`handover:${values.handoverPhoto}`} label="Foto penyerahan bantuan" initialUrl={values.handoverPhoto} onChange={url=>set("handoverPhoto",url??"")} onUploadingChange={busy=>uploadState("handoverPhoto",busy)}/>{values.handoverPhoto&&<RemovePhotoButton label="Hapus foto penyerahan" disabled={uploads.handoverPhoto} onClick={()=>set("handoverPhoto","")}/>}</div>
+          <div><ImageUploadField key={`certificate:${values.certificatePhoto}`} label="Foto sertifikat bantuan" initialUrl={values.certificatePhoto} onChange={url=>set("certificatePhoto",url??"")} onUploadingChange={busy=>uploadState("certificatePhoto",busy)}/>{values.certificatePhoto&&<RemovePhotoButton label="Hapus foto sertifikat" disabled={uploads.certificatePhoto} onClick={()=>set("certificatePhoto","")}/>}</div>
+        </div>
+      </section>
 
       <div className="rounded-3xl border-2 border-dashed border-rose-200 bg-rose-50/40 p-5 dark:border-rose-900/40 dark:bg-rose-950/20">
         <div className="mb-2 flex items-center gap-2.5">
@@ -318,7 +340,7 @@ export function BeneficiaryForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <LoadingButton type="submit" loading={isSubmitting} className="w-fit px-8">
+      <LoadingButton type="submit" loading={isSubmitting} disabled={uploading} className="w-fit px-8">
         {isEdit ? "Simpan Perubahan" : "Tambah Data"}
       </LoadingButton>
     </form>

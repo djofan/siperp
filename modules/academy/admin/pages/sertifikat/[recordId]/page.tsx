@@ -29,7 +29,7 @@ export default async function Page({ params, searchParams }: {
       {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-block text-sm text-accent underline">Buka file sertifikat tersimpan ↗</a>}
       <p className="text-sm leading-6 text-foreground/60">Catatan kelulusan mengikuti progres terbaru. Menghapus tautan atau catatan tidak mencabut sertifikat otomatis bagi peserta yang masih memenuhi syarat.</p>
     </section>
-    <DeleteForm title="catatan kelulusan ini" description="Catatan dan tautan tambahan dihapus. Progres serta riwayat kuis tetap tersimpan. Peserta yang lulus tetap dapat mencetak sertifikat otomatis." action={deleteAcademyCompletion.bind(null, recordId)} />
+    <DeleteForm title="catatan kelulusan ini" description="Catatan dan tautan tambahan dihapus. Progres serta riwayat ujian tetap tersimpan. Peserta yang lulus tetap dapat mencetak sertifikat otomatis." action={deleteAcademyCompletion.bind(null, recordId)} />
   </>;
 }
 

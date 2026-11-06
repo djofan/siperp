@@ -1,0 +1,27 @@
+
+.root{position:relative;flex-shrink:0}
+.root .trigger{min-height:44px}
+.panel{max-height:calc(100dvh - 132px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.summary{overflow-wrap:anywhere}
+.root .trigger{display:flex;align-items:center;gap:10px;background:transparent;border:0;border-radius:16px;padding:7px 10px;color:#204c3b;font:inherit;text-align:left;cursor:pointer}
+.root .trigger:hover,.root .trigger[aria-expanded=true]{background:#eaf1e5}
+.avatar{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:#deecd3;color:#34683e;font-weight:700;flex-shrink:0}
+.identity{display:grid;gap:4px;max-width:160px}
+.identity strong{font-size:12px}
+.identity small{font-size:11px;color:#6c8065;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rotated{transform:rotate(180deg)}
+.panel{position:absolute;top:calc(100% + 10px);right:0;z-index:100;width:280px;max-width:calc(100vw - 32px);padding:8px;background:#fff;border-radius:18px;box-shadow:0 12px 40px #183e3026}
+.summary{padding:12px;display:grid;gap:5px}
+.summary strong{font-size:13px;color:#204c3b}
+.summary small{font-size:11px;color:#6c8065;line-height:1.6}
+.panel a,.panel button{box-sizing:border-box;display:flex;align-items:center;gap:12px;width:100%;padding:12px;border:0;border-radius:12px;background:transparent;color:#204c3b;text-align:left;text-decoration:none;font:inherit;font-size:13px;cursor:pointer}
+.panel a:hover,.panel button:hover{background:#eff5ea;color:#174f36}
+.panel a small{display:block;margin-top:4px;font-size:11px;color:#70806c}
+.panel button{color:#ac4034}
+.panel button:hover{background:#fff1ed;color:#963326}
+.panel button:disabled{opacity:.6;cursor:wait}
+.root button:focus-visible,.panel a:focus-visible{outline:2px solid #28784b;outline-offset:2px}
+@media(max-width:600px){.identity{display:none}.root .trigger{padding:4px;gap:5px}.avatar{width:36px;height:36px}}
+
+.mobileOptions{display:none}
+@media(max-width:760px){.mobileOptions{display:grid}.mobileOptions button span{display:inline!important}.root .trigger>svg{display:none}}

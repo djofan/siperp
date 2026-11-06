@@ -1,7 +1,7 @@
 "use client";
 import { useActionState, useId, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { FormField, Input } from "@/components/ui/FormField";
+import { Button } from "@/modules/academy/components/ui/ButtonCompat";
+import { FormField, Input } from "@/modules/academy/components/ui/FieldCompat";
 import type { ActionState } from "../../api/actions";
 
 type Action = (state: ActionState, form: FormData) => Promise<ActionState>;
@@ -32,7 +32,7 @@ export function MaintenanceForm({ action, initial }: { action: Action; initial: 
   return <form action={formAction} className="space-y-4">
     {state.error && <p role="alert" className="text-sm text-danger">{state.error}</p>}
     <label className="flex items-center gap-3 text-foreground"><input type="checkbox" name="maintenance" checked={checked} onChange={event => setChecked(event.target.checked)} />Aktifkan mode pemeliharaan</label>
-    <p className="max-w-2xl text-sm leading-6 text-foreground/60">Mode pemeliharaan menutup akses publik dan peserta, termasuk pengerjaan kuis. Waktu kuis yang sudah berjalan tetap dihitung. Admin tetap dapat mengelola modul.</p>
+    <p className="max-w-2xl text-sm leading-6 text-foreground/60">Mode pemeliharaan menutup akses publik dan peserta, termasuk pengerjaan ujian. Waktu ujian yang sudah berjalan tetap dihitung. Admin tetap dapat mengelola modul.</p>
     <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : "Simpan pengaturan"}</Button>
   </form>;
 }

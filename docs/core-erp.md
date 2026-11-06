@@ -4,7 +4,7 @@ Halaman utama `/admin/super`, kontak `/admin/super/kontak`, keuangan `/admin/sup
 
 ## Dashboard
 
-Filter tanggal menggunakan WIB. Dana masuk dan pengeluaran mengikuti periode; pekerjaan tertunda dan pendaftaran Academy menggunakan seluruh waktu, diberi label tersendiri. Penerimaan `simulation` dan `midtrans_sandbox` tidak masuk ke ringkasan keuangan. Academy menampilkan angkatan resmi, bukan angkatan simulasi. Angka bantuan menghitung catatan penerima per modul, bukan jumlah orang unik lintas modul dan bukan nominal pengeluaran bank.
+Filter tanggal menggunakan WIB. Dana masuk dan pengeluaran mengikuti periode; pekerjaan tertunda dan pendaftaran Academy menggunakan seluruh waktu, diberi label tersendiri. Penerimaan `simulation` dan `ipaymu_sandbox` tidak masuk ke ringkasan keuangan. Academy menampilkan angkatan resmi, bukan angkatan simulasi. Angka bantuan menghitung catatan penerima per modul, bukan jumlah orang unik lintas modul dan bukan nominal pengeluaran bank.
 
 ## Kontak terpadu
 

@@ -13,11 +13,11 @@ export default async function TambahAkunPage() {
           href="/admin/super/akun"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-foreground/50 hover:text-foreground"
         >
-          ← Kembali ke Kelola Akun
+          ← Kembali ke akun admin modul
         </Link>
         <PageHeader
-          title="Tambah Akun"
-          description="Buat akun admin baru dan tentukan modul yang boleh diakses."
+          title="Tambah admin"
+          description="Isi identitas dan pilih akses modul, lalu simpan untuk kembali ke daftar akun."
         />
       </div>
       <AkunForm modules={modules} />

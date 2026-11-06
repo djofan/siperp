@@ -1,5 +1,36 @@
 # Insan Academy — operasional angkatan pertama
 
+## Pengelolaan materi dan angkatan
+
+- Buat angkatan di `/admin/academy/angkatan`. Jumlah peserta tidak dibatasi.
+- Di `/admin/academy/materi`, pilih angkatan sebelum melihat atau membuat materi.
+  Formulir hanya memuat angkatan, jenis Audio, judul, urutan, dan deskripsi singkat.
+  Formulir tambah materi mendukung unggah audio dan publikasi dalam satu kali
+  penyimpanan. Panel admin menampilkan semua materi angkatan tanpa pagination,
+  diurutkan dari angka terkecil (mulai 0). Urutan berikutnya disarankan otomatis.
+- Di editor materi, gunakan **Duplikat ke angkatan lain**. Judul, urutan,
+  deskripsi dan audio disalin sebagai draft. Materi asal dan tujuan memiliki
+  identitas terpisah; progres, nilai, dan sertifikat tidak ikut disalin.
+- Audio duplikat menggunakan file penyimpanan yang sama dengan tautan akses
+  baru milik materi tujuan. Mengganti audio salinan tidak mengubah audio asal.
+- Kuis juga wajib memilih angkatan. Peserta hanya dapat membuka materi, file,
+  dan kuis dari angkatan yang diikutinya.
+- Menu peserta **Angkatan Saya** menyimpan riwayat keikutsertaan. Setelah semua
+  ujian terpublikasi termasuk ujian akhir selesai dikerjakan (tidak harus lulus),
+  akun dan NIP yang sama dapat mendaftar ke angkatan berikutnya yang dibuka.
+  Tidak boleh mendaftar dua kali pada angkatan yang sama.
+- Migrasi `2026_10_20_010000_scope_academy_learning_to_cohorts` mempertahankan
+  materi dan riwayat lama. Program lama yang jelas asal angkatannya dipetakan
+  kembali. Pustaka bersama dengan lebih dari satu calon angkatan tetap ada di
+  **Arsip belum memiliki angkatan**, lalu diduplikasi admin ke angkatan tujuan.
+
+## Batas upload
+
+Audio maksimal 50 MB. Next Server Actions menyediakan ruang request 51 MB.
+Server lokal `php artisan serve` memakai `api/php.d/uploads.ini`; restart server
+setelah perubahan konfigurasi. Pada hosting, PHP/web server juga harus memakai
+batas upload 50 MB dan request minimal 51 MB.
+
 ## Pengembangan lanjutan
 
 - Pengajar mengunggah audio MP3/WAV/OGG/M4A (maksimal 50 MB) dan PDF (maksimal
@@ -24,118 +55,13 @@
 - Dashboard pengajar dan menu Nilai menampilkan peserta yang melewatkan tenggat,
   mendapat nilai terbaik di bawah batas lulus, atau belum mengerjakan ujian yang
   sudah tersedia. Ujian yang belum dibuka tidak menjadi alasan tindak lanjut.
-- Superadmin mengelola angkatan di `/admin/academy/angkatan`. Angkatan baru
-  menyalin materi, file upload dan soal dari template resmi. Peserta, nilai,
-  sertifikat, pertanyaan, tanggal mulai dan jadwal absolut ujian tidak disalin.
-  Angkatan/ujian baru dibuat draft, dengan kuota 200 dan durasi 30 hari. Membuka
-  pendaftaran angkatan menutup pendaftaran angkatan resmi lainnya secara atomik.
-  Jadwal, ranking, nilai dan sertifikat tetap terkait ID angkatan masing-masing.
-
-Verifikasi lokal: `node scripts/check-academy-development.mjs` memakai fixture
-sementara dan sesi uji singkat dari akun lokal yang telah memiliki peran tersebut.
-Script menghapus fixture dan file ujinya setelah pemeriksaan, tanpa mengganti
-password akun atau membuat superadmin baru.
-
-Program memakai satu pemateri, Ustadz Irham, dengan materi audio. Nomor CS awal:
-**+62 811-1186-626**. Pendaftaran final memakai web, mengikuti keputusan pengelola
-di chat, sehingga tidak memerlukan Google Form.
-
-## Pendaftaran dan grup
-
-1. Peserta membuka `/academy/daftar`, mengisi nama, email, nomor WhatsApp,
-   jenis kelamin, dan password. Pendaftaran membuat akun Core, profil, dan
-   enrollment secara atomik. Tidak memberikan akses admin atau pengajar.
-2. Kuota 200 dihitung dari enrollment angkatan, bukan seluruh akun Core.
-   Pendaftaran web dan impor memakai lock program yang sama. Saat penuh atau
-   program sudah dimulai, pendaftaran program ditutup.
-3. Superadmin membuka `/admin/academy/pendaftaran`, mengunduh kontak VCF,
-   mengimpornya ke aplikasi Contacts yang digunakan tim, dan memasukkan peserta
-   ke grup WhatsApp secara manual. Tombol status grup hanya mencatat pekerjaan
-   tersebut; sistem tidak mengirim pesan atau memasukkan orang ke grup otomatis.
-4. Impor CSV opsional tersedia untuk pendaftaran manual. Maksimal 50 baris per
-   batch dengan header `name,email,phone,gender`. Gender IKHWAN/AKHWAT. Impor
-   tidak mengganti password atau nama akun lama. Password sementara akun baru
-   ditampilkan sekali dan wajib diganti sebelum mengakses materi.
-5. Setelah kuota terpenuhi dan tim siap, superadmin menetapkan tanggal mulai
-   dalam WIB. Program berlangsung **30 hari** sebagai implementasi satu bulan.
-   Tanggal mulai program yang sudah berjalan tidak dapat digeser dari form ini.
-
-## Jadwal dan materi
-
-Kerangka awal: 3 pekan dengan 4 slot materi per pekan (12 materi). Minggu ke-4
-tidak mempunyai materi baru. Ujian harian 4 kali seminggu selama minggu 1–3
-pada hari 1–4, 8–11, dan 15–18 (12 ujian). Ujian
-mingguan 3 kali sebulan pada hari 6, 13, dan 20. Setiap bab memiliki ujian akhir
-bulan pada hari ke-30 (3 ujian untuk kerangka 3 bab saat ini). Pengajar dapat
-mengatur waktu buka, tutup, dan durasi masing-masing ujian.
-
-Audio resmi belum disediakan. Semua 12 slot materi dan 18 evaluasi resmi
-disimpan sebagai draft. Judul placeholder harus diganti sesuai silabus yang
-disepakati. Pengajar mengisi teks dan/atau URL audio serta publikasi materi di
-`/academy/pengajar/materi`. Materi teks saja tidak menampilkan pemutar audio kosong.
-Materi tidak terbuka sebelum tanggal mulai atau sebelum hari rilisnya.
-Materi yang telah dibuka tetap dapat dipakai untuk murojaah setelah program.
-
-## Dashboard dan peran
-
-Peserta: dashboard, materi, ujian, pertanyaan pribadi, catatan, sertifikat milik
-sendiri, peringkat milik sendiri, dan ganti password. Menu Kemajuan Saya dihapus;
-URL lamanya mengarah ke dashboard. Peringkat dihitung per program memakai nilai
-berbobot, tanpa menampilkan identitas/nilai peserta lain; nilai sama mendapat
-peringkat sama. Program simulasi mempunyai kelompok peringkat terpisah.
-
-Pengajar: dashboard ringkas dengan empat fungsi, yaitu materi teks/audio, soal
-dan ujian, jawaban pertanyaan, serta nilai seluruh peserta dengan rincian per
-ujian. Tidak ada menu sertifikat, peringkat pribadi, atau kemajuan. Halaman dan
-server action mengharuskan akses pengajar/superadmin; akun peserta tidak dapat
-mengubah materi, soal, atau melihat tabel nilai peserta lain. Pengajar tidak
-memperoleh akses pengelolaan akun, kontak, atau pengaturan admin.
-
-Superadmin lama tetap mengelola administrasi, peserta, sertifikat, dan pengaturan.
-
-Evaluasi mempunyai hari rilis 1–30, waktu buka tambahan, batas tutup opsional,
-dan durasi pengerjaan. Batas tutup wajib diisi untuk evaluasi resmi yang harus
-ditutup pada hari tertentu. Batas tutup dapat memperpendek durasi percobaan;
-muat ulang halaman tidak mengulang timer. Soal/kunci/bobot disnapshot saat
-percobaan dimulai, sehingga perubahan admin tidak mengubah percobaan lama.
-
-## Penilaian
-
-- Pilihan ganda dan benar/salah: satu jawaban benar.
-- Multiple choice: satu atau beberapa jawaban benar dengan minimal satu
-  pengecoh. Nilai penuh hanya jika himpunan pilihan persis sesuai kunci.
-- Bobot soal 1–100. Salah atau kosong bernilai 0, tanpa pengurangan nilai.
-- Nilai kuis = bobot jawaban benar / total bobot soal × 100, dibulatkan dua
-  angka desimal. Ambang awal kelulusan kuis 70.
-- Nilai program awal = **20% rerata harian + 30% rerata pekanan + 50% ujian
-  akhir**. Evaluasi yang belum dikerjakan tetap dihitung 0. Jika retake diizinkan,
-  nilai terbaik per kuis digunakan; jumlah percobaan tidak menambah bobot.
-- Nilai sementara ditandai sampai semua tiga kategori dan seluruh evaluasi
-  terpublikasi selesai. Sertifikat mensyaratkan semua materi selesai, semua
-  evaluasi lulus, ketiga kategori tersedia/selesai, dan nilai berbobot ≥70.
-- Superadmin bisa mengubah bobot kategori di pengaturan dengan total wajib 100%.
-  Perubahan bobot kategori menghitung ulang nilai program; nilai kuis lama tetap.
-
-Bobot 20/30/50 adalah pilihan konfigurasi awal program ini, bukan klaim bobot
-resmi HSI. Pola audio dan evaluasi berjenjang mengacu pada
-[HSI Reguler](https://home.hsi.id/divisi/reguler). Penggunaan evaluasi rutin dengan
-umpan balik dan evaluasi akhir mengikuti pembedaan
-[formative/summative assessment CMU](https://www.cmu.edu/teaching/assessment/basics/formative-summative.html).
-
-## Hak akses dan akun simulasi
-
-- Peserta: audio, catatan pribadi, kuis, progres, tanya jawab, dan ganti password.
-- Pengajar: daftar rekaman yang belum tersedia, penyimpanan URL audio sebagai
-  draft, jadwal sesi, serta jawaban pertanyaan peserta. Tidak mendapat akses
-  administrasi Core atau panel admin academy.
-- Superadmin yang sudah ada: seluruh administrasi. Tidak dibuat akun admin baru.
-
-`npm run db:setup:insan-academy` menerapkan dua migrasi tambahan khusus academy,
-menyiapkan kerangka program, dan membuat akun simulasi peserta/pengajar pada
-database lokal. Script tidak menimpa password akun yang sudah ada. Kredensial
-tersimpan di `academy-simulation.local.json` (diabaikan Git).
-
-Program simulasi terpisah dari angkatan resmi dan tidak mengurangi kuota resmi.
-Audio simulasi hanyalah bunyi uji pemutar tiga detik, **bukan rekaman ustadz**.
-Tersedia satu materi dan evaluasi harian/pekanan/akhir dengan ketiga jenis soal.
-Script dapat dijalankan ulang tanpa menggandakan akun, materi, atau evaluasi.
+- Superadmin mengelola angkatan di `/admin/academy/angkatan`. Angkatan adalah
+  kelompok peserta, terpisah dari program. Buat nama angkatan tanpa
+  menyalin materi atau soal. Pilih angkatan ketika mendaftarkan peserta; angkatan
+  juga dapat diubah melalui edit peserta. Jumlah peserta dihitung dari profil
+  yang belum dihapus. Membuka pendaftaran web menutup angkatan lain secara atomik.
+  Jadwal, ranking, nilai dan sertifikat tetap mengikuti program yang diikuti.
+- Migrasi `2026_10_20_000000_create_academy_cohorts` memisahkan data angkatan
+  lama dari program. Peserta dengan beberapa program memakai program pertama
+  sebagai angkatan awal. Peserta tanpa program resmi dapat ditetapkan angkatannya
+  melalui edit peserta. Enrollment dan riwayat belajar tidak dihapus.

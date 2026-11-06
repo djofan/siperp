@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { MobileSidebar } from "@/components/admin-shell/MobileSidebar";
 import { SipSidebar } from "@/modules/sip/components/admin/SipSidebar";
 import { SipTopbar } from "@/modules/sip/components/admin/SipTopbar";
 import { AdminGradientBackground } from "@/components/admin-shell/AdminGradientBackground";
 
-const MOBILE_SIDEBAR_TRANSITION_MS = 200;
 
 export function SipAdminShellChrome({
   userName,
@@ -15,18 +15,7 @@ export function SipAdminShellChrome({
   children: React.ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileVisible, setMobileVisible] = useState(false);
-
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const raf = requestAnimationFrame(() => setMobileVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [mobileOpen]);
-
-  function closeMobileSidebar() {
-    setMobileVisible(false);
-    setTimeout(() => setMobileOpen(false), MOBILE_SIDEBAR_TRANSITION_MS);
-  }
+  function closeMobileSidebar() { setMobileOpen(false); }
 
   return (
     <div className="dark relative flex h-dvh overflow-hidden text-foreground">
@@ -35,20 +24,9 @@ export function SipAdminShellChrome({
         <SipSidebar userName={userName} />
       </div>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${mobileVisible ? "opacity-100" : "opacity-0"}`}
-            onClick={closeMobileSidebar}
-            aria-hidden
-          />
-          <div
-            className={`absolute inset-y-0 left-0 bg-[#0a0d08] shadow-xl transition-transform duration-200 ease-out ${mobileVisible ? "translate-x-0" : "-translate-x-full"}`}
-          >
-            <SipSidebar userName={userName} onNavigate={closeMobileSidebar} />
-          </div>
-        </div>
-      )}
+      <MobileSidebar open={mobileOpen} onClose={closeMobileSidebar}>
+        <SipSidebar userName={userName} onNavigate={closeMobileSidebar} />
+      </MobileSidebar>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col overflow-hidden">
         <SipTopbar onMenuClick={() => setMobileOpen(true)} />

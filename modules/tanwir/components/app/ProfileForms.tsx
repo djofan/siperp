@@ -38,7 +38,7 @@ export function ProfileForm({ action, initial, isPeserta }: { action: Action; in
   const [preview, setPreview] = useState<string | null>(initial.photoUrl);
 
   return (
-    <form action={formAction} className="crud-form space-y-6">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form space-y-6">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {state.message && <Notice tone="success">{state.message}</Notice>}
 

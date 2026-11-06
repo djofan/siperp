@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { listAdminTransactions, listEntries, money } from "@/modules/sarsip/api/data";
-import { TransactionActions } from "@/modules/lazsip/components/admin/TransactionActions";
+import { TransactionActions } from "@/modules/payment/components/TransactionActions";
 export default async function TransactionsPage() {
   const [rows, entries] = await Promise.all([listAdminTransactions(), listEntries("campaign", true)]);
   const titles = new Map(entries.map((e) => [e.id, e.title]));

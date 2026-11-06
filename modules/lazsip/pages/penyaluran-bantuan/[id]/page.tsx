@@ -4,6 +4,7 @@ import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { Button } from "@/modules/lazsip/components/ui/Button";
 import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 import { BeneficiaryCard } from "@/modules/lazsip/components/BeneficiaryCard";
 import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 
@@ -32,11 +33,13 @@ export default async function LazsipBeneficiaryDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <article className="mx-auto max-w-3xl">
+        <PageIntroRow>
         <BackLinkGroup homeHref="/lazsip#penyaluran" listHref="/lazsip/penyaluran-bantuan" listLabel="Semua Bantuan" />
 
         <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
           {AID_TYPE_LABEL[item.aidType] ?? item.aidType}
         </span>
+        </PageIntroRow>
 
         <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           {item.name}
@@ -76,7 +79,7 @@ export default async function LazsipBeneficiaryDetailPage({
                 <p className="mt-1 text-lg font-extrabold text-lazsip-primary-900">{formatRupiah(item.amountReceived)}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50">Diketahui dari</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50">Sumber Informasi LAZSIP</p>
                 <p className="mt-1 text-sm font-semibold text-lazsip-primary-900">{item.referralSource}</p>
               </div>
             </div>
@@ -88,6 +91,18 @@ export default async function LazsipBeneficiaryDetailPage({
           <p className="mt-1 text-sm font-semibold text-lazsip-primary-900">{item.verifierName}</p>
           <p className="text-xs text-lazsip-primary-800/55">{item.verifierArea}</p>
         </div>
+
+        {(item.handoverPhoto || item.certificatePhoto) && <section className="mt-5" aria-label="Dokumentasi penyaluran bantuan">
+          <h2 className="mb-3 text-sm font-semibold text-lazsip-primary-900">Dokumentasi penyaluran</h2>
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+            {[["Foto penyerahan bantuan",item.handoverPhoto],["Foto sertifikat bantuan",item.certificatePhoto]].map(([title,src])=>src&&<figure key={title} className="overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white">
+              <a href={src} target="_blank" rel="noopener noreferrer" className="block focus-visible:outline-2 focus-visible:outline-lazsip-primary-500" aria-label={`Lihat ukuran penuh: ${title}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- gambar dokumentasi dari upload admin */}
+                <img src={src} alt={`${title} — ${item.name}`} loading="lazy" className="block aspect-[4/3] w-full object-cover object-center"/>
+              </a><figcaption className="flex items-center justify-between gap-2 px-4 py-3 text-xs font-medium text-lazsip-primary-900"><span>{title}</span><span aria-hidden="true" className="text-lazsip-primary-500">↗</span></figcaption>
+            </figure>)}
+          </div>
+        </section>}
 
         <div className="mt-12 border-t border-lazsip-primary-100 pt-8">
           <Button href="/lazsip/penyaluran-bantuan" variant="secondary">

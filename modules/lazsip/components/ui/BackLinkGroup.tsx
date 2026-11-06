@@ -10,10 +10,10 @@ export function BackLinkGroup({
   listLabel: string;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <nav aria-label="Navigasi kembali" className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:gap-x-5">
       <BackLink href={homeHref}>Kembali ke Beranda</BackLink>
-      <span className="text-lazsip-primary-800/30 dark:text-white/20">|</span>
+      <span aria-hidden="true" className="text-lazsip-primary-800/30 dark:text-white/20">/</span>
       <BackLink href={listHref}>{listLabel}</BackLink>
-    </div>
+    </nav>
   );
 }

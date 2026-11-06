@@ -1,3 +1,5 @@
 <?php
 
-// Reserved for a future module migration. Follow api/docs/CONVENTIONS.md and OpenAPI.
+use App\Support\LearningRoutes;
+
+LearningRoutes::register('ojol');

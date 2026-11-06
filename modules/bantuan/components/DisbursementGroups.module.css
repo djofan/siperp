@@ -1,0 +1,38 @@
+.root{display:grid;gap:20px}.root h2,.root h3,.root p{margin:0}.root h2{font-size:20px;color:#204e38}.root header p{margin-top:7px;color:#647c69;font-size:13px;line-height:1.7}.groups{display:grid;gap:18px;grid-template-columns:repeat(2,minmax(0,1fr))}.group{min-width:0;align-self:start;background:#fff;border-radius:22px;padding:24px;display:grid;gap:20px}.heading{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}.caption{font-size:10px;letter-spacing:1px;color:#758575}.heading h3{font-size:19px;color:#204e38;margin:6px 0}.heading p{font-size:12px;color:#647c69}.total{font-size:23px;color:#235b3a;font-variant-numeric:tabular-nums}.root button{cursor:pointer}.root .primary{background:#246e43;color:#fff;border:0;border-radius:12px;padding:13px 17px;min-height:46px;display:flex;align-items:center;justify-content:center;gap:9px;font-weight:650;font-size:13px}.root .primary:hover:not(:disabled){background:#195632;color:#fff}.root button:disabled{opacity:.55;cursor:not-allowed}.form{scroll-margin-top:110px}.form fieldset{border:0;padding:0;margin:0;min-width:0;display:grid;gap:18px}.selection,.summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px;background:#edf5e8;border-radius:12px;font-size:13px}.selection label,.confirm{display:flex;align-items:center;gap:10px}.root input[type=checkbox]{width:18px;height:18px;min-height:18px;flex:0 0 18px;accent-color:#246e43;margin:0}.recipients{display:grid;gap:8px;max-height:320px;overflow:auto}.recipients>label{display:flex;align-items:center;gap:10px;padding:12px;background:#f6f9f3;border-radius:10px}.recipients span{flex:1;min-width:0;display:grid;gap:5px}.recipients strong,.recipients b{font-size:12px;color:#244f39}.recipients small{font-size:11px;color:#6b7e6e}.summary>strong{font-size:20px;color:#225b38}.fields{display:grid;grid-template-columns:1fr;gap:16px}.fields label,.evidence{display:grid;gap:8px;font-size:12px;color:#355740}.root input:not([type=checkbox]){width:100%;min-width:0;min-height:44px;padding:11px 13px;border:1px solid #d9e5d3;border-radius:10px;background:#fff;color:#234834;font:inherit}.evidence small{color:#6b7e6e}.confirm{align-items:flex-start;font-size:12px;line-height:1.7;color:#395c45}.footer{display:flex;justify-content:flex-end;gap:10px}.root .secondary{background:#edf3e8;color:#365e44;border:0;padding:12px 18px;border-radius:12px}.error{color:#a33228;background:#fff0ec;padding:12px;border-radius:10px;font-size:13px}.success{background:#eaf5e6;padding:14px;border-radius:12px;color:#285b36;font-size:13px}.root :focus-visible{outline:2px solid #609853;outline-offset:3px}@media(max-width:1100px){.groups{grid-template-columns:1fr}}@media(max-width:600px){.group{padding:18px}.summary{align-items:flex-start;flex-direction:column}.footer{flex-wrap:wrap}.recipients>label{flex-wrap:wrap}}
+
+/* Separate the transfer summary from the application list below. */
+.root{gap:18px;margin-bottom:32px}
+.root>header{max-width:760px}
+.root>header h2{font-size:20px;font-weight:650;line-height:1.35}
+.groups{gap:20px;align-items:start}
+.group{padding:24px;gap:22px;border-radius:20px;box-shadow:0 4px 20px rgb(29 68 45 / 3%)}
+.heading{align-items:center;flex-wrap:nowrap;gap:16px}
+.identity{display:flex;align-items:center;gap:12px;min-width:0}
+.avatar{display:grid;place-items:center;flex:0 0 42px;height:42px;border-radius:14px;background:#edf3e8;color:#356743;font-size:14px;font-weight:700}
+.root .heading h3{margin:4px 0 0;font-size:18px;line-height:1.4;font-weight:650;overflow-wrap:anywhere}
+.caption{font-size:11px;letter-spacing:0;color:#718174}
+.badge{flex-shrink:0;padding:7px 10px;border-radius:8px;background:#f3f6ef;color:#55705b;font-size:11px;font-weight:550}
+.amount{display:grid;gap:7px;padding:18px 20px;background:#f5f8f2;border-radius:14px}
+.amount>span{font-size:12px;color:#647b68}
+.total{font-size:28px;line-height:1.2;font-weight:650;letter-spacing:-.6px;overflow-wrap:anywhere}
+.root .openButton{width:100%;min-height:46px;padding:12px 16px;font-size:13px;border-radius:11px}
+.openButton svg:last-child{margin-left:auto;transition:transform .2s}
+.openButton[aria-expanded=true] svg:last-child{transform:rotate(180deg)}
+.expanded{grid-column:1/-1}
+.expanded .fields{grid-template-columns:minmax(180px,1fr) minmax(0,2fr)}
+.form{padding-top:4px}
+@media(max-width:600px){
+ .group{padding:20px;gap:18px}
+ .heading{align-items:flex-start;flex-wrap:wrap}
+ .total{font-size:25px}
+ .expanded .fields{grid-template-columns:1fr}
+ .root .openButton{font-size:12px}
+}
+
+@media(max-width:600px){
+ .recipients>label{display:grid;grid-template-columns:18px minmax(0,1fr);align-items:start}
+ .recipients>label>b{grid-column:2}.recipients small{overflow-wrap:anywhere}
+ .selection{flex-wrap:wrap}.footer{display:grid;grid-template-columns:1fr}
+ .root .primary{white-space:normal;text-align:center}
+ .root input:not([type=checkbox]){font-size:16px}
+}

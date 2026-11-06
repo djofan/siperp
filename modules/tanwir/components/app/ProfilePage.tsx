@@ -1,16 +1,13 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getOwnProfile } from "@/modules/tanwir/api/members";
 import { changePasswordAction, updateProfileAction } from "@/modules/tanwir/api/actions/profile";
 import { Card, PageTitle, Pill, SectionTitle } from "@/modules/tanwir/components/ui";
 import { photoUrl } from "./media";
 import { PasswordForm, ProfileForm } from "./ProfileForms";
 
 /** Halaman profil bersama guru & peserta (server component). */
-export async function ProfilePage({ memberId }: { memberId: string }) {
-  const member = await prisma.tanwirMember.findUnique({
-    where: { id: memberId },
-    include: { user: { select: { name: true, email: true } }, group: { select: { name: true, code: true } } },
-  });
+export async function ProfilePage({ memberId: _memberId }: { memberId: string }) {
+  const member = await getOwnProfile();
   if (!member) notFound();
   const isPeserta = member.role === "peserta";
   const email = member.user.email.endsWith(".invalid") ? null : member.user.email;

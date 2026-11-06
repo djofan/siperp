@@ -1,57 +1,118 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ref = name => ({ $ref: `#/components/schemas/${name}` });
-const object = (properties, required = Object.keys(properties), additionalProperties = false) => ({ type: 'object', properties, required, additionalProperties });
-const string = {type:'string'};
-const json = schema => ({'application/json':{schema}});
-const error = description => ({description,content:json(ref('Error'))});
-const errors = Object.fromEntries([[400,'Malformed request'],[401,'Missing or invalid Bearer token'],[403,'Access denied'],[404,'Resource not found'],[409,'Conflict'],[422,'Validation failed'],[429,'Rate limited'],[500,'Internal error']].map(([status,description])=>[status,error(description)]));
-errors[429].headers={'Retry-After':{schema:{type:'string'},description:'Seconds before retry'}};
-const success = (schema,description='Success') => ({description,content:json(schema)});
-const schemas={
- Error:object({error:object({code:string,message:string,details:{type:'object',additionalProperties:{type:'array',items:string}}})}),
- Health:object({data:object({status:{enum:['ok','degraded']},database:object({status:{enum:['connected','unavailable']}})})}),
- PaymentAttempt:object({id:{type:'string',pattern:'^c[a-z0-9]{24}$'},name:string,amount:{type:'integer',minimum:1},status:{enum:['pending','cancelled']}}),
- PaymentAttemptResponse:object({data:ref('PaymentAttempt')}),
- PaymentAttemptCollection:object({data:{type:'array',items:ref('PaymentAttempt')},meta:object({current_page:{type:'integer'},per_page:{type:'integer',maximum:100},total:{type:'integer'},last_page:{type:'integer'},from:{type:['integer','null']},to:{type:['integer','null']},path:string,links:{type:'array',items:object({url:{type:['string','null']},label:string,active:{type:'boolean'}},['url','label','active'],true)}},['current_page','per_page','total','last_page','from','to','path','links'],true),links:object({first:string,last:string,prev:{type:['string','null']},next:{type:['string','null']}})}),
+import { readFileSync, writeFileSync } from 'node:fs';
+
+// Preserve the existing partial Core/Academy contract as the baseline. Module
+// additions live here; openapi.json is generated, never edited by hand.
+const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+const image = {
+  type: ['string', 'null'], maxLength: 191,
+  pattern: '^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$',
+  description: 'Image URL returned by the authenticated SARSIP upload endpoint. Null uses the built-in illustration. Omission on update preserves the saved photo for older clients.',
 };
-const base={openapi:'3.1.0',info:{title:'Siperp API',version:'1.0.0',description:'Foundation only. The checked-in contract is authoritative for frontend/backend integration.'},servers:[{url:'http://localhost:8000'}],security:[{bearerAuth:[]}],components:{securitySchemes:{bearerAuth:{type:'http',scheme:'bearer',description:'Sanctum personal access token; absolute lifetime seven days. No session cookies.'}},schemas}};
-const body=(schema)=>({required:true,content:json(schema)});
-const live={...base,paths:{
- '/api/v1/health':{get:{operationId:'getHealth',tags:['Foundation'],security:[],summary:'Application and database health',responses:{200:success(ref('Health')),503:success(ref('Health'),'Degraded database health'),500:errors[500]}}},
- '/api/v1/auth/login':{post:{operationId:'loginPlaceholder',tags:['Foundation'],security:[],summary:'Login placeholder; does not issue tokens yet',description:'Explicit POST action exception. Five attempts per minute per normalized email/IP. Returns 501 after valid input.',requestBody:body(object({email:{type:'string',format:'email',maxLength:191},password:{type:'string',minLength:1}},['email','password'],true)),responses:{400:errors[400],422:errors[422],429:errors[429],500:errors[500],501:error('Not implemented; internal details omitted')}}},
+const fields = {
+  headline: { type: 'string', minLength: 1, maxLength: 191 },
+  description: { type: 'string', minLength: 1, maxLength: 10000 },
+  contact: { type: ['string', 'null'], maxLength: 191 },
+  heroImage: image,
+};
+document.components.schemas.SarsipProfile = {
+  type: 'object', additionalProperties: false,
+  required: ['id', ...Object.keys(fields)],
+  properties: { id: { type: 'string' }, ...fields },
+};
+document.components.schemas.SarsipProfileUpdate = {
+  type: 'object', required: ['headline', 'description'], properties: fields,
+};
+const json = schema => ({ 'application/json': { schema } });
+const error = { description: 'Request rejected', content: json({ $ref: '#/components/schemas/Error' }) };
+document.paths['/api/v1/sarsip/profile'] = {
+  get: {
+    summary: 'Read public SARSIP profile and hero image', security: [],
+    responses: {
+      200: { description: 'Public profile', content: json({
+        type: 'object', required: ['data'], additionalProperties: false,
+        properties: { data: { $ref: '#/components/schemas/SarsipProfile' } },
+      }) },
+      403: error,
+    },
+  },
+  put: {
+    summary: 'Save SARSIP profile and optional hero image',
+    description: 'Requires an active user with SARSIP access. Older clients may omit heroImage to keep the current photo; send null to return to the built-in illustration.',
+    requestBody: { required: true, content: json({ $ref: '#/components/schemas/SarsipProfileUpdate' }) },
+    responses: {
+      200: { description: 'Saved', content: json({ type: 'object', required: ['ok'], properties: { ok: { const: true } } }) },
+      401: error, 403: error, 422: error,
+    },
+  },
+};
+document.components.schemas.BantuanMobileLogin = {
+  type: 'object', required: ['code', 'password'],
+  properties: {
+    code: { type: 'string', minLength: 3, maxLength: 32, pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$', description: 'Existing ERP account code; outer whitespace is trimmed and lookup is case-insensitive.' },
+    password: { type: 'string', minLength: 1, maxLength: 72, writeOnly: true },
+  },
+};
+document.components.schemas.BantuanMobileToken = {
+  type: 'object', required: ['data'], additionalProperties: false,
+  properties: { data: {
+    type: 'object', required: ['token', 'expires_at'], additionalProperties: false,
+    properties: { token: { type: 'string', minLength: 1 }, expires_at: { type: 'string', format: 'date-time' } },
+  } },
+};
+document.paths['/api/v1/bantuan/mobile/login'] = { post: {
+  summary: 'Log in to Bantuan mobile using an existing ERP account', security: [],
+  description: 'Core credentials and live Bantuan module access are checked before issuing a bantuan-mobile Sanctum token. Expiration follows Core TokenIssuer. No session cookie is created or changed. Use the token as Bearer authorization on the existing Bantuan notifications endpoint. Uses the shared throttle:login limiter (5 attempts per minute per normalized account code and IP).',
+  requestBody: { required: true, content: json({ $ref: '#/components/schemas/BantuanMobileLogin' }) },
+  responses: {
+    200: { description: 'Mobile token issued', headers: { 'Cache-Control': { required: true, schema: { type: 'string', pattern: '(^|,\\s*)no-store(,|$)' } } }, content: json({ $ref: '#/components/schemas/BantuanMobileToken' }) },
+    401: error, 403: error, 422: error,
+    429: { ...error, headers: { 'Retry-After': { required: true, schema: { type: 'string' } } } },
+  },
+} };
+
+// Bantuan mobile push registration and session lifecycle.
+const mobileNoContent = { description: 'Completed; empty response body' };
+document.paths['/api/v1/bantuan/mobile/devices'] = {
+  post: {
+    summary: 'Register or rotate the current mobile sessions FCM device',
+    description: 'Requires bantuan-mobile Sanctum token, active user and live Bantuan access. Device token is encrypted at rest. Upsert is idempotent; no token is returned.',
+    requestBody: { required: true, content: json({ type: 'object', required: ['token'], properties: { token: { type: 'string', minLength: 1, maxLength: 4096, writeOnly: true } } }) },
+    responses: { 204: mobileNoContent, 401: error, 403: error, 422: error, 429: error },
+  },
+  delete: { summary: 'Unregister devices belonging to the current mobile session', responses: { 204: mobileNoContent, 401: error, 403: error, 429: error } },
+};
+document.paths['/api/v1/bantuan/mobile/session'] = {
+  delete: { summary: 'Revoke the current mobile session and remove its devices', description: 'Requires a bantuan-mobile Sanctum token. Logout remains available after module access is revoked.', responses: { 204: mobileNoContent, 401: error, 403: error } },
+};
+
+
+document.paths['/api/v1/bantuan/santunan/periods'] = {post:{tags:['Bantuan'],summary:'Buat santunan rutin bulan berikutnya',description:'Admin/bendahara saja. Seluruh rutin bulan sumber disalin secara atomik; tidak rutin, laporan dan foto tidak disalin. Tujuan yang sudah memiliki rutin ditolak.',security:[{bearerAuth:[]}],requestBody:{required:true,content:{'application/json':{schema:{type:'object',required:['sourcePeriod'],properties:{sourcePeriod:{type:'string',pattern:'^[0-9]{4}-(0[1-9]|1[0-2])$'}}}}}},responses:{'201':{description:'Periode dibuat',headers:{Location:{schema:{type:'string'}}},content:{'application/json':{schema:{type:'object',required:['data'],properties:{data:{type:'object',required:['period','createdCount'],properties:{period:{type:'string'},createdCount:{type:'integer',minimum:1}}}}}}}},'403':{description:'Peran tidak diizinkan'},'409':{description:'Rutin bulan tujuan sudah ada'},'422':{description:'Input invalid, sumber kosong, atau penyalur tidak aktif'}}}};
+// Cookie-authenticated PWA registrations remain separate from native mobile sessions.
+const pwaContext = {type:'object',required:['enabled','registered','userId','binding','firebase','vapidKey'],additionalProperties:false,properties:{
+  enabled:{type:'boolean'},registered:{type:'boolean'},userId:{type:'string'},binding:{type:'string',pattern:'^[a-f0-9]{64}$'},
+  firebase:{anyOf:[{type:'null'},{type:'object',required:['apiKey','projectId','messagingSenderId','appId'],additionalProperties:false,properties:{apiKey:{type:'string'},projectId:{type:'string'},messagingSenderId:{type:'string'},appId:{type:'string'}}}]},
+  vapidKey:{type:['string','null']},
 }};
-const idParam={name:'payment_attempt',in:'path',required:true,schema:{type:'string'},description:'CUID v1 identifier; unknown identifiers return 404'};
-const query=[
- {name:'page',in:'query',schema:{type:'integer',minimum:1,default:1}},
- {name:'per_page',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:25}},
- {name:'filter',in:'query',style:'deepObject',explode:true,schema:object({status:{enum:['pending','cancelled']}},[],false)},
- {name:'sort',in:'query',schema:{type:'string',enum:['name','-name','amount','-amount'],default:'name'}},
- {name:'q',in:'query',schema:{type:'string',maxLength:200}},
-];
-const fields={name:{type:'string',minLength:1,maxLength:100},amount:{type:'integer',minimum:1},status:{enum:['pending','cancelled']}};
-const created={...success(ref('PaymentAttemptResponse'),'Created; replay returns the original status, representation and Location'),headers:{Location:{schema:{type:'string',format:'uri'},description:'Canonical URI of the created resource'}}};
-const resource='/api/v1/examples/payment-attempts';
-const example={...base,info:{...base.info,title:'Siperp REST example (test only)',description:'Non-production reference. Routes are registered only by tests; in-memory idempotency does not provide cross-process durability.'},'x-example-only':true,paths:{
- [resource]:{
- get:{operationId:'examplesIndex',tags:['Examples'],parameters:query,responses:{200:success(ref('PaymentAttemptCollection')),...errors}},
- post:{operationId:'examplesStore',tags:['Examples'],parameters:[{name:'Idempotency-Key',in:'header',required:true,schema:{type:'string',minLength:1,maxLength:128,pattern:'^[A-Za-z0-9._:-]+$'},description:'Scoped to authenticated principal and creation operation; different payload with the same key returns 409'}],requestBody:body(object({name:fields.name,amount:fields.amount},['name','amount'],true)),responses:{201:created,...errors}},
- },
- [resource+'/{payment_attempt}']:{parameters:[idParam],
- get:{operationId:'examplesShow',tags:['Examples'],responses:{200:success(ref('PaymentAttemptResponse')),...errors}},
- put:{operationId:'examplesReplace',tags:['Examples'],description:'Full replacement of all writable fields; read-only and internal fields remain server-owned.',requestBody:body(object(fields,Object.keys(fields),true)),responses:{200:success(ref('PaymentAttemptResponse')),...errors}},
- patch:{operationId:'examplesUpdate',tags:['Examples'],description:'Partial update; at least one writable field required.',requestBody:body({...object(fields,[],true),anyOf:Object.keys(fields).map(field=>({required:[field]}))}),responses:{200:success(ref('PaymentAttemptResponse')),...errors}},
- delete:{operationId:'examplesDestroy',tags:['Examples'],responses:{204:{description:'Deleted; no response body'},...errors}},
- },
+document.paths['/api/v1/bantuan/pwa/push-context']={get:{summary:'Read public Firebase Web config and current PWA session binding',description:'Requires next-server session, active user and Bantuan access. No Sanctum token, service-account key or server file path is returned. Cookie callers use the normal Core session.',responses:{200:{description:'Private context; no-store',headers:{'Cache-Control':{schema:{type:'string'}}},content:json({type:'object',required:['data'],properties:{data:pwaContext}})},401:error,403:error,429:error}}};
+document.paths['/api/v1/bantuan/pwa/devices']={
+  post:{summary:'Register or rotate the current web sessions PWA FCM device',description:'Requires active next-server session, Bantuan access and configured Firebase Web/VAPID. Token encrypted at rest; one registration per web session. Repeat preserves registration start date; a shared browser token changes owner atomically.',requestBody:{required:true,content:json({type:'object',required:['token'],properties:{token:{type:'string',minLength:1,maxLength:4096,writeOnly:true}}})},responses:{204:mobileNoContent,401:error,403:error,422:error,429:error,503:error}},
+  delete:{summary:'Unregister the current web sessions PWA device',description:'Remains available after Bantuan access is revoked. Other sessions and native registrations remain untouched.',responses:{204:mobileNoContent,401:error,403:error,429:error}},
+};
+// Private santunan evidence: only the two original photos are mandatory.
+document.paths['/api/v1/bantuan/santunan/{id}/documents'] = {post:{
+  tags:['Bantuan'], summary:'Upload private santunan evidence',
+  description:'Assigned volunteer or module admin; only after transfer and before completion. transfer_receipt is optional and never replaces aid_paper or recipient_photo. One file per kind; encrypted storage.',
+  security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}}],
+  requestBody:{required:true,content:{'multipart/form-data':{schema:{type:'object',required:['kind','file'],properties:{kind:{type:'string',enum:['aid_paper','recipient_photo','transfer_receipt']},file:{type:'string',format:'binary',description:'JPEG, PNG or WEBP; maximum 2048 KiB'}}}}}},
+  responses:{201:{description:'Evidence uploaded',content:json({type:'object',required:['data'],properties:{data:{type:'object',required:['id','kind'],properties:{id:{type:'string',format:'uuid'},kind:{type:'string',enum:['aid_paper','recipient_photo','transfer_receipt']}}}}})},401:error,403:error,404:error,409:error,422:error,503:error},
 }};
-export const specifications={'openapi.json':live,'openapi.example.json':example};
-if(process.argv[1] && path.resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
- for(const [name,spec] of Object.entries(specifications)) {
-  const target=path.join(root,'docs',name),text=JSON.stringify(spec,null,2)+'\n';
-  if(process.argv.includes('--check')) {if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==text)throw Error(`OpenAPI drift: regenerate ${name}`);}
-  else fs.writeFileSync(target,text);
- }
- console.log(process.argv.includes('--check')?'OpenAPI artifacts are current':'OpenAPI artifacts exported to api/docs');
+document.paths['/api/v1/bantuan/applications/{id}/actions/survey_submit'] = {post:{tags:['Bantuan'],summary:'Submit an assigned survey',description:'Requires the assigned verifier (or module admin). Completeness and evidence checks remain mandatory. All survey submissions enter survey_cc_review. Call Center officers may review their own assigned surveys and explicitly forward them with survey_review_submit to survey_submitted for independent Approver review. Self approval remains forbidden.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version','survey'],properties:{version:{type:'integer',minimum:1},survey:{type:'object',additionalProperties:true},applicant:{type:'object',additionalProperties:true}}})},responses:{200:{description:'Survey recorded with current application status and version'},403:error,404:error,409:error,422:error}}};
+const output = `${JSON.stringify(document, null, 2)}\n`;
+const target = new URL('../docs/openapi.json', import.meta.url);
+if (process.argv.includes('--check')) {
+  if (readFileSync(target, 'utf8').replace(/\r\n/g, '\n') !== output) {
+    throw new Error('OpenAPI contract is stale. Run node api/tools/export-openapi.mjs.');
+  }
+} else {
+  writeFileSync(target, output);
 }

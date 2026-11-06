@@ -1,4 +1,5 @@
 "use client";
+import { useRef } from "react";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ export function ZakatPaymentForm({
   // ulang di form ini — kalau datang langsung dari tombol Navbar/Footer, default "maal".
   const zakatType = initialType === "fitrah" ? "fitrah" : "maal";
 
+  const checkoutKey = useRef<string | null>(null);
   const [nominal, setNominal] = useState(initialAmount ?? "");
   const [paymentMethod, setPaymentMethod] = useState(feeRefs[0]?.method ?? "");
   const [coversFee, setCoversFee] = useState(true);
@@ -82,7 +84,7 @@ export function ZakatPaymentForm({
     try {
       const response = await fetch("/api/payment/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutKey.current ??= crypto.randomUUID() },
         body: JSON.stringify({
           moduleSource: "lazsip",
           sourceType: "zakat",
@@ -100,7 +102,7 @@ export function ZakatPaymentForm({
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        setError(data?.error ?? "Gagal mengirim pembayaran zakat.");
+        setError((data?.error?.message ?? data?.error) ?? "Gagal mengirim pembayaran zakat.");
         return;
       }
 

@@ -73,6 +73,7 @@ Daftar berikut membedakan endpoint aktif dari rancangan migrasi; tidak ada endpo
 
 | Endpoint | Metode | Keadaan | Alasan |
 | --- | --- | --- | --- |
+| `/api/v1/bantuan/mobile/login` | POST | Aktif | Login akun ERP melalui `LoginRequest` Core dan `throttle:login`; JSON `{code,password}`. Akun aktif dan akses Bantuan diperiksa sebelum `TokenIssuer` menerbitkan token `bantuan-mobile`. Respons 200 `{data:{token,expires_at}}` dengan `Cache-Control: no-store`, tanpa cookie. Error 401/403/422/429 memakai `ErrorResource`. Superadmin mengikuti pengecualian status modul Core; modul wajib terdaftar. |
 | `/api/v1/health` | GET | Aktif | Singleton diagnostik yang sudah disepakati; bukan koleksi atau aksi CRUD bisnis |
 | `/api/v1/auth/login` | POST | Placeholder 501 | Aksi autentikasi yang kelak menerbitkan token; password tidak boleh menjadi query GET |
 | `/api/v1/payment/transactions/{id}/checkout-sessions` | POST | Rancangan; belum aktif | Membuat sub-resource sesi checkout pada provider pembayaran; ada efek eksternal |
@@ -137,3 +138,47 @@ Content-Type: application/json
 ```
 
 ID ilustratif; test menggunakan CUID asli. Jalankan `php artisan test --filter=RestConventionsTest` dan `php artisan test --filter=OpenApiContractTest`. Hasil keseluruhan dicatat pada `api/VERIFICATION.md`.
+
+## Bantuan mobile push
+POST /api/v1/bantuan/mobile/devices mendaftarkan atau merotasi perangkat sesi mobile (token string maksimal 4096, respons 204). DELETE pada URI sama menghapus perangkat sesi saat ini (204). DELETE /api/v1/bantuan/mobile/session mencabut token sesi dan perangkatnya (204). Semua membutuhkan Sanctum bantuan-mobile; registrasi perangkat memeriksa user.active dan module.access:bantuan. Logout tetap tersedia saat akses modul dicabut. Tidak ada token yang dikembalikan. Error mengikuti ErrorResource. Registrasi dibatasi 60 request/menit. Kontrak dihasilkan oleh tools/export-openapi.mjs.
+
+## Periode santunan rutin
+
+`POST /api/v1/bantuan/santunan/periods` membuat kumpulan santunan rutin bulan berikutnya.
+Request `{sourcePeriod: "YYYY-MM"}`; admin/bendahara saja. Respons 201 melalui API Resource
+berisi `data.period` dan `data.createdCount`, Location menunjuk daftar santunan dengan filter
+`period`. 409 bila rutin bulan tujuan sudah ada; 422 bila sumber kosong atau penyalur tidak aktif.
+Penyalinan atomik dan diserialisasi pada registri modul; laporan, status, dan dokumen tidak disalin.
+
+## Kategori santunan dan kertas bantuan
+
+`POST /api/v1/bantuan/santunan` menerima kategori rutin `widow`, `orphan`,
+`foster_child`, dan `tahfidz` (Lembaga Tahfidz). Tidak rutin tetap hanya `orphan`.
+Kategori disimpan pada kolom string yang sudah ada, tanpa migration. Kontrak
+input diekspor oleh `node api/tools/export-santunan-openapi.mjs`. Template
+kertas bantuan merupakan aset statis tanpa data penerima; hasil terisi
+dibuat di browser dari data santunan yang sudah diotorisasi.
+
+## Push PWA Bantuan
+
+- `GET /api/v1/bantuan/pwa/push-context`: sesi web `next-server`, akun aktif,
+  akses Bantuan. Respons Resource 200 berisi konfigurasi Firebase Web publik,
+  VAPID publik, status registrasi dan binding sesi HMAC, dengan no-store.
+  Kunci service account, token Sanctum, dan path server tidak dikirim.
+- `POST /api/v1/bantuan/pwa/devices`: `{token}` FCM Web, 204 tanpa body,
+  validasi 422, akses 401/403, server belum dikonfigurasi 503. Upsert per sesi,
+  token dienkripsi. Token browser yang sama berpindah ke sesi pemilik baru.
+- `DELETE /api/v1/bantuan/pwa/devices`: hapus registrasi sesi web saat ini,
+  204 tanpa body; tetap tersedia setelah akses modul dicabut. Cookie mutasi
+  memakai pemeriksaan Origin Core. Endpoint native mobile tidak dilonggarkan.
+- `bantuan:push` mengirim kanal mobile dan PWA. PWA menggunakan pesan data-only
+  generik dengan binding sesi; service worker memeriksa konteks sesi langsung
+  sebelum menampilkan notifikasi dan hanya membuka halaman notifikasi internal.
+
+## Bukti santunan
+
+`POST /api/v1/bantuan/santunan/{id}/documents` menerima multipart `kind` dan `file`
+(JPEG/PNG/WEBP, maksimal 2048 KiB). `aid_paper` dan `recipient_photo` wajib untuk
+menyelesaikan laporan; `transfer_receipt` opsional. Ketiganya disimpan terenkripsi
+dan hanya dapat dibaca lewat endpoint privat dengan otorisasi santunan yang sama.
+Unggah hanya setelah transfer dan sebelum selesai; satu dokumen per jenis.

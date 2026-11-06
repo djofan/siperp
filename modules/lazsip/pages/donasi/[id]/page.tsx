@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ApiError } from "@/lib/api";
 import { getCampaignById, listCampaigns, listCampaignHistory } from "@/modules/lazsip/api/campaigns";
 import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { formatRupiah } from "@/modules/lazsip/components/format";
@@ -8,6 +9,7 @@ import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
 import { CampaignCard } from "@/modules/lazsip/components/CampaignCard";
 import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
 import { CampaignDetailColumns } from "@/modules/lazsip/components/sections/CampaignDetailColumns";
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 
 export default async function LazsipDonasiDetailPage({
   params,
@@ -23,7 +25,10 @@ export default async function LazsipDonasiDetailPage({
 
   const percent = campaign.targetAmount ? (campaign.currentAmount / campaign.targetAmount) * 100 : 0;
   const allCampaigns = await listCampaigns();
-  const history = await listCampaignHistory(id);
+  const history = await listCampaignHistory(id).catch((error: unknown) => {
+    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return null;
+    throw error;
+  });
   const otherCampaigns = allCampaigns.filter((c) => c.id !== id && c.status === "active").slice(0, 3);
 
   return (
@@ -35,7 +40,8 @@ export default async function LazsipDonasiDetailPage({
       </h1>
 
       <CampaignDetailColumns
-        history={history}
+        history={history ?? []}
+        historyUnavailable={history === null}
         campaignId={campaign.id}
         uniqueCode={campaign.uniqueCode}
         feeRefs={feeRefs}
@@ -58,6 +64,8 @@ export default async function LazsipDonasiDetailPage({
           </>
         }
       />
+
+      <CampaignGallery photos={campaign.documentationPhotos??[]} title={campaign.title}/>
 
       {otherCampaigns.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">

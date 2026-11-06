@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { apiRequest } from "@/lib/api";
 import { SIP_SITE_CONTENT_DEFAULTS } from "@/modules/sip/api/siteContentDefaults";
 import { sipPublicUrl } from "@/modules/sip/public-url";
 
@@ -28,9 +28,7 @@ export const SIP_SITE_CONTENT_KEYS: SipSiteContentSectionKey[] = [
 ];
 
 export async function getSiteContent(sectionKey: SipSiteContentSectionKey) {
-  const row = await prisma.sipSiteContent.findUnique({ where: { sectionKey } });
-  if (!row) return null;
-  return JSON.parse(row.contentJson) as Record<string, string>;
+  return apiRequest<Record<string, string> | null>(`sip/site-content/${encodeURIComponent(sectionKey)}`);
 }
 
 /**
@@ -59,13 +57,4 @@ export function splitLines(value: string | undefined) {
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
-}
-
-export async function upsertSiteContent(sectionKey: SipSiteContentSectionKey, content: Record<string, string>) {
-  const contentJson = JSON.stringify(content);
-  await prisma.sipSiteContent.upsert({
-    where: { sectionKey },
-    update: { contentJson },
-    create: { sectionKey, contentJson },
-  });
 }

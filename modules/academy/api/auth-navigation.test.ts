@@ -17,7 +17,8 @@ test("academy auth pages and registration stay reachable during maintenance", {
   assert.match(home, /href="\/academy\/daftar"/);
   assert.doesNotMatch(home, /href="https:\/\/wa\.me\/[^\"]*"[^>]*>\s*Daftar/);
   const login = await get("/academy/masuk");
-  assert.match(login, /id="academy-login-password"/);
+  assert.match(login, /id="academy-password"/);
+  assert.match(login, /name="code"/);
   const register = await get("/academy/daftar");
   assert.match(register, /id="academy-register-password"/);
   const form = new FormData();
@@ -40,7 +41,7 @@ test("academy auth pages and registration stay reachable during maintenance", {
   assert.match(await submitted.text(), /Isi nama dan alamat email yang valid\./);
   const invalidLogin = await fetch(new URL("/api/auth/login", base), {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: "missing@academy-test.invalid", password: "invalid-password" }),
+    body: JSON.stringify({ code: "MISSING-CODE", password: "invalid-password" }),
   });
   assert.equal(invalidLogin.status, 401);
 });

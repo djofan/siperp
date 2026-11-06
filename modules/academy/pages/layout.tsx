@@ -5,6 +5,7 @@ import { getLearningSettings } from "../api/learning";
 import { getExamNotifications } from "../api/notifications";
 import { ReminderRefresh } from "../components/ReminderRefresh";
 import "../components/academy.css";
+import "../components/dashboard.css";
 export const metadata: Metadata = {
   title: { default: "Insan Academy | LAZSIP", template: "%s | Insan Academy" },
   description: "Belajar bersama Ustadz Irham melalui audio harian, catatan belajar, evaluasi, dan tanya jawab selama satu bulan.",

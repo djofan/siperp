@@ -47,7 +47,7 @@ export function LaporanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengunggah file.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal mengunggah file.");
       return;
     }
     const data = await response.json();
@@ -69,7 +69,7 @@ export function LaporanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan.");
       setIsSubmitting(false);
       return;
     }

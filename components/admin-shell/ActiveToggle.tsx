@@ -34,7 +34,7 @@ export function ActiveToggle({
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         setIsActive(previous);
-        setError(data?.error ?? "Gagal mengubah status.");
+        setError((data?.error?.message ?? data?.error) ?? "Gagal mengubah status.");
         return;
       }
 

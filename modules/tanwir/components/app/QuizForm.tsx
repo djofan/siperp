@@ -20,7 +20,7 @@ export function QuizForm({
   const complete = answered === questions.length;
 
   return (
-    <form action={formAction} className="quiz-form space-y-4">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="quiz-form space-y-4">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {Object.entries(answers).map(([id, answer]) => <input key={id} type="hidden" name={`q_${id}`} value={answer} />)}
       <div className="flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tanwir-line"><div className="h-full bg-tanwir-primary" style={{ width: `${questions.length ? answered / questions.length * 100 : 0}%` }} /></div><span className="text-xs tabular-nums text-tanwir-muted">{answered}/{questions.length} terjawab</span></div>

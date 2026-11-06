@@ -1,8 +1,27 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Dev saja: izinkan membuka app lewat 127.0.0.1 (cookie terpisah dari localhost) untuk menguji
-  // dua sesi sekaligus, mis. superadmin di localhost & akun demo Tanwir di 127.0.0.1.
+  experimental: { serverActions: { bodySizeLimit: "51mb" } },
+  async headers() {
+    return [{source:"/bantuan-app/:path*",headers:[
+      {key:"Cache-Control",value:"no-store, private"},
+      {key:"X-Robots-Tag",value:"noindex, nofollow"},
+      {key:"Referrer-Policy",value:"same-origin"},
+    ]}];
+  },
+  async rewrites() {
+    const backend = (process.env.LARAVEL_API_URL ?? "http://127.0.0.1:8000/api/v1").replace(/\/$/, "");
+    return {
+      beforeFiles: [
+        { source: "/uploads/sip/:filename", destination: `${backend}/sip/files/:filename` },
+        { source: "/uploads/sarsip/:filename", destination: `${backend}/sarsip/files/:filename` },
+        { source: "/uploads/lazsip/:filename", destination: `${backend}/lazsip/files/:filename` },
+        { source: "/api/:path*", destination: `${backend}/:path*` },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   allowedDevOrigins: ["127.0.0.1"],
   redirects() {
     return [
@@ -10,18 +29,8 @@ const nextConfig: NextConfig = {
       { source: "/sip/:path*", destination: "/:path*", permanent: true },
     ];
   },
-  outputFileTracingIncludes: {
-    "/admin/super/backup": ["./scripts/erp-backup.mjs", "./scripts/lib/erp-backup.mjs", "./node_modules/@next/env/**/*"],
-  },
-  // Uploaded academy files are persistent runtime data, not build assets.
   outputFileTracingExcludes: {
-    "/*": ["./.erp-backups/**/*", "./.erp-restore-test/**/*"],
-    "/api/academy/**": ["./.academy-uploads/**/*"],
-    "/admin/academy/**": ["./.academy-uploads/**/*"],
-    "/api/tanwir/**": ["./.tanwir-uploads/**/*"],
-    "/tanwir/**": ["./.tanwir-uploads/**/*"],
-    "/api/ojol/**": ["./.ojol-uploads/**/*"],
-    "/ojol/**": ["./.ojol-uploads/**/*"],
+    "/*": ["./api/**/*"],
   },
 };
 

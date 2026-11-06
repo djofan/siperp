@@ -1,23 +1,9 @@
-import { connection } from "next/server";
-import { getAcademyAvailability } from "../api/access";
-import { listPublicCourses } from "../api/courses";
-import { CourseCard } from "./CourseCard";
+import Link from "next/link";
+import { listMaterials } from "../api/materials";
 import { EmptyState } from "./ui";
 import { AcademyIcon } from "./icons";
-
 export async function HomeCourses() {
-  await connection();
-  let available: boolean;
-  let courses: Awaited<ReturnType<typeof listPublicCourses>>;
-  try {
-    available = await getAcademyAvailability();
-    courses = available ? await listPublicCourses("", 6) : [];
-  } catch (error) {
-    console.error("Academy home catalog unavailable", error instanceof Error ? error.name : "Unknown error");
-    return <p role="status" className="rounded-2xl border border-lazsip-primary-200 bg-white p-8 text-center leading-7">Daftar program belum dapat dimuat. Silakan coba kembali beberapa saat lagi.</p>;
-  }
-  if (!courses.length) {
-    return <EmptyState><AcademyIcon name="BookOpen" className="mx-auto mb-3 h-10 w-10 text-gray-300" /><p>Program segera hadir.</p><p className="mt-1 text-sm text-gray-400">{available ? "Cek lagi nanti untuk konten pembelajaran baru." : "Program belajar sedang dipersiapkan."}</p></EmptyState>;
-  }
-  return <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{courses.map((course) => <CourseCard key={course.id} course={course} />)}</div>;
+  const result = await listMaterials();
+  if (!result.items.length) return <EmptyState>Materi belajar segera hadir.</EmptyState>;
+  return <div className="space-y-3">{result.items.slice(0, 6).map(item => <Link key={item.id} href={`/academy/materi/${item.id}`} className="academy-card academy-program-row hover:border-green-200"><span className="academy-icon-tile"><AcademyIcon name="BookOpen" className="h-5 w-5" /></span><div className="flex-1"><h3 className="text-sm font-semibold">{item.title}</h3><p className="academy-muted">{item.shortDescription}</p></div><span className="text-sm text-green-700">Pelajari →</span></Link>)}<Link href="/academy/materi" className="mt-5 block text-center text-sm font-semibold text-green-700">Lihat semua materi →</Link></div>;
 }

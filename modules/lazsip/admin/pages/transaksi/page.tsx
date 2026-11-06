@@ -14,6 +14,7 @@ export default async function TransaksiPage() {
     ...legacyDonations.map((d) => ({
       source: "legacy-donation" as const,
       id: d.id,
+      trackingCode: d.id,
       type: "donasi" as const,
       label: `Donasi — ${d.campaign.title}`,
       donorName: d.donorName,
@@ -25,6 +26,8 @@ export default async function TransaksiPage() {
     ...paymentDonations.map((d) => ({
       source: "payment" as const,
       id: d.id,
+      trackingCode: d.trackingCode,
+      gateway: d.gateway,
       type: "donasi" as const,
       label: `Donasi — ${d.campaign.title}`,
       donorName: d.donorName,
@@ -36,6 +39,7 @@ export default async function TransaksiPage() {
     ...zakatPayments.map((z) => ({
       source: "zakat" as const,
       id: z.id,
+      trackingCode: z.id,
       type: "zakat" as const,
       label: z.zakatType === "fitrah" ? "Zakat Fitrah" : "Zakat Maal",
       donorName: z.donorName,

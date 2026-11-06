@@ -63,7 +63,7 @@ export function ProgramBantuanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan program.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan program.");
       setIsSubmitting(false);
       return;
     }

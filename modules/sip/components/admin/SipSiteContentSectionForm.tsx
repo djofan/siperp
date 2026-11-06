@@ -56,6 +56,8 @@ export function SipSiteContentSectionForm({
   const [values, setValues] = useState(saved);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [uploadingFields, setUploadingFields] = useState<Set<string>>(new Set());
   // SipImageUploadField menyimpan preview sendiri — di-remount lewat key saat "Batalkan".
   const [resetCount, setResetCount] = useState(0);
 
@@ -72,8 +74,10 @@ export function SipSiteContentSectionForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting || uploadingFields.size > 0) return;
     setIsSubmitting(true);
     setStatus("idle");
+    setErrorMessage("");
 
     try {
       const res = await fetch(`/api/sip/site-content/${sectionKey}`, {
@@ -81,11 +85,17 @@ export function SipSiteContentSectionForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: values }),
       });
-      if (!res.ok) throw new Error(String(res.status));
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const details = Object.values(data?.error?.details ?? {}).flat().filter((value): value is string => typeof value === "string");
+        const message = details[0] ?? data?.error?.message ?? data?.error;
+        throw new Error(typeof message === "string" ? message : "Gagal menyimpan. Coba lagi.");
+      }
       setSaved(values);
       setStatus("saved");
       router.refresh();
-    } catch {
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal menyimpan. Coba lagi.");
       setStatus("error");
     } finally {
       setIsSubmitting(false);
@@ -156,6 +166,12 @@ export function SipSiteContentSectionForm({
                     label={field.label}
                     initialUrl={values[field.key] || null}
                     onChange={(url) => setField(field.key, url ?? "")}
+                    onUploadingChange={(uploading) => setUploadingFields((previous) => {
+                      const next = new Set(previous);
+                      if (uploading) next.add(field.key);
+                      else next.delete(field.key);
+                      return next;
+                    })}
                   />
                 ) : (
                   <>
@@ -206,7 +222,7 @@ export function SipSiteContentSectionForm({
           }`}
         >
           {status === "error"
-            ? "Gagal menyimpan. Coba lagi."
+            ? errorMessage
             : status === "saved"
               ? "Tersimpan — landing page sudah diperbarui."
               : dirty
@@ -230,7 +246,7 @@ export function SipSiteContentSectionForm({
           type="submit"
           variant="lime"
           loading={isSubmitting}
-          disabled={!dirty}
+          disabled={!dirty || uploadingFields.size > 0}
         >
           Simpan perubahan
         </SipLoadingButton>

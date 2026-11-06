@@ -1,36 +1,13 @@
-import { prisma } from "@/lib/prisma";
+import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import type { SipProgramBantuan } from "@/contracts/modules/sip";
 
-export { slugify } from "@/modules/sip/api/slugify";
-
-export async function listProgramBantuan() {
-  return prisma.sipProgramBantuan.findMany({ orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }] });
-}
-
+export async function listProgramBantuan() { return apiCollection<SipProgramBantuan>("sip/program-bantuan"); }
 export async function getProgramBantuanById(id: string) {
-  return prisma.sipProgramBantuan.findUnique({ where: { id } });
+  try { return await apiRequest<SipProgramBantuan>(`sip/program-bantuan/${encodeURIComponent(id)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }
-
+export { slugify } from "./slugify";
 export async function getProgramBantuanBySlug(slug: string) {
-  return prisma.sipProgramBantuan.findUnique({ where: { slug } });
-}
-
-interface ProgramBantuanInput {
-  title: string;
-  slug: string;
-  description: string;
-  image?: string;
-  campaignUrl?: string;
-  isPinned: boolean;
-}
-
-export async function createProgramBantuan(input: ProgramBantuanInput) {
-  return prisma.sipProgramBantuan.create({ data: input });
-}
-
-export async function updateProgramBantuan(id: string, input: ProgramBantuanInput) {
-  return prisma.sipProgramBantuan.update({ where: { id }, data: input });
-}
-
-export async function deleteProgramBantuan(id: string) {
-  await prisma.sipProgramBantuan.delete({ where: { id } });
+  try { return await apiRequest<SipProgramBantuan>(`sip/program-bantuan/by-slug/${encodeURIComponent(slug)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }

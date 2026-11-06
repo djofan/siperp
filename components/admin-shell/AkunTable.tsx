@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
 import { ActiveToggle } from "@/components/admin-shell/ActiveToggle";
-import { getModuleBadgeColor } from "@/components/admin-shell/moduleColors";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ArrowUpRight, ShieldCheck } from "lucide-react";
+import styles from "./AccountForm.module.css";
 
 interface ModuleOption {
   id: string;
@@ -13,7 +14,7 @@ interface ModuleOption {
 interface UserRow {
   id: string;
   name: string;
-  email: string;
+  code: string;
   isSuperadmin: boolean;
   isActive: boolean;
   moduleAccess: { id: string; module: ModuleOption }[];
@@ -29,7 +30,7 @@ export function AkunTable({ users }: { users: UserRow[] }) {
       <Thead>
         <Tr>
           <Th>Nama</Th>
-          <Th>Email</Th>
+          <Th>Kode login</Th>
           <Th>Akses Modul</Th>
           <Th>Status</Th>
           <Th />
@@ -43,22 +44,21 @@ export function AkunTable({ users }: { users: UserRow[] }) {
                 {user.name}
               </Link>
             </Td>
-            <Td className="text-foreground/60">{user.email}</Td>
+            <Td className="font-mono text-accent">{user.code}</Td>
             <Td>
               {user.isSuperadmin ? (
-                <span className="rounded-full bg-accent-soft px-2.5 py-1 text-xs font-medium text-accent">
-                  Superadmin
+                <span className={`${styles.pill} ${styles.superPill}`}>
+                  <ShieldCheck size={14} /> Semua modul
                 </span>
               ) : user.moduleAccess.length > 0 ? (
-                <span className="flex flex-wrap gap-1.5">
+                <span className={styles.pills}>
                   {user.moduleAccess.map((access) => {
-                    const color = getModuleBadgeColor(access.module.slug);
                     return (
                       <span
                         key={access.id}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${color.bg} ${color.text}`}
+                        className={styles.pill}
                       >
-                        <span className={`h-1.5 w-1.5 rounded-full ${color.dot}`} />
+                        <span className={styles.pillDot} aria-hidden="true" />
                         {access.module.name}
                       </span>
                     );
@@ -74,9 +74,9 @@ export function AkunTable({ users }: { users: UserRow[] }) {
             <Td className="text-right">
               <Link
                 href={`/admin/super/akun/${user.id}`}
-                className="text-sm font-medium text-accent hover:text-accent-hover"
+                className={styles.manage}
               >
-                Kelola
+                Kelola <ArrowUpRight size={14} />
               </Link>
             </Td>
           </Tr>

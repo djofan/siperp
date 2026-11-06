@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { studentGroupInfo } from "@/modules/tanwir/api/dashboard";
 import { listStudentTasks, statusCounts } from "@/modules/tanwir/api/submissions";
-import { prisma } from "@/lib/prisma";
+import { listStudents } from "@/modules/tanwir/api/students";
 import { StudentTaskRow } from "@/modules/tanwir/components/app/TaskRow";
 import { Card, Empty, Notice, SectionTitle, Stat } from "@/modules/tanwir/components/ui";
 import { Icon } from "@/modules/tanwir/components/icons";
@@ -12,7 +12,7 @@ export default async function PesertaHomePage() {
   const [tasks, group, studentCount] = await Promise.all([
     listStudentTasks(viewer.member),
     studentGroupInfo(viewer.member.groupId),
-    prisma.tanwirStudent.count({ where: { memberId: viewer.member.id } }),
+    listStudents({ kind: "peserta", memberId: viewer.member.id }).then(rows => rows.length),
   ]);
   const counts = statusCounts(tasks);
   const actionable = tasks.filter((task) => task.state === "todo" || task.state === "rejected").slice(0, 4);

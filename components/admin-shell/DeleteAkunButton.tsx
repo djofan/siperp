@@ -21,7 +21,7 @@ export function DeleteAkunButton({ userId, userName }: { userId: string; userNam
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menghapus akun.");
+      setError((data?.error?.message ?? data?.error) ?? "Gagal menghapus akun.");
       setIsDeleting(false);
       return;
     }

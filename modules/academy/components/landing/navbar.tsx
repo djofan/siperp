@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "../icons";
 
+import { publicNavigation } from "../public-navigation";
+
 interface NavbarProps {
   isLoggedIn: boolean;
   dashboardHref?: "/academy/belajar" | "/academy/pengajar";
@@ -26,15 +28,18 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
     <header className={[
       "fixed top-0 z-50 w-full bg-white/95 backdrop-blur-sm transition-all duration-200",
       scrolled ? "shadow-sm border-b border-gray-100" : ""].join(" ")}>
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         {/* Logo */}
         <Link href="/academy" className="flex items-center gap-2.5 font-semibold">
           <img src="/academy/logo-lazsip.webp" alt="LAZSIP" className="h-7 w-7 object-contain" />
           <span className="text-gray-900">Insan Academy</span>
         </Link>
 
+        <nav aria-label="Navigasi utama" className="hidden items-center gap-5 text-sm font-medium text-gray-700 lg:flex">
+          {publicNavigation.map(item => <Link key={item.href} href={item.href} className="hover:text-green-700">{item.label}</Link>)}
+        </nav>
         {/* Desktop nav */}
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {isLoggedIn ? (
             <a href={dashboardHref} className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
               Dashboard
@@ -53,7 +58,7 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
 
         {/* Mobile hamburger */}
         <button
-          aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} className="flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 sm:hidden"
+          aria-label={menuOpen ? "Tutup menu" : "Buka menu"} aria-expanded={menuOpen} className="flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
         >
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -62,11 +67,9 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="border-t border-gray-100 bg-white px-4 py-3 sm:hidden">
+        <div className="border-t border-gray-100 bg-white px-4 py-3 lg:hidden">
           <div className="flex flex-col gap-2">
-            <a href="/academy/#programs" className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50" onClick={() => setMenuOpen(false)}>
-              Program
-            </a>
+            {publicNavigation.map(item => <Link key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700" onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
             {isLoggedIn ? (
               <a href={dashboardHref} className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                 Dashboard

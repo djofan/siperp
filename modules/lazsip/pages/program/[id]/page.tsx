@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { getProgramById, listPrograms } from "@/modules/lazsip/api/programs";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
+import { PageIntroRow } from "@/modules/lazsip/components/ui/PageIntroRow";
 import { ProgramCard } from "@/modules/lazsip/components/ProgramCard";
 import { RelatedCardsRow } from "@/modules/lazsip/components/ui/RelatedCardsRow";
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 
 const TYPE_LABEL: Record<string, string> = {
   berita: "Berita",
@@ -28,11 +30,13 @@ export default async function LazsipProgramDetailPage({
   return (
     <div className="mx-auto max-w-6xl px-4 pb-20 pt-28 sm:px-6 sm:pt-32">
       <article className="mx-auto max-w-3xl">
+        <PageIntroRow>
         <BackLinkGroup homeHref="/lazsip#program" listHref="/lazsip/program" listLabel="Semua Program" />
 
         <span className="mb-4 mt-6 inline-flex items-center rounded-full bg-lazsip-primary-50 px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-lazsip-primary-800">
           {TYPE_LABEL[program.type] ?? program.type}
         </span>
+        </PageIntroRow>
 
         <h1 className="text-balance text-[2rem] font-extrabold leading-[1.15] tracking-tight text-lazsip-primary-900 sm:text-5xl">
           {program.title}
@@ -75,6 +79,8 @@ export default async function LazsipProgramDetailPage({
           </div>
         )}
       </article>
+
+      <CampaignGallery photos={program.documentationPhotos??[]} title={program.title} kind="program"/>
 
       {otherPrograms.length > 0 && (
         <div className="mt-16 border-t border-lazsip-primary-100 pt-12">

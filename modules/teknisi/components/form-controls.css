@@ -1,0 +1,31 @@
+/* Keep native controls consistent, including utility-styled shared fields. */
+.tech-workspace {
+  --tech-field-background: #1a2319;
+  --tech-field-border: #35402f;
+}
+.tech-workspace.tech-central {
+  --tech-field-background: #19232e;
+  --tech-field-border: #344454;
+}
+.tech-workspace .tech-main input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),
+.tech-workspace .tech-main select,
+.tech-workspace .tech-main textarea {
+  background-color: var(--tech-field-background);
+  border: 1px solid var(--tech-field-border);
+  color: #e7e9ea;
+  color-scheme: dark;
+}
+.tech-workspace .tech-main select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d0dec5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-position: right 14px center !important;
+  background-size: 16px !important;
+  background-repeat: no-repeat !important;
+  padding-right: 42px !important;
+}
+.tech-workspace .tech-main select[multiple] {
+  background-image: none !important;
+}
+.tech-workspace textarea {
+  resize: none;
+  overflow-y: auto;
+}

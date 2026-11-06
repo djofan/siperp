@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { apiRequest, ApiError } from "@/lib/api";
 import { requireModuleAdmin, requireModulePublic } from "@/modules/core/module-access";
 import { TanwirError } from "./errors";
 
@@ -12,27 +12,9 @@ export type TanwirMemberRole = "guru" | "peserta";
 
 /** Pengguna yang sedang login, dilihat dari sisi modul Tanwir (cache per request). */
 export const getTanwirViewer = cache(async () => {
-  const session = await getSession();
-  if (!session) return null;
-  const user = await prisma.user.findFirst({
-    where: { id: session.userId, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      isSuperadmin: true,
-      moduleAccess: { where: { module: { slug: "tanwir" } }, select: { role: true } },
-      tanwirMember: { select: { id: true, code: true, role: true, groupId: true, photo: true } },
-    },
-  });
-  if (!user) return null;
-  return {
-    userId: user.id,
-    name: user.name,
-    isSuperadmin: user.isSuperadmin,
-    // Admin Tanwir = superadmin atau akun Core dengan akses modul tanwir berperan admin.
-    isAdmin: user.isSuperadmin || user.moduleAccess.some((access) => access.role === "admin"),
-    member: user.tanwirMember,
-  };
+  if (!await getSession()) return null;
+  try { return await apiRequest<{ userId: string; name: string; isSuperadmin: boolean; isAdmin: boolean; member: { id: string; code: string; role: "guru" | "peserta"; groupId: string | null; photo: string | null } | null }>("tanwir/viewer"); }
+  catch (error) { if (error instanceof ApiError && [401, 403].includes(error.status)) return null; throw error; }
 });
 
 export type TanwirViewer = NonNullable<Awaited<ReturnType<typeof getTanwirViewer>>>;

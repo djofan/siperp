@@ -23,6 +23,7 @@ export default async function GuruEditTaskPage({ params }: { params: Promise<{ i
           action={saveTaskAction.bind(null, task.id)}
           minDeadline={toWibInputValue(new Date())}
           typeLocked={hasSubmissions}
+          deadlineLocked={hasSubmissions}
           questionsLocked={hasSubmissions}
           initial={{
             title: task.title,

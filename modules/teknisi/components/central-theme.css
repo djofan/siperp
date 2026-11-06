@@ -1,0 +1,75 @@
+/* Black/orange palette is isolated from the technician workspace. */
+.tech-workspace.tech-central {
+  --background:#0e0d0c; --surface:#191715; --surface-muted:#141210;
+  --foreground:#f0ece7; --border:#383029; --accent:#f5a35c;
+  --accent-soft:#f5a35c19; --central-muted:#a99f95;
+  --color-background:var(--background); --color-surface:var(--surface);
+  --color-surface-muted:var(--surface-muted); --color-foreground:var(--foreground);
+  --color-border:var(--border); --color-accent:var(--accent); --color-accent-soft:var(--accent-soft);
+  --tech-field-background:#211c18; --tech-field-border:#3c3026;
+  background:radial-gradient(ellipse at 24% 0%,#39231555 0%,#21170f22 32%,transparent 64%),var(--background);
+}
+.tech-workspace.tech-central .tech-main{background:transparent;scrollbar-color:#ffffff20 transparent;scrollbar-width:thin}
+.tech-workspace.tech-central .tech-frame{background:transparent;min-width:0}
+.tech-workspace.tech-central .tech-sidebar{background:transparent;border:0;box-shadow:none}
+.tech-workspace.tech-central .tech-topbar{background:transparent;color:var(--central-muted)}
+.tech-workspace.tech-central .tech-brand span,.tech-workspace.tech-central .tech-eyebrow{color:var(--accent)}
+.tech-workspace.tech-central .tech-sidebar nav a{border-radius:8px;color:#bfb5ab}
+.tech-workspace.tech-central .tech-sidebar nav a:hover,.tech-workspace.tech-central .tech-sidebar nav a.is-active{background:#f5a35c12;color:#ffe0c1}
+.tech-workspace.tech-central .tech-box,.tech-workspace.tech-central .tech-ticket,.tech-workspace.tech-central .tech-summary>div,.tech-workspace.tech-central .bg-surface{background:var(--surface);color:var(--foreground);border-radius:12px;box-shadow:none}
+.tech-workspace.tech-central .tech-btn,.tech-workspace.tech-central .tech-toolbar .tech-btn,.tech-workspace.tech-central .tech-main .tech-box .tech-btn,.tech-workspace.tech-central button.bg-accent{background:linear-gradient(115deg,#f7b476,#ee9347);color:#26170c;border-radius:8px}
+.tech-workspace.tech-central .tech-btn:hover{background:#f8b97e}
+.tech-workspace.tech-central .tech-btn.secondary,.tech-workspace.tech-central .tech-toolbar .tech-btn.secondary,.tech-workspace.tech-central .tech-main .tech-box .tech-btn.secondary{background:#f5a35c0e;color:#edc6a5}
+.tech-workspace.tech-central .tech-note,.tech-workspace.tech-central .bg-surface-muted{background:#f5a35c07;color:var(--central-muted)}
+.tech-workspace.tech-central .tech-box p,.tech-workspace.tech-central .tech-ticket p,.tech-workspace.tech-central .tech-box dt,.tech-workspace.tech-central .tech-dash-heading p,.tech-workspace.tech-central .tech-dash-footnote,.tech-workspace.tech-central .tech-dash-empty p,.tech-workspace.tech-central .tech-dash-task small,.tech-workspace.tech-central .tech-dash-person small{color:var(--central-muted)}
+.tech-workspace.tech-central .tech-toolbar a{background:#f5a35c09;color:#dbc1ab}
+.tech-workspace.tech-central .tech-toolbar a[aria-current=page],.tech-workspace.tech-central .tech-ticket .tech-card-head>span{background:#f5a35c12;color:#efc49f}
+.tech-workspace.tech-central .tech-dash-filters>label{color:var(--central-muted)!important}
+.tech-workspace.tech-central .tech-dash-filters .tech-btn{border-radius:8px}
+.tech-workspace.tech-central .tech-dash-finance>article,.tech-workspace.tech-central .tech-dash-finance>article.primary{background:linear-gradient(135deg,#302218 0%,#211b16 45%,#191715 100%);padding:16px;border:0;border-radius:10px;box-shadow:none}
+.tech-workspace.tech-central .tech-dash-finance span{color:#c9b8aa}
+.tech-workspace.tech-central .tech-dash-finance strong{font-size:clamp(20px,1.7vw,27px);color:#fff0e1;font-weight:600}
+.tech-workspace.tech-central .tech-dash-finance small,.tech-workspace.tech-central .tech-dash-finance .primary small{color:var(--central-muted)}
+.tech-workspace.tech-central .tech-dash-queue>a{background:var(--surface);border-radius:10px;padding:14px}
+.tech-workspace.tech-central .tech-dash-queue>a:hover{background:#251d17}
+.tech-workspace.tech-central .tech-dash-queue span{color:#d1c3b7}
+.tech-workspace.tech-central .tech-dash-queue small{color:var(--central-muted)}
+.tech-workspace.tech-central .tech-dash-panel{padding:16px}
+.tech-workspace.tech-central .tech-dash-section-head a,.tech-workspace.tech-central .tech-dash-section-head>span{color:#e1b896}
+.tech-workspace.tech-central .tech-dash-filter-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;margin-bottom:14px;padding:12px 14px;background:var(--surface);border-radius:10px}
+.tech-workspace.tech-central .tech-dash-filter-row .tech-dash-filters{margin:0}
+.tech-workspace.tech-central .tech-dash-filter-row>span{font-size:10px;color:var(--central-muted)}
+.tech-workspace.tech-central .tech-dash>.tech-box{padding:18px}
+.tech-workspace.tech-central .tech-dash>.tech-box>h2{font-size:13px;margin-bottom:12px}
+.tech-workspace.tech-central .tech-dash>.tech-dash-finance{margin-bottom:14px}
+.tech-workspace.tech-central .tech-dash>.tech-dash-footnote{margin:10px 0 14px}
+.tech-workspace.tech-central input:focus-visible,.tech-workspace.tech-central select:focus-visible,.tech-workspace.tech-central textarea:focus-visible{outline-color:#f5a35c66}
+.tech-workspace.tech-central a:focus-visible,.tech-workspace.tech-central button:focus-visible{outline-color:var(--accent)}
+.tech-workspace.tech-central .tech-main select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23edc6a5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")!important}
+.tech-workspace.tech-central .tech-confirm{background:var(--surface);color:var(--foreground);border-color:var(--border)}
+.tech-workspace.tech-central .tech-history>li>span,.tech-workspace.tech-central .tech-draft-hint,.tech-workspace.tech-central .tech-photo-field small,.tech-workspace.tech-central .tech-photo-grid small{color:var(--central-muted)}
+.tech-workspace.tech-central .tech-timer{background:#f5a35c0c;color:#e9c19f}
+.tech-workspace.tech-central .tech-service-list .tech-service-card{--card-accent:#efbe96;--card-muted:var(--central-muted);background:#1b1714;box-shadow:none}
+.tech-workspace.tech-central .tech-service-list .tech-service-card:hover{background:#231b15;box-shadow:none}
+.tech-workspace.tech-central .tech-service-card .tech-customer,.tech-workspace.tech-central .tech-service-card .tech-complaint p,.tech-workspace.tech-central .tech-service-card .tech-service-meta dd{color:#d4c5b8}
+.tech-workspace.tech-central .tech-service-card footer>a:first-child{color:#e3c5ad}
+.tech-workspace.tech-central .tech-service-card .tech-service-estimate{background:#f5a35c07}
+.tech-workspace.tech-central .tech-service-card .tech-service-estimate strong{color:#ffe3ca}
+.tech-workspace.tech-central .tech-service-card:focus-within{outline-color:#f5a35c55}
+.tech-workspace.tech-central .tech-empty-symbol{background:#f5a35c0c;color:#e6ba95}
+.tech-workspace.tech-central .tech-list-empty p,.tech-workspace.tech-central .tech-list-pagination{color:var(--central-muted)}
+.tech-workspace.tech-central .tech-service-list .tech-view-switch button[aria-pressed=true]{background:#f5a35c16;color:#f3c6a0}
+.tech-workspace.tech-central .tech-avatar{background:#f5a35c12;color:#f5bd8d}
+.tech-workspace.tech-central input[type=checkbox]{accent-color:var(--accent)}
+.tech-workspace.tech-central .tech-main::-webkit-scrollbar{width:3px;height:3px}
+.tech-workspace.tech-central .tech-main::-webkit-scrollbar-track{background:transparent}
+.tech-workspace.tech-central .tech-main::-webkit-scrollbar-thumb{background:#ffffff20;border-radius:8px}
+.tech-workspace.tech-central .tech-main::-webkit-scrollbar-button{display:none;width:0;height:0}
+@supports selector(::-webkit-scrollbar){.tech-workspace.tech-central .tech-main{scrollbar-width:auto;scrollbar-color:auto}}
+@media(max-width:900px){.tech-workspace.tech-central .tech-sidebar.is-open{background:linear-gradient(135deg,#21170f,#12100e 65%)}}
+@media(max-width:600px){
+  .tech-workspace.tech-central .tech-dash-filter-row{padding:12px}
+  .tech-workspace.tech-central .tech-dash>.tech-box{padding:14px}
+  .tech-workspace.tech-central .tech-dash-finance>article{padding:13px 14px}
+  .tech-workspace.tech-central .tech-dash-finance strong{font-size:20px}
+}

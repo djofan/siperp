@@ -1,0 +1,31 @@
+/* One continuous background prevents seams at the sidebar and header. */
+.tech-workspace.tech-operator {
+  background: radial-gradient(ellipse at 24% 0%, #27402155 0%, #18231522 34%, transparent 65%), #0b0e0a;
+}
+.tech-workspace.tech-operator .tech-main,
+.tech-workspace.tech-operator .tech-frame,
+.tech-workspace.tech-operator .tech-topbar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.tech-workspace.tech-operator .tech-frame { min-width: 0; }
+.tech-workspace.tech-operator .tech-sidebar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.tech-workspace.tech-operator .tech-main {
+  scrollbar-width: thin;
+  scrollbar-color: #ffffff20 transparent;
+}
+.tech-workspace.tech-operator .tech-main::-webkit-scrollbar { width:3px;height:3px; }
+.tech-workspace.tech-operator .tech-main::-webkit-scrollbar-track { background:transparent; }
+.tech-workspace.tech-operator .tech-main::-webkit-scrollbar-thumb { background:#ffffff20;border-radius:8px; }
+.tech-workspace.tech-operator .tech-main::-webkit-scrollbar-button { display:none;width:0;height:0; }
+@supports selector(::-webkit-scrollbar) {
+  .tech-workspace.tech-operator .tech-main { scrollbar-width:auto;scrollbar-color:auto; }
+}
+@media(max-width:900px) {
+  .tech-workspace.tech-operator .tech-sidebar.is-open { background:linear-gradient(135deg,#182315,#0b0e0a 65%); }
+}

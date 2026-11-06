@@ -28,6 +28,7 @@ export default async function EditCampaignPage({
           description: campaign.description,
           targetAmount: String(campaign.targetAmount),
           image: campaign.image ?? "",
+          documentationPhotos: campaign.documentationPhotos ?? [],
           uniqueCode: campaign.uniqueCode,
           isPinned: campaign.isPinned,
           status: campaign.status,

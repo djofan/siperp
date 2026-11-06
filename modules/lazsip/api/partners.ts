@@ -1,27 +1,7 @@
-import { prisma } from "@/lib/prisma";
-
-export async function listPartners() {
-  return prisma.lazsipPartner.findMany({ orderBy: { name: "asc" } });
-}
-
+import { apiRequest, apiCollection, ApiError } from "@/lib/api";
+import type { LazsipPartner } from "@/contracts/modules/lazsip";
+export async function listPartners() { return apiCollection<LazsipPartner>("lazsip/partners"); }
 export async function getPartnerById(id: string) {
-  return prisma.lazsipPartner.findUnique({ where: { id } });
-}
-
-interface PartnerInput {
-  name: string;
-  logo?: string;
-  url?: string;
-}
-
-export async function createPartner(input: PartnerInput) {
-  return prisma.lazsipPartner.create({ data: input });
-}
-
-export async function updatePartner(id: string, input: PartnerInput) {
-  return prisma.lazsipPartner.update({ where: { id }, data: input });
-}
-
-export async function deletePartner(id: string) {
-  await prisma.lazsipPartner.delete({ where: { id } });
+  try { return await apiRequest<LazsipPartner>(`lazsip/partners/${encodeURIComponent(id)}`); }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return null; throw error; }
 }

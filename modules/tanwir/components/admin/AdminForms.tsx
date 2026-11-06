@@ -55,7 +55,7 @@ export function MemberForm({
   const empty: WilayahValue = { provinceId: null, provinceName: null, cityId: null, cityName: null, districtId: null, districtName: null, villageId: null, villageName: null };
 
   return (
-    <form action={formAction} className="crud-form space-y-8">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form space-y-8">
       <ErrorText error={state.error} />
       <section className="space-y-4">
         <div><h2 className="text-sm font-medium text-foreground">Informasi akun</h2><p className="form-section-note">Identitas dan akses login. Kode akun dibuat otomatis oleh sistem.</p></div>
@@ -140,7 +140,7 @@ export function GroupForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   return (
-    <form action={formAction} className="crud-form compact-group-form space-y-5">
+    <form action={formAction} onReset={(event) => event.preventDefault()} className="crud-form compact-group-form space-y-5">
       <ErrorText error={state.error} />
       <FormField label="PIC (guru)" htmlFor="g-pic" hint="Guru yang menaungi kelompok ini. Tugas buatan guru tersebut otomatis terkirim ke kelompok ini.">
         <Select id="g-pic" name="picId" required defaultValue={initial?.picId ?? ""}>

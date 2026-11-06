@@ -30,6 +30,14 @@ return [
     */
 
     'connections' => [
+        // Durable and asynchronous even if the rest of the app uses QUEUE_CONNECTION=sync.
+        'payment' => [
+            'driver' => 'database',
+            'table' => 'payment_jobs',
+            'queue' => 'callbacks',
+            'retry_after' => 90,
+            'after_commit' => true,
+        ],
 
         'sync' => [
             'driver' => 'sync',

@@ -1,4 +1,5 @@
 "use client";
+import { useRef } from "react";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,7 @@ interface FeeRef {
 
 export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: string; uniqueCode: string; feeRefs: FeeRef[] }) {
   const router = useRouter();
+  const checkoutKey = useRef<string | null>(null);
   const [nominal, setNominal] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(feeRefs[0]?.method ?? "");
   const [coversFee, setCoversFee] = useState(true);
@@ -75,7 +77,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
     try {
       const response = await fetch("/api/payment/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": checkoutKey.current ??= crypto.randomUUID() },
         body: JSON.stringify({
           moduleSource: "lazsip",
           sourceType: "campaign",
@@ -93,7 +95,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        setError(data?.error ?? "Gagal mengirim donasi.");
+        setError((data?.error?.message ?? data?.error) ?? "Gagal mengirim donasi.");
         return;
       }
 
