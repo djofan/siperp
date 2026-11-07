@@ -28,3 +28,6 @@
   .root.bulk .bulkHeader { grid-template-columns:minmax(0,1fr);gap:12px; }
   .root.bulk .bulkHeader .trigger { width:100%; }
 }
+
+.root .iconTrigger{width:38px;height:38px;min-height:38px;padding:0;margin-left:auto;border-radius:11px;background:#edf2e9;color:#28523b;font-weight:400;flex-shrink:0}.root .iconTrigger:hover{background:#dfe9d8;color:#153f29}.root .iconTrigger svg{flex-shrink:0}.root .iconTrigger:disabled{opacity:.6}.spinner{animation:reminderSpin 1s linear infinite}@keyframes reminderSpin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+@media(max-width:640px){.root .iconTrigger{width:44px;height:44px;min-height:44px}}

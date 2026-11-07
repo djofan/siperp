@@ -83,7 +83,7 @@ test("sidebar stays compact while the process launcher retains every authorized 
   for(const role of roles){
     const viewer={role,canBypass:true},sidebar=sidebarNavigation(viewer);
     assert.ok(sidebar.length<=11,role);
-    assert.ok(sidebar.length>=6,role);
+    assert.ok(sidebar.length>=3,role);
     assert.ok(sidebar.some(item=>item.key==="proses"),role);
     assert.equal(canViewRoute(viewer,["proses"]),true);
     for(const item of sidebar)assert.equal(canViewRoute(viewer,item.key?[item.key]:[]),true);
@@ -117,4 +117,21 @@ test("ongoing applications are visible to operational roles but not field-only a
   for(const role of ["verifier","volunteer"]){
     assert.equal(canViewRoute({role,canBypass:false},["berjalan"]),false);
   }
+});
+
+
+test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
+  const personal=["requester","verifier"];
+  for(const role of personal){
+    const viewer={role,canBypass:false};const keys=sidebarNavigation(viewer).map(item=>item.key);
+    for(const key of ["berjalan","mustahiq","pengajuan-dana","laporan","santunan","tim","audit","pengaturan"])assert.equal(keys.includes(key),false,role+": "+key);
+    assert.equal(sidebarNavigation(viewer).find(item=>item.key==="pengajuan").label,"Pengajuan saya");
+  }
+  assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["santunan"]);
+  const multi={role:"requester",roles:["requester","verifier","volunteer","treasurer"],canBypass:false};
+  const keys=sidebarNavigation(multi).map(item=>item.key);
+  for(const key of ["proses","berjalan","pengajuan-dana","laporan","santunan","pencairan","survei"])assert.ok(keys.includes(key),key);
+  assert.equal(new Set(keys).size,keys.length);
+  assert.equal(sidebarNavigation(multi).find(item=>item.key==="pengajuan").label,"Semua pengajuan");
+  for(const key of ["tim","pengaturan","audit"])assert.equal(keys.includes(key),false,key);
 });

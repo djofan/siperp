@@ -31,7 +31,7 @@ class ApplicationQuery
     {
         if (($filters['view'] ?? null) === 'ongoing') {
             abort_unless($access->canMonitor($request), 403);
-            $query = Application::query()->whereIn('status', Access::ONGOING);
+            $query = $access->scope(Application::query(), $request)->whereIn('status', Access::ONGOING);
         } else {
             $query = $access->scope(Application::query(), $request);
         }

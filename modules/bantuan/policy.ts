@@ -54,7 +54,7 @@ function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntr
     {key:"pengajuan",label:viewer.role==="requester"?"Pengajuan saya":"Semua pengajuan",icon:"files",group:"Umum"},
     {key:"proses",label:"Pekerjaan saya",icon:"inbox",group:"Umum"},
   ];
-  if(!["verifier","volunteer"].includes(viewer.role))items.push({key:"berjalan",label:"Pengajuan Berjalan",icon:"inbox",group:"Umum",description:"Pantau semua pengajuan yang masih diproses."});
+  if(!["verifier","volunteer"].includes(viewer.role))items.push({key:"berjalan",label:"Pengajuan Berjalan",icon:"inbox",group:"Umum",description:viewer.role==="requester"?"Pantau pengajuan terkait Anda yang masih diproses.":"Pantau semua pengajuan yang masih diproses."});
   if(!["verifier","volunteer"].includes(viewer.role))items.push({key:"mustahiq",label:"Data Mustahiq",icon:"users",group:"Umum",description:"Profil penerima dan riwayat bantuan."});
   if(["admin","call_center","requester"].includes(viewer.role))items.push({key:"pengajuan/baru",label:"Pengajuan baru",icon:"plus",group:"01 · Pengajuan"});
   if(viewer.canBypass&&["admin","call_center","verifier"].includes(viewer.role))items.push({key:"pengajuan/langsung",label:"Pengajuan langsung",icon:"plus",group:"01 · Pengajuan"});
@@ -70,10 +70,23 @@ function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntr
 }
 export function navigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypass">):NavEntry[]{
   const items=rolesOf(viewer).flatMap(role=>singleNavigation({...viewer,role}));
-  return [...new Map(items.map(item=>[item.key,item])).values()].map(item=>item.key==="pengajuan"&&rolesOf(viewer).length>1?{...item,label:"Semua pengajuan"}:item);
+  const canSeeAll=rolesOf(viewer).some(role=>!["requester","verifier","volunteer"].includes(role));
+  return [...new Map(items.map(item=>[item.key,item])).values()].map(item=>item.key==="pengajuan"&&rolesOf(viewer).length>1?{...item,label:"Semua pengajuan"}:item.key==="berjalan"?{...item,description:canSeeAll?"Pantau semua pengajuan yang masih diproses.":"Pantau pengajuan terkait Anda yang masih diproses."}:item);
 }
 export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypass">):NavEntry[]{
-  const main=["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","tim","pengaturan","audit"];
+  // Keep general monitoring separate from the personal workspace of field staff.
+  const primaryByRole:Record<string,string[]>={
+    admin:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","tim","pengaturan","audit"],
+    call_center:["","pengajuan","berjalan","proses","mustahiq","laporan"],
+    requester:["","pengajuan","proses"],
+    verifier:["","pengajuan","proses"],
+    volunteer:["santunan"],
+    approver:["","pengajuan","berjalan","proses","mustahiq"],
+    chair:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","audit"],
+    fund_requester:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana"],
+    treasurer:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan"],
+  };
+  const main=rolesOf(viewer).flatMap(role=>primaryByRole[role]??[]);
   const priorities:Record<string,string[]>={
     call_center:["screening","penugasan-survei","review-survei-cc","penugasan-penyalur"], requester:["draft","perlu-dilengkapi"],
     verifier:["survei","penyaluran"],approver:["review-tahap-1","review-tahap-2"],chair:["review-tahap-1","review-tahap-2"],
@@ -82,7 +95,8 @@ export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypas
   const entries=navigation(viewer).filter(item=>main.includes(item.key)||rolesOf(viewer).some(role=>(priorities[role]??[]).includes(item.key)));
   const running=entries.findIndex(item=>item.key==="berjalan"),all=entries.findIndex(item=>item.key==="pengajuan");
   if(running>=0&&all>=0)[entries[running],entries[all]]=[entries[all],entries[running]];
-  return entries;
+  const personalOnly=rolesOf(viewer).every(role=>["requester","verifier","volunteer"].includes(role));
+  return entries.map(item=>personalOnly&&item.key==="pengajuan"?{...item,label:"Pengajuan saya",description:"Pengajuan yang Anda buat atau ditugaskan kepada Anda."}:item);
 }
 export function processInfo(view:string):NavEntry|undefined {
   if(view==="review")return {key:view,label:"Antrean persetujuan",icon:"check",group:"02 · Persetujuan",states:["review1","survey_submitted","review2","bypass_review"],description:"Pilih pengajuan untuk meninjau dan mencatat keputusan."};

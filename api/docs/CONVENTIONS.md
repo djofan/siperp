@@ -182,3 +182,7 @@ dibuat di browser dari data santunan yang sudah diotorisasi.
 menyelesaikan laporan; `transfer_receipt` opsional. Ketiganya disimpan terenkripsi
 dan hanya dapat dibaca lewat endpoint privat dengan otorisasi santunan yang sama.
 Unggah hanya setelah transfer dan sebelum selesai; satu dokumen per jenis.
+
+## Cakupan daftar Pengajuan Bantuan
+
+Akun yang hanya memiliki kombinasi role `requester`, `verifier`, dan `volunteer` hanya dapat melihat pengajuan yang dibuatnya atau ditugaskan kepadanya melalui `verifier_id` / `distributor_id`. Gabungan role dinilai secara union: adanya `admin`, `call_center`, `approver`, `chair`, `fund_requester`, atau `treasurer` memberikan cakupan seluruh pengajuan, termasuk yang belum ditetapkan nominalnya. Cakupan yang sama dipakai daftar, detail, ringkasan, ekspor, dan filter `view=ongoing`; filter berjalan tetap mengecualikan draft/status akhir. Izin tindakan dan akses dokumen/data sensitif tetap diperiksa terpisah.
