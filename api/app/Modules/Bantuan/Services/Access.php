@@ -76,16 +76,15 @@ class Access
 
     private function scopeRoles($query, Request $request, array $roles)
     {
-        if (array_intersect($roles, ['admin', 'call_center', 'approver', 'chair'])) return $query;
+        if (array_intersect($roles, ['admin', 'call_center', 'approver', 'chair', 'fund_requester', 'treasurer'])) return $query;
 
         // Keep the union grouped so subsequent filters cannot widen visibility.
         return $query->where(function ($scope) use ($roles, $request) {
             $scope->whereRaw('1 = 0');
-            if (array_intersect($roles, ['requester', 'verifier'])) $scope->orWhere('created_by', $request->user()->id);
-            if (in_array('verifier', $roles, true)) {
-                $scope->orWhere('verifier_id', $request->user()->id)->orWhere('distributor_id', $request->user()->id);
+            if (array_intersect($roles, ['requester', 'verifier', 'volunteer'])) {
+                $scope->orWhere('created_by', $request->user()->id)
+                    ->orWhere('verifier_id', $request->user()->id)->orWhere('distributor_id', $request->user()->id);
             }
-            if (array_intersect($roles, ['fund_requester', 'treasurer'])) $scope->orWhereNotNull('amount');
         });
     }
 

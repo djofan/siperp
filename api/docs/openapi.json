@@ -2706,5 +2706,21 @@
   },
   "x-core-account-access-policy": {
     "description": "Core module access grants are only for module administrators (AMSIP or existing admin access), and entries must use role admin. Operational accounts retain their home-module roles; Core identity updates must omit entries. Attempts to change their access return 422. Superadmin access is automatic."
+  },
+  "x-bantuan-application-visibility": {
+    "restrictedRoles": [
+      "requester",
+      "verifier",
+      "volunteer"
+    ],
+    "allApplicationsRoles": [
+      "admin",
+      "call_center",
+      "approver",
+      "chair",
+      "fund_requester",
+      "treasurer"
+    ],
+    "rule": "Union of granted roles. Restricted-only accounts see applications they created or are assigned to as verifier/distributor. Any all-applications role sees all applications, including rows without an amount. The ongoing view intersects this scope with active statuses. Mutation permissions and private-document access remain separately authorized."
   }
 }

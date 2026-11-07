@@ -16,7 +16,7 @@ export default async function AdminOverview() {
     { href: "peserta", title: "Peserta & progres", detail: "Pantau akun dan perkembangan belajar peserta.", icon: Users },
     { href: "pendaftaran", title: "Pendaftaran & jadwal", detail: "Atur peserta, grup, dan tanggal mulai program.", icon: CalendarDays },
   ];
-  return <div className="space-y-7"><AdminHeading title={`Selamat datang, ${user.name}`} description="Ringkasan pembelajaran dan akses cepat untuk mengelola Insan Academy." action={<Button asChild><Link href="/admin/academy/program/baru">Tambah program <ArrowRight /></Link></Button>} />
+  return <div className="min-w-0 space-y-5"><AdminHeading title={`Selamat datang, ${user.name}`} description="Ringkasan pembelajaran dan akses cepat untuk mengelola Insan Academy." action={<Button asChild><Link href="/admin/academy/program/baru">Tambah program <ArrowRight /></Link></Button>} />
     <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard label="Total program" value={stats.courses} detail="Seluruh program belajar" icon={<GraduationCap />} />
       <MetricCard label="Program terpublikasi" value={stats.published} detail="Program yang tampil kepada peserta" icon={<CheckCircle2 />} tone="blue" />

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { LazsipNotifications } from "./LazsipNotifications";
 import { PublicWebsiteLink } from "@/components/admin-shell/PublicWebsiteLink";
 import { LAZSIP_NAV_ITEMS } from "@/modules/lazsip/components/admin/LazsipSidebar";
 
@@ -65,20 +66,7 @@ export function LazsipTopbar({
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
           </svg>
         </Link>
-        <Link
-          href="/admin/lazsip/transaksi"
-          aria-label="Transaksi menunggu verifikasi"
-          className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" />
-          </svg>
-          {pendingTransactionsCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
-              {pendingTransactionsCount > 99 ? "99+" : pendingTransactionsCount}
-            </span>
-          )}
-        </Link>
+        <LazsipNotifications pendingCount={pendingTransactionsCount} />
         <PublicWebsiteLink href="/lazsip" className="text-white/80 hover:text-white" />
       </div>
     </header>

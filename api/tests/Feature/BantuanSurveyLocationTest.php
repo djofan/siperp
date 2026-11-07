@@ -176,7 +176,11 @@ it('allows non-field roles to monitor ongoing applications without exposing draf
     $active = surveyLocationApplication($cc);
     $draft = surveyLocationApplication($cc); $draft->forceFill(['status' => 'draft'])->save();
     $done = surveyLocationApplication($cc); $done->forceFill(['status' => 'completed'])->save();
-    $this->actingAs($requester, 'sanctum')->getJson('/api/v1/bantuan/applications?view=ongoing')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $active->id);
+    $this->actingAs($requester, 'sanctum')->getJson('/api/v1/bantuan/applications?view=ongoing')->assertOk()->assertJsonCount(0, 'data');
+    $own = surveyLocationApplication($requester);
+    $this->getJson('/api/v1/bantuan/applications?view=ongoing')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $own->id);
+    $this->actingAs(surveyLocationActor('treasurer'), 'sanctum')->getJson('/api/v1/bantuan/applications?view=ongoing')->assertOk()->assertJsonCount(2, 'data');
+    $this->actingAs($requester, 'sanctum');
     $this->postJson('/api/v1/bantuan/applications/'.$active->id.'/actions/cancel', ['version' => 1, 'reason' => 'Tidak berwenang'])->assertNotFound();
     $this->getJson('/api/v1/bantuan/applications?view=ongoing&status=completed')->assertOk()->assertJsonCount(0, 'data');
     foreach (['verifier', 'volunteer'] as $role) {

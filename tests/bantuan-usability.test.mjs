@@ -259,7 +259,7 @@ test("filter queries keep queue boundaries and verifier assignment while validat
 test("sidebar uses a few informative primary menus while work counts include hidden queues",()=>{
   const {SidebarMenu}=load("modules/bantuan/components/SidebarMenu.tsx");
   const html=renderToStaticMarkup(React.createElement(SidebarMenu,{viewer:viewer("call_center"),dashboard:{...stats,total:10,byStatus:{draft:1,needs_data:4,screening:2,survey_assignment:1,approved:2}},activeKey:"pengajuan",onNavigate(){}}));
-  assert.match(html,/Cari dan pantau seluruh pengajuan/);
+  assert.match(html,/Cari dan pantau pengajuan sesuai akses Anda/);
   assert.match(html,/Prioritas sesuai tugas Anda/);
   const workLink=html.match(/<a[^>]*href="\/admin\/bantuan\/proses"[\s\S]*?<\/a>/)?.[0];
   assert.match(workLink,/aria-label="10 pengajuan"/);

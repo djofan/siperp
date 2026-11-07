@@ -38,7 +38,7 @@ class ApplicationReminderController
             }
             foreach ($groups as &$group) {
                 $group['count'] = count($group['items']);
-                $group['message'] = ReminderMessage::greeting($group['name'])."Mohon bantuan Bapak/Ibu untuk menindaklanjuti ".$group['count']." pengajuan berikut sesuai tahap masing-masing:\n\n";
+                $group['message'] = ReminderMessage::greeting($group['name'])."Mohon tindak lanjuti ".$group['count']." pengajuan berikut:\n\n";
                 foreach ($group['items'] as $i=>$summary) $group['message'] .= ($i+1).". ".$summary."\n\n";
                 $group['message'] .= ReminderMessage::closing();
                 // Long messages remain copyable without relying on browser URL length limits.
@@ -107,7 +107,7 @@ class ApplicationReminderController
             app(Journal::class)->notify($row, 'Call Center meminta koordinasi pengajuan. Tahap saat ini: '.$task, [], $members->pluck('id')->all(), 'manual-task:'.$row->status.':'.now()->toDateString());
             app(Journal::class)->record($request, $row, 'prepare_task_reminder', $row->status, ['recipients' => $members->pluck('id')->all()]);
             $recipients = $members->map(function ($member) use ($row, $task, $input, $currentIds) {
-                $message = ReminderMessage::greeting($member->name)."Mohon bantuan Bapak/Ibu untuk menindaklanjuti pengajuan berikut:\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
+                $message = ReminderMessage::greeting($member->name)."Mohon tindak lanjuti pengajuan berikut:\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
                 if (! in_array($member->id, $currentIds, true)) $message .= "\nMohon koordinasi sesuai keterlibatan Anda; tahap ini mungkin sedang ditangani petugas lain.";
                 if (! empty($input['note'])) $message .= "\n\nCatatan Call Center: ".$input['note'];
                 $phone = Whatsapp::phone($member->phone);

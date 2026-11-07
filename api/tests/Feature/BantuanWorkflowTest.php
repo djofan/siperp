@@ -1033,17 +1033,23 @@ it('unions application visibility without widening subsequent filters', function
     foreach ($ids as $name => $id) {
         $detail = $this->getJson('/api/v1/bantuan/applications/'.$id);
         if (! in_array($name, $visible, true)) { $detail->assertNotFound(); continue; }
-        $private = $sensitive && ($name !== 'finance' || array_intersect($roles, ['admin', 'call_center', 'approver', 'chair']));
+        $private = (bool) array_intersect($roles, ['admin', 'call_center', 'approver', 'chair']) || ($sensitive && ($name === 'own' || in_array($name, ['survey', 'distribution'], true) && in_array('verifier', $roles, true)));
         $detail->assertOk()->assertJsonPath('data.applicant.nik', $private ? '3271051234567890' : '327105xxxxxxxxxx');
         $detail->assertJsonPath('data.duplicateCount', count($visible) - 1)->assertJsonCount(count($visible) - 1, 'data.duplicateApplications');
     }
 })->with([
-    'requester plus finance' => [['requester', 'fund_requester'], ['own', 'finance'], true],
-    'finance plus verifier' => [['fund_requester', 'verifier'], ['own', 'survey', 'distribution', 'finance'], true],
-    'verifier plus finance' => [['verifier', 'fund_requester'], ['own', 'survey', 'distribution', 'finance'], true],
-    'volunteer only' => [['volunteer'], [], false],
+    'requester only' => [['requester'], ['own', 'survey', 'distribution'], true],
+    'verifier only' => [['verifier'], ['own', 'survey', 'distribution'], true],
+    'three restricted roles' => [['requester', 'verifier', 'volunteer'], ['own', 'survey', 'distribution'], true],
+    'four roles including treasurer' => [['requester', 'verifier', 'volunteer', 'treasurer'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
+    'fund requester only' => [['fund_requester'], ['own', 'survey', 'distribution', 'finance', 'hidden'], false],
+    'treasurer only' => [['treasurer'], ['own', 'survey', 'distribution', 'finance', 'hidden'], false],
+    'requester plus finance' => [['requester', 'fund_requester'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
+    'finance plus verifier' => [['fund_requester', 'verifier'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
+    'verifier plus finance' => [['verifier', 'fund_requester'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
+    'volunteer only' => [['volunteer'], ['own', 'survey', 'distribution'], false],
     'volunteer plus verifier' => [['volunteer', 'verifier'], ['own', 'survey', 'distribution'], true],
-    'volunteer plus finance stays masked' => [['volunteer', 'treasurer'], ['finance'], false],
+    'volunteer plus finance stays masked' => [['volunteer', 'treasurer'], ['own', 'survey', 'distribution', 'finance', 'hidden'], false],
     'secondary call center' => [['requester', 'call_center'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
     'secondary chair' => [['volunteer', 'chair'], ['own', 'survey', 'distribution', 'finance', 'hidden'], true],
 ]);
@@ -1501,10 +1507,10 @@ it('prepares immediate survey assignment details only for call center with an ac
     $response = $this->postJson($url,['purpose'=>'assignment'])->assertOk();
     $message = $response->json('data.message');
     $row = Application::findOrFail($id);
-    expect($message)->toContain('Bapak/Ibu mendapat penugasan survei bantuan',
-        $this->verifier->name, $row->number, $row->name, 'Mohon konfirmasi kesiapan kunjungan',
-        '/admin/bantuan/pengajuan/'.$id, 'Lihat selengkapnya:');
-    expect($message)->not->toContain('Jalan Melati Nomor 10, Bogor', 'No. HP calon penerima:', 'Kebutuhan / masalah:');
+    expect($message)->toContain('Jalan Melati Nomor 10, Bogor', 'Anda mendapat tugas survei bantuan',
+        $this->verifier->name, $row->number, $row->name, $row->program, 'Mohon konfirmasi kesiapan kunjungan');
+    expect($message)->toContain('No. HP calon penerima: '.$row->applicant['phone']);
+    expect($message)->toContain('https://www.google.com/maps/search/?api=1&query='.rawurlencode('Jalan Melati Nomor 10, Bogor'), 'https://erp.lazsip.or.id/admin', 'login menggunakan akun Anda');
     expect($response->json('data.url'))->toBe('https://wa.me/6281234567890?text='.rawurlencode($message));
     $this->actingAs($this->verifier,'sanctum')->postJson($url,['purpose'=>'assignment'])->assertForbidden();
     Application::findOrFail($id)->forceFill(['status'=>'completed'])->save();

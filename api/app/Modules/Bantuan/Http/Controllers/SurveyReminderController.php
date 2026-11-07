@@ -18,7 +18,7 @@ class SurveyReminderController
             $phone=Whatsapp::phone(DB::table('bantuan_staff')->where('user_id',$row->verifier_id)->value('phone'));
             abort_unless($phone,422,'Nomor WhatsApp verifikator belum diisi. Minta admin melengkapi nomor akun.');
             $name=DB::table('users')->where('id',$row->verifier_id)->value('name');
-            $intro = $assignment ? 'Bapak/Ibu mendapat penugasan survei bantuan. Mohon konfirmasi kesiapan kunjungan.' : 'Mohon izin mengingatkan, hasil survei belum diterima setelah batas tindak lanjut '.($deadline['days'] ?? 5).' hari sejak penugasan. Mohon kabari perkembangannya.';
+            $intro = $assignment ? 'Anda mendapat tugas survei bantuan. Mohon konfirmasi kesiapan kunjungan.' : 'Mohon tindak lanjuti survei yang sudah melewati batas '.($deadline['days'] ?? 5).' hari.';
             $message = ReminderMessage::greeting($name ?? 'Petugas').$intro."\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
             if (!$assignment) app(Journal::class)->notify($row,'Call Center mengingatkan agar survei segera diselesaikan.',[],[$row->verifier_id],'manual-survey-reminder:'.now()->toDateString());
             app(Journal::class)->record($request,$row,$assignment ? 'prepare_survey_assignment_message' : 'prepare_survey_reminder',$row->status,['verifierId'=>$row->verifier_id]);
