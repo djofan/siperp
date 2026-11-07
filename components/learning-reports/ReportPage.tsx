@@ -42,7 +42,20 @@ export async function LearningDashboardReport({module,from,to}:{module:LearningM
   let data:ReportResponse|null=null;
   try{data=await apiRequest<ReportResponse>(`${module}/reports/participants?${query}`,{},false);
   }catch(e){if(!(e instanceof ApiError))throw e;}
-  if(!data)return <section className={s.dashboard}><p>Ringkasan {module} belum dapat dimuat. <Link href={`/admin/${module}/laporan`}>Buka laporan</Link></p></section>;
-    return <section className={s.dashboard}><div className={s.compact}><div className={s.heading}><div><h2>{module==="tanwir"?"Tanwir Qurani":"Ojol Mengaji"} · performa peserta</h2><p>Ringkasan sesuai periode tugas. Buka laporan untuk filter kelompok, guru, keaktifan, dan nilai.</p></div><Link className={s.button} href={`/admin/${module}/laporan?${query}`}>Lihat laporan & Excel →</Link></div><ReportStats data={data.summary}/></div></section>;
+  if(!data)return <section className={s.dashboard}><p>Ringkasan {module==="tanwir"?"Tanwir Qurani":"Ojol Mengaji"} belum dapat dimuat. <Link href={`/admin/${module}/laporan`}>Buka laporan</Link></p></section>;
+    return <section className={s.dashboard}><div className={s.compact}><div className={s.heading}><div><h2>{module==="tanwir"?"Tanwir Qurani":"Ojol Mengaji"} · performa peserta</h2><p>Ringkasan sesuai periode tugas. Buka laporan untuk filter kelompok, guru, keaktifan, dan nilai.</p></div><Link className={s.button} href={`/admin/${module}/laporan?${query}`}>Laporan & Excel →</Link></div><ReportStats data={data.summary}/></div></section>;
 
+}
+
+export function LearningDashboardOverview({module,from,to}:{module:LearningModule;from?:string;to?:string}){
+  return <section className={s.overview} aria-label="Performa pembelajaran">
+    <form className={s.periodFilter} action={`/admin/${module}`}>
+      <div className={s.periodIntro}><strong>Performa pembelajaran</strong><small>Filter periode berdasarkan tanggal tugas dibuat.</small></div>
+      <label>Dari tanggal<input type="date" name="from" defaultValue={from}/></label>
+      <label>Sampai tanggal<input type="date" name="to" min={from||undefined} defaultValue={to}/></label>
+      <div className={s.periodActions}><button className={s.button}>Terapkan</button>{(from||to)&&<Link href={`/admin/${module}`}>Reset</Link>}</div>
+    </form>
+    <LearningDashboardReport module={module} from={from} to={to}/>
+    <p className={s.periodNote}>Filter periode berlaku pada performa peserta. Jumlah akun, kelompok, dan total tugas di bawah mencakup seluruh periode.</p>
+  </section>;
 }

@@ -45,7 +45,7 @@ export default async function SipDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <SipAdminPageHeader title="Admin SIP" description={`Selamat datang, ${user.name}. Kelola website utama Solidaritas Insan Peduli dari sini.`} action={
         <div className="flex flex-wrap gap-2">
           <Link href="/admin/sip/konten" className="rounded-full bg-sip-lime px-4 py-2 text-sm font-semibold text-sip-ink hover:bg-sip-lime-hover">Edit Halaman Utama</Link>
@@ -87,12 +87,12 @@ export default async function SipDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+      <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
         <SipPenyaluranYearChart data={perYear} />
         <SipLaporanCoverage {...coverage} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+      <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
         <div className={panelClasses("p-6")}>
           <div className="mb-4 flex items-baseline justify-between gap-2">
             <h2 className="text-sm font-semibold text-white">Penyaluran Bantuan Terbaru</h2>

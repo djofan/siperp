@@ -37,7 +37,7 @@ export default async function LazsipDashboardPage() {
   const totals = analytics.totals;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5">
       <AdminPageHeader title="Dashboard" description="Ringkasan aktivitas LAZSIP — donasi, zakat, campaign, dan penyaluran bantuan." />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

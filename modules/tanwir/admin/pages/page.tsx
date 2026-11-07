@@ -1,4 +1,4 @@
-import { LearningDashboardReport } from "@/components/learning-reports/ReportPage";
+import { LearningDashboardOverview } from "@/components/learning-reports/ReportPage";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { buttonVariants } from "@/components/ui/Button";
@@ -21,8 +21,7 @@ export default async function TanwirAdminDashboard({searchParams}:{searchParams:
         description="Pembinaan hafalan guru ngaji TPQ. Kelola guru, peserta, dan kelompok; pantau tugas dan setoran."
       />
 
-      <form className="flex flex-wrap items-end gap-3 text-sm"><label>Periode tugas dari<input type="date" name="from" defaultValue={period.from} className="block rounded-lg bg-surface p-2"/></label><label>Sampai<input type="date" name="to" defaultValue={period.to} className="block rounded-lg bg-surface p-2"/></label><button className="rounded-lg bg-surface px-4 py-2">Terapkan periode</button></form>
-      <LearningDashboardReport module="tanwir" from={period.from} to={period.to}/>
+      <LearningDashboardOverview module="tanwir" from={period.from} to={period.to}/>
       <div className="tanwir-dashboard-primary">
       <DirectorySummary items={[
         { label: "Guru", value: summary.guru, detail: "Guru pembimbing terdaftar", icon: "user" },

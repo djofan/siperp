@@ -237,7 +237,7 @@
 .tanwir-admin .tanwir-reference-dashboard { align-items: stretch; }
 .tanwir-admin .tanwir-dashboard-primary,
 .tanwir-admin .tanwir-dashboard-rail { min-width: 0; }
-.tanwir-admin .tanwir-dashboard-rail { grid-template-rows: auto 1fr; align-content: stretch; }
+.tanwir-admin .tanwir-dashboard-rail { grid-template-rows: auto auto; align-content: start; }
 .tanwir-admin .directory-stat { display: flex; flex-direction: column; min-width: 0; }
 .tanwir-admin .directory-summary { grid-auto-rows: 1fr; }
 .tanwir-admin .sidebar-brand { padding: 14px 12px 18px; }

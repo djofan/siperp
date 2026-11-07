@@ -25,7 +25,7 @@
 .metric>small{display:block;font-size:11px;line-height:1.6;color:#80917e}
 .metric:last-child{background:linear-gradient(115deg,#e2efd9,#edf5e4)}
 .metric:last-child .metricIcon{background:#ffffffa8;color:#447844}
-.columns{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:20px;align-items:stretch}
+.columns{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,1fr);gap:20px;align-items:start}
 .card{min-width:0;background:#fff;border-radius:20px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 5px 20px #244d2204}
 .cardHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:23px 24px 18px}
 .cardHeader h2{margin:0;font-size:14px;font-weight:650;line-height:1.5;color:#244d38}
@@ -73,7 +73,7 @@
 .contributionHeader h2{margin:0;color:#244d38;font-size:15px;font-weight:650;line-height:1.5}
 .contributionHeader p{margin:6px 0 0;color:#728476;font-size:12px;line-height:1.6}
 .contributionGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.4fr);gap:12px;margin:20px 0 0}
-.contributionItem{min-width:0;display:flex;flex-direction:column;gap:18px;padding:20px;border-radius:14px;background:#f6f8f3}
+.contributionItem{min-width:0;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:14px;background:#f6f8f3}
 .contributionItem[data-money]{background:#eaf2e3}
 .contributionItem dt{font-size:12px;line-height:1.6;color:#5d7463}
 .contributionItem dd{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin:auto 0 0;min-width:0;color:#244d38}
