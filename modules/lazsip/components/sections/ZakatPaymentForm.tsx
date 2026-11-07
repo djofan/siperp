@@ -41,11 +41,12 @@ export function ZakatPaymentForm({
 
   const nominalNumber = Number(nominal.replace(/[^0-9]/g, "")) || 0;
   const method = feeRefs.find((m) => m.method === paymentMethod) ?? null;
+  const isIpaymu = paymentMethod === "iPaymu" || paymentMethod === "iPaymu Sandbox";
 
   const { fee, total } = useMemo(() => {
-    const feeAmount = calculateFee(method, nominalNumber);
+    const feeAmount = isIpaymu ? 0 : calculateFee(method, nominalNumber);
     return { fee: feeAmount, total: nominalNumber + (coversFee ? feeAmount : 0) };
-  }, [nominalNumber, method, coversFee]);
+  }, [nominalNumber, method, coversFee, isIpaymu]);
 
   function handleNominalChange(e: React.ChangeEvent<HTMLInputElement>) {
     setNominal(e.target.value.replace(/[^0-9]/g, ""));
@@ -95,7 +96,7 @@ export function ZakatPaymentForm({
           donorEmail: email.trim(),
           isAnonymous: anonim,
           amount: nominalNumber,
-          coversFee,
+          coversFee: !isIpaymu && coversFee,
           paymentMethod,
         }),
       });
@@ -176,6 +177,7 @@ export function ZakatPaymentForm({
         </div>
       </div>
 
+      {isIpaymu ? <p className="rounded-2xl bg-lazsip-primary-50 p-4 text-sm leading-relaxed text-lazsip-primary-800">Pilih metode pembayaran di halaman iPaymu. Biaya transaksi mengikuti ketentuan iPaymu; periksa rincian sebelum membayar.</p> : (
       <label className="flex items-start gap-3 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-4">
         <input
           type="checkbox"
@@ -187,6 +189,7 @@ export function ZakatPaymentForm({
           Tambahkan {formatRupiah(fee)} untuk biaya transaksi agar zakat tersalurkan 100%.
         </span>
       </label>
+      )}
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex flex-1 flex-col gap-1.5">
@@ -252,11 +255,11 @@ export function ZakatPaymentForm({
           <span className="font-medium text-lazsip-primary-900">{formatRupiah(nominalNumber)}</span>
         </div>
         <div className="flex items-center justify-between text-lazsip-primary-800/70">
-          <span>Biaya admin</span>
-          <span className="font-medium text-lazsip-primary-900">{coversFee ? formatRupiah(fee) : "Ditanggung LAZSIP"}</span>
+          <span>Biaya transaksi</span>
+          <span className="font-medium text-lazsip-primary-900">{isIpaymu ? "Mengikuti iPaymu" : coversFee ? formatRupiah(fee) : "Ditanggung LAZSIP"}</span>
         </div>
         <div className="flex items-center justify-between border-t border-lazsip-primary-100 pt-2 text-base font-bold text-lazsip-primary-900">
-          <span>Total pembayaran</span>
+          <span>{isIpaymu ? "Nominal diteruskan ke iPaymu" : "Total pembayaran"}</span>
           <span>{formatRupiah(total)}</span>
         </div>
       </div>

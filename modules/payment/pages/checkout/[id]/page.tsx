@@ -25,8 +25,8 @@ export default async function CheckoutPage({
         <dl className="mt-6 space-y-3 text-sm text-slate-600">
           <div className="flex justify-between gap-4"><dt>Metode pembayaran</dt><dd className="text-right">{isIpaymu ? "Dipilih di iPaymu" : transaction.paymentMethod}</dd></div>
           <div className="flex justify-between gap-4"><dt>Nominal donasi</dt><dd>Rp{transaction.amount.toLocaleString("id-ID")}</dd></div>
-          <div className="flex justify-between gap-4"><dt>Biaya admin</dt><dd>Rp{transaction.adminFee.toLocaleString("id-ID")}</dd></div>
-          <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 font-bold text-slate-900"><dt>{isSandbox || !isIpaymu ? "Total simulasi" : "Total pembayaran"}</dt><dd>Rp{(transaction.amount + transaction.adminFee).toLocaleString("id-ID")}</dd></div>
+          <div className="flex justify-between gap-4"><dt>Biaya transaksi</dt><dd className="text-right">{isIpaymu ? "Mengikuti ketentuan iPaymu" : `Rp${transaction.adminFee.toLocaleString("id-ID")}`}</dd></div>
+          <div className="flex justify-between gap-4 border-t border-slate-200 pt-3 font-bold text-slate-900"><dt>{isIpaymu ? "Nominal diteruskan ke iPaymu" : "Total simulasi"}</dt><dd>Rp{(transaction.amount + transaction.adminFee).toLocaleString("id-ID")}</dd></div>
         </dl>
         <CheckoutForm key={transaction.id} transaction={{ id: transaction.id, trackingCode: transaction.trackingCode, status: transaction.status, moduleSource: transaction.moduleSource, gateway: transaction.gateway }} />
       </section>
