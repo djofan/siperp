@@ -671,6 +671,13 @@
           }
         },
         "additionalProperties": true
+      },
+      "BantuanTelephone": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 30,
+        "pattern": "^\\+?[0-9 ()-]+$",
+        "description": "Applicant phone and optional reporterPhone on application create/update: 8–15 digits, optional leading + (international code cannot start with 0), spaces/hyphens and balanced numeric area-code parentheses. Letters, extensions and invalid digit counts return 422. Enforced on drafts too when present; reporterPhone remains nullable. Formatting is preserved."
       }
     }
   },

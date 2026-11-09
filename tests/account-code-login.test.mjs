@@ -10,7 +10,7 @@ const {renderToStaticMarkup}=require("react-dom/server");
 function load(filename, overrides={},cache=new Map()){
   const full=path.resolve(filename);
   if(cache.has(full))return cache.get(full).exports;
-  const module={exports:{}};cache.set(full,module);
+  const loadedModule={exports:{}};cache.set(full,loadedModule);
   const localRequire=id=>{
     if(id==="@/lib/session"&&Object.hasOwn(overrides,"session"))return{SESSION_COOKIE_NAME:"sip_session",verifySessionToken:async()=>overrides.session};
     if(id==="react"&&overrides.react)return overrides.react;
@@ -25,8 +25,8 @@ function load(filename, overrides={},cache=new Map()){
   };
   const code=ts.transpileModule(readFileSync(full,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
   class TestFormData{constructor(form){this.values=form.values;}get(key){return this.values[key]??null;}}
-  vm.runInNewContext(code,{module,exports:module.exports,require:localRequire,fetch:overrides.fetch,FormData:TestFormData,URL,window:{location:{assign(){}}}},{filename:full});
-  return module.exports;
+  vm.runInNewContext(code,{module:loadedModule,exports:loadedModule.exports,require:localRequire,fetch:overrides.fetch,FormData:TestFormData,URL,window:{location:{assign(){}}}},{filename:full});
+  return loadedModule.exports;
 }
 function findForm(node){
   if(!node||typeof node!=="object")return null;
@@ -52,19 +52,31 @@ test("every login screen asks for a code and never offers email fallback",()=>{
 });
 
 test("all login forms submit the normalized code and the unchanged password",async()=>{
-  for(const module of ["core","academy","teknisi","tanwir","ojol"]){
+  for(const moduleSlug of ["core","academy","teknisi","tanwir","ojol"]){
     const calls=[];
     let index=0;
-    const states=module==="core"?[" sip-000123 "," exact password "]:[];
+    const states=moduleSlug==="core"?[" sip-000123 "," exact password "]:[];
     const react={...React,useState:initial=>[index<states.length?states[index++]:(typeof initial==="function"?initial():initial),()=>{}]};
-    const fetch=async(url,options)=>{calls.push([url,JSON.parse(options.body)]);return{ok:true,json:async()=>({data:{},nextPath:module==="teknisi"?"/teknisi/panel":"/academy/lanjut",redirectTo:"/"+module})};};
-    const file=module==="core"?"components/admin-shell/LoginForm.tsx":["academy","teknisi"].includes(module)?"components/auth/ParticipantLoginForm.tsx":`modules/${module}/components/site/LoginForm.tsx`;
+    const fetch=async(url,options)=>{calls.push([url,JSON.parse(options.body)]);return{ok:true,json:async()=>({data:{},nextPath:moduleSlug==="teknisi"?"/teknisi/panel":"/academy/lanjut",redirectTo:"/"+moduleSlug})};};
+    const file=moduleSlug==="core"?"components/admin-shell/LoginForm.tsx":["academy","teknisi"].includes(moduleSlug)?"components/auth/ParticipantLoginForm.tsx":`modules/${moduleSlug}/components/site/LoginForm.tsx`;
     const exports=load(file,{react,fetch});
     const component=exports.ParticipantLoginForm??exports.LoginForm;
-    const form=findForm(component({moduleSlug:module,successHref:"/academy/lanjut"}));
+    const form=findForm(component({moduleSlug,successHref:"/academy/lanjut"}));
     await form.props.onSubmit({preventDefault(){},currentTarget:{values:{code:" sip-000123 ",password:" exact password "}}});
-    assert.equal(calls.length,1,module);
-    assert.deepEqual(calls[0][1],{code:"SIP-000123",password:" exact password "},module);
+    assert.equal(calls.length,1,moduleSlug);
+    assert.deepEqual(calls[0][1],{code:"SIP-000123",password:" exact password ",...(moduleSlug==="core"?{remember:false}:{})},moduleSlug);
+  }
+});
+
+test("Core forwards the explicit remember me choice without changing credentials",async()=>{
+  for(const remember of [false,true]){
+    const calls=[];let index=0;
+    const states=[" sip-000123 "," exact password ",remember];
+    const react={...React,useState:initial=>[index<states.length?states[index++]:(typeof initial==="function"?initial():initial),()=>{}]};
+    const fetch=async(url,options)=>{calls.push(JSON.parse(options.body));return{ok:true,json:async()=>({data:{}})};};
+    const {LoginForm}=load("components/admin-shell/LoginForm.tsx",{react,fetch});
+    await findForm(LoginForm()).props.onSubmit({preventDefault(){}});
+    assert.deepEqual(calls,[{code:"SIP-000123",password:" exact password ",remember}]);
   }
 });
 

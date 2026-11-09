@@ -77,6 +77,10 @@ modul tetap tersedia melalui dashboard web.
 
 ## Mengaktifkan push di VPS
 
+Push PWA tetap memakai Firebase Cloud Messaging (FCM), sama dengan layanan yang
+sudah berjalan. Tidak ada pemilihan atau perpindahan otomatis ke layanan Web Push
+standar terpisah. Pertahankan konfigurasi Firebase dan VAPID yang sudah digunakan.
+
 1. Pasang dependensi dari lockfile (`npm ci` pada frontend; `composer install`
    jika dependensi backend berubah), jalankan migration Laravel setelah backup,
    kemudian build dan restart layanan seperti deployment biasa.

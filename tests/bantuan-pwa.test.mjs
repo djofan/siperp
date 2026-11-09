@@ -20,6 +20,10 @@ test("PWA tabs and routes follow operational permissions including combined role
   assert.equal(policy.validPwaRoute(["tugas","../secrets"],verifier),false);
   assert.equal(policy.pwaAccess(viewer(["verifier","volunteer"])).santunan,true);
   assert.equal(policy.pwaTabs(viewer(["verifier","volunteer"])).length,5);
+  for(const role of ["requester","call_center","approver","chair","fund_requester"]){
+    assert.equal(policy.pwaAccess(viewer([role])).tasks,true,`${role} should see tasks`);
+    assert.equal(policy.validPwaRoute(["tugas"],viewer([role])),true,`${role} task route`);
+  }
 });
 test("survey and distribution task queues use identity filters and validated pagination",()=>{
   const user=viewer(["verifier"]);
@@ -28,11 +32,23 @@ test("survey and distribution task queues use identity filters and validated pag
   const distribution=new URLSearchParams(policy.taskQuery(user,"distribution",1,""));assert.equal(distribution.get("distributorId"),"me");
   const transfer=new URLSearchParams(policy.taskQuery(viewer(["treasurer"]),"transfer",1,""));assert.equal(transfer.get("states"),"fund_approved");assert.equal(transfer.has("distributorId"),false);
 });
+test("call center and decision roles receive their mobile work queues",()=>{
+  const callCenter=viewer(["call_center"]);
+  assert.deepEqual(Array.from(policy.taskKinds(callCenter)),["intake","assignment","survey_review","distribution"]);
+  const intake=new URLSearchParams(policy.taskQuery(callCenter,"intake",1,""));
+  assert.equal(intake.get("states"),"draft,needs_data,screening");
+  const assignment=new URLSearchParams(policy.taskQuery(callCenter,"assignment",1,""));
+  assert.equal(assignment.get("states"),"survey_assignment,approved");
+  const distribution=new URLSearchParams(policy.taskQuery(callCenter,"distribution",1,""));
+  assert.equal(distribution.has("distributorId"),false);
+  assert.deepEqual(Array.from(policy.taskKinds(viewer(["approver"]))),["approval"]);
+  assert.deepEqual(Array.from(policy.taskKinds(viewer(["fund_requester"]))),["funding","transfer"]);
+});
 function worker(network=async()=>new Response("live")){
- const handlers={},cached=[],deleted=[];
+ const handlers={},cached=[],deleted=[],shown=[],opened=[],windows=[];
  const cache={addAll:async values=>cached.push(...values),match:async()=>null};
- const context={URL,Response,fetch:network,caches:{open:async()=>cache,match:async()=>new Response("offline public shell"),keys:async()=>["bantuan-pwa-shell-old","another-module-cache"],delete:async key=>deleted.push(key)},self:{location:{origin:"https://example.test"},addEventListener:(type,callback)=>handlers[type]=callback,clients:{claim:async()=>{}},skipWaiting:()=>{}}};
- vm.runInNewContext(readFileSync("public/bantuan-app/sw.js","utf8"),context);return {handlers,cached,deleted};
+ const context={URL,Response,fetch:network,caches:{open:async()=>cache,match:async()=>new Response("offline public shell"),keys:async()=>["bantuan-pwa-shell-old","another-module-cache"],delete:async key=>deleted.push(key)},self:{location:{origin:"https://example.test"},addEventListener:(type,callback)=>handlers[type]=callback,registration:{showNotification:async(title,options)=>shown.push({title,...options})},clients:{claim:async()=>{},matchAll:async()=>windows,openWindow:async url=>opened.push(url)},skipWaiting:()=>{}}};
+ vm.runInNewContext(readFileSync("public/bantuan-app/sw.js","utf8"),context);return {handlers,cached,deleted,shown,opened,windows};
 }
 function event(path,options={}){return {request:{url:"https://example.test"+path,method:"GET",mode:"cors",...options},response:null,respondWith(promise){this.response=promise;},waitUntil(promise){this.pending=promise;}};}
 test("service worker never intercepts or caches API requests, private photos, mutations, or other modules",async()=>{
@@ -45,7 +61,6 @@ test("authenticated PWA navigation uses network, with a generic offline fallback
  const online=worker(),page=event("/bantuan-app/tugas",{mode:"navigate"});online.handlers.fetch(page);assert.equal(await (await page.response).text(),"live");assert.equal(online.cached.length,0);
  const offline=worker(async()=>{throw new Error("offline");}),fallback=event("/bantuan-app/santunan",{mode:"navigate"});offline.handlers.fetch(fallback);assert.equal(await (await fallback.response).text(),"offline public shell");
 });
-
 
 test("manifest is scoped to Bantuan and supplies real install icons including maskable",async()=>{
   const manifestModule=compile("modules/bantuan/pwa/manifest.ts");

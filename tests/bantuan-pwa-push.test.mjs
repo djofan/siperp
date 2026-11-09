@@ -28,6 +28,14 @@ test("queued push is dropped after logout, account switch, revoked access or unr
 test("foreign payloads do not trigger a lookup or notification",async()=>{
   const w=worker();await w.dispatch("push",push({notification:{body:"arbitrary"}}));assert.equal(w.requests.length,0);assert.equal(w.shown.length,0);
 });
+
+test("unbound standard Web Push and malformed messages never bypass Firebase session checks",async()=>{
+  const w=worker();
+  for(const json of [()=>({title:"Old notification",body:"Wrong session"}),()=>{throw new Error("bad JSON");}]){
+    await w.dispatch("push",{data:{json},waitUntil(promise){this.pending=promise;}});
+  }
+  assert.equal(w.requests.length,0);assert.equal(w.shown.length,0);
+});
 test("notification clicks ignore payload URLs and only open the internal notification page",async()=>{
   const w=worker(),event={notification:{data:{type:"bantuan_pwa",url:"https://untrusted.example"},close(){}},waitUntil(p){this.pending=p;}};
   await w.dispatch("notificationclick",event);assert.deepEqual(w.opened,["https://example.test/bantuan-app/notifikasi"]);
