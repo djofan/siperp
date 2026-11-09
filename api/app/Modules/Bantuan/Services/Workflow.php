@@ -13,9 +13,9 @@ class Workflow
         'submit' => [['draft', 'needs_data'], ['call_center', 'verifier', 'requester'], 'screening'],
         'screen_pass' => [['screening'], ['call_center'], 'review1'],
         'screen_reject' => [['screening'], ['call_center'], 'rejected_screening'],
-        'request_data' => [['screening', 'review1'], ['call_center', 'approver', 'chair'], 'needs_data'],
-        'review1_approve' => [['review1'], ['approver', 'chair'], 'survey_assignment'],
-        'review1_reject' => [['review1'], ['approver', 'chair'], 'rejected_t1'],
+        'request_data' => [['screening', 'review1'], ['call_center', 'approver', 'chair', 'survey_approver'], 'needs_data'],
+        'review1_approve' => [['review1'], ['approver', 'chair', 'survey_approver'], 'survey_assignment'],
+        'review1_reject' => [['review1'], ['approver', 'chair', 'survey_approver'], 'rejected_t1'],
         'assign_survey' => [['survey_assignment', 'survey_assigned'], ['call_center'], 'survey_assigned'],
         'survey_save' => [['survey_assigned'], ['verifier'], 'survey_assigned'],
         'survey_submit' => [['survey_assigned'], ['verifier'], 'survey_cc_review'],
@@ -38,7 +38,7 @@ class Workflow
         'return_funds' => [['delivery_failed'], ['treasurer'], 'returned'],
         'reopen' => [['rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass', 'cancelled', 'returned'], ['approver', 'chair'], 'screening'],
         'cancel' => [['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'survey_submitted', 'bypass_review', 'approved', 'fund_ready'], ['call_center', 'verifier', 'requester'], 'cancelled'],
-        'comment' => [[], ['call_center', 'approver', 'chair', 'verifier', 'fund_requester', 'treasurer', 'requester'], null],
+        'comment' => [[], ['call_center', 'approver', 'chair', 'verifier', 'fund_requester', 'treasurer', 'requester', 'observer', 'survey_approver'], null],
     ];
 
     public function perform(Request $request, string $id, string $action): Application
@@ -56,7 +56,7 @@ class Workflow
             $from = $row->status;
             $own = $row->created_by === $request->user()->id;
             $roles = match ($action) {
-                'request_data' => $row->status === 'screening' ? ['call_center'] : ['approver', 'chair'],
+                'request_data' => $row->status === 'screening' ? ['call_center'] : ['approver', 'chair', 'survey_approver'],
                 'survey_location' => ['call_center', ...($row->verifier_id === $request->user()->id ? ['verifier'] : [])],
                 'handover', 'delivery_fail' => $row->distribution_type === 'direct' ? ['treasurer']
                     : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier'] : []),
@@ -90,7 +90,7 @@ class Workflow
             }
             if ($action === 'request_data') {
                 abort_if($row->status === 'screening' && ! in_array($role, ['admin', 'call_center'], true), 403);
-                abort_if($row->status === 'review1' && ! in_array($role, ['admin', 'approver', 'chair'], true), 403);
+                abort_if($row->status === 'review1' && ! in_array($role, ['admin', 'approver', 'chair', 'survey_approver'], true), 403);
             }
             if ($action === 'submit') {
                 $complete = clone $request;
@@ -292,7 +292,8 @@ class Workflow
             app(Journal::class)->record($request, $row, $action, $from, $details);
             $targets = match ($row->status) {
                 'screening' => ['call_center'],
-                'review1', 'survey_submitted', 'bypass_review', 'review2' => ['approver', 'chair'],
+                'review1' => ['approver', 'chair', 'survey_approver'],
+                'survey_submitted', 'bypass_review', 'review2' => ['approver', 'chair'],
                 'survey_cc_review' => ['call_center'],
                 'survey_assignment', 'approved', 'completed' => ['call_center', 'approver'],
                 'fund_ready', 'fund_submitted' => ['fund_requester'], 'fund_approved' => ['treasurer'], default => [],

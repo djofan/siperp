@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class BantuanSession implements ModuleSession
 {
-    private const HOME = ['requester' => '', 'call_center' => '', 'approver' => '', 'chair' => '', 'verifier' => '', 'volunteer' => 'santunan', 'fund_requester' => '', 'treasurer' => ''];
+    private const HOME = ['requester' => '', 'call_center' => '', 'approver' => '', 'chair' => '', 'observer' => '', 'survey_approver' => '', 'verifier' => '', 'volunteer' => 'santunan', 'fund_requester' => '', 'treasurer' => ''];
 
     public function credentialField(): string
     {

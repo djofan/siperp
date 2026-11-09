@@ -135,3 +135,12 @@ test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
   assert.equal(sidebarNavigation(multi).find(item=>item.key==="pengajuan").label,"Semua pengajuan");
   for(const key of ["tim","pengaturan","audit"])assert.equal(keys.includes(key),false,key);
 });
+
+test("Pengurus has monitoring routes and no creation, edit or management routes",()=>{
+  const viewer={role:"observer",roles:["observer"],canBypass:false};
+  for(const route of [[],["berjalan"],["pengajuan"],["pengajuan","id"],["mustahiq"],["pengajuan-dana"],["menu-survei"],["menu-penyaluran"]])assert.equal(canViewRoute(viewer,route),true,route.join("/"));
+  for(const route of [["pengajuan","baru"],["pengajuan","langsung"],["pengajuan","id","edit"],["tim"],["pengaturan"],["audit"]])assert.equal(canViewRoute(viewer,route),false,route.join("/"));
+  assert.equal(sidebarNavigation(viewer).some(item=>item.key==="proses"),false);
+  const mixed={...viewer,roles:["observer","call_center"]};
+  assert.equal(canViewRoute(mixed,["pengajuan","baru"]),true);
+});

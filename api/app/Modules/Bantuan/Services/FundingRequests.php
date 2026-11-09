@@ -28,7 +28,7 @@ class FundingRequests
 
     public function visible(Request $request)
     {
-        abort_unless($this->access->has($request, ['admin', 'fund_requester', 'treasurer', 'chair']), 403);
+        abort_unless($this->access->has($request, ['admin', 'fund_requester', 'treasurer', 'chair', 'observer']), 403);
         $visible = $this->access->scope(Application::query(), $request)->select('id');
 
         // A card is visible only when every member is in the caller's application scope.

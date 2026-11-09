@@ -32,7 +32,7 @@ export function Toast({message,onClose}:{message:string;onClose:()=>void}){
   useEffect(()=>{const id=setTimeout(onClose,6500);return()=>clearTimeout(id);},[message,onClose]);
   return <div role="status" className={s.toast}><CheckCircle2 size={21}/><span>{message}</span><button aria-label="Tutup notifikasi" onClick={onClose}><X size={17}/></button></div>;
 }
-export function Dialog({title,description,children,onClose,wide=false}:{title:string;description?:string;children:ReactNode;onClose:()=>void;wide?:boolean}){
+export function Dialog({title,description,children,onClose,wide=false,className=""}:{title:string;description?:string;children:ReactNode;onClose:()=>void;wide?:boolean;className?:string}){
   const ref=useRef<HTMLDialogElement>(null),id=useId();
   useEffect(()=>{
     const element=ref.current;if(!element)return;
@@ -40,7 +40,7 @@ export function Dialog({title,description,children,onClose,wide=false}:{title:st
     try{element.showModal();}catch(error){unlock();throw error;}
     return()=>{try{element.close();}finally{unlock();}};
   },[]);
-  return <dialog ref={ref} className={`${s.dialog} ${wide?s.wideDialog:""}`} aria-labelledby={id} aria-describedby={description?id+"-description":undefined} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+  return <dialog ref={ref} className={`${s.dialog} ${wide?s.wideDialog:""} ${className}`} aria-labelledby={id} aria-describedby={description?id+"-description":undefined} onCancel={e=>{e.preventDefault();onClose();}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
     <div className={s.dialogHeader}><div><h2 id={id}>{title}</h2>{description&&<p id={id+"-description"}>{description}</p>}</div><button aria-label="Tutup dialog" className={s.iconButton} onClick={onClose} type="button"><X size={18}/></button></div>
     <div className={s.dialogBody}>{children}</div>
   </dialog>;

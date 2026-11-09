@@ -6,6 +6,7 @@ const tasks: Record<string, string[]> = {
   requester: ["perlu-dilengkapi", "draft"],
   call_center: ["perlu-dilengkapi", "draft", "screening", "penugasan-survei", "review-survei-cc", "penugasan-penyalur"],
   verifier: ["perlu-dilengkapi", "draft", "survei", "penyaluran"],
+  survey_approver: ["review-tahap-1"],
   approver: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
   chair: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
   fund_requester: ["dana-siap", "dana-diajukan"],
@@ -37,6 +38,8 @@ export const taskCopy: Record<string, { title: string; action: string; descripti
 };
 export function roleSteps(role: string | RoleViewer): string[] {
   if(typeof role!=="string")return [...new Set(rolesOf(role).flatMap(value=>roleSteps(value)))];
+  if (role === "survey_approver") return ["Buka Persetujuan tahap 1 untuk memeriksa pengajuan masuk.", "Setujui untuk survei, tolak, atau minta data dilengkapi. Cukup salah satu penyetuju mengambil keputusan.", "Call Center menugaskan Verifikator setelah disetujui. Nominal tetap diputuskan Approver setelah hasil survei."];
+  if (role === "observer") return ["Pantau semua pengajuan dan tahapnya melalui daftar atau menu proses.", "Buka detail untuk membaca data pemohon, hasil survei, dokumen, dan riwayat.", "Tambahkan catatan internal atau pertanyaan untuk tim. Pengurus tidak mengubah data maupun status pengajuan."];
   if (role === "requester") return ["Buat pengajuan dan lengkapi data pemohon.", "Kirim langsung ke Approver untuk persetujuan awal.", "Setelah disetujui, Call Center menugaskan Verifikator. Pantau pengajuan sendiri dan perbaiki data jika diminta."];
   if (role === "volunteer") return ["Buka santunan yang ditugaskan kepada Anda.", "Tunggu dana ditandai sudah ditransfer oleh Bendahara.", "Setelah diserahkan, isi laporan dan unggah dua foto bukti."];
   if (["call_center", "admin"].includes(role)) return ["Buat pengajuan dan isi data pemohon.", "Kirim ke penyetuju; draft belum masuk proses.", "Setelah disetujui, pilih petugas survei atau penyalur."];

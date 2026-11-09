@@ -115,9 +115,19 @@ for (const module of ['tanwir','ojol']) {
 }
 document['x-bantuan-application-visibility'] = {
   restrictedRoles: ['requester', 'verifier', 'volunteer'],
-  allApplicationsRoles: ['admin', 'call_center', 'approver', 'chair', 'fund_requester', 'treasurer'],
+  observer: { label: 'Pengurus', scope: 'All applications and private details, documents, timeline and funding groups', allowedApplicationMutations: ['comment'], combinedRoles: 'Other explicitly granted roles retain their own mutation permissions' },
+  allApplicationsRoles: ['admin', 'call_center', 'approver', 'chair', 'fund_requester', 'treasurer', 'observer', 'survey_approver'],
+  surveyApprover: { role: 'survey_approver', label: 'Penyetuju Survei', allowedApplicationMutations: ['review1_approve', 'review1_reject', 'request_data (review1 only)', 'comment'], forbids: ['amount decisions', 'survey result approval', 'bypass approval', 'self approval'], resolution: 'First valid versioned decision wins; existing Approver and Chair retain first stage access' },
   rule: 'Union of granted roles. Restricted-only accounts see applications they created or are assigned to as verifier/distributor. Any all-applications role sees all applications, including rows without an amount. The ongoing view intersects this scope with active statuses. Mutation permissions and private-document access remain separately authorized.',
 };
+// Compact location metadata for the authorized Bantuan listing; never full street/NIK/phone.
+document.components.schemas.BantuanApplicationSummary = {
+  type: 'object', additionalProperties: true,
+  properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes, falling back to region. Empty when unavailable.' } },
+};
+
+document['x-bantuan-application-notes'] = { field: 'applicant.applicationNotes', type: 'string', nullable: true, maxLength: 10000, required: false, description: 'Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments.' };
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

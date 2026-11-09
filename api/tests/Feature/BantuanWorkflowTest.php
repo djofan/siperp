@@ -1637,3 +1637,103 @@ it('lists involved reminder recipients without sending and accepts only explicit
     $this->postJson($base.'/reminders',['status'=>'fund_ready','recipientIds'=>[$this->verifier->id],'note'=>'Mohon koordinasi kesiapan penyaluran.'])->assertOk()->assertJsonCount(1,'data.recipients')->assertJsonPath('data.recipients.0.id',$this->verifier->id);
     expect(DB::table('bantuan_notifications')->where('application_id',$id)->pluck('user_id')->all())->toBe([$this->verifier->id]);
 });
+
+it('lists a compact district and city without exposing the full address', function () {
+    $input = bantuanInput();
+    $input['applicant']['district'] = 'Kec. Cibinong';
+    $input['applicant']['city'] = 'Kabupaten Bogor';
+    $input['applicant']['street'] = 'Jalan Rahasia nomor 22';
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $response = $this->getJson('/api/v1/bantuan/applications')->assertOk();
+    $row = collect($response->json('data'))->firstWhere('id', $id);
+    expect($row['shortLocation'])->toBe('Cibinong, Bogor');
+    expect(json_encode($row))->not->toContain('Jalan Rahasia');
+});
+
+it('lets Pengurus monitor every application and add only internal notes', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $observer = bantuanUser('observer');
+    foreach (['draft', 'review1', 'survey_assigned', 'fund_approved', 'completed', 'cancelled'] as $status) {
+        Application::findOrFail($id)->forceFill(['status' => $status])->save();
+        $this->actingAs($observer, 'sanctum')->getJson('/api/v1/bantuan/applications')->assertOk()->assertJsonPath('data.0.id', $id);
+        $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonPath('data.applicant.street', 'Alamat uji');
+    }
+    $this->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.total', 1);
+    $this->getJson('/api/v1/bantuan/funding-requests')->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/comment', ['version' => 1, 'reason' => 'Apakah kondisi pemohon sudah dikonfirmasi?'])->assertOk()->assertJsonPath('data.status', 'cancelled');
+    expect(DB::table('bantuan_events')->where('application_id', $id)->where('action', 'comment')->value('actor_role'))->toBe('observer');
+    foreach (array_keys(\App\Modules\Bantuan\Services\Workflow::RULES) as $action) {
+        if ($action === 'comment') continue;
+        $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action, ['version' => 2])->assertForbidden();
+    }
+    $this->putJson('/api/v1/bantuan/applications/'.$id, bantuanInput())->assertForbidden();
+    $this->deleteJson('/api/v1/bantuan/applications/'.$id)->assertForbidden();
+    $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertForbidden();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/reminders', ['status' => 'cancelled'])->assertForbidden();
+    $this->postJson('/api/v1/bantuan/funding-requests', [])->assertForbidden();
+    expect(Application::findOrFail($id)->status)->toBe('cancelled');
+});
+
+it('registers Pengurus through module administration without management privileges', function () {
+    $admin = bantuanUser('admin');
+    $id = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/bantuan/staff', [
+        'name' => 'Pengurus Uji', 'password' => 'test-pengurus-password', 'roles' => ['observer'], 'canBypass' => false,
+    ])->assertCreated()->json('data.id');
+    $this->actingAs(User::findOrFail($id), 'sanctum')->getJson('/api/v1/bantuan/viewer')->assertOk()->assertJsonPath('data.role', 'observer')->assertJsonPath('data.canBypass', false);
+    $this->postJson('/api/v1/bantuan/staff', [])->assertForbidden();
+    $this->putJson('/api/v1/bantuan/settings', [])->assertForbidden();
+});
+
+it('limits survey approvers to first stage decisions without changing an aid amount', function (string $action, string $target) {
+    $input = bantuanInput();
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'review1'])->save();
+    $person = bantuanUser('survey_approver');
+    $this->actingAs($person, 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action, ['version' => 1, 'amount' => 999999, 'reason' => 'Keputusan pemeriksaan awal'])->assertOk()->assertJsonPath('data.status', $target)->assertJsonPath('data.amount', null);
+    $this->actingAs($this->approver, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 1])->assertConflict();
+})->with([['review1_approve', 'survey_assignment'], ['review1_reject', 'rejected_t1'], ['request_data', 'needs_data']]);
+
+it('denies survey approvers later approval and self approval while preserving combined funding access', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $person = bantuanUser('fund_requester');
+    bantuanRoles($person, ['fund_requester', 'survey_approver']);
+    foreach (['survey_submitted', 'review2', 'bypass_review'] as $status) {
+        Application::findOrFail($id)->forceFill(['status' => $status])->save();
+        foreach (['approve', 'review_reject', 'survey_again'] as $action) {
+            $this->actingAs($person, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action, ['version' => 1, 'amount' => 500000, 'reason' => 'Tidak berhak memutuskan'])->assertForbidden();
+        }
+    }
+    Application::findOrFail($id)->forceFill(['status' => 'review1', 'created_by' => $person->id])->save();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version' => 1])->assertForbidden();
+    $this->getJson('/api/v1/bantuan/funding-requests/ready')->assertOk();
+    $this->getJson('/api/v1/bantuan/viewer')->assertJsonPath('data.roles.1', 'survey_approver');
+});
+
+it('registers survey approvers alongside the existing approver and notifies only early review', function () {
+    $admin = bantuanUser('admin');
+    $personId = $this->actingAs($admin, 'sanctum')->postJson('/api/v1/bantuan/staff', [
+        'name' => 'Penyetuju Survei Uji', 'password' => 'test-survey-approval', 'roles' => ['survey_approver'], 'canBypass' => false,
+    ])->assertCreated()->json('data.id');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $personId)->exists())->toBeTrue();
+    $this->getJson('/api/v1/bantuan/applications/'.$id.'/reminder-recipients?status=review1')->assertOk()->assertJsonFragment(['id' => $personId]);
+    $this->actingAs(User::findOrFail($personId), 'sanctum')->getJson('/api/v1/bantuan/viewer')->assertOk()->assertJsonPath('data.role', 'survey_approver');
+});
+
+
+it('preserves optional application notes for each intake source', function (string $source) {
+    $payload = bantuanInput();
+    $payload['source'] = $source;
+    $payload['applicant']['applicationNotes'] = "Mohon hubungi sore hari.\nPemohon bekerja pagi hari.";
+    if ($source === 'bypass') {
+        bantuanRoles($this->cc, ['call_center'], true);
+        $payload['bypassReason'] = 'Kondisi pemohon telah diketahui langsung.';
+    }
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $payload)
+        ->assertCreated()->json('data.id');
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()
+        ->assertJsonPath('data.applicant.applicationNotes', $payload['applicant']['applicationNotes']);
+    expect(Application::findOrFail($id)->applicant['applicationNotes'])->toBe($payload['applicant']['applicationNotes']);
+})->with(['online', 'walk_in', 'bypass']);
