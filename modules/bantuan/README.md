@@ -205,3 +205,9 @@ contoh dihapus. Penambahan kategori ini tidak membutuhkan migration tabel.
 Aplikasi petugas tersedia di `/bantuan-app/beranda` dengan navigasi bawah dan
 login cookie Core. Menu mengikuti hak akses akun. Panduan pemasangan, perilaku
 cache privat, dan batas tahap pertama ada di `docs/bantuan-pwa.md`.
+
+PWA kini mendukung Web Push standar browser (VAPID), terpisah dari Firebase Flutter.
+Tombol **Aktifkan notifikasi HP** berada di halaman Akun/Notifikasi. Langganan
+terikat ke akun dan sesi ERP; scheduler `bantuan:web-push` mengirim hanya inbox
+penerima, menghentikan sesi yang dicabut/kedaluwarsa, dan menghapus langganan expired.
+Setup/deployment serta langkah uji antar-akun dijelaskan di `docs/bantuan-pwa.md`.

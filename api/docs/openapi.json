@@ -411,6 +411,70 @@
           }
         }
       },
+      "SantunanInput": {
+        "type": "object",
+        "required": [
+          "frequency",
+          "category",
+          "period",
+          "recipientName",
+          "volunteerId",
+          "amount"
+        ],
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "routine",
+              "non_routine"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "widow",
+              "orphan",
+              "foster_child",
+              "tahfidz"
+            ]
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          },
+          "recipientName": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "volunteerId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9000000000000
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "frequency": {
+                  "const": "non_routine"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "category": {
+                  "const": "orphan"
+                }
+              }
+            }
+          }
+        ]
+      },
       "SarsipProfile": {
         "type": "object",
         "additionalProperties": false,
@@ -537,69 +601,12 @@
           }
         }
       },
-      "SantunanInput": {
-        "type": "object",
-        "required": [
-          "frequency",
-          "category",
-          "period",
-          "recipientName",
-          "volunteerId",
-          "amount"
-        ],
-        "properties": {
-          "frequency": {
-            "type": "string",
-            "enum": [
-              "routine",
-              "non_routine"
-            ]
-          },
-          "category": {
-            "type": "string",
-            "enum": [
-              "widow",
-              "orphan",
-              "foster_child",
-              "tahfidz"
-            ]
-          },
-          "period": {
-            "type": "string",
-            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
-          },
-          "recipientName": {
-            "type": "string",
-            "maxLength": 191
-          },
-          "volunteerId": {
-            "type": "string",
-            "maxLength": 191
-          },
-          "amount": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 9000000000000
-          }
-        },
-        "allOf": [
-          {
-            "if": {
-              "properties": {
-                "frequency": {
-                  "const": "non_routine"
-                }
-              }
-            },
-            "then": {
-              "properties": {
-                "category": {
-                  "const": "orphan"
-                }
-              }
-            }
-          }
-        ]
+      "BantuanTelephone": {
+        "type": "string",
+        "minLength": 8,
+        "maxLength": 30,
+        "pattern": "^\\+?[0-9 ()-]+$",
+        "description": "Applicant phone and optional reporterPhone on application create/update: 8–15 digits, optional leading + (international code cannot start with 0), spaces/hyphens and balanced numeric area-code parentheses. Letters, extensions and invalid digit counts return 422. Enforced on drafts too when present; reporterPhone remains nullable. Formatting is preserved."
       }
     }
   },
@@ -1070,6 +1077,41 @@
         }
       }
     },
+    "/api/v1/bantuan/santunan": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Tambah santunan rutin atau tidak rutin",
+        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SantunanInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+          },
+          "403": {
+            "description": "Peran tidak diizinkan"
+          },
+          "422": {
+            "description": "Kategori atau penyalur tidak valid"
+          }
+        }
+      }
+    },
     "/api/v1/sarsip/profile": {
       "get": {
         "summary": "Read public SARSIP profile and hero image",
@@ -1480,37 +1522,244 @@
         }
       }
     },
-    "/api/v1/bantuan/santunan": {
-      "post": {
-        "tags": [
-          "Bantuan"
-        ],
-        "summary": "Tambah santunan rutin atau tidak rutin",
-        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
-        "security": [
-          {
-            "bearerAuth": []
+    "/api/v1/bantuan/web-push/config": {
+      "get": {
+        "summary": "Read browser Web Push availability and public VAPID key",
+        "description": "Requires an active Bantuan session. Returns only the public key, never the private key.",
+        "responses": {
+          "200": {
+            "description": "Configuration",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "enabled",
+                        "publicKey"
+                      ],
+                      "properties": {
+                        "enabled": {
+                          "type": "boolean"
+                        },
+                        "publicKey": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
-        ],
+        }
+      }
+    },
+    "/api/v1/bantuan/web-push/subscriptions": {
+      "post": {
+        "summary": "Bind a browser subscription to the current ERP account and Sanctum session",
+        "description": "Encrypted at rest; idempotent endpoint upsert. Shared browser reassigns to current account. Only new unread notifications created since registration are sent. Limited to 30 requests/minute. No subscription secret is returned.",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SantunanInput"
+                "type": "object",
+                "required": [
+                  "endpoint",
+                  "keys"
+                ],
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "writeOnly": true,
+                    "description": "HTTPS browser push endpoint. Only FCM, Mozilla, Apple and Windows push service hosts/subdomains on port 443 are allowed; no credentials or fragment."
+                  },
+                  "keys": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ],
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "writeOnly": true,
+                        "description": "Base64url uncompressed 65-byte P-256 public key"
+                      },
+                      "auth": {
+                        "type": "string",
+                        "maxLength": 30,
+                        "writeOnly": true,
+                        "description": "Base64url 16-byte authentication secret"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
         "responses": {
-          "201": {
-            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "403": {
-            "description": "Peran tidak diizinkan"
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "422": {
-            "description": "Kategori atau penyalur tidak valid"
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove a browser subscription owned by the current account and session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "endpoint"
+                ],
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "maxLength": 2048,
+                    "writeOnly": true,
+                    "description": "HTTPS browser push endpoint. Only FCM, Mozilla, Apple and Windows push service hosts/subdomains on port 443 are allowed; no credentials or fragment."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Completed; empty response body"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }

@@ -2,11 +2,16 @@
 
 use App\Modules\Bantuan\Http\Controllers\BantuanController as C;
 use App\Modules\Bantuan\Http\Controllers\DocumentController;
-use App\Modules\Bantuan\Http\Controllers\SantunanController;
-use App\Modules\Bantuan\Http\Controllers\StaffController as S;
-use Illuminate\Support\Facades\Route;
 use App\Modules\Bantuan\Http\Controllers\FundingRequestController;
 use App\Modules\Bantuan\Http\Controllers\MustahiqController;
+use App\Modules\Bantuan\Http\Controllers\RegionController;
+use App\Modules\Bantuan\Http\Controllers\ReportController;
+use App\Modules\Bantuan\Http\Controllers\SantunanController;
+use App\Modules\Bantuan\Http\Controllers\StaffController as S;
+use App\Modules\Bantuan\Http\Controllers\SurveyLocationController;
+use App\Modules\Bantuan\Http\Controllers\SurveyReminderController;
+use App\Modules\Bantuan\Http\Controllers\WebPushController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('mustahiq', [MustahiqController::class, 'index']);
 Route::get('mustahiq/{id}', [MustahiqController::class, 'show']);
@@ -28,8 +33,8 @@ Route::post('duplicate-check', [C::class, 'duplicate']);
 Route::post('applicants/search', [C::class, 'searchApplicants'])->middleware('throttle:60,1');
 Route::post('batch', [C::class, 'batch']);
 Route::get('applications/{id}', [C::class, 'show']);
-Route::post('applications/{id}/locations', [\App\Modules\Bantuan\Http\Controllers\SurveyLocationController::class, 'search'])->middleware('throttle:20,1');
-Route::post('applications/{id}/route', [\App\Modules\Bantuan\Http\Controllers\SurveyLocationController::class, 'route'])->middleware('throttle:20,1');
+Route::post('applications/{id}/locations', [SurveyLocationController::class, 'search'])->middleware('throttle:20,1');
+Route::post('applications/{id}/route', [SurveyLocationController::class, 'route'])->middleware('throttle:20,1');
 Route::put('applications/{id}', [C::class, 'update']);
 Route::delete('applications/{id}', [C::class, 'destroy']);
 Route::post('applications/{id}/actions/{action}', [C::class, 'action']);
@@ -37,6 +42,9 @@ Route::post('applications/{id}/documents', [C::class, 'document'])->middleware('
 Route::get('documents/{id}', [C::class, 'download']);
 Route::delete('documents/{id}', [DocumentController::class, 'destroy']);
 Route::get('notifications', [C::class, 'notifications']);
+Route::get('web-push/config', [WebPushController::class, 'configuration']);
+Route::post('web-push/subscriptions', [WebPushController::class, 'store'])->middleware('throttle:30,1');
+Route::delete('web-push/subscriptions', [WebPushController::class, 'destroy'])->middleware('throttle:30,1');
 Route::put('notifications/read-all', [C::class, 'readAllNotifications']);
 Route::put('notifications/{id}/read', [C::class, 'readNotification']);
 Route::get('audit', [C::class, 'audit']);
@@ -53,8 +61,8 @@ Route::post('santunan/{id}/documents', [SantunanController::class, 'document'])-
 Route::post('santunan/{id}/complete', [SantunanController::class, 'complete']);
 Route::get('santunan-documents/{documentId}', [SantunanController::class, 'download']);
 
-Route::get('regions/{level}', \App\Modules\Bantuan\Http\Controllers\RegionController::class)->middleware('throttle:60,1');
+Route::get('regions/{level}', RegionController::class)->middleware('throttle:60,1');
 
-Route::post('applications/{id}/remind-survey', \App\Modules\Bantuan\Http\Controllers\SurveyReminderController::class)->middleware('throttle:10,1');
+Route::post('applications/{id}/remind-survey', SurveyReminderController::class)->middleware('throttle:10,1');
 
-Route::get('reports/full', \App\Modules\Bantuan\Http\Controllers\ReportController::class)->middleware('throttle:5,1');
+Route::get('reports/full', ReportController::class)->middleware('throttle:5,1');

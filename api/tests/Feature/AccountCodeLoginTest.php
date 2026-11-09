@@ -16,6 +16,7 @@ function codeAccount(array $extra = []): User
     $user = new User;
     $user->forceFill(array_replace(['name' => 'Akun kode', 'email' => Str::uuid().'@example.test',
         'password_hash' => Hash::make('password-code-test'), 'is_active' => true, 'is_superadmin' => false], $extra))->save();
+
     return $user;
 }
 
@@ -39,6 +40,34 @@ it('authenticates superadmin by code and keeps the password hash unchanged', fun
     $this->postJson('/api/v1/auth/login', ['code' => '  '.strtolower($user->code).'  ', 'password' => 'password-code-test'])
         ->assertOk()->assertJsonPath('data.isSuperadmin', true);
     expect($user->fresh()->password_hash)->toBe($hash);
+});
+
+it('uses a browser session cookie unless remember me is selected', function () {
+    $user = codeAccount();
+    DB::table('module_access')->insert(['id' => (string) Str::uuid(), 'user_id' => $user->id, 'module_id' => 'code-sip', 'role' => 'admin']);
+
+    $sessionResponse = $this->postJson('/api/v1/auth/login', ['code' => $user->code,
+        'password' => 'password-code-test', 'remember' => false])->assertOk();
+    $sessionCookie = collect($sessionResponse->headers->getCookies())->first(fn ($cookie) => $cookie->getName() === 'sip_session');
+    $sessionToken = $user->tokens()->latest('id')->first();
+
+    expect($sessionCookie->getExpiresTime())->toBe(0)
+        ->and($sessionToken->expires_at->between(now()->addHours(11)->addMinutes(59), now()->addHours(12)->addMinute()))->toBeTrue();
+
+    $rememberedResponse = $this->postJson('/api/v1/auth/login', ['code' => $user->code,
+        'password' => 'password-code-test', 'remember' => true])->assertOk();
+    $rememberedCookie = collect($rememberedResponse->headers->getCookies())->first(fn ($cookie) => $cookie->getName() === 'sip_session');
+    $rememberedToken = $user->tokens()->latest('id')->first();
+
+    expect($rememberedCookie->getExpiresTime())->toBeGreaterThan(now()->addDays(29)->timestamp)
+        ->and($rememberedToken->expires_at->between(now()->addDays(29)->addHours(23), now()->addDays(30)->addMinute()))->toBeTrue();
+});
+
+it('rejects invalid remember me values', function () {
+    $user = codeAccount();
+    $this->postJson('/api/v1/auth/login', ['code' => $user->code, 'password' => 'password-code-test', 'remember' => 'yes'])
+        ->assertUnprocessable()->assertJsonValidationErrors('remember', 'error.details');
+    expect($user->tokens()->count())->toBe(0);
 });
 
 it('rejects email login and old identifier fields on every login endpoint', function (string $path) {
@@ -104,7 +133,9 @@ it('creates accounts without email and exposes the generated code in management'
 
 it('keeps Core login independent from optional module profile tables', function () {
     $user = codeAccount();
-    foreach (['teknisi_participants', 'zakat_academy_profiles', 'tanwir_members', 'ojol_members'] as $table) Schema::drop($table);
+    foreach (['teknisi_participants', 'zakat_academy_profiles', 'tanwir_members', 'ojol_members'] as $table) {
+        Schema::drop($table);
+    }
     $this->postJson('/api/v1/auth/login', ['code' => $user->code, 'password' => 'password-code-test'])->assertOk();
 });
 

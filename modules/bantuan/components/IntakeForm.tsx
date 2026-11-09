@@ -20,6 +20,7 @@ import { LoadingState } from "./LoadingState";
 import s from "./Workspace.module.css";
 import controls from "./IntakeActions.module.css";
 import { canRestoreIntake, submitIntake } from "../intake-lifecycle";
+import { isValidPhone } from "../phone";
 import { hasAnyRole } from "../permissions";
 import { surveyFields } from "../survey-fields";
 import { AddressRegions } from "./AddressRegions";
@@ -82,6 +83,7 @@ export function validateFields(fields:Field[],values:Values):Record<string,strin
     const value=values[f.key];
     if(!f.optional&&(value===undefined||value===null||value===""))errors[f.key]=["Kolom ini wajib diisi."];
     else if(f.type==="nik"&&!/^[0-9]{16}$/.test(String(value??"")))errors[f.key]=["NIK harus terdiri dari 16 digit angka."];
+    else if(f.type==="tel"&&value!==undefined&&value!==null&&value!==""&&!isValidPhone(value))errors[f.key]=["Nomor telepon harus berisi 8–15 angka. Gunakan 08…, 021…, atau +62…. Format spasi, tanda hubung, dan kurung kode area diperbolehkan."];
     else if(f.type==="date"&&value&&new Date(String(value))>new Date())errors[f.key]=["Tanggal tidak boleh melewati hari ini."];
     else if(f.type==="number"&&value!==""&&value!==undefined&&value!==null&&(!Number.isInteger(Number(value))||Number(value)<0))errors[f.key]=["Masukkan angka bulat, minimal 0."];
   }
@@ -106,7 +108,7 @@ export function Fields({fields,values,set,prefix="",required=true,errors={},orig
       {f.key==="dependents"?<DependentsEditor value={values.dependents} errors={errors} onChange={rows=>{set("dependents",rows);set("dependentCount",rows.length);}}/>:segmented?<div className={s.segmented} role="radiogroup" aria-label={f.label}>{options.map((o,i)=><button key={o} id={id+"-"+i} type="button" role="radio" aria-checked={String(values[f.key])===o} onClick={()=>{set(f.key,f.type==="boolean"?o==="true":o);if(f.key==="hasSktm")set("willingSktm","");blur(f.key);}}>{o==="true"?"Ya":o==="false"?f.key==="hasSktm"?"Belum":"Tidak":o}</button>)}</div>:
       f.options?<select id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,e.target.value)}><option value="">Pilih…</option>{options.map(o=><option key={o} value={o}>{o.replaceAll("_"," ")}</option>)}</select>:
       f.type==="textarea"?<textarea id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} maxLength={10000} onChange={e=>set(f.key,e.target.value)}/>:
-      <div className={rupiah?s.moneyInput:undefined}>{rupiah&&<span>Rp</span>}<input id={id} className={s.input} name={id} type={rupiah||f.type==="nik"?"text":f.type??"text"} inputMode={rupiah||f.type==="nik"||f.type==="number"?"numeric":undefined} maxLength={f.type==="nik"?16:1000} max={f.type==="date"?today.toLocaleDateString("en-CA"):undefined} min={f.type==="number"?0:undefined} value={rupiah&&values[f.key]!==undefined&&values[f.key]!==""?Number(values[f.key]).toLocaleString("id-ID"):String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,rupiah?e.target.value.replace(/[^0-9]/g,"")?Number(e.target.value.replace(/[^0-9]/g,"")):"":f.type==="number"?e.target.value===""?"":Number(e.target.value):e.target.value)}/></div>}
+      <div className={rupiah?s.moneyInput:undefined}>{rupiah&&<span>Rp</span>}<input id={id} className={s.input} name={id} type={rupiah||f.type==="nik"?"text":f.type??"text"} inputMode={rupiah||f.type==="nik"||f.type==="number"?"numeric":undefined} maxLength={f.type==="nik"?16:f.type==="tel"?30:1000} max={f.type==="date"?today.toLocaleDateString("en-CA"):undefined} min={f.type==="number"?0:undefined} value={rupiah&&values[f.key]!==undefined&&values[f.key]!==""?Number(values[f.key]).toLocaleString("id-ID"):String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,rupiah?e.target.value.replace(/[^0-9]/g,"")?Number(e.target.value.replace(/[^0-9]/g,"")):"":f.type==="number"?e.target.value===""?"":Number(e.target.value):e.target.value)}/></div>}
       {error?<small role="alert" className={s.fieldError}>{fieldMessage(error)}</small>:f.key==="birthDate"&&age!==null&&age>=0?<small>Usia {age} tahun</small>:f.hint&&<small>{f.hint}</small>}
     </div>;
   })}</div>;

@@ -10,8 +10,10 @@ import { clearDrafts } from "../api/vault";
 import { clearPhotoMemory } from "../api/photo-queue";
 import { Santunan } from "../components/Santunan";
 import { ActionPanel,DocumentUpload } from "../components/ActionPanel";
-import { pwaAccess,pwaTabs,pwaRoot,taskKinds,taskLabels,taskQuery,type TaskKind } from "./policy";
+import { pwaAccess,pwaTabs,pwaRoot,taskKinds,taskLabels,taskQuery,taskStates,type TaskKind } from "./policy";
 import { pwaRequest } from "./client";
+import { WebPushSettings } from "./WebPushSettings";
+import { disableWebPush } from "./web-push";
 import base from "../components/Workspace.module.css";
 import s from "./Pwa.module.css";
 
@@ -44,6 +46,8 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
   async function logout(){
     if(loggingOut)return;setLoggingOut(true);setLogoutError("");
     try {
+      // Core logout still revokes the session when browser cleanup is unavailable/offline.
+      await disableWebPush().catch(()=>undefined);
       const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
       if(!response.ok&&response.status!==401)throw new Error("Keluar belum berhasil. Periksa koneksi dan coba lagi.");
       clearPhotoMemory(viewer.id);await clearDrafts(viewer.id).catch(()=>undefined);
@@ -57,11 +61,12 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
     <main id="pwa-content" className={s.content}>
       {tab!=="beranda"&&tab!=="santunan"&&<div className={s.pageTitle}><span className={s.eyebrow}>BANTUAN SIP</span><h1>{title}</h1></div>}
       {staffError&&<ErrorNotice message={`Daftar tim belum dapat dimuat: ${staffError}`} retry={retry}/>}
+      <WebPushSettings userId={viewer.id} visible={tab==="akun"||tab==="notifikasi"}/>
       {tab==="beranda"&&<HomeScreen viewer={viewer} revision={revision} retry={retry}/>}
       {tab==="tugas"&&(route[1]?staff?<TaskDetail id={route[1]} viewer={viewer} staff={staff}/>:!staffError&&<Loading/>:<TaskList viewer={viewer}/>)}
       {tab==="santunan"&&access.santunan&&(staff?<div className={s.santunan}><Santunan viewer={viewer} staff={staff}/></div>:!staffError&&<Loading/>)}
       {tab==="notifikasi"&&<Notifications viewer={viewer} onRead={retry}/>}
-      {tab==="akun"&&<><section className={s.profile}><span className={s.avatar}>{viewer.name.slice(0,1)}</span><h2>{viewer.name}</h2><p>{roleLabel(viewer)}</p><dl><div><dt>Kode akun</dt><dd>{viewer.code??"Hubungi pengelola"}</dd></div><div><dt>Akses</dt><dd>Modul Bantuan</dd></div></dl></section><section className={s.panel}><h2><Smartphone size={19}/>Pasang di HP</h2><p>Android: buka menu browser lalu pilih Pasang aplikasi atau Tambahkan ke layar utama. iPhone: buka di Safari, tekan Bagikan, lalu Tambahkan ke Layar Utama.</p><p>Aplikasi memerlukan internet untuk membaca dan mengirim data. Notifikasi tersedia saat aplikasi dibuka.</p></section><Link href="/admin/bantuan" className={s.rowLink}><ExternalLink size={18}/>Dashboard web lengkap<ChevronRight size={17}/></Link>{logoutError&&<div role="alert" className={s.error}>{logoutError}</div>}<button className={s.logout} onClick={()=>void logout()} disabled={loggingOut}><LogOut size={19}/>{loggingOut?"Sedang keluar…":"Keluar dari akun"}</button></>}
+      {tab==="akun"&&<><section className={s.profile}><span className={s.avatar}>{viewer.name.slice(0,1)}</span><h2>{viewer.name}</h2><p>{roleLabel(viewer)}</p><dl><div><dt>Kode akun</dt><dd>{viewer.code??"Hubungi pengelola"}</dd></div><div><dt>Akses</dt><dd>Modul Bantuan</dd></div></dl></section><section className={s.panel}><h2><Smartphone size={19}/>Pasang di HP</h2><p>Android: buka menu browser lalu pilih Pasang aplikasi atau Tambahkan ke layar utama. iPhone: buka di Safari, tekan Bagikan, lalu Tambahkan ke Layar Utama.</p><p>Aplikasi memerlukan internet untuk membaca dan mengirim data. Aktifkan notifikasi HP di panel di atas untuk menerima popup melalui Web Push.</p></section><Link href="/admin/bantuan" className={s.rowLink}><ExternalLink size={18}/>Dashboard web lengkap<ChevronRight size={17}/></Link>{logoutError&&<div role="alert" className={s.error}>{logoutError}</div>}<button className={s.logout} onClick={()=>void logout()} disabled={loggingOut}><LogOut size={19}/>{loggingOut?"Sedang keluar…":"Keluar dari akun"}</button></>}
     </main>
     <nav className={s.nav} aria-label="Navigasi aplikasi" style={{gridTemplateColumns:`repeat(${tabs.length},1fr)`}}>{tabs.map(item=>{const Icon=icons[item.key];return <Link key={item.key} href={`${pwaRoot}/${item.key}`} aria-current={tab===item.key?"page":undefined}><span><Icon size={21}/>{item.key==="notifikasi"&&unread!==null&&unread>0&&<i/>}</span>{item.label}</Link>;})}</nav>
   </div>;
@@ -78,12 +83,15 @@ function HomeScreen({viewer,revision,retry}:{viewer:BantuanViewer;revision:numbe
   const firstName=viewer.name.split(" ")[0];
   const remaining=data?.santunan.filter(row=>row.distributionStatus==="process")??[];
   const waiting=remaining.filter(row=>row.transferStatus==="pending").length;
+  const activeTaskStates=[...new Set(taskKinds(viewer).flatMap(kind=>taskStates[kind]))];
+  const activeTasks=activeTaskStates.reduce((total,status)=>total+Number(data?.dashboard?.byStatus[status]??0),0);
   return <>
     <div className={s.greeting}><div><p>Assalamu’alaikum, {firstName}</p><h1>Siap menebar<br/>kebaikan hari ini?</h1></div><button className={s.refresh} aria-label="Muat ulang ringkasan" onClick={retry}><RefreshCw size={19}/></button></div>
     <section className={s.hero}><span className={s.heroIcon}><HandHeart size={29}/></span><div><span>SETIAP AMANAH BERARTI</span><h2>Hadirkan manfaat,<br/>tuntaskan amanah.</h2><p>{access.santunan?"Pantau transfer dan laporan penyaluran santunan.":"Periksa penugasan dan catat hasil kunjungan Anda."}</p><Link href={`${pwaRoot}/${access.santunan?"santunan":access.tasks?"tugas":"notifikasi"}`}>{access.santunan?"Buka santunan":"Lihat aktivitas"}<ArrowUpRight size={18}/></Link></div></section>
     {error?<ErrorNotice message={error} retry={retry}/>:!data?<Loading/>:<>
       <div className={s.sectionHeading}><h2>Ringkasan pekerjaan</h2><span>Sesuai akses akun</span></div>
       <div className={s.metrics}>
+        {access.tasks&&<Link href={`${pwaRoot}/tugas`}><ClipboardList size={20}/><strong>{activeTasks}</strong><span>Tugas aktif</span></Link>}
         {access.survey&&<Link href={`${pwaRoot}/tugas`}><ClipboardList size={20}/><strong>{data.dashboard?.byStatus.survey_assigned??0}</strong><span>Survei berjalan</span></Link>}
         {access.transfer&&<Link href={`${pwaRoot}/tugas`}><Wallet size={20}/><strong>{data.dashboard?.byStatus.fund_approved??0}</strong><span>Siap dicairkan</span></Link>}
         {access.santunan&&<Link href={`${pwaRoot}/santunan`}><Clock size={20}/><strong>{remaining.length}</strong><span>Santunan belum selesai</span></Link>}
@@ -124,5 +132,5 @@ function Notifications({viewer,onRead}:{viewer:BantuanViewer;onRead:()=>void}) {
   const [notes,setNotes]=useState<AidNotification[]|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(""),[revision,setRevision]=useState(0);
   useEffect(()=>{const controller=new AbortController();pwaRequest<AidNotification[]>("notifications",{signal:controller.signal}).then(data=>{setNotes(data);setError("");}).catch(err=>{if(!controller.signal.aborted)setError(err.message);});return()=>controller.abort();},[revision]);
   async function mark(note?:AidNotification){setBusy(note?.id??"all");setError("");try{await pwaRequest(note?`notifications/${note.id}/read`:"notifications/read-all",{method:"PUT"});setNotes(current=>current?.map(item=>!note||item.id===note.id?{...item,read_at:new Date().toISOString()}:item)??null);onRead();}catch(err){setError(err instanceof Error?err.message:"Notifikasi belum dapat diperbarui.");}finally{setBusy("");}}
-  return <>{error&&<ErrorNotice message={error} retry={()=>setRevision(value=>value+1)}/>}<p className={s.muted}>50 notifikasi terbaru. Pemberitahuan diperbarui saat aplikasi dibuka.</p>{notes?.some(note=>!note.read_at)&&<button className={s.outline} disabled={!!busy} onClick={()=>void mark()}>Tandai semua dibaca</button>}{!notes?!error&&<Loading/>:!notes.length?<Empty title="Belum ada notifikasi">Tugas baru dan perubahan status akan tampil di sini.</Empty>:notes.map(note=><article className={s.notification} data-unread={!note.read_at} key={note.id}><div className={s.noteIcon}><Bell size={18}/></div><div><p>{note.message}</p><small>{day(note.created_at)}</small><div className={s.notificationActions}>{!note.read_at&&<button disabled={!!busy} onClick={()=>void mark(note)}>{busy===note.id?"Menyimpan…":"Tandai dibaca"}</button>}{pwaAccess(viewer).tasks&&<Link href={`${pwaRoot}/tugas/${encodeURIComponent(note.application_id)}`}>Buka pengajuan<ChevronRight size={15}/></Link>}</div></div></article>)}</>;
+  return <>{error&&<ErrorNotice message={error} retry={()=>setRevision(value=>value+1)}/>}<p className={s.muted}>50 notifikasi terbaru. Pemberitahuan diperbarui saat aplikasi dibuka.</p>{notes?.some(note=>!note.read_at)&&<button className={s.outline} disabled={!!busy} onClick={()=>void mark()}>Tandai semua dibaca</button>}{!notes?!error&&<Loading/>:!notes.length?<Empty title="Belum ada notifikasi">Tugas baru dan perubahan status akan tampil di sini.</Empty>:notes.map(note=><article className={s.notification} data-unread={!note.read_at} key={note.id}><div className={s.noteIcon}><Bell size={18}/></div><div><p>{note.message}</p><small>{day(note.created_at)}</small><div className={s.notificationActions}>{!note.read_at&&<button disabled={!!busy} onClick={()=>void mark(note)}>{busy===note.id?"Menyimpan…":"Tandai dibaca"}</button>}{note.application_id&&pwaAccess(viewer).tasks&&<Link href={`${pwaRoot}/tugas/${encodeURIComponent(note.application_id)}`}>Buka pengajuan<ChevronRight size={15}/></Link>}</div></div></article>)}</>;
 }
