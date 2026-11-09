@@ -7,7 +7,8 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { bantuanRoles, bantuanStatuses, bantuanActionLabels } from "@/contracts/modules/bantuan";
 import type { AidDashboard, AidDetail, AidNotification, AidPage, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
 import { day, money, request } from "../api/client";
-import { preparePhoto } from "../api/photos";
+import { preparePhotoUpload } from "../api/photos";
+import { appendPhotoLocation } from "../photo-location";
 import { navigation, sidebarNavigation, defaultListStates, processInfo, nextStep, menuGroups } from "../policy";
 import { MenuGroup } from "./MenuGroup";
 import { Mustahiq } from "./Mustahiq";
@@ -123,7 +124,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   }
   async function markRead(note:AidNotification){try{await request(`notifications/${note.id}/read`,{method:"PUT"});setShowNotifications(false);router.push(`/admin/bantuan/pengajuan/${note.application_id}?from=${encodeURIComponent(navTab)}`);reload();}catch(err){setError(String(err));}}
   async function batch(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!page||!batchAction)return;setBatchBusy(true);setError("");const form=new FormData(e.currentTarget);try{
-    if(batchAction==="disburse"){const file=form.get("file");if(file instanceof File&&file.size){const prepared=await preparePhoto(file);for(const row of page.data.filter(r=>selected[r.id])){const upload=new FormData();upload.set("kind","transfer");upload.set("file",prepared);await request(`applications/${row.id}/documents`,{method:"POST",body:upload});}}}
+    if(batchAction==="disburse"){const file=form.get("file");if(file instanceof File&&file.size){const {file:prepared,location}=await preparePhotoUpload(file);for(const row of page.data.filter(r=>selected[r.id])){const upload=new FormData();upload.set("kind","transfer");upload.set("file",prepared);appendPhotoLocation(upload,location);await request(`applications/${row.id}/documents`,{method:"POST",body:upload});}}}
     await request("batch",{method:"POST",body:JSON.stringify({action:batchAction,reason:form.get("reason"),reference:form.get("reference"),transferDate:form.get("transferDate"),account:form.get("account"),totalAmount:Number(form.get("totalAmount")),items:page.data.filter(r=>selected[r.id]).map(r=>({id:r.id,version:r.version,amount:Number(amounts[r.id]??r.amount??0),transferAmount:r.amount}))})});setSelected({});setBatchAction("");setBatchSuccess(true);
   }catch(err){setError(err instanceof Error?err.message:"Proses massal gagal.");}finally{setBatchBusy(false);}}
   const canCreate=!!viewer&&(hasAnyRole(viewer,["admin","call_center","requester"])||hasRole(viewer,"verifier")&&viewer.canBypass);

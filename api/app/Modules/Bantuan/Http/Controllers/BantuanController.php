@@ -135,7 +135,7 @@ class BantuanController
             'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
             'duplicateApplications' => $this->applicantHistory($request, $access, $row->nik_hash, $row->id),
-            'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at', 'caption'])->map(function ($doc) { $doc->caption = $doc->caption ? Crypt::decryptString($doc->caption) : null; return $doc; }), 'events' => $events]]);
+            'documents' => $documents->get(['id', 'kind', 'mime', 'created_at', 'used_at', 'caption', 'photo_location'])->map(function ($doc) { $doc->location = \App\Modules\Bantuan\Services\PhotoLocation::present($doc->photo_location); unset($doc->photo_location); $doc->caption = $doc->caption ? Crypt::decryptString($doc->caption) : null; return $doc; }), 'events' => $events]])->header('Cache-Control', 'no-store, private');
     }
 
     public function store(Request $request, Intake $intake)
@@ -236,6 +236,7 @@ class BantuanController
             $row = $access->find($request, $id, true);
             $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,education_other,return',
                 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
+            $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
             $kind = $data['kind'];
             $access->documentRole($request, $row, $kind);
             abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true), 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
@@ -249,7 +250,7 @@ class BantuanController
             $written = Storage::disk('local')->put($path, Crypt::encryptString(file_get_contents($data['file']->getRealPath())));
             abort_unless($written, 503, 'Penyimpanan dokumen gagal.');
             DB::table('bantuan_documents')->insert(['id' => $docId, 'application_id' => $id, 'kind' => $kind, 'path' => $path,
-                'caption' => isset($data['caption']) ? Crypt::encryptString($data['caption']) : null, 'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
+                'photo_location' => $photoLocation, 'caption' => isset($data['caption']) ? Crypt::encryptString($data['caption']) : null, 'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
             $journal->record($request, $row, 'upload_document', $row->status, ['documentId' => $docId, 'kind' => $kind]);
 
             return response()->json(['data' => ['id' => $docId, 'kind' => $kind]], 201);
