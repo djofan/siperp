@@ -10,7 +10,6 @@ use App\Modules\Bantuan\Http\Controllers\SantunanController;
 use App\Modules\Bantuan\Http\Controllers\StaffController as S;
 use App\Modules\Bantuan\Http\Controllers\SurveyLocationController;
 use App\Modules\Bantuan\Http\Controllers\SurveyReminderController;
-use App\Modules\Bantuan\Http\Controllers\WebPushController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('mustahiq', [MustahiqController::class, 'index']);
@@ -43,9 +42,6 @@ Route::post('applications/{id}/documents', [C::class, 'document'])->middleware('
 Route::get('documents/{id}', [C::class, 'download']);
 Route::delete('documents/{id}', [DocumentController::class, 'destroy']);
 Route::get('notifications', [C::class, 'notifications']);
-Route::get('web-push/config', [WebPushController::class, 'configuration']);
-Route::post('web-push/subscriptions', [WebPushController::class, 'store'])->middleware('throttle:30,1');
-Route::delete('web-push/subscriptions', [WebPushController::class, 'destroy'])->middleware('throttle:30,1');
 Route::put('notifications/read-all', [C::class, 'readAllNotifications']);
 Route::put('notifications/{id}/read', [C::class, 'readNotification']);
 Route::get('audit', [C::class, 'audit']);

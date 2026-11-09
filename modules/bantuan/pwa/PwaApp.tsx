@@ -15,7 +15,6 @@ import { Santunan } from "../components/Santunan";
 import { ActionPanel,DocumentUpload } from "../components/ActionPanel";
 import { pwaAccess,pwaTabs,pwaRoot,taskKinds,taskLabels,taskQuery,taskStates,type TaskKind } from "./policy";
 import { pwaRequest } from "./client";
-import { disableWebPush } from "./web-push";
 import base from "../components/Workspace.module.css";
 import s from "./Pwa.module.css";
 
@@ -50,7 +49,6 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
   async function logout(){
     if(loggingOut)return;setLoggingOut(true);setLogoutError("");
     try {
-      await disableWebPush().catch(()=>undefined);
       const { disablePwaPush }=await import("./push-client");
       await disablePwaPush().catch(()=>undefined);
       const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});

@@ -62,29 +62,6 @@ test("authenticated PWA navigation uses network, with a generic offline fallback
  const offline=worker(async()=>{throw new Error("offline");}),fallback=event("/bantuan-app/santunan",{mode:"navigate"});offline.handlers.fetch(fallback);assert.equal(await (await fallback.response).text(),"offline public shell");
 });
 
-test("push shows bounded notification text without caching private data and tolerates malformed payload",async()=>{
-  const w=worker(),e=event("/");
-  e.data={json:()=>({title:"SIPERP Bantuan",body:"Ada pembaruan bantuan.",tag:"id-b",url:"https://evil.test"})};
-  w.handlers.push(e);await e.pending;
-  assert.equal(w.shown[0].title,"SIPERP Bantuan");assert.equal(w.shown[0].body,"Ada pembaruan bantuan.");
-  assert.equal(w.shown[0].data.url,"/bantuan-app/notifikasi");assert.equal(w.cached.length,0);
-  e.data={json:()=>{throw new Error("bad json");}};w.handlers.push(e);await e.pending;
-  assert.equal(w.shown[1].title,"SIPERP Bantuan");
-  e.data={json:()=>({title:"a".repeat(500),body:"b".repeat(500)})};w.handlers.push(e);await e.pending;
-  assert.equal(w.shown[2].title.length,100);assert.equal(w.shown[2].body.length,300);
-});
-
-test("notification click opens only the authenticated PWA inbox or focuses its existing window",async()=>{
-  const w=worker(),e=event("/");let closed=0,focused=0,navigated="";
-  e.notification={data:{url:"https://evil.test"},close:()=>closed++};
-  w.handlers.notificationclick(e);await e.pending;
-  assert.equal(closed,1);assert.deepEqual(w.opened,["https://example.test/bantuan-app/notifikasi"]);
-  w.windows.push({url:"https://example.test/bantuan-app/beranda",navigate:async url=>{navigated=url;},focus:async()=>focused++});
-  w.handlers.notificationclick(e);await e.pending;
-  assert.equal(focused,1);assert.equal(navigated,"https://example.test/bantuan-app/notifikasi");assert.equal(w.opened.length,1);
-});
-
-
 test("manifest is scoped to Bantuan and supplies real install icons including maskable",async()=>{
   const manifestModule=compile("modules/bantuan/pwa/manifest.ts");
   const response=manifestModule.GET();
