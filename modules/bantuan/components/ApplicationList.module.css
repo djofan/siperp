@@ -21,3 +21,7 @@
 .cardActions .primaryAction:hover, .cardActions .primaryAction:active { background: #1e6037; color: #fff!important; }
 .cardActions .open:focus-visible { outline: 2px solid #287746; outline-offset: 3px; }
 .rejection{padding:16px;background:#fff2ed;border-radius:14px;color:#823d2f;min-width:0}.rejection strong{font-size:12px}.rejection p{margin:7px 0 0;font-size:13px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.tableActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap}.tableActions>div{margin-top:0;flex:0 0 auto}.tableLocation{display:flex;align-items:center;gap:5px;margin-top:7px;max-width:190px;color:#71866b;font-size:11px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tableLocation svg{flex-shrink:0}
+
+.tableLocation>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

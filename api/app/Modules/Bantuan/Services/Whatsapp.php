@@ -26,7 +26,7 @@ class Whatsapp
     public const TASKS = [
         'needs_data' => [['requester', 'verifier', 'call_center'], 'Lengkapi data pengajuan'],
         'screening' => [['call_center'], 'Periksa pengajuan'],
-        'review1' => [['approver', 'chair'], 'Review awal pengajuan'],
+        'review1' => [['approver', 'chair', 'survey_approver'], 'Review awal pengajuan'],
         'survey_assignment' => [['call_center'], 'Tentukan verifikator'],
         'survey_assigned' => [['verifier'], 'Selesaikan survei'],
         'survey_cc_review' => [['call_center'], 'Review hasil survei'],

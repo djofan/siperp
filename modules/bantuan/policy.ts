@@ -2,7 +2,7 @@ import { canManageOwnPasswordInModule, rolesOf, type RoleViewer } from "./permis
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
 
 export const homeByRole: Record<string, string> = {
-  admin: "", requester: "", call_center: "", approver: "", chair: "",
+  admin: "", requester: "", call_center: "", approver: "", chair: "", observer: "", survey_approver: "",
   verifier: "", volunteer:"santunan", fund_requester: "", treasurer: "",
 };
 export const href = (view = "") => `/admin/bantuan${view ? "/"+view : ""}`;
@@ -27,7 +27,7 @@ export const processMenus:ProcessEntry[]=[
   process("draft","Draft pengajuan","01 · Pengajuan",["draft"],["call_center","verifier","requester"],"Lengkapi draft dan foto wajib, lalu kirim pengajuan.","file"),
   process("screening","Review Call Center","01 · Pengajuan",["screening"],["call_center"],"Periksa pengajuan dari Petugas Pengajuan. Teruskan ke Approver, minta kelengkapan, atau catat penolakan."),
   process("perlu-dilengkapi","Perlu dilengkapi","01 · Pengajuan",["needs_data"],["call_center","verifier","requester"],"Baca alasan pengembalian, lengkapi data, lalu kirim ulang.","file"),
-  process("review-tahap-1","Persetujuan tahap 1","02 · Persetujuan",["review1"],["approver","chair"],"Tinjau pengajuan call center atau hasil screening. Setujui sebelum penugasan verifikator.","check"),
+  process("review-tahap-1","Persetujuan tahap 1","02 · Persetujuan",["review1"],["approver","chair","survey_approver"],"Tinjau pengajuan call center atau hasil screening. Setujui sebelum penugasan verifikator.","check"),
   process("review-langsung","Persetujuan langsung","02 · Persetujuan",["bypass_review"],["approver","chair"],"Tinjau pengajuan jalur langsung dan tetapkan keputusan serta nominal.","check"),
   process("penugasan-survei","Tugaskan verifikator","03 · Survei",["survey_assignment"],["call_center"],"Pilih verifikator yang akan melakukan kunjungan sesuai wilayah.","users"),
   process("survei","Tugas survei saya","03 · Survei",["survey_assigned"],["verifier"],"Isi hasil kunjungan untuk pengajuan yang ditugaskan kepada Anda.","clipboard","survey"),
@@ -48,6 +48,14 @@ export const processMenus:ProcessEntry[]=[
 ];
 function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntry[]{
   if(!Object.prototype.hasOwnProperty.call(homeByRole,viewer.role))return [];
+  if(viewer.role==="observer")return [
+    {key:"",label:"Dashboard",icon:"layout",group:"Umum",description:"Ringkasan seluruh pengajuan bantuan."},
+    {key:"berjalan",label:"Pengajuan Berjalan",icon:"inbox",group:"Umum",description:"Pantau seluruh pengajuan yang masih diproses."},
+    {key:"pengajuan",label:"Semua pengajuan",icon:"files",group:"Umum",description:"Lihat semua pengajuan, dokumen, dan riwayat. Tambahkan catatan internal jika diperlukan."},
+    {key:"mustahiq",label:"Data Mustahiq",icon:"users",group:"Umum",description:"Lihat profil dan riwayat bantuan tanpa mengubah data."},
+    {key:"pengajuan-dana",label:"Pengajuan dana",icon:"wallet",group:"Umum",description:"Pantau kelompok pengajuan dana dan hasilnya."},
+    ...processMenus.filter(item=>item.key!=="survei").map(item=>({...item,task:undefined,description:`Pantau ${item.label.toLowerCase()}. Akses baca saja.`})),
+  ];
   if(viewer.role==="volunteer")return [{key:"santunan",label:"Santunan saya",icon:"hand",group:"Umum"}];
   const items:NavEntry[]=[
     {key:"",label:"Dashboard",icon:"layout",group:"Umum"},
@@ -76,6 +84,8 @@ export function navigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypass">):Na
 export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypass">):NavEntry[]{
   // Keep general monitoring separate from the personal workspace of field staff.
   const primaryByRole:Record<string,string[]>={
+    observer:["","berjalan","pengajuan","mustahiq","pengajuan-dana"],
+    survey_approver:["","berjalan","pengajuan","proses","mustahiq"],
     admin:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","tim","pengaturan","audit"],
     call_center:["","pengajuan","berjalan","proses","mustahiq","laporan"],
     requester:["","pengajuan","proses"],
@@ -89,7 +99,7 @@ export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypas
   const main=rolesOf(viewer).flatMap(role=>primaryByRole[role]??[]);
   const priorities:Record<string,string[]>={
     call_center:["screening","penugasan-survei","review-survei-cc","penugasan-penyalur"], requester:["draft","perlu-dilengkapi"],
-    verifier:["survei","penyaluran"],approver:["review-tahap-1","review-tahap-2"],chair:["review-tahap-1","review-tahap-2"],
+    verifier:["survei","penyaluran"],survey_approver:["review-tahap-1"],approver:["review-tahap-1","review-tahap-2"],chair:["review-tahap-1","review-tahap-2"],
     fund_requester:["dana-siap","dana-diajukan"],treasurer:["pencairan","penyaluran"],
   };
   const entries=navigation(viewer).filter(item=>main.includes(item.key)||rolesOf(viewer).some(role=>(priorities[role]??[]).includes(item.key)));
@@ -122,7 +132,7 @@ function canViewSingleRoute(viewer:Pick<BantuanViewer,"role"|"canBypass">,route:
 }
 export function canViewRoute(viewer:RoleViewer&Pick<BantuanViewer,"canBypass"|"canChooseModules">,route:string[]):boolean{
   if(route[0]==="akun")return route.length===1&&canManageOwnPasswordInModule(viewer);
-  if(route[0]==="mustahiq")return route.length<=2&&rolesOf(viewer).some(role=>["admin","requester","call_center","approver","chair","treasurer","fund_requester"].includes(role));
+  if(route[0]==="mustahiq")return route.length<=2&&rolesOf(viewer).some(role=>["admin","requester","call_center","approver","chair","treasurer","fund_requester","observer","survey_approver"].includes(role));
   const group=route.length===1?menuGroups.find(item=>item.key===route[0]):undefined;
   if(group)return navigation(viewer).some(item=>item.group===group.group);
   return rolesOf(viewer).some(role=>canViewSingleRoute({...viewer,role,roles:undefined} as BantuanViewer,route));
@@ -130,7 +140,7 @@ export function canViewRoute(viewer:RoleViewer&Pick<BantuanViewer,"canBypass"|"c
 export function inboxStates(role:string):string[]{
   return ({admin:["screening","review1","survey_assignment","survey_cc_review","survey_submitted","bypass_review","approved","fund_ready","fund_submitted","fund_approved"],
     call_center:["draft","needs_data","screening","survey_assignment","survey_cc_review","approved"], requester:["draft","needs_data"],
-    approver:["review1","survey_submitted","review2","bypass_review"],chair:["review1","survey_submitted","review2","bypass_review"],
+    survey_approver:["review1"],approver:["review1","survey_submitted","review2","bypass_review"],chair:["review1","survey_submitted","review2","bypass_review"],
     verifier:["survey_assigned","disbursed"],fund_requester:["fund_ready","fund_submitted"],treasurer:["fund_approved","disbursed","delivery_failed"]} as Record<string,string[]>)[role]??[];
 }
 export function intakeStage(source:string, intakeRole?:string|null):string {
@@ -144,7 +154,7 @@ export function nextStep(status:string, source="online", intakeRole?:string|null
     draft:["Lengkapi lalu kirim pengajuan",intakeRole==="requester"?"Lengkapi data lalu kirim ke Call Center untuk diperiksa sebelum diteruskan ke Approver.":source==="online"?"Draft belum masuk proses. Lengkapi data; foto WhatsApp opsional, lalu kirim ke penyetuju.":"Draft belum masuk proses. Lengkapi data, foto wajah dan KTP, lalu kirim pengajuan.","Pembuat pengajuan"],
     needs_data:["Lengkapi data yang diminta","Baca alasan pengembalian, perbarui data, lalu kirim kembali.",intakeRole==="requester"?"Petugas Pengajuan / Call Center":"Call Center"],
     screening:["Menunggu review Call Center","Call Center memeriksa data dan kelengkapan sebelum meneruskan ke Approver.","Call Center"],
-    review1:["Menunggu keputusan tahap 1","Penyetuju akan menentukan apakah pengajuan dilanjutkan ke survei.","Approver / Ketua Yayasan"],
+    review1:["Menunggu keputusan tahap 1","Penyetuju akan menentukan apakah pengajuan dilanjutkan ke survei.","Penyetuju Survei / Approver / Ketua Yayasan"],
     survey_assignment:["Tentukan petugas survei","Pilih Verifikator sesuai wilayah agar kunjungan dapat dimulai.","Call Center"],
     survey_assigned:["Lakukan survei lapangan","Periksa data pemohon, isi hasil kunjungan, dan lengkapi slot foto.","Verifikator yang ditugaskan"],
     survey_cc_review:["Review hasil survei","Call Center memeriksa hasil kunjungan dan mengoreksi data sebelum mengirim ke Approver.","Call Center"],

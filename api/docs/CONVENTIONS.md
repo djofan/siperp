@@ -186,3 +186,9 @@ Unggah hanya setelah transfer dan sebelum selesai; satu dokumen per jenis.
 ## Cakupan daftar Pengajuan Bantuan
 
 Akun yang hanya memiliki kombinasi role `requester`, `verifier`, dan `volunteer` hanya dapat melihat pengajuan yang dibuatnya atau ditugaskan kepadanya melalui `verifier_id` / `distributor_id`. Gabungan role dinilai secara union: adanya `admin`, `call_center`, `approver`, `chair`, `fund_requester`, atau `treasurer` memberikan cakupan seluruh pengajuan, termasuk yang belum ditetapkan nominalnya. Cakupan yang sama dipakai daftar, detail, ringkasan, ekspor, dan filter `view=ongoing`; filter berjalan tetap mengecualikan draft/status akhir. Izin tindakan dan akses dokumen/data sensitif tetap diperiksa terpisah.
+
+Ringkasan pengajuan Bantuan menyertakan `shortLocation` (maks. 100 karakter): kecamatan dan kota tanpa prefiks administratif, atau wilayah jika belum diisi. Tidak menyertakan alamat jalan, NIK, atau nomor telepon. Cakupan akses daftar tetap berlaku.
+
+Peran Bantuan `observer` (Pengurus) membaca seluruh pengajuan, data pemohon, dokumen, riwayat, dan kelompok dana. Hanya aksi pengajuan `comment` diizinkan; membuat/mengubah/menghapus pengajuan, dokumen, reminder, keputusan, dan pencairan tetap memerlukan peran operasional terkait. Akun multi-role mempertahankan gabungan hak eksplisit.
+
+Peran Bantuan `survey_approver` (Penyetuju Survei) hanya mengambil keputusan `review1_approve`, `review1_reject`, atau `request_data` pada tahap `review1`, serta catatan internal. Tidak berhak memutuskan nominal, hasil survei, atau bypass. Larangan keputusan atas pengajuan sendiri tetap berlaku. Keputusan pertama dengan version valid berlaku; peran Approver/Ketua tetap dapat menangani tahap awal. Notifikasi tahap review1 turut ditujukan ke Penyetuju Survei yang memenuhi syarat.

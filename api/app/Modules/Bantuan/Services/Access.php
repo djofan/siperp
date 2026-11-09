@@ -8,9 +8,9 @@ use Illuminate\Support\Facades\DB;
 
 class Access
 {
-    public const ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'volunteer', 'fund_requester', 'treasurer', 'chair'];
+    public const ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'volunteer', 'fund_requester', 'treasurer', 'chair', 'observer', 'survey_approver'];
 
-    private const SENSITIVE_ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'chair'];
+    private const SENSITIVE_ROLES = ['admin', 'requester', 'call_center', 'approver', 'verifier', 'chair', 'observer', 'survey_approver'];
 
     public function role(Request $request): string
     {
@@ -61,7 +61,7 @@ class Access
 
     public function canMonitor(Request $request): bool
     {
-        return $this->has($request, ['admin', 'call_center', 'requester', 'approver', 'chair', 'fund_requester', 'treasurer']);
+        return $this->has($request, ['admin', 'call_center', 'requester', 'approver', 'chair', 'fund_requester', 'treasurer', 'observer', 'survey_approver']);
     }
 
     public function scope($query, Request $request)
@@ -76,7 +76,7 @@ class Access
 
     private function scopeRoles($query, Request $request, array $roles)
     {
-        if (array_intersect($roles, ['admin', 'call_center', 'approver', 'chair', 'fund_requester', 'treasurer'])) return $query;
+        if (array_intersect($roles, ['admin', 'call_center', 'approver', 'chair', 'fund_requester', 'treasurer', 'observer', 'survey_approver'])) return $query;
 
         // Keep the union grouped so subsequent filters cannot widen visibility.
         return $query->where(function ($scope) use ($roles, $request) {
@@ -97,7 +97,7 @@ class Access
 
     public function sensitive(Request $request, ?Application $row = null): bool
     {
-        if ($this->has($request, ['admin', 'call_center', 'approver', 'chair'])) return true;
+        if ($this->has($request, ['admin', 'call_center', 'approver', 'chair', 'observer', 'survey_approver'])) return true;
         if (! $row) return $this->has($request, ['requester', 'verifier']);
         $userId = $request->user()->id;
         return ($row->created_by === $userId && $this->has($request, ['requester', 'verifier']))

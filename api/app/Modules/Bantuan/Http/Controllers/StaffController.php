@@ -52,7 +52,7 @@ class StaffController
         $access->allow($request, []);
         $input = $request->validate(['name' => 'required|string|max:191', 'email' => 'nullable|email|max:191|unique:users,email',
             'password' => 'required|string|min:12|max:72', 'role' => ['required_without:roles', Rule::in(Access::ROLES)],
-            'roles' => 'sometimes|required|array|min:1|max:9', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
+            'roles' => 'sometimes|required|array|min:1|max:11', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
             'region' => 'nullable|string|max:191', 'canBypass' => 'required|boolean',
             'phone' => 'sometimes|nullable|string|max:30', 'whatsappEnabled' => 'sometimes|boolean']);
 
@@ -75,7 +75,7 @@ class StaffController
     {
         $access->allow($request, []);
         $input = $request->validate(['role' => ['required_without:roles', Rule::in(Access::ROLES)], 'region' => 'nullable|string|max:191',
-            'roles' => 'sometimes|required|array|min:1|max:9', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
+            'roles' => 'sometimes|required|array|min:1|max:11', 'roles.*' => ['required', 'distinct', Rule::in(Access::ROLES)],
             'name' => 'sometimes|required|string|max:191', 'email' => ['sometimes', 'nullable', 'email', 'max:191', Rule::unique('users', 'email')->ignore($id)],
             'canBypass' => 'required|boolean', 'active' => 'required|boolean', 'password' => 'nullable|string|min:12|max:72',
             'phone' => 'sometimes|nullable|string|max:30', 'whatsappEnabled' => 'sometimes|boolean']);

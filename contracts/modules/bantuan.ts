@@ -1,6 +1,6 @@
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", requester: "Petugas Pengajuan", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
-  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan",
+  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Pengurus", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
@@ -38,6 +38,7 @@ export interface BantuanSettings { programs: string[]; regions: string[]; housin
 export interface BantuanViewer { id: string; name: string; code?: string; role: string; roles?: string[]; canChooseModules?: boolean; canBypass: boolean; settings: BantuanSettings }
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface AidApplication {
+  shortLocation?: string;
   rejectionReason?: string | null;
   id: string; number: string; name: string; status: string; program: string; region: string; source: string; createdBy: string; intakeRole?: string | null;
   amount: number | null; verifierId: string | null; distributorId: string | null; distributionType: string | null;

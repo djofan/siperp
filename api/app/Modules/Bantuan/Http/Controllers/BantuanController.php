@@ -40,7 +40,12 @@ class BantuanController
 
     private function summary(Application $row): array
     {
+        $applicant = $row->applicant ?? [];
+        $location = collect([$applicant['district'] ?? '', $applicant['city'] ?? ''])
+            ->map(fn ($value) => preg_replace('/^(?:kecamatan|kec\.?|kabupaten|kab\.?|kota)\s+/iu', '', trim((string) $value)))
+            ->filter()->unique()->implode(', ');
         return ['id' => $row->id, 'number' => $row->number, 'name' => $row->name, 'status' => $row->status,
+            'shortLocation' => mb_substr($location ?: trim((string) $row->region), 0, 100),
             'createdBy' => $row->created_by, 'intakeRole' => $row->intake_role,
             'program' => $row->program, 'region' => $row->region, 'source' => $row->source, 'amount' => $row->amount,
             'verifierId' => $row->verifier_id, 'distributorId' => $row->distributor_id, 'distributionType' => $row->distribution_type,

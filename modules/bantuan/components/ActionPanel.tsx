@@ -30,9 +30,9 @@ const actions: Action[] = [
   {key:"submit",label:"Ajukan sekarang",states:["draft","needs_data"],roles:["call_center","verifier","requester"]},
   {key:"screen_pass",label:"Teruskan ke Approver",states:["screening"],roles:["call_center"]},
   {key:"screen_reject",label:"Tolak pengajuan",states:["screening"],roles:["call_center"],danger:true},
-  {key:"request_data",label:"Minta lengkapi data",states:["screening","review1"],roles:["call_center","approver","chair"]},
-  {key:"review1_approve",label:"Setujui untuk survei",states:["review1"],roles:["approver","chair"]},
-  {key:"review1_reject",label:"Tolak pengajuan",states:["review1"],roles:["approver","chair"],danger:true},
+  {key:"request_data",label:"Minta lengkapi data",states:["screening","review1"],roles:["call_center","approver","chair","survey_approver"]},
+  {key:"review1_approve",label:"Setujui untuk survei",states:["review1"],roles:["approver","chair","survey_approver"]},
+  {key:"review1_reject",label:"Tolak pengajuan",states:["review1"],roles:["approver","chair","survey_approver"],danger:true},
   {key:"assign_survey",label:"Tugaskan / ganti Verifikator",states:["survey_assignment","survey_assigned"],roles:["call_center"]},
   {key:"survey_decline",label:"Tolak tugas survei",states:["survey_assigned"],roles:["verifier"],danger:true},
   {key:"survey_review_submit",label:"Review & kirim hasil ke Approver",states:["survey_cc_review"],roles:["call_center"]},
@@ -82,7 +82,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
   return actions.filter(a=>a.states.includes(row.status)&&(viewer.role==="admin"||a.roles.includes(viewer.role)))
     .filter(a=>!row.fundingRequest||!["fund_approve","fund_reject","assign_distributor"].includes(a.key))
     .filter(a=>viewer.role!=="verifier"||!["submit","cancel"].includes(a.key)||row.createdBy===viewer.id&&row.source==="bypass"&&["draft","needs_data"].includes(row.status))
-    .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair"].includes(viewer.role)))
+    .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
     .filter(a=>viewer.role!=="requester"||row.createdBy===viewer.id&&row.source!=="bypass"&&["draft","needs_data",...(a.key==="cancel"?["screening"]:[])].includes(row.status))
     .filter(a=>viewer.role==="admin"||!(row.intakeRole==="requester"&&row.createdBy===viewer.id&&["screen_pass","screen_reject"].includes(a.key)))
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
@@ -105,6 +105,7 @@ export function getPrimaryAction(row:AidDetail,viewer:BantuanViewer){
 }
 
 export function getActionSectionLabel(row:AidDetail,viewer:BantuanViewer){
+  if(rolesOf(viewer).every(role=>role==="observer"))return "Catatan internal";
   const primary=getPrimaryAction(row,viewer);
   if(!primary)return row.survey?"Lihat hasil survei":"Status pengajuan";
   const labels:Record<string,string>={
@@ -257,7 +258,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   const correctionErrors=Object.fromEntries(Object.entries(fieldErrors).filter(([key])=>key.startsWith("applicant.")).map(([key,value])=>[key.slice(10),value]));
   if(assignedRow)return <div className={s.assignmentComplete}><SurveyReminder key={assignedRow.version} row={assignedRow} viewer={viewer} assignment/><div className={s.assignmentFooter}><span>Penugasan sudah tersimpan. Anda dapat melanjutkan pekerjaan lainnya.</span><Link className={`${s.button} ${s.secondary}`} href="/admin/bantuan/proses">Kembali ke pekerjaan saya</Link></div></div>;
   if(success)return <ProcessSuccess title="Berhasil disimpan" description={`${success}. Perubahan pengajuan ${row.number} sudah tersimpan.`}/>;
-  return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>Keputusan dicatat beserta petugas dan waktunya.</p></div></div><div className={s.cardBody}>
+  return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>{rolesOf(viewer).every(role=>role==="observer")?"Akses baca saja. Sampaikan catatan atau pertanyaan untuk tim tanpa mengubah pengajuan.":"Keputusan dicatat beserta petugas dan waktunya."}</p></div></div><div className={s.cardBody}>
     {row.fundingRequest&&<div className={s.notice}><strong>Termasuk kartu dana {row.fundingRequest.number}</strong><p>Keputusan dana dicatat dari kartu agar seluruh bantuan dalam kartu tetap konsisten.</p>{rolesOf(viewer).some(role=>["admin","fund_requester","treasurer","chair"].includes(role))&&<Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buka kartu pengajuan dana →</Link>}</div>}
     {row.status==="fund_ready"&&rolesOf(viewer).some(role=>["admin","fund_requester"].includes(role))&&<div className={s.notice}><strong>Ajukan bersama bantuan lainnya</strong><p>Buka Pengajuan dana, buat kartu, lalu centang bantuan yang ingin diajukan. Total nominal dihitung otomatis.</p><Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buat kartu pengajuan dana →</Link></div>}
     {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}

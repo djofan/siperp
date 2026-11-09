@@ -268,3 +268,16 @@ test("sidebar uses a few informative primary menus while work counts include hid
   assert.ok(destinations.includes("/admin/bantuan/berjalan"));
   for(const target of destinations)assert.equal(canViewRoute(viewer("call_center"),target.replace("/admin/bantuan","").split("/").filter(Boolean)),true);
 });
+
+test("survey approver buttons are limited to early decisions and respect self approval",()=>{
+ const {getAvailableActions}=load("modules/bantuan/components/ActionPanel.tsx");
+ const who=viewer("survey_approver"),row={id:"a1",status:"review1",source:"online",createdBy:"other",verifierId:null};
+ assert.deepEqual(Array.from(getAvailableActions(row,who),a=>a.key).sort(),["request_data","review1_approve","review1_reject"]);
+ for(const status of ["survey_submitted","review2","bypass_review","fund_approved"])assert.equal(getAvailableActions({...row,status},who).length,0);
+ assert.ok(!getAvailableActions({...row,createdBy:who.id},who).some(a=>a.key==="review1_approve"));
+ assert.ok(canViewRoute(who,["review-tahap-1"]));
+ assert.ok(!canViewRoute(who,["review-tahap-2"]));
+ const combined={...who,role:"fund_requester",roles:["fund_requester","survey_approver"]};
+ assert.ok(canViewRoute(combined,["pengajuan-dana"]));
+ assert.ok(getAvailableActions(row,combined).some(a=>a.key==="review1_approve"));
+});

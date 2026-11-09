@@ -15,7 +15,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : "Pe
 
 /** Parent route: /admin/bantuan/pengajuan-dana. Only the viewer prop is required. */
 export function FundingRequests({ viewer, onChanged }: { viewer: BantuanViewer; onChanged?: () => void | Promise<void> }) {
-  const canRead = hasAnyRole(viewer, ["admin", "fund_requester", "treasurer", "chair"]);
+  const canRead = hasAnyRole(viewer, ["admin", "fund_requester", "treasurer", "chair", "observer"]);
   const canManage = hasAnyRole(viewer, ["admin", "fund_requester"]);
   const [cards, setCards] = useState<FundingPage<FundingBatch>>(empty);
   const [ready, setReady] = useState<FundingPage<FundingCandidate>>(empty);
