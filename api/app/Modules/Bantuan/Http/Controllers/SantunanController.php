@@ -35,7 +35,7 @@ class SantunanController
             }
         }
 
-        return response()->json(['data' => $query->get()->map(fn (Santunan $row) => $this->payload($row))]);
+        return response()->json(['data' => $query->get()->map(fn (Santunan $row) => $this->payload($row))])->header('Cache-Control', 'no-store, private');
     }
 
     public function store(Request $request, Access $access)
@@ -127,15 +127,16 @@ class SantunanController
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
         $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+        $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
         $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
 
-        return DB::transaction(function () use ($request, $row, $data, $access) {
+        return DB::transaction(function () use ($request, $row, $data, $access, $photoLocation) {
             abort_if(DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->where('kind', $data['kind'])->exists(), 422, 'Foto untuk jenis bukti ini sudah tersedia.');
             $documentId = (string) Str::uuid();
             $path = 'bantuan/santunan/'.$row->id.'/'.$documentId.'.enc';
             abort_unless(Storage::disk('local')->put($path, Crypt::encryptString(file_get_contents($data['file']->getRealPath()))), 503, 'Penyimpanan dokumen gagal.');
             DB::table('bantuan_santunan_documents')->insert(['id' => $documentId, 'santunan_id' => $row->id, 'kind' => $data['kind'],
-                'path' => $path, 'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
+                'photo_location' => $photoLocation, 'path' => $path, 'mime' => $data['file']->getMimeType(), 'uploaded_by' => $request->user()->id, 'created_at' => now()]);
             $this->event($request, $access, $row, 'document_uploaded', ['kind' => $data['kind']]);
 
             return response()->json(['data' => ['id' => $documentId, 'kind' => $data['kind']]], 201);
@@ -192,7 +193,11 @@ class SantunanController
 
     private function payload(Santunan $row): array
     {
-        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'created_at']);
+        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'created_at', 'photo_location'])->map(function ($doc) {
+            $doc->location = \App\Modules\Bantuan\Services\PhotoLocation::present($doc->photo_location);
+            unset($doc->photo_location);
+            return $doc;
+        });
 
         return ['id' => $row->id, 'number' => $row->number, 'frequency' => $row->frequency, 'category' => $row->category,
             'period' => $row->period->format('Y-m'), 'recipientName' => $row->recipient['name'], 'volunteerId' => $row->volunteer_id,

@@ -611,6 +611,66 @@
             "description": "District and city without administrative prefixes, falling back to region. Empty when unavailable."
           }
         }
+      },
+      "BantuanPhotoLocation": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "additionalProperties": false,
+        "required": [
+          "latitude",
+          "longitude",
+          "source"
+        ],
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "exif",
+              "device"
+            ]
+          },
+          "accuracy": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 10000000
+          }
+        },
+        "description": "Uploader-provided coordinates, not verified proof. exif = GPS from original metadata; device = device position at upload, not capture. Encrypted at rest. Legacy photos have null location."
+      },
+      "BantuanPhotoDocument": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "location"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/BantuanPhotoLocation"
+          }
+        },
+        "additionalProperties": true
       }
     }
   },
@@ -1112,6 +1172,83 @@
           },
           "422": {
             "description": "Kategori atau penyalur tidak valid"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Read authorized santunan and photo pins",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Existing role scope and filters apply. Volunteers only see assigned records. Private no-store.",
+        "responses": {
+          "200": {
+            "description": "Authorized santunan records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "documents"
+                        ],
+                        "properties": {
+                          "documents": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/components/schemas/BantuanPhotoDocument"
+                            }
+                          }
+                        },
+                        "additionalProperties": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
@@ -1817,6 +1954,43 @@
                     "type": "string",
                     "format": "binary",
                     "description": "JPEG, PNG or WEBP; maximum 2048 KiB"
+                  },
+                  "location": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "latitude",
+                      "longitude",
+                      "source"
+                    ],
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "exif",
+                          "device"
+                        ]
+                      },
+                      "accuracy": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 10000000
+                      }
+                    },
+                    "description": "Uploader-provided coordinates, not verified proof. exif = GPS from original metadata; device = device position at upload, not capture. Encrypted at rest. Legacy photos have null location."
                   }
                 }
               }
@@ -2713,6 +2887,273 @@
           }
         }
       }
+    },
+    "/api/v1/bantuan/applications/{id}/documents": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Upload private application photo with optional location",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "description": "Existing stage, role and sensitive-document permissions apply. Use multipart fields location[latitude], location[longitude], location[source] and optionally location[accuracy]. No location is inferred for old photos. clientId replay preserves the first upload and its location.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kind",
+                  "file"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "face",
+                      "ktp",
+                      "kk",
+                      "supporting",
+                      "sktm",
+                      "survey_recipient",
+                      "survey_front",
+                      "survey_inside",
+                      "survey_environment",
+                      "survey_other",
+                      "transfer",
+                      "handover",
+                      "certificate",
+                      "receipt",
+                      "education_other",
+                      "return"
+                    ]
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "JPEG, PNG or WEBP; maximum 2048 KiB"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "caption": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "location": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "latitude",
+                      "longitude",
+                      "source"
+                    ],
+                    "properties": {
+                      "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                      },
+                      "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                      },
+                      "source": {
+                        "type": "string",
+                        "enum": [
+                          "exif",
+                          "device"
+                        ]
+                      },
+                      "accuracy": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 10000000
+                      }
+                    },
+                    "description": "Uploader-provided coordinates, not verified proof. exif = GPS from original metadata; device = device position at upload, not capture. Encrypted at rest. Legacy photos have null location."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Existing upload replayed"
+          },
+          "201": {
+            "description": "Photo created; data contains id and kind"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications/{id}": {
+      "get": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Read authorized application details and private photo pins",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "description": "Preserves existing record scope and sensitive-document filtering. Private no-store. Location is returned only for visible documents.",
+        "responses": {
+          "200": {
+            "description": "Application detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "documents"
+                      ],
+                      "properties": {
+                        "documents": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/BantuanPhotoDocument"
+                          }
+                        }
+                      },
+                      "additionalProperties": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -2768,5 +3209,13 @@
     "maxLength": 10000,
     "required": false,
     "description": "Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments."
+  },
+  "x-bantuan-photo-locations": {
+    "applicationDetail": "Authorized GET /api/v1/bantuan/applications/{id}: documents[].location",
+    "santunanList": "Authorized GET /api/v1/bantuan/santunan: data[].documents[].location",
+    "schema": {
+      "$ref": "#/components/schemas/BantuanPhotoLocation"
+    },
+    "visibility": "Same document filtering and record ownership as private photos. No public location endpoint. Browser builds a map link only after authorization. Opening it shares coordinates with the map provider."
   }
 }

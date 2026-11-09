@@ -6,7 +6,11 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 import { santunanCategoryLabels } from "@/contracts/modules/bantuan";
 import type { BantuanStaff, BantuanViewer, SantunanRecord } from "@/contracts/modules/bantuan";
 import { day, money, request } from "../api/client";
-import { preparePhoto } from "../api/photos";
+import { preparePhotoUpload } from "../api/photos";
+import { PhotoLocationPicker } from "./PhotoLocationPicker";
+import { PhotoLocationLink } from "./PhotoLocationLink";
+import type { PhotoLocation } from "@/contracts/modules/bantuan";
+import { appendPhotoLocation } from "../photo-location";
 import s from "./Workspace.module.css";
 import { PhotoViewer } from "./PhotoViewer";
 import d from "./Santunan.module.css";
@@ -23,11 +27,12 @@ const today=()=>new Date().toLocaleDateString("en-CA");
 
 export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff[]}){
   const [rows,setRows]=useState<SantunanRecord[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[busy,setBusy]=useState("");
+  const [deviceLocation,setDeviceLocation]=useState<PhotoLocation|null>(null);
   const [createFrequency,setCreateFrequency]=useState("routine");
   const [frequency,setFrequency]=useState(""),[distribution,setDistribution]=useState("");
   const [filters,setFilters]=useState({category:"",transfer:"",volunteer:"",periodFrom:"",periodTo:"",amountMin:"",amountMax:"",sort:"period"});
   const [showCreate,setShowCreate]=useState(false),[expanded,setExpanded]=useState(""),[search,setSearch]=useState(""),[success,setSuccess]=useState("");
-  const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string}|null>(null);
+  const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string;location?:PhotoLocation|null}|null>(null);
   const [card,setCard]=useState<SantunanRecord|null>(null);
   const [showPeriod,setShowPeriod]=useState(false);
   const [selected,setSelected]=useState<string[]>([]);
@@ -53,8 +58,8 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     }finally{setBusy("");}
   }
   async function report(e:FormEvent<HTMLFormElement>,row:SantunanRecord){e.preventDefault();setBusy(row.id);setError("");const form=new FormData(e.currentTarget);try{
-    for(const kind of ["aid_paper","recipient_photo","transfer_receipt"]){const file=form.get(kind);if(file instanceof File&&file.size){const body=new FormData();body.set("kind",kind);body.set("file",await preparePhoto(file));await request(`santunan/${row.id}/documents`,{method:"POST",body});}}
-    await request(`santunan/${row.id}/complete`,{method:"POST",body:JSON.stringify({version:row.version,distributionDate:form.get("distributionDate"),location:form.get("location"),recipient:form.get("recipient"),description:form.get("description")})});setExpanded("");await load();setSuccess("Laporan tersimpan. Penyaluran santunan selesai.");
+    for(const kind of ["aid_paper","recipient_photo","transfer_receipt"]){const file=form.get(kind);if(file instanceof File&&file.size){const body=new FormData();body.set("kind",kind);const prepared=await preparePhotoUpload(file,deviceLocation);body.set("file",prepared.file);appendPhotoLocation(body,prepared.location);await request(`santunan/${row.id}/documents`,{method:"POST",body});}}
+    await request(`santunan/${row.id}/complete`,{method:"POST",body:JSON.stringify({version:row.version,distributionDate:form.get("distributionDate"),location:form.get("location"),recipient:form.get("recipient"),description:form.get("description")})});setDeviceLocation(null);setExpanded("");await load();setSuccess("Laporan tersimpan. Penyaluran santunan selesai.");
   }catch(err){await load();setError(err instanceof Error?err.message:"Laporan penyaluran gagal disimpan.");}finally{setBusy("");}}
   const canManage=hasAnyRole(viewer,["admin","treasurer"]);
   const visible=rows.filter(row=>[row.recipientName,row.number,staff.find(person=>person.id===row.volunteerId)?.name].join(" ").toLowerCase().includes(search.trim().toLowerCase())&&(!frequency||row.frequency===frequency)&&(!distribution||row.distributionStatus===distribution)&&(!filters.category||row.category===filters.category)&&(!filters.transfer||row.transferStatus===filters.transfer)&&(!filters.volunteer||row.volunteerId===filters.volunteer)&&(!filters.periodFrom||row.period>=filters.periodFrom)&&(!filters.periodTo||row.period<=filters.periodTo)&&(!filters.amountMin||row.amount>=Number(filters.amountMin))&&(!filters.amountMax||row.amount<=Number(filters.amountMax))).sort((a,b)=>filters.sort==="amount_high"?b.amount-a.amount:filters.sort==="amount_low"?a.amount-b.amount:filters.sort==="name"?a.recipientName.localeCompare(b.recipientName,"id"):b.period.localeCompare(a.period));
@@ -103,7 +108,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
         <div className={d.cardActions}><Button variant="secondary" onClick={()=>setCard(row)}>Cetak kertas bantuan</Button>{canManage&&row.transferStatus==="pending"&&<Button disabled={!!busy} onClick={()=>setConfirm(row)}><Wallet size={15}/>Tandai sudah ditransfer</Button>}<Button variant="secondary" aria-expanded={expanded===row.id} aria-controls={"santunan-detail-"+row.id} onClick={()=>setExpanded(current=>current===row.id?"":row.id)}>{(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"?"Isi laporan":"Buka santunan"}<ChevronDown size={15}/></Button></div>
         <div id={"santunan-detail-"+row.id} className={d.details} hidden={expanded!==row.id}>
           <p className={d.detailNote}>{row.transferStatus==="pending"?"Laporan penyaluran dapat diisi setelah dana ditandai sudah ditransfer.":row.distributionStatus==="completed"?"Laporan penyaluran sudah lengkap.":"Dana sudah ditransfer. Lengkapi laporan penyaluran dan dua foto bukti."}</p>
-          {(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"&&<form onSubmit={e=>void report(e,row)}><div className={s.formGrid}>
+          {(hasRole(viewer,"admin")||hasRole(viewer,"volunteer")&&viewer.id===row.volunteerId)&&row.transferStatus==="transferred"&&row.distributionStatus==="process"&&<form onSubmit={e=>void report(e,row)}><PhotoLocationPicker value={deviceLocation} onChange={setDeviceLocation} disabled={!!busy}/><div className={s.formGrid}>
             <label className={s.field}>Tanggal penyaluran<input className={s.input} name="distributionDate" type="date" defaultValue={today()} max={today()} required/></label>
             <label className={s.field}>Lokasi penyaluran<input className={s.input} name="location" placeholder="Lokasi penyerahan bantuan" maxLength={500} required/></label>
             <label className={s.field}>Nama penerima<input className={s.input} name="recipient" defaultValue={row.recipientName} maxLength={191} required/></label>
@@ -113,7 +118,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
             {!row.documents.some(doc=>doc.kind==="transfer_receipt")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto bukti transfer</strong><small>Opsional · JPG, PNG, atau WEBP</small><input name="transfer_receipt" type="file" accept="image/jpeg,image/png,image/webp"/></label>}
           </div><div className={d.formActions}><Button disabled={!!busy}>{busy===row.id?"Menyimpan…":"Simpan laporan & selesaikan"}</Button></div></form>}
           {row.report&&<dl className={d.report}><div><dt>Tanggal penyaluran</dt><dd>{day(row.report.distributionDate)}</dd></div><div><dt>Penerima</dt><dd>{row.report.recipient}</dd></div><div><dt>Lokasi</dt><dd>{row.report.location}</dd></div><div><dt>Deskripsi</dt><dd>{row.report.description}</dd></div></dl>}
-          {row.documents.length>0&&<div className={d.evidence}>{row.documents.map(doc=><button type="button" key={doc.id} onClick={()=>setPreview({src:"/api/bantuan/santunan-documents/"+doc.id,title:doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"})}><img src={"/api/bantuan/santunan-documents/"+doc.id} alt={doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}/><span>{doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}</span></button>)}</div>}
+          {row.documents.length>0&&<div className={d.evidence}>{row.documents.map(doc=><div key={doc.id}><PhotoLocationLink location={doc.location}/><button type="button" key={doc.id} onClick={()=>setPreview({src:"/api/bantuan/santunan-documents/"+doc.id,title:doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima",location:doc.location})}><img src={"/api/bantuan/santunan-documents/"+doc.id} alt={doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}/><span>{doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}</span></button></div>)}</div>}
         </div>
       </article>)}</div>:<div className={d.empty}><HandHeart size={34} strokeWidth={1.3}/><h3>{rows.length?"Tidak ada hasil yang cocok":"Belum ada santunan"}</h3><p>{rows.length?"Coba kata pencarian atau filter yang lain.":canManage?"Tambahkan catatan santunan untuk memulai proses penyaluran.":"Catatan santunan yang ditugaskan kepada Anda akan tampil di sini."}</p>{canManage&&!rows.length&&<Button onClick={()=>setShowCreate(true)}><Plus size={15}/>Tambah santunan</Button>}</div>}
     </section>
@@ -121,7 +126,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     {bulkConfirm&&<Dialog title="Catat transfer santunan terpilih?" description={`${bulkConfirm.length} santunan dengan total ${money(bulkConfirm.reduce((sum,row)=>sum+row.amount,0))} akan ditandai sudah ditransfer. Pastikan seluruh transfer tersebut benar-benar sudah dilakukan. Tombol ini hanya mencatat status, bukan mengirim uang.`} onClose={()=>!busy&&setBulkConfirm(null)}><p>Jika ada catatan yang gagal, proses berhenti. Catatan yang sudah berhasil tetap tersimpan.</p><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setBulkConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markSelectedTransferred()}>{busy?"Mencatat transfer…":"Ya, semua sudah ditransfer"}</Button></div></Dialog>}
     {confirm&&<Dialog title="Tandai dana sudah ditransfer?" description={"Pastikan transfer "+money(confirm.amount)+" untuk "+confirm.recipientName+" sudah dilakukan. Tindakan ini hanya mencatat status, bukan mengirim uang."} onClose={()=>!busy&&setConfirm(null)}><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markTransferred(confirm)}>{busy?"Menyimpan…":"Ya, sudah ditransfer"}</Button></div>{error&&<p role="alert" className={s.fieldError}>{error}</p>}</Dialog>}
     {card&&<SantunanCard row={card} verifier={staff.find(person=>person.id===card.volunteerId)?.name??(card.volunteerId===viewer.id?viewer.name:"")} onClose={()=>setCard(null)}/>}
-    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} onClose={()=>setPreview(null)}/>}
+    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} location={preview.location} onClose={()=>setPreview(null)}/>}
     {success&&<Toast message={success} onClose={()=>setSuccess("")}/>}
   </div>;
 }
