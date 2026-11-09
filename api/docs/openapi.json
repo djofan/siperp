@@ -2760,5 +2760,13 @@
       "resolution": "First valid versioned decision wins; existing Approver and Chair retain first stage access"
     },
     "rule": "Union of granted roles. Restricted-only accounts see applications they created or are assigned to as verifier/distributor. Any all-applications role sees all applications, including rows without an amount. The ongoing view intersects this scope with active statuses. Mutation permissions and private-document access remain separately authorized."
+  },
+  "x-bantuan-application-notes": {
+    "field": "applicant.applicationNotes",
+    "type": "string",
+    "nullable": true,
+    "maxLength": 10000,
+    "required": false,
+    "description": "Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments."
   }
 }

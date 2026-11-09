@@ -126,6 +126,8 @@ document.components.schemas.BantuanApplicationSummary = {
   properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes, falling back to region. Empty when unavailable.' } },
 };
 
+document['x-bantuan-application-notes'] = { field: 'applicant.applicationNotes', type: 'string', nullable: true, maxLength: 10000, required: false, description: 'Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments.' };
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

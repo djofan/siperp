@@ -75,6 +75,7 @@ class Intake
             'applicant.willingSktm' => $request->input('applicant.hasSktm') === false || $request->input('applicant.hasSktm') === 0 || $request->input('applicant.hasSktm') === '0'
                 ? 'required|boolean' : 'exclude',
             'applicant.informationSource' => 'required|string|max:191', 'applicant.problem' => 'required|string|max:10000',
+            'applicant.applicationNotes' => 'nullable|string|max:10000',
             'applicant.latitude' => 'nullable|required_with:applicant.longitude|numeric|between:-90,90',
             'applicant.longitude' => 'nullable|required_with:applicant.latitude|numeric|between:-180,180',
         ];

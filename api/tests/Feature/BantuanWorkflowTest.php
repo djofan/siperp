@@ -1721,3 +1721,19 @@ it('registers survey approvers alongside the existing approver and notifies only
     $this->getJson('/api/v1/bantuan/applications/'.$id.'/reminder-recipients?status=review1')->assertOk()->assertJsonFragment(['id' => $personId]);
     $this->actingAs(User::findOrFail($personId), 'sanctum')->getJson('/api/v1/bantuan/viewer')->assertOk()->assertJsonPath('data.role', 'survey_approver');
 });
+
+
+it('preserves optional application notes for each intake source', function (string $source) {
+    $payload = bantuanInput();
+    $payload['source'] = $source;
+    $payload['applicant']['applicationNotes'] = "Mohon hubungi sore hari.\nPemohon bekerja pagi hari.";
+    if ($source === 'bypass') {
+        bantuanRoles($this->cc, ['call_center'], true);
+        $payload['bypassReason'] = 'Kondisi pemohon telah diketahui langsung.';
+    }
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $payload)
+        ->assertCreated()->json('data.id');
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()
+        ->assertJsonPath('data.applicant.applicationNotes', $payload['applicant']['applicationNotes']);
+    expect(Application::findOrFail($id)->applicant['applicationNotes'])->toBe($payload['applicant']['applicationNotes']);
+})->with(['online', 'walk_in', 'bypass']);
