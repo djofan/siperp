@@ -21,7 +21,15 @@ self.addEventListener("message",event=>{
 });
 self.addEventListener("push",event=>{
   event.waitUntil((async()=>{
-    let payload;try{payload=event.data?.json();}catch{return;}
+    let payload;try{payload=event.data?.json();}catch{payload={};}
+    // Standard Web Push has top-level content; FCM messages use a data envelope.
+    if(!payload?.data){
+      await self.registration.showNotification(typeof payload?.title==="string"?payload.title.slice(0,100):"SIPERP Bantuan",{
+        body:typeof payload?.body==="string"?payload.body.slice(0,300):"Ada kabar baru. Buka aplikasi untuk melihatnya.",icon:"/bantuan-app/icon-192.png",badge:"/bantuan-app/icon-192.png",
+        tag:typeof payload?.tag==="string"?payload.tag.slice(0,100):"bantuan-update",data:{type:"bantuan_web_push",url:"/bantuan-app/notifikasi"},
+      });
+      return;
+    }
     const data=payload?.data;
     if(data?.type!=="bantuan_pwa"||typeof data.binding!=="string"||typeof data.notification_id!=="string")return;
     try {
@@ -44,7 +52,6 @@ self.addEventListener("push",event=>{
   })());
 });
 self.addEventListener("notificationclick",event=>{
-  if(event.notification.data?.type!=="bantuan_pwa")return;
   event.notification.close();
   event.waitUntil((async()=>{
     const target=new URL("/bantuan-app/notifikasi",self.location.origin).href;

@@ -3,8 +3,12 @@ import { useEffect,useRef,useState } from "react";
 import { BellRing,BellOff } from "lucide-react";
 import { readPushContext,registerPwaPush,disablePwaPush,pushSupported,pushOptedIn,pushError,type PushContext } from "./push-client";
 import s from "./Pwa.module.css";
+import { pwaRequest } from "./client";
+import { WebPushSettings } from "./WebPushSettings";
+import type { PushConfiguration } from "./web-push";
 
 export function PwaPushControl({viewerId,showControls}:{viewerId:string;showControls:boolean}) {
+  const [webPush,setWebPush]=useState(false);
   const [context,setContext]=useState<PushContext|null>(null),[supported,setSupported]=useState<boolean|null>(null),[permission,setPermission]=useState<NotificationPermission>("default"),[busy,setBusy]=useState(false),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const refreshing=useRef(false);
   useEffect(()=>{
@@ -14,6 +18,10 @@ export function PwaPushControl({viewerId,showControls}:{viewerId:string;showCont
       try {
         const can=pushSupported();if(live){setSupported(can);if("Notification" in window)setPermission(Notification.permission);}
         if(!can)return;
+        const config=await pwaRequest<PushConfiguration>("web-push/config");
+        if(!live)return;
+        setWebPush(config.enabled);
+        if(config.enabled)return;
         const data=await readPushContext();if(!live)return;setContext(data);
         if(data.enabled&&Notification.permission==="granted"&&pushOptedIn()){
           const registered=await registerPwaPush(data,viewerId,true);if(live&&registered){setContext({...data,registered:true});setError("");}
@@ -37,6 +45,7 @@ export function PwaPushControl({viewerId,showControls}:{viewerId:string;showCont
     }catch(err){setError(pushError(err));}finally{setBusy(false);}
   }
   async function disable(){setBusy(true);setError("");setNotice("");try{await disablePwaPush();setContext(current=>current?{...current,registered:false}:null);setNotice("Push dinonaktifkan untuk sesi ini. Izin browser tidak diubah.");}catch(err){setError(pushError(err));}finally{setBusy(false);}}
+  if(webPush)return <WebPushSettings userId={viewerId} visible={showControls}/>;
   if(!showControls)return null;
   return <section className={s.panel} aria-label="Pengaturan push notifikasi"><h2><BellRing size={19}/>Notifikasi di HP</h2>
     {supported===null?<p>Memeriksa dukungan browser…</p>:!supported?<p>Gunakan HTTPS dan browser yang mendukung notifikasi. Pada iPhone, pasang aplikasi melalui Safari → Bagikan → Tambahkan ke Layar Utama terlebih dahulu.</p>:<>

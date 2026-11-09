@@ -13,8 +13,9 @@ import { clearDrafts } from "../api/vault";
 import { clearPhotoMemory } from "../api/photo-queue";
 import { Santunan } from "../components/Santunan";
 import { ActionPanel,DocumentUpload } from "../components/ActionPanel";
-import { pwaAccess,pwaTabs,pwaRoot,taskKinds,taskLabels,taskQuery,type TaskKind } from "./policy";
+import { pwaAccess,pwaTabs,pwaRoot,taskKinds,taskLabels,taskQuery,taskStates,type TaskKind } from "./policy";
 import { pwaRequest } from "./client";
+import { disableWebPush } from "./web-push";
 import base from "../components/Workspace.module.css";
 import s from "./Pwa.module.css";
 
@@ -49,6 +50,7 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}) {
   async function logout(){
     if(loggingOut)return;setLoggingOut(true);setLogoutError("");
     try {
+      await disableWebPush().catch(()=>undefined);
       const { disablePwaPush }=await import("./push-client");
       await disablePwaPush().catch(()=>undefined);
       const response=await fetch("/api/auth/logout",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{Accept:"application/json"}});
@@ -86,12 +88,15 @@ function HomeScreen({viewer,revision,retry}:{viewer:BantuanViewer;revision:numbe
   const firstName=viewer.name.split(" ")[0];
   const remaining=data?.santunan.filter(row=>row.distributionStatus==="process")??[];
   const waiting=remaining.filter(row=>row.transferStatus==="pending").length;
+  const activeTaskStates=[...new Set(taskKinds(viewer).flatMap(kind=>taskStates[kind]))];
+  const activeTasks=activeTaskStates.reduce((total,status)=>total+Number(data?.dashboard?.byStatus[status]??0),0);
   return <>
     <div className={s.greeting}><div><p>Assalamu’alaikum, {firstName}</p><h1>Siap menebar<br/>kebaikan hari ini?</h1></div><button className={s.refresh} aria-label="Muat ulang ringkasan" onClick={retry}><RefreshCw size={19}/></button></div>
     <section className={s.hero}><span className={s.heroIcon}><HandHeart size={29}/></span><div><span>SETIAP AMANAH BERARTI</span><h2>Hadirkan manfaat,<br/>tuntaskan amanah.</h2><p>{access.santunan?"Pantau transfer dan laporan penyaluran santunan.":"Periksa penugasan dan catat hasil kunjungan Anda."}</p><Link href={`${pwaRoot}/${access.santunan?"santunan":access.tasks?"tugas":"notifikasi"}`}>{access.santunan?"Buka santunan":"Lihat aktivitas"}<ArrowUpRight size={18}/></Link></div></section>
     {error?<ErrorNotice message={error} retry={retry}/>:!data?<Loading/>:<>
       <div className={s.sectionHeading}><h2>Ringkasan pekerjaan</h2><span>Sesuai akses akun</span></div>
       <div className={s.metrics}>
+        {access.tasks&&<Link href={`${pwaRoot}/tugas`}><ClipboardList size={20}/><strong>{activeTasks}</strong><span>Tugas aktif</span></Link>}
         {access.survey&&<Link href={`${pwaRoot}/tugas`}><ClipboardList size={20}/><strong>{data.dashboard?.byStatus.survey_assigned??0}</strong><span>Survei berjalan</span></Link>}
         {access.transfer&&<Link href={`${pwaRoot}/tugas`}><Wallet size={20}/><strong>{data.dashboard?.byStatus.fund_approved??0}</strong><span>Siap dicairkan</span></Link>}
         {access.santunan&&<Link href={`${pwaRoot}/santunan`}><Clock size={20}/><strong>{remaining.length}</strong><span>Santunan belum selesai</span></Link>}
@@ -132,5 +137,5 @@ function Notifications({viewer,onRead,refreshKey}:{viewer:BantuanViewer;onRead:(
   const [notes,setNotes]=useState<AidNotification[]|null>(null),[error,setError]=useState(""),[busy,setBusy]=useState(""),[revision,setRevision]=useState(0);
   useEffect(()=>{const controller=new AbortController();pwaRequest<AidNotification[]>("notifications",{signal:controller.signal}).then(data=>{setNotes(data);setError("");}).catch(err=>{if(!controller.signal.aborted)setError(err.message);});return()=>controller.abort();},[revision,refreshKey]);
   async function mark(note?:AidNotification){setBusy(note?.id??"all");setError("");try{await pwaRequest(note?`notifications/${note.id}/read`:"notifications/read-all",{method:"PUT"});setNotes(current=>current?.map(item=>!note||item.id===note.id?{...item,read_at:new Date().toISOString()}:item)??null);onRead();}catch(err){setError(err instanceof Error?err.message:"Notifikasi belum dapat diperbarui.");}finally{setBusy("");}}
-  return <>{error&&<ErrorNotice message={error} retry={()=>setRevision(value=>value+1)}/>}<p className={s.muted}>50 notifikasi terbaru. Pemberitahuan diperbarui saat aplikasi dibuka.</p>{notes?.some(note=>!note.read_at)&&<button className={s.outline} disabled={!!busy} onClick={()=>void mark()}>Tandai semua dibaca</button>}{!notes?!error&&<Loading/>:!notes.length?<Empty title="Belum ada notifikasi">Tugas baru dan perubahan status akan tampil di sini.</Empty>:notes.map(note=><article className={s.notification} data-unread={!note.read_at} key={note.id}><div className={s.noteIcon}><Bell size={18}/></div><div><p>{note.message}</p><small>{day(note.created_at)}</small><div className={s.notificationActions}>{!note.read_at&&<button disabled={!!busy} onClick={()=>void mark(note)}>{busy===note.id?"Menyimpan…":"Tandai dibaca"}</button>}{pwaAccess(viewer).tasks&&<Link href={`${pwaRoot}/tugas/${encodeURIComponent(note.application_id)}`}>Buka pengajuan<ChevronRight size={15}/></Link>}</div></div></article>)}</>;
+  return <>{error&&<ErrorNotice message={error} retry={()=>setRevision(value=>value+1)}/>}<p className={s.muted}>50 notifikasi terbaru. Pemberitahuan diperbarui saat aplikasi dibuka.</p>{notes?.some(note=>!note.read_at)&&<button className={s.outline} disabled={!!busy} onClick={()=>void mark()}>Tandai semua dibaca</button>}{!notes?!error&&<Loading/>:!notes.length?<Empty title="Belum ada notifikasi">Tugas baru dan perubahan status akan tampil di sini.</Empty>:notes.map(note=><article className={s.notification} data-unread={!note.read_at} key={note.id}><div className={s.noteIcon}><Bell size={18}/></div><div><p>{note.message}</p><small>{day(note.created_at)}</small><div className={s.notificationActions}>{!note.read_at&&<button disabled={!!busy} onClick={()=>void mark(note)}>{busy===note.id?"Menyimpan…":"Tandai dibaca"}</button>}{note.application_id&&pwaAccess(viewer).tasks&&<Link href={`${pwaRoot}/tugas/${encodeURIComponent(note.application_id)}`}>Buka pengajuan<ChevronRight size={15}/></Link>}</div></div></article>)}</>;
 }

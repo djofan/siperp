@@ -4,6 +4,21 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Kontak pengajuan Bantuan: `applicant.phone` pada POST/PUT applications wajib berisi 8–15 angka
+(maksimal 30 karakter dengan format). `applicant.reporterPhone` opsional/nullable, tetapi bila diisi
+memakai validasi yang sama. Diperbolehkan satu `+` di awal untuk kode internasional yang tidak diawali 0,
+spasi, tanda hubung dan kurung kode area berisi angka yang berpasangan. Huruf/ekstensi dan format tidak valid
+ditolak 422 melalui ErrorResource. Draft boleh tidak mengisi nomor, tetapi nomor yang diisi tetap divalidasi.
+Format nomor tersimpan dipertahankan. Schema referensi: `BantuanTelephone` pada generator OpenAPI.
+
+Web Push Bantuan memakai sesi Core/Sanctum yang sama dengan PWA. `GET /api/v1/bantuan/web-push/config`
+mengembalikan `{data:{enabled,publicKey}}` dengan `Cache-Control: no-store`; tidak pernah private key.
+`POST /api/v1/bantuan/web-push/subscriptions` menerima `{endpoint,keys:{p256dh,auth}}`, upsert terenkripsi
+untuk akun dan sesi saat ini, respons 204. Endpoint harus HTTPS port 443 milik layanan push FCM/Mozilla/Apple/Windows.
+`DELETE` pada URI yang sama menerima `{endpoint}`, menghapus hanya langganan milik akun DAN sesi saat ini (204).
+Seluruh endpoint memerlukan `auth:sanctum`, `user.active`, `module.access:bantuan`; mutasi dibatasi 30/menit.
+Error mengikuti ErrorResource (401/403/422/429; registrasi 503 bila VAPID belum dikonfigurasi).
+
 Resource memakai kata benda jamak, huruf kecil, kebab-case, di bawah prefix modul: `/api/v1/lazsip/campaigns`, `/api/v1/lazsip/campaigns/{id}`, `/api/v1/payment/destination-accounts`. Nama tabel/kolom lama tidak berubah hanya karena URI menggunakan konvensi baru.
 
 Gunakan `Route::apiResource` sebagai default, dengan `only`/`except` jika operasi tidak tersedia. Provider modul sudah memasang prefix `api/v1/<modul>` dan middleware `api`; jangan menambahkan prefix dua kali. Route dilindungi `auth:sanctum` dan `module.access:<slug>` saat kebijakan Core sudah dimigrasikan.

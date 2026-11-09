@@ -219,6 +219,13 @@ login cookie Core. Menu mengikuti hak akses akun. Panduan pemasangan, perilaku
 cache privat, dan batas tahap pertama ada di `docs/bantuan-pwa.md`.
 
 
+PWA kini mendukung Web Push standar browser (VAPID), terpisah dari Firebase Flutter.
+Tombol **Aktifkan notifikasi HP** berada di halaman Akun/Notifikasi. Langganan
+terikat ke akun dan sesi ERP; scheduler `bantuan:web-push` mengirim hanya inbox
+penerima, menghentikan sesi yang dicabut/kedaluwarsa, dan menghapus langganan expired.
+Setup/deployment serta langkah uji antar-akun dijelaskan di `docs/bantuan-pwa.md`.
+
+
 ## Pin lokasi per foto
 
 Foto pengajuan/survei dan bukti santunan dapat memiliki `location` opsional.

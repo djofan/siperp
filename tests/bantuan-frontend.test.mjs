@@ -10,7 +10,7 @@ test("returning applicants can be searched and reused without copying old workfl
   assert.match(picker,/applicants\/search/);
   assert.match(picker,/Isi otomatis dari data terakhir/);
   assert.match(picker,/Isi ulang, gunakan nama & NIK/);
-  assert.match(intake,/problem:"",intakeType:"returning"/);
+  assert.match(intake,/problem:"",applicationNotes:"",intakeType:"returning"/);
   assert.match(intake,/name:detail.applicant.name,nik:detail.applicant.nik/);
   assert.match(intake,/if\(hasInput\)setReuse/);
   const apply=intake.match(/function applyPrevious\([\s\S]*?\n  \}/)[0];
