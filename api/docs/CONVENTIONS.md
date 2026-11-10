@@ -4,6 +4,13 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Kontak pengajuan Bantuan: `applicant.phone` pada POST/PUT applications wajib berisi 8–15 angka
+(maksimal 30 karakter dengan format). `applicant.reporterPhone` opsional/nullable, tetapi bila diisi
+memakai validasi yang sama. Diperbolehkan satu `+` di awal untuk kode internasional yang tidak diawali 0,
+spasi, tanda hubung dan kurung kode area berisi angka yang berpasangan. Huruf/ekstensi dan format tidak valid
+ditolak 422 melalui ErrorResource. Draft boleh tidak mengisi nomor, tetapi nomor yang diisi tetap divalidasi.
+Format nomor tersimpan dipertahankan. Schema referensi: `BantuanTelephone` pada generator OpenAPI.
+
 Resource memakai kata benda jamak, huruf kecil, kebab-case, di bawah prefix modul: `/api/v1/lazsip/campaigns`, `/api/v1/lazsip/campaigns/{id}`, `/api/v1/payment/destination-accounts`. Nama tabel/kolom lama tidak berubah hanya karena URI menggunakan konvensi baru.
 
 Gunakan `Route::apiResource` sebagai default, dengan `only`/`except` jika operasi tidak tersedia. Provider modul sudah memasang prefix `api/v1/<modul>` dan middleware `api`; jangan menambahkan prefix dua kali. Route dilindungi `auth:sanctum` dan `module.access:<slug>` saat kebijakan Core sudah dimigrasikan.
@@ -201,3 +208,15 @@ Peran Bantuan `survey_approver` (Penyetuju Survei) hanya mengambil keputusan `re
 Pencarian daftar Bantuan (`search`) mendukung gabungan kata pada nama/nomor pengajuan, program, wilayah, status, sumber, nominal, tanggal, serta nama/kode pembuat dan petugas terkait. Alamat pemohon/alamat survei, telepon, pekerjaan, masalah dan catatan hanya dicocokkan jika pemanggil berhak membaca detail sensitif baris tersebut. NIK tetap persis 16 digit. Pemindaian field terenkripsi dilakukan secara streaming pada baris yang sudah dibatasi akses dan filter, tanpa indeks plaintext.
 
 Keputusan dana manual untuk kartu grup memakai `POST /api/v1/bantuan/funding-requests/{id}/manual-decision`. Call Center/admin/Superadmin mengirim atribusi manual beserta versi kartu dan versi seluruh item; keputusan atomik berlaku untuk seluruh grup. Endpoint manual per-pengajuan tetap menolak pemutusan satu item dalam kartu aktif.
+
+## Lokasi foto Bantuan
+
+Upload dokumen pengajuan dan santunan menerima objek multipart opsional
+`location[latitude]`, `location[longitude]`, `location[source]` (`exif`/`device`),
+serta `location[accuracy]` opsional dalam meter. Pasangan koordinat dan sumber
+wajib lengkap jika location diberikan; rentang latitude -90..90, longitude
+-180..180, accuracy 0..10000000. Field di luar whitelist ditolak 422.
+Lokasi disimpan terenkripsi, tidak ditulis ke log/audit. Representasi dokumen
+privat menambahkan `location` nullable; foto lama null. Filtering dan izin foto
+berlaku juga untuk koordinat. Source menandakan asal klaim klien, bukan bukti
+terverifikasi. Tidak ada endpoint lokasi publik atau perubahan izin dokumen.

@@ -2,7 +2,7 @@
 import { ManualProcessPanel } from "./ManualProcessPanel";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { rolesOf } from "../permissions";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
@@ -10,7 +10,10 @@ import type { AidDetail, BantuanStaff, BantuanViewer } from "@/contracts/modules
 import { documentLabels } from "@/contracts/modules/bantuan";
 import { fieldMessage, request, RequestError } from "../api/client";
 import { focusActionProblem, nativeActionErrors, revealActionTarget, type ActionErrors } from "../action-feedback";
-import { preparePhoto } from "../api/photos";
+import { preparePhotoUpload } from "../api/photos";
+import { PhotoLocationPicker } from "./PhotoLocationPicker";
+import type { PhotoLocation } from "@/contracts/modules/bantuan";
+import { appendPhotoLocation } from "../photo-location";
 import { applicantFields, Fields, validateFields, type Values } from "./IntakeForm";
 import { PhotoReview } from "./PhotoReview";
 import { ProcessSuccess } from "./ProcessSuccess";
@@ -59,6 +62,7 @@ const today=()=>new Date().toLocaleDateString("en-CA");
 
 
 export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer: BantuanViewer; reload: () => void }) {
+  const [deviceLocation,setDeviceLocation]=useState<PhotoLocation|null>(null);
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const kinds=Object.keys(documentLabels).filter(k=>rolesOf(viewer).some(role=>{
     if(["survey_assigned","survey_cc_review"].includes(row.status)&&(k.startsWith("survey_")||["sktm","ktp","kk","supporting"].includes(k)))return role==="admin"||role==="call_center"||role==="verifier"&&row.verifierId===viewer.id;
@@ -69,11 +73,12 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
     if(["transfer","return"].includes(k))return role==="treasurer"&&["fund_approved","disbursed","delivery_failed"].includes(row.status);
     return row.status==="disbursed"&&(role==="verifier"&&row.distributorId===viewer.id||role==="treasurer"&&row.distributionType==="direct");
   }));
-  async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const prepared=await preparePhoto(file);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);await request(`applications/${row.id}/documents`,{method:"POST",body});}reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
+  async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const {file:prepared,location}=await preparePhotoUpload(file,deviceLocation);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});}setDeviceLocation(null);reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
   return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · JPG, PNG, WEBP · maks. 2 MB</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
     {row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
     {kinds.length>0&&<form onSubmit={upload} style={{display:"grid",gap:12,marginTop:20}}>
       <label className={s.field}>Jenis dokumen<select className={s.input} value={kind||kinds[0]} onChange={e=>setKind(e.target.value)}>{kinds.map(k=><option key={k} value={k}>{documentLabels[k]}</option>)}</select></label>
+      <PhotoLocationPicker value={deviceLocation} onChange={setDeviceLocation} disabled={busy}/>
       <label className={s.upload}>Pilih foto<input name="files" type="file" accept="image/jpeg,image/png,image/webp" multiple required/></label>
       {error&&<p role="alert" className={s.tiny} style={{color:"#ad4b35"}}>{error}</p>}<button className={`${s.button} ${s.secondary}`} disabled={busy}>{busy?"Mengunggah…":"Unggah dokumen"}</button>
     </form>}

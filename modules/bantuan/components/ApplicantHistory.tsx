@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import type { AidApplicantHistory } from "@/contracts/modules/bantuan";
 import { bantuanStatuses } from "@/contracts/modules/bantuan";
 import { day, money } from "../api/client";

@@ -1,10 +1,11 @@
 "use client";
 import {useRef,useState,type FormEvent} from "react";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import {Check,Wallet,ChevronDown} from "lucide-react";
 import type {AidApplication,AidDashboard,AidPage,BantuanStaff} from "@/contracts/modules/bantuan";
 import {money,request} from "../api/client";
-import {preparePhoto} from "../api/photos";
+import {preparePhotoUpload} from "../api/photos";
+import { appendPhotoLocation } from "../photo-location";
 import s from "./DisbursementGroups.module.css";
 
 export function DisbursementGroups({tickets,staff,onSaved}:{tickets:AidDashboard["tickets"];staff:BantuanStaff[];onSaved:()=>void}){
@@ -27,7 +28,7 @@ function TransferGroup({ticket,staff,onSaved}:{ticket:AidDashboard["tickets"][nu
  }
  async function save(event:FormEvent){event.preventDefault();if(lock.current||!chosen.length||!confirmed)return;lock.current=true;setBusy(true);setError("");
   try{
-   if(file){const photo=await preparePhoto(file);for(const row of chosen){if(uploaded.current.has(row.id))continue;const body=new FormData();body.set("kind","transfer");body.set("file",photo);await request(`applications/${row.id}/documents`,{method:"POST",body});uploaded.current.add(row.id);}}
+   if(file){const {file:photo,location}=await preparePhotoUpload(file);for(const row of chosen){if(uploaded.current.has(row.id))continue;const body=new FormData();body.set("kind","transfer");body.set("file",photo);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});uploaded.current.add(row.id);}}
    await request("batch",{method:"POST",body:JSON.stringify({action:"disburse",transferDate:date,account:account.trim(),totalAmount:total,items:chosen.map(row=>({id:row.id,version:row.version,transferAmount:row.amount}))})});
    setSaved(`${chosen.length} bantuan senilai ${money(total)} sudah dicatat. Status menjadi siap diserahkan dan penyalur mendapat notifikasi.`);setOpen(false);onSaved();
   }catch(e){setError(e instanceof Error?e.message:"Pencairan belum dapat dicatat. Periksa status sebelum mencoba lagi.");}finally{lock.current=false;setBusy(false);}

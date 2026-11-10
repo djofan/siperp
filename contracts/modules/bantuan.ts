@@ -1,3 +1,4 @@
+export interface PhotoLocation { latitude:number; longitude:number; source:"exif"|"device"; accuracy?:number|null }
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", requester: "Petugas Pengajuan", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
   volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Pengurus", survey_approver: "Penyetuju Survei",
@@ -58,7 +59,7 @@ export interface AidDetail extends AidApplication {
   survey: Record<string, unknown> | null; handover: Record<string, unknown> | null;
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
   duplicateApplications: AidApplicantHistory[];
-  documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null }[];
+  documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null; location?:PhotoLocation|null }[];
   events: { manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
@@ -69,7 +70,7 @@ export interface AidDashboard {
   approvedAmount: number; disbursedAmount: number; completedAmount: number; overdue: number;
   tickets: { distributor_id: string | null; distribution_type: string; total: number; amount: number }[];
 }
-export interface AidNotification { id: string; application_id: string; message: string; read_at: string | null; created_at: string }
+export interface AidNotification { id: string; application_id: string | null; message: string; read_at: string | null; created_at: string }
 export const santunanCategoryLabels = { widow: "Janda dhuafa", orphan: "Anak yatim", foster_child: "Anak asuh", tahfidz: "Lembaga Tahfidz" };
 export type SantunanCategory = keyof typeof santunanCategoryLabels;
 export interface SantunanRecord {
@@ -78,5 +79,5 @@ export interface SantunanRecord {
   transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
   transferredAt: string|null; completedAt: string|null; version: number;
   report: { distributionDate:string; location:string; recipient:string; description:string }|null;
-  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; created_at:string }[];
+  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; created_at:string; location?:PhotoLocation|null }[];
 }

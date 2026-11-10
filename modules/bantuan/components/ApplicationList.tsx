@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { usePathname } from "next/navigation";
 import { ArrowRight, CalendarDays, UserRound, Wallet, MapPin } from "lucide-react";
 import type { AidApplication, AidPage, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";

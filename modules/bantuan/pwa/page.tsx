@@ -1,9 +1,10 @@
 import { redirect,notFound } from "next/navigation";
 import { getSession,hasModuleAccess } from "@/lib/auth";
 import { apiRequest,ApiError } from "@/lib/api";
-import type { BantuanViewer } from "@/contracts/modules/bantuan";
+import type { AidDetail, BantuanViewer } from "@/contracts/modules/bantuan";
 import { PwaApp } from "./PwaApp";
-import { validPwaRoute,pwaHome } from "./policy";
+import { canEditIntake } from "../permissions";
+import { validPwaRoute,pwaHome,pwaWorkspaceRoute } from "./policy";
 import Link from "next/link";
 import s from "./Pwa.module.css";
 export default async function PwaPage({params}:{params:Promise<{path?:string[]}>}) {
@@ -20,5 +21,10 @@ export default async function PwaPage({params}:{params:Promise<{path?:string[]}>
     throw error;
   }
   if(!validPwaRoute(path,viewer))notFound();
+  const workspace=pwaWorkspaceRoute(path,viewer);
+  if(workspace[0]==="pengajuan"&&workspace[1]&&!["baru","langsung"].includes(workspace[1])){
+    const row=await apiRequest<AidDetail>(`bantuan/applications/${encodeURIComponent(workspace[1])}`);
+    if(workspace[2]==="edit"&&!canEditIntake(viewer,row))notFound();
+  }
   return <PwaApp key={`${viewer.id}:${path.join("/")}`} viewer={viewer} route={path}/>;
 }

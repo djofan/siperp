@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { canManageOwnPasswordInModule } from "../permissions";
 import { useEffect, useRef } from "react";
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";
 import { href, menuGroups, navigation } from "../policy";
 import { queueCount } from "../workspace-guide";

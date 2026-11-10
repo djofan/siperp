@@ -217,3 +217,28 @@ contoh dihapus. Penambahan kategori ini tidak membutuhkan migration tabel.
 Aplikasi petugas tersedia di `/bantuan-app/beranda` dengan navigasi bawah dan
 login cookie Core. Menu mengikuti hak akses akun. Panduan pemasangan, perilaku
 cache privat, dan batas tahap pertama ada di `docs/bantuan-pwa.md`.
+
+
+## Pin lokasi per foto
+
+Foto pengajuan/survei dan bukti santunan dapat memiliki `location` opsional.
+GPS metadata foto asli dibaca di perangkat sebelum kompresi. Jika metadata
+hilang (misalnya foto dari WhatsApp), tidak ada lokasi pengambilan yang ditebak.
+Petugas boleh memilih **Gunakan lokasi perangkat saat ini**; sumber ini diberi
+label lokasi saat unggah, bukan lokasi pengambilan. Izin GPS ditolak atau metadata
+rusak tidak memblokir upload. Kamera browser juga bisa menghapus metadata GPS.
+
+Koordinat ikut disimpan dalam antrean lokal terenkripsi, sehingga retry tidak
+mengambil lokasi baru. Laravel memvalidasi pasangan koordinat dan sumbernya,
+menyimpan `photo_location` terenkripsi di kedua tabel dokumen, dan mengembalikan
+`documents[].location` hanya dalam detail/daftar yang sudah diotorisasi dengan
+filter dokumen yang sama. Retry `clientId` tidak menimpa lokasi unggahan pertama.
+Koordinat kiriman petugas/EXIF dapat diubah dan bukan bukti lokasi terverifikasi.
+
+**Buka lokasi foto** membuka Google Maps di tab baru; koordinat dibagikan ke
+penyedia peta saat tautan ditekan. Fitur pin tidak memerlukan Geoapify/API key.
+Foto lama tetap tanpa pin; tidak ada backfill lokasi perkiraan.
+
+Deployment: backup database, jalankan `npm ci`, migration Laravel
+`2026_11_09_000001_add_bantuan_photo_locations`, build dan restart seperti biasa.
+Pastikan HTTPS dan izin lokasi HP aktif jika ingin memakai lokasi perangkat.

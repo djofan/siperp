@@ -1,12 +1,30 @@
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
-import { hasAnyRole } from "../permissions";
+import { canViewRoute, homeByRole } from "../policy";
+import { hasAnyRole,rolesOf } from "../permissions";
 
 export const pwaRoot = "/bantuan-app";
 export const pwaHome = `${pwaRoot}/beranda`;
 export type PwaTab = "beranda" | "tugas" | "santunan" | "notifikasi" | "akun";
+export type TaskKind = "intake" | "assignment" | "survey" | "survey_review" | "approval" | "funding" | "transfer" | "distribution";
+
+const kindsByRole:Record<string,TaskKind[]>={
+  admin:["intake","assignment","survey","survey_review","approval","funding","transfer","distribution"],
+  requester:["intake"],
+  call_center:["intake","assignment","survey_review","distribution"],
+  approver:["approval"],
+  chair:["approval"],
+  verifier:["survey","distribution"],
+  fund_requester:["funding","transfer"],
+  treasurer:["transfer","distribution"],
+};
+
+export function taskKinds(viewer:BantuanViewer):TaskKind[] {
+  const roles=[viewer.role,...(viewer.roles??[])];
+  return [...new Set(roles.flatMap(role=>kindsByRole[role]??[]))];
+}
 export function pwaAccess(viewer: BantuanViewer) {
   return {
-    tasks: hasAnyRole(viewer,["admin","verifier","treasurer"]),
+    tasks: taskKinds(viewer).length>0,
     survey: hasAnyRole(viewer,["admin","verifier"]),
     transfer: hasAnyRole(viewer,["admin","treasurer"]),
     distribution: hasAnyRole(viewer,["admin","verifier","treasurer"]),
@@ -19,23 +37,42 @@ export function pwaTabs(viewer:BantuanViewer): {key:PwaTab;label:string}[] {
 }
 export function validPwaRoute(path:string[],viewer:BantuanViewer) {
   if(!path.length)return true;
+  if(path[0]==="workspace")return path.length>1&&path.slice(1).every(segment=>/^[a-zA-Z0-9_-]{1,80}$/.test(segment))&&(path[1]==="akun"&&path.length===2||canViewRoute(viewer,path.slice(1)));
   if(!pwaTabs(viewer).some(tab=>tab.key===path[0]))return false;
   return path.length===1 || path[0]==="tugas"&&path.length===2&&/^[a-zA-Z0-9_-]{1,80}$/.test(path[1]);
 }
-export type TaskKind = "survey" | "distribution" | "transfer";
-export function taskKinds(viewer:BantuanViewer):TaskKind[] {
-  const access=pwaAccess(viewer);
-  return [...(access.survey?["survey" as const]:[]),...(access.transfer?["transfer" as const]:[]),...(access.distribution?["distribution" as const]:[])];
-}
-export const taskLabels:Record<TaskKind,string>={survey:"Survei saya",distribution:"Penyaluran",transfer:"Pencairan"};
+export const taskLabels:Record<TaskKind,string>={
+  intake:"Review pengajuan",assignment:"Penugasan",survey:"Survei saya",survey_review:"Review survei",
+  approval:"Persetujuan",funding:"Pengajuan dana",transfer:"Pencairan",distribution:"Penyaluran",
+};
+export const taskStates:Record<TaskKind,string[]>={
+  intake:["draft","needs_data","screening"],
+  assignment:["survey_assignment","approved"],
+  survey:["survey_assigned"],
+  survey_review:["survey_cc_review"],
+  approval:["review1","survey_submitted","review2","bypass_review"],
+  funding:["fund_ready","fund_submitted"],
+  transfer:["fund_approved"],
+  distribution:["disbursed","delivery_failed"],
+};
 export function taskQuery(viewer:BantuanViewer,kind:TaskKind,page:number,search:string) {
   const query=new URLSearchParams({perPage:"12",page:String(page),sort:"updated"});
   if(search.trim())query.set("search",search.trim());
-  if(kind==="survey") {query.set("states","survey_assigned");query.set("verifierId","me");}
-  if(kind==="transfer")query.set("states","fund_approved");
+  query.set("states",taskStates[kind].join(","));
+  if(kind==="survey"&&!hasAnyRole(viewer,["admin","call_center"]))query.set("verifierId","me");
   if(kind==="distribution") {
-    query.set("states","disbursed,delivery_failed");
-    if(!pwaAccess(viewer).transfer)query.set("distributorId","me");
+    if(!hasAnyRole(viewer,["admin","call_center","treasurer"]))query.set("distributorId","me");
   }
   return query.toString();
+}
+
+
+export function pwaWorkspaceRoute(path:string[],viewer:BantuanViewer):string[]{
+  if(path[0]==="workspace")return path.slice(1);
+  if(path[0]==="beranda")return rolesOf(viewer).length>1?[]:[homeByRole[viewer.role]??""].filter(Boolean);
+  if(path[0]==="tugas")return path[1]?["pengajuan",path[1]]:navigationTaskRoute(viewer);
+  return path;
+}
+function navigationTaskRoute(viewer:BantuanViewer):string[]{
+  return canViewRoute(viewer,["proses"])?["proses"]:canViewRoute(viewer,["pengajuan"])?["pengajuan"]:[homeByRole[viewer.role]??""].filter(Boolean);
 }

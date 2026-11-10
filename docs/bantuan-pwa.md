@@ -1,6 +1,13 @@
 # PWA Bantuan SIP
 
-Branch pengembangan: `feature/pwa-pengajuan`.
+Branch pengembangan awal: `feature/pwa-pengajuan`.
+
+PWA kini memakai `Workspace` yang sama dengan dashboard web. Menu, formulir,
+monitoring, peta survei, pin foto, dana, laporan, santunan, dan pengelolaan
+mengikuti `navigation`/`canViewRoute` serta hak akses Laravel yang sama.
+Navigasi bawah menyediakan Beranda, Pekerjaan (jika ada), Semua menu,
+Notifikasi dan Akun. Semua menu membuka sidebar responsif; pencarian,
+filter, kartu/tabel dan tindakan massal tetap tersedia.
 
 ## Akses
 
@@ -77,6 +84,10 @@ modul tetap tersedia melalui dashboard web.
 
 ## Mengaktifkan push di VPS
 
+Push PWA tetap memakai Firebase Cloud Messaging (FCM), sama dengan layanan yang
+sudah berjalan. Tidak ada pemilihan atau perpindahan otomatis ke layanan Web Push
+standar terpisah. Pertahankan konfigurasi Firebase dan VAPID yang sudah digunakan.
+
 1. Pasang dependensi dari lockfile (`npm ci` pada frontend; `composer install`
    jika dependensi backend berubah), jalankan migration Laravel setelah backup,
    kemudian build dan restart layanan seperti deployment biasa.
@@ -140,3 +151,30 @@ Validasi akhir di HP sungguhan memerlukan konfigurasi Firebase/VAPID dan VPS
 HTTPS yang aktif. Uji juga izin ditolak, disable, logout, ganti akun, perubahan
 izin modul, sesi kedaluwarsa, dan klik notifikasi. Jangan kirim kunci atau token
 perangkat dalam tangkapan layar/log diagnostik.
+
+
+## Kesetaraan dashboard web dan PWA
+
+- `/bantuan-app/workspace/<menu>` memuat halaman dashboard yang sama melalui
+  `Workspace`, bukan salinan antarmuka operasional yang berbeda.
+- `/beranda`, `/tugas`, `/tugas/<id>`, `/santunan`, `/notifikasi` dan `/akun`
+  tetap valid sesuai akses sebelumnya. Home relawan tunggal membuka Santunan;
+  gabungan peran memakai dashboard. Tautan notifikasi lama tetap dapat dibuka.
+- `WorkspaceNavigation` memetakan tautan/push/replace/prefetch internal Bantuan
+  ke scope PWA, mempertahankan query dan fragment. URL API, ekspor, peta luar,
+  dan modul lain tidak dipetakan. Tanpa provider, dashboard web tetap memakai
+  URL `/admin/bantuan` seperti semula.
+- Server memeriksa menu dengan policy web yang sama dan memeriksa izin edit
+  terhadap pengajuan aktual. Laravel tetap memeriksa record, role dan versi
+  untuk semua pembacaan/mutasi; URL PWA tidak memberikan hak tambahan.
+- Push otomatis diregistrasi ulang hanya bagi pengguna yang sudah opt-in.
+  Kontrol izin berada di Akun/Notifikasi. Push baru menyegarkan data tanpa
+  membongkar formulir; 401 mengarahkan ke login PWA. Logout mencoba melepas
+  registrasi perangkat sebelum mencabut sesi dan membersihkan draft lokal.
+- Service worker tetap terbatas `/bantuan-app/`: API, foto privat dan halaman
+  autentikasi tidak dimasukkan cache. Update menunggu pilihan pengguna agar
+  draft tidak hilang saat mengisi formulir.
+- Admin yang mengelola akun melalui Core tetap diarahkan ke pengaturan akun
+  platform sesuai aturan web. Pemilihan modul lain memang keluar dari PWA.
+- Tidak ada migration atau perubahan environment untuk kesetaraan tampilan ini.
+  Deployment cukup build frontend dan restart setelah mengambil kode terbaru.

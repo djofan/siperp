@@ -1,3 +1,11 @@
+import type { PhotoLocation } from "@/contracts/modules/bantuan";
+import { readPhotoLocation } from "../photo-location";
+
+export async function preparePhotoUpload(original:File, deviceLocation?:PhotoLocation|null){
+  const location=await readPhotoLocation(original)??deviceLocation??null;
+  return {file:await preparePhoto(original),location};
+}
+
 // Processing stays on the device; HEIC is decoded lazily, without a conversion service.
 export async function preparePhoto(original: File): Promise<File> {
   if(original.size>30*1024*1024)throw new Error("Ukuran foto asli maksimal 30 MB.");

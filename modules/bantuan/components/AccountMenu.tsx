@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, LogOut, Settings } from "lucide-react";
 import type { BantuanViewer } from "@/contracts/modules/bantuan";

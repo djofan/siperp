@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useWorkspaceRouter as useRouter } from "./WorkspaceNavigation";
 import { Check } from "lucide-react";
 import { Button, Dialog } from "./ui";
 import s from "./Workspace.module.css";
