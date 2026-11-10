@@ -174,3 +174,12 @@ it('does not reuse a bantuan code still registered as a login alias', function (
     AccountCodes::register($user->id, 'SIP001');
     expect(AccountCodes::nextBantuan())->toBe('SIP002');
 });
+
+it('reuses a released code without colliding with the archived internal email', function () {
+    $first = codeAccount(['code' => 'SIP001', 'email' => 'sip001@accounts.sip.invalid']);
+    AccountCodes::releaseBantuan($first);
+    $replacement = codeAccount(['code' => AccountCodes::nextBantuan(), 'email' => null]);
+    expect($replacement->code)->toBe('SIP001')
+        ->and($replacement->email)->not->toBe($first->email)
+        ->and(AccountCodes::find('SIP001')->id)->toBe($replacement->id);
+});

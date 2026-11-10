@@ -3798,5 +3798,14 @@
   "x-api-error-diagnostics": {
     "compatibility": "Existing error.code/message/details remain. Diagnostic metadata is additive. Database duplicates/constraints and busy states return 409; unavailable connections return 503; schema mismatches and unknown database errors return 500.",
     "privacy": "No SQL, bindings, password, exception message, stack or configuration values in public diagnostics. api_request_failed logs include correlation ID, category, route template, exception class and source location, with SQLSTATE/driver code for database failures; request bodies, full URLs, SQL and bindings are not logged by this handler."
+  },
+  "x-ipaymu-request-authentication": {
+    "method": "POST",
+    "serialization": "One JSON string with JSON_UNESCAPED_SLASHES; the same bytes are signed and sent as application/json.",
+    "stringToSign": "POST:VA:lowercase(SHA256(body)):ApiKey",
+    "signature": "HMAC-SHA256 hexadecimal using ApiKey as key",
+    "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
+    "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
+    "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
   }
 }
