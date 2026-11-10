@@ -161,10 +161,10 @@ class BantuanController
         $input = $request->validate(['version' => 'required|integer|min:1', 'confirmation' => 'nullable|string']);
         $paths = DB::transaction(function () use ($request, $id, $access, $input, $deletion) {
             $row = $access->find($request, $id, true);
-            abort_unless($access->has($request, ['admin']) || $row->created_by === $request->user()->id, 403, 'Hanya draft sendiri yang dapat dihapus.');
+            abort_unless($access->has($request, ['admin', 'call_center']) || $row->created_by === $request->user()->id, 403, 'Hanya draft sendiri yang dapat dihapus.');
             abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang terlebih dahulu.');
             if ($row->status !== 'draft') {
-                abort_unless($access->has($request, ['admin']), 409, 'Pengajuan sudah dikirim. Gunakan Batalkan pengajuan, bukan hapus.');
+                abort_unless($access->has($request, ['admin', 'call_center']), 409, 'Pengajuan sudah dikirim. Gunakan Batalkan pengajuan, bukan hapus.');
                 abort_unless(($input['confirmation'] ?? '') === $row->number, 422, 'Ketik nomor pengajuan untuk mengonfirmasi hapus permanen.');
             }
 

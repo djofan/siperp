@@ -130,6 +130,8 @@ document['x-bantuan-application-notes'] = { field: 'applicant.applicationNotes',
 
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_review_withdraw'] = {post:{tags:['Bantuan'],summary:'Withdraw survey results for Call Center review',description:'Call Center or module admin only. Allowed from survey_submitted or review2 before an Approver decision. Preserves applicant, survey and documents; transitions to survey_cc_review. Repeated review and submission are supported. Version locking prevents withdrawing after a concurrent decision.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Current application with incremented version'},403:error,404:error,409:error,422:error}}};
 
+document['x-bantuan-permanent-deletion'] = { authorizedRoles: ['superadmin','admin','call_center'], description: 'May permanently delete applications at any stage, including applications created by another officer. Non-draft deletion requires exact application number confirmation; version locking remains mandatory. Other operational roles retain owned-draft deletion only.' };
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

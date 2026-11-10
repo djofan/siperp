@@ -2856,5 +2856,13 @@
     "maxLength": 10000,
     "required": false,
     "description": "Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments."
+  },
+  "x-bantuan-permanent-deletion": {
+    "authorizedRoles": [
+      "superadmin",
+      "admin",
+      "call_center"
+    ],
+    "description": "May permanently delete applications at any stage, including applications created by another officer. Non-draft deletion requires exact application number confirmation; version locking remains mandatory. Other operational roles retain owned-draft deletion only."
   }
 }

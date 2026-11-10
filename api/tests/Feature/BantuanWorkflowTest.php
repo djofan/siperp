@@ -369,7 +369,7 @@ it('deletes only owned drafts and removes related evidence and notifications', f
     Storage::disk('local')->assertMissing($path);
     $sent = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     $this->postJson('/api/v1/bantuan/applications/'.$sent.'/actions/submit', ['version' => 1])->assertOk();
-    $this->deleteJson('/api/v1/bantuan/applications/'.$sent, ['version' => 2])->assertConflict();
+    $this->deleteJson('/api/v1/bantuan/applications/'.$sent, ['version' => 2])->assertUnprocessable();
     expect(Application::findOrFail($sent))->not->toBeNull();
 });
 
@@ -1527,7 +1527,7 @@ it('lets module admins permanently delete every stage with explicit confirmation
     DB::table('bantuan_documents')->where('id', $doc)->update(['path' => $path]);
     Storage::disk('local')->put($path, 'test');
     $url = '/api/v1/bantuan/applications/'.$id;
-    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertConflict();
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => 'wrong'])->assertUnprocessable();
     $this->actingAs(bantuanUser('admin'), 'sanctum');
     $this->deleteJson($url, ['version' => 99, 'confirmation' => $row->number])->assertConflict();
     if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => 'wrong'])->assertUnprocessable();
@@ -1762,3 +1762,15 @@ it('allows Call Center to withdraw and resubmit survey review without losing evi
     $this->actingAs($this->cc, 'sanctum')->postJson($url.'survey_review_withdraw', ['version' => 5])->assertConflict();
     $this->postJson($url.'survey_review_withdraw', ['version' => 6])->assertConflict();
 });
+
+
+it('allows Call Center to permanently delete another officers application at every stage', function (string $status) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['status' => $status, 'created_by' => $this->verifier->id])->save();
+    $url = '/api/v1/bantuan/applications/'.$id;
+    $this->deleteJson($url, ['version' => 99, 'confirmation' => $row->number])->assertConflict();
+    if ($status !== 'draft') $this->deleteJson($url, ['version' => 1, 'confirmation' => 'wrong'])->assertUnprocessable();
+    $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertOk();
+    $this->assertDatabaseMissing('bantuan_applications', ['id' => $id]);
+})->with(['draft','review1','survey_submitted','fund_submitted','completed','rejected_t2']);
