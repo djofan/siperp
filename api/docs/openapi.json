@@ -44,6 +44,23 @@
                     "type": "string"
                   }
                 }
+              },
+              "diagnosticCode": {
+                "type": "string",
+                "description": "Stable public diagnostic category such as DB_SCHEMA_MISMATCH, DB_UNAVAILABLE or APP_KEY_MISSING. Does not expose SQL or configuration values."
+              },
+              "requestId": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Server-generated support reference, also returned as X-Request-ID and recorded in api_request_failed logs for server failures."
+              },
+              "retryAfter": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0,
+                "description": "Seconds until retry when the server supplies Retry-After."
               }
             },
             "required": [
@@ -3536,6 +3553,136 @@
           }
         }
       }
+    },
+    "/api/v1/core/module-accounts/{id}/password-reset": {
+      "post": {
+        "tags": [
+          "Core"
+        ],
+        "summary": "Reset an operational account password without its old password",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Active module admins may reset operational accounts only when every target module is managed by that admin. Superadmin may reset operational accounts across modules. Admin identities, superadmin, self and unassigned accounts are excluded. Writes only a password hash, revokes every target token and logs actor/target without credentials. No password is returned. Rate limit 10 requests/minute.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password",
+                  "password_confirmation"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 72,
+                    "writeOnly": true
+                  },
+                  "password_confirmation": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 72,
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset completed; Cache-Control: no-store, private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "const": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -3643,5 +3790,13 @@
       "$ref": "#/components/schemas/BantuanPhotoLocation"
     },
     "visibility": "Same document filtering and record ownership as private photos. No public location endpoint. Browser builds a map link only after authorization. Opening it shares coordinates with the map provider."
+  },
+  "x-core-operational-password-reset": {
+    "accountList": "GET /api/v1/core/module-accounts: accounts[].canResetPassword is a UI hint only; authorization is repeated on mutation.",
+    "passwordVisibility": "Only the new password entered in the browser can be copied after success. Existing passwords are never retrievable."
+  },
+  "x-api-error-diagnostics": {
+    "compatibility": "Existing error.code/message/details remain. Diagnostic metadata is additive. Database duplicates/constraints and busy states return 409; unavailable connections return 503; schema mismatches and unknown database errors return 500.",
+    "privacy": "No SQL, bindings, password, exception message, stack or configuration values in public diagnostics. api_request_failed logs include correlation ID, category, route template, exception class and source location, with SQLSTATE/driver code for database failures; request bodies, full URLs, SQL and bindings are not logged by this handler."
   }
 }

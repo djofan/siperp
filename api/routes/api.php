@@ -30,6 +30,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::put('/auth/password', [SessionController::class, 'password'])->middleware('throttle:5,1');
     Route::get('/core/module-accounts', [ManagedAccountController::class, 'index']);
     Route::post('/core/module-accounts', [ManagedAccountController::class, 'store']);
+    Route::post('/core/module-accounts/{id}/password-reset', \App\Modules\Core\Http\Controllers\AccountPasswordResetController::class)->middleware('throttle:10,1');
     Route::get('/{module}/viewer', [ModuleSessionController::class, 'viewer'])->where('module', 'tanwir|ojol|academy|teknisi');
     Route::middleware('superadmin')->group(function (): void {
         Route::prefix('super/erp')->group(function () {
