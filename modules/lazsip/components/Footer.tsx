@@ -1,3 +1,4 @@
+import { ORGANIZATION_CONTACT } from "@/lib/organization-contact";
 import Link from "next/link";
 import { serviceLinks } from "./ServiceInfoPage";
 import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
@@ -47,9 +48,11 @@ export function Footer({
   whatsapp?: string;
 }) {
   const legalitasItems = legalitas ? Object.values(legalitas) : [];
-  const whatsappHref = whatsapp
-    ? `https://wa.me/${whatsapp}?text=${encodeURIComponent("Assalamu'alaikum, saya ingin bertanya seputar LAZSIP.")}`
-    : null;
+  const address = kontak.address?.trim() || ORGANIZATION_CONTACT.address;
+  const email = kontak.email?.trim() || ORGANIZATION_CONTACT.email;
+  const phone = kontak.phone?.trim() || ORGANIZATION_CONTACT.phone;
+  const whatsappNumber = whatsapp?.replace(/\D/g, "") || ORGANIZATION_CONTACT.phoneDigits;
+  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Assalamu'alaikum, saya ingin bertanya seputar LAZSIP.")}`;
   return (
     <footer className="relative overflow-hidden bg-lazsip-primary-900 text-white/70">
       <div
@@ -86,8 +89,8 @@ export function Footer({
         </div>
       </div>
 
-      <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.2fr_0.8fr_1fr_1.2fr]">
-        <div>
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-x-8 gap-y-9 px-4 pb-10 pt-6 sm:grid-cols-2 sm:px-6 lg:grid-cols-[1.1fr_0.7fr_1.3fr_1fr]">
+        <div className="min-w-0">
           <div className="flex items-center gap-2.5">
             <LazsipMark />
             <span className="text-lg font-semibold text-white">{lazsipSiteConfig.name}</span>
@@ -113,17 +116,20 @@ export function Footer({
           </ul>
         </div>
 
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-white/50">Kontak</h3>
+        <div className="min-w-0">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-white/60">Alamat kantor</h3>
+          <p className="mt-4 text-sm font-medium text-white">Solidaritas Insan Peduli</p>
+          <address className="mt-2 text-sm not-italic leading-7">{address}</address>
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-white/10 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-offset-4">
+            Lihat lokasi kantor <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+
+        <div className="min-w-0">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-white/60">Hubungi kami</h3>
           <ul className="mt-4 space-y-3 text-sm">
-            {kontak.address && <li className="leading-relaxed">{kontak.address}</li>}
-            {kontak.email && <li>{kontak.email}</li>}
-            {kontak.phone && <li>{kontak.phone}</li>}
-            {!kontak.address && !kontak.email && !kontak.phone && (
-              <li className="leading-relaxed text-white/60">
-                Layanan konsultasi zakat, infak, dan donasi tersedia setiap hari melalui WhatsApp.
-              </li>
-            )}
+            <li><span className="mb-1 block text-xs text-white/50">Email</span><a className="break-words transition-colors hover:text-white" href={`mailto:${email}`}>{email}</a></li>
+            <li><span className="mb-1 block text-xs text-white/50">Telepon</span><a className="transition-colors hover:text-white" href={`tel:${phone.replace(/[^\d+]/g, "")}`}>{phone}</a></li>
             {whatsappHref && (
               <li>
                 <a
@@ -144,9 +150,9 @@ export function Footer({
           </ul>
         </div>
 
-        <div>
+        <div className="sm:col-span-2 lg:col-span-4">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-white/50">Legalitas</h3>
-          <ul className="mt-4 space-y-2.5 text-sm">
+          <ul className="mt-3 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
             {legalitasItems.length > 0 ? (
               legalitasItems.map((item) => (
                 <li key={item} className="flex items-start gap-2">
