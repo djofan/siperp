@@ -23,6 +23,7 @@ class Journal
         $action = ['submit' => 'Pengajuan dikirim', 'screen_pass' => 'Menunggu review tahap 1',
             'review1_approve' => 'Disetujui untuk survei', 'assign_survey' => 'Anda mendapat tugas survei',
             'survey_submit' => 'Hasil survei menunggu review Call Center', 'approve' => 'Nominal bantuan ditetapkan',
+            'survey_review_withdraw' => 'Hasil survei dikembalikan ke pemeriksaan Call Center',
             'survey_review_save' => 'Draft koreksi survei disimpan',
             'survey_review_submit' => 'Hasil review survei menunggu keputusan',
             'survey_return' => 'Survei dikembalikan ke Verifikator untuk diperbaiki',

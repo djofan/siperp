@@ -22,6 +22,7 @@ class Workflow
         'survey_decline' => [['survey_assigned'], ['verifier'], 'survey_assignment'],
         'survey_review_save' => [['survey_cc_review'], ['call_center'], 'survey_cc_review'],
         'survey_review_submit' => [['survey_cc_review'], ['call_center'], 'survey_submitted'],
+        'survey_review_withdraw' => [['survey_submitted', 'review2'], ['call_center'], 'survey_cc_review'],
         'survey_return' => [['survey_cc_review'], ['call_center'], 'survey_assigned'],
         'survey_address' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center'], null],
         'survey_location' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center', 'verifier'], null],

@@ -1737,3 +1737,28 @@ it('preserves optional application notes for each intake source', function (stri
         ->assertJsonPath('data.applicant.applicationNotes', $payload['applicant']['applicationNotes']);
     expect(Application::findOrFail($id)->applicant['applicationNotes'])->toBe($payload['applicant']['applicationNotes']);
 })->with(['online', 'walk_in', 'bypass']);
+
+
+it('allows Call Center to withdraw and resubmit survey review without losing evidence', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['status' => 'survey_submitted', 'verifier_id' => $this->verifier->id, 'survey' => bantuanSurvey()])->save();
+    foreach (['ktp', 'kk', 'survey_recipient', 'survey_front', 'survey_inside', 'survey_inside', 'survey_environment'] as $kind) {
+        $doc = bantuanDoc($id, $kind);
+        DB::table('bantuan_documents')->where('id', $doc)->update(['used_at' => now()]);
+    }
+    $url = '/api/v1/bantuan/applications/'.$id.'/actions/';
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url.'survey_review_withdraw', ['version' => 1])->assertForbidden();
+    for ($version = 1; $version <= 3; $version += 2) {
+        $this->actingAs($this->cc, 'sanctum')->postJson($url.'survey_review_withdraw', ['version' => $version])
+            ->assertOk()->assertJsonPath('data.status', 'survey_cc_review');
+        $this->actingAs($this->approver, 'sanctum')->postJson($url.'approve', ['version' => $version, 'amount' => 100])->assertConflict();
+        $this->actingAs($this->cc, 'sanctum')->postJson($url.'survey_review_submit', ['version' => $version + 1])
+            ->assertOk()->assertJsonPath('data.status', 'survey_submitted');
+    }
+    expect(Application::findOrFail($id)->survey)->toBe(bantuanSurvey());
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->whereNull('deleted_at')->count())->toBe(7);
+    $this->actingAs($this->approver, 'sanctum')->postJson($url.'approve', ['version' => 5, 'amount' => 100])->assertOk();
+    $this->actingAs($this->cc, 'sanctum')->postJson($url.'survey_review_withdraw', ['version' => 5])->assertConflict();
+    $this->postJson($url.'survey_review_withdraw', ['version' => 6])->assertConflict();
+});
