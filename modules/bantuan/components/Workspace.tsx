@@ -1,9 +1,13 @@
 "use client";
+import { PwaPushControl } from "../pwa/PwaPushControl";
+import { PwaNotifications } from "../pwa/PwaNotifications";
+import { canManageOwnPasswordInModule } from "../permissions";
 import { ChangePassword } from "@/modules/core/ChangePassword";
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "./WorkspaceNavigation";
+import { useSearchParams } from "next/navigation";
+import { useWorkspaceRouter as useRouter } from "./WorkspaceNavigation";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { bantuanRoles, bantuanStatuses, bantuanActionLabels } from "@/contracts/modules/bantuan";
 import type { AidDashboard, AidDetail, AidNotification, AidPage, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
 import { day, money, request } from "../api/client";
@@ -47,7 +51,7 @@ export function Badge({ status }: { status: string }) {
   const tone=status==="completed"?s.green:status.startsWith("rejected")||["cancelled","delivery_failed"].includes(status)?s.red:["review1","survey_cc_review","survey_submitted","bypass_review","review2","fund_submitted"].includes(status)?s.amber:["survey_assigned","disbursed"].includes(status)?s.blue:"";
   return <span className={`${s.badge} ${tone}`}>{bantuanStatuses[status]??status}</span>;
 }
-export function Workspace({ route, initialViewer }: { route: string[]; initialViewer?: BantuanViewer }) {
+export function Workspace({ route, initialViewer, mobileApp=false }: { route: string[]; initialViewer?: BantuanViewer; mobileApp?:boolean }) {
   const router=useRouter(),key=route.join("/"),tab=route[0]??"",applicationId=route[1]??"";
   const searchParams=useSearchParams();
   const isNew=tab==="pengajuan"&&["baru","langsung"].includes(applicationId);
@@ -70,10 +74,35 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   const listRefreshing=loadedListKey!==listKey&&!error;
   const viewerId=viewer?.id,viewerRole=viewer?.role,viewerRoles=JSON.stringify(viewer?.roles??[]);
   const [menuQuery,setMenuQuery]=useState(""),[loggingOut,setLoggingOut]=useState(false);
+  const sidebarRef=useRef<HTMLElement>(null);
   const [batchSuccess,setBatchSuccess]=useState(false);
   const [amounts,setAmounts]=useState<Record<string,string>>({});
   // Refresh data in place. Unmounting detail would discard unsaved form values.
   const reload=useCallback(()=>{setError("");setRevision(v=>v+1);},[setError,setRevision]);
+  useEffect(()=>{
+    if(!mobileApp)return;
+    const open=()=>setMobile(true),pushed=()=>reload();
+    window.addEventListener("bantuan-open-menu",open);window.addEventListener("bantuan-push-received",pushed);
+    return()=>{window.removeEventListener("bantuan-open-menu",open);window.removeEventListener("bantuan-push-received",pushed);};
+  },[mobileApp,reload]);
+  useEffect(()=>{
+    if(!mobileApp||!mobile)return;
+    const previousFocus=document.activeElement as HTMLElement|null;
+    const focusable=()=>Array.from(sidebarRef.current?.querySelectorAll<HTMLElement>('a[href],button:not(:disabled),input:not(:disabled),[tabindex="0"]')??[]).filter(node=>node.getClientRects().length>0);
+    focusable()[0]?.focus();
+    const escape=(event:KeyboardEvent)=>{
+      if(document.querySelector('dialog[open]'))return;
+      if(event.key==="Escape"){event.preventDefault();setMobile(false);}
+      if(event.key==="Tab"){
+        const items=focusable(),first=items[0],last=items.at(-1);
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+      }
+    };
+    window.addEventListener("keydown",escape);
+    const previous=document.body.style.overflow;document.body.style.overflow="hidden";
+    return()=>{document.body.style.overflow=previous;window.removeEventListener("keydown",escape);if(previousFocus?.isConnected)previousFocus.focus();};
+  },[mobileApp,mobile]);
   const finishBatch=useCallback(()=>{setBatchSuccess(false);reload();},[reload]);
   useEffect(()=>{
     let live=true;const controller=new AbortController();
@@ -84,7 +113,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
     return()=>{live=false;controller.abort();};
   },[revision]);
   useEffect(()=>{
-    if(!viewerId||!viewerRole||isNew||menuGroups.some(group=>group.key===tab)||["akun","mustahiq","tim","pengaturan","audit","proses","santunan","pengajuan-dana",""].includes(tab))return;
+    if(!viewerId||!viewerRole||isNew||menuGroups.some(group=>group.key===tab)||["notifikasi","akun","mustahiq","tim","pengaturan","audit","proses","santunan","pengajuan-dana",""].includes(tab))return;
     let live=true;const controller=new AbortController();
     if(tab==="pengajuan"&&applicationId){
       void request<AidDetail>(`applications/${encodeURIComponent(applicationId)}`,{signal:controller.signal})
@@ -131,6 +160,7 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   async function logout(){
     setLoggingOut(true);
     try{
+      if(mobileApp){const {disablePwaPush}=await import("../pwa/push-client");await disablePwaPush().catch(()=>undefined);}
       const response=await fetch("/api/auth/logout",{method:"POST"});
       if(!response.ok)throw new Error("Belum berhasil keluar. Coba lagi.");
       if(viewer){try{await clearDrafts(viewer.id);}catch{}clearPhotoMemory(viewer.id);}
@@ -154,19 +184,20 @@ export function Workspace({ route, initialViewer }: { route: string[]; initialVi
   const batchOptions=viewer?[...(hasAnyRole(viewer,["admin","approver","chair"])?["approve"]:[]),...(hasAnyRole(viewer,["admin","fund_requester"])?["fund_submit","fund_approve","fund_reject"]:[]),...(hasAnyRole(viewer,["admin","treasurer"])&&tab!=="pencairan"?["disburse"]:[])]:[];
   const eligibleBatchOptions=batchOptions.filter(a=>selectedRows.every(r=>batchStates[a].includes(r.status)));
   const report=page?.summary;
-  return <div className={s.app}>
+  return <div className={`${s.app} ${mobileApp?s.mobileApp:""}`}>
     {batchSuccess&&<ProcessSuccess title="Proses massal berhasil" description="Seluruh pengajuan yang dipilih sudah diproses." onContinue={finishBatch}/>}
     {mobile&&<button className={s.mobileOverlay} aria-label="Tutup navigasi" onClick={()=>setMobile(false)}/>}
-    <aside className={s.sidebar} data-open={mobile}><Link href="/admin/bantuan" className={s.brand}><span className={s.brandLabel}>LAZSIP</span><strong>Pengajuan bantuan</strong></Link>
+    <aside id="bantuan-sidebar" ref={sidebarRef} role={mobileApp&&mobile?"dialog":undefined} aria-modal={mobileApp&&mobile?true:undefined} aria-label="Menu Bantuan" className={s.sidebar} data-open={mobile}>{mobileApp&&mobile&&<button type="button" className={s.button} onClick={()=>setMobile(false)}>Tutup semua menu</button>}<Link href="/admin/bantuan" className={s.brand}><span className={s.brandLabel}>LAZSIP</span><strong>Pengajuan bantuan</strong></Link>
       {viewer&&<SidebarMenu viewer={viewer} dashboard={dashboard} activeKey={tab==="akun"?"akun":sidebarActiveKey} onNavigate={()=>setMobile(false)}/>}
       <div className={s.sidebarHelp}><Icon name="shield"/><div><strong>Ruang kerja internal</strong><p>Data pribadi hanya untuk petugas berwenang.</p></div></div>
       <div className={s.sidebarFooter}><span className={s.avatar}>{viewer?.name.slice(0,2).toUpperCase()??"…"}</span><div style={{minWidth:0}}><strong style={{fontSize:12}}>{viewer?.name??"Memuat akun…"}</strong><div className={s.tiny}>{viewer?roleLabel(viewer):""}</div></div><button className={s.iconButton} aria-label="Keluar dari akun" title="Keluar" onClick={()=>void logout()} disabled={loggingOut}><Icon name="logout"/></button></div>
     </aside>
-    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{tab==="akun"?"Pengaturan akun":origin?.label??queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}><Link href="/bantuan-app/beranda" className={s.platformButton} title="Aplikasi mobile Bantuan"><Icon name="hand"/><span>Aplikasi mobile</span></Link>{viewer&&<><HelpButton viewer={viewer}/></>}{viewer&&(viewer.canChooseModules??hasRole(viewer,"admin"))&&<Link href="/admin/modul" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link>}<span className={s.pill}>Internal</span><button className={s.iconButton} aria-label={`Notifikasi, ${notifications.filter(n=>!n.read_at).length} belum dibaca`} aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.notificationCount}>{notifications.filter(n=>!n.read_at).length}</span>}</button><AccountMenu viewer={viewer} loggingOut={loggingOut} onLogout={()=>void logout()}/></div></header>
+    <div className={s.body}><header className={s.topbar}><div style={{display:"flex",gap:12,alignItems:"center"}}><button className={`${s.iconButton} ${s.menuButton}`} aria-label="Buka navigasi" onClick={()=>setMobile(true)}><Icon name="menu"/></button><div className={s.breadcrumb}><span>Workspace</span><span>/</span><strong>{tab==="akun"?"Pengaturan akun":origin?.label??queue?.label??activeLink?.label??"Pengajuan"}</strong></div></div><form className={s.menuSearch} onSubmit={e=>{e.preventDefault();const match=allLinks.find(l=>l.label.toLowerCase().includes(menuQuery.trim().toLowerCase()));if(menuQuery.trim()&&match){router.push("/admin/bantuan"+(match.key?"/"+match.key:""));setMenuQuery("");}else if(menuQuery.trim())setError("Menu belum ditemukan. Coba pilih nama menu dari saran pencarian.");}}><Icon name="search"/><input aria-label="Cari menu Bantuan" placeholder="Cari menu..." list="bantuan-menu-suggestions" value={menuQuery} onChange={e=>setMenuQuery(e.target.value)}/><datalist id="bantuan-menu-suggestions">{allLinks.map(link=><option key={link.key} value={link.label}/>)}</datalist></form><div className={s.topActions}>{!mobileApp&&<Link href="/bantuan-app/beranda" className={s.platformButton} title="Aplikasi mobile Bantuan"><Icon name="hand"/><span>Aplikasi mobile</span></Link>}{viewer&&<><HelpButton viewer={viewer}/></>}{viewer&&(viewer.canChooseModules??hasRole(viewer,"admin"))&&<Link href="/admin/modul" className={s.platformButton} title="Pilihan modul"><Icon name="grid"/><span>Pilihan modul</span></Link>}<span className={s.pill}>Internal</span><button className={s.iconButton} aria-label={`Notifikasi, ${notifications.filter(n=>!n.read_at).length} belum dibaca`} aria-expanded={showNotifications} onClick={()=>setShowNotifications(v=>!v)}><Icon name="bell"/>{notifications.some(n=>!n.read_at)&&<span className={s.notificationCount}>{notifications.filter(n=>!n.read_at).length}</span>}</button><AccountMenu viewer={viewer} loggingOut={loggingOut} onLogout={()=>void logout()}/></div></header>
     {showNotifications&&<section className={s.popover}><div className={s.cardHeader} style={{padding:"0 0 14px"}}><h2>Notifikasi</h2><button type="button" className={s.link} disabled={markingAll||!notifications.some(n=>!n.read_at)} onClick={()=>void markAllRead()}>{markingAll?"Menandai…":"Tandai semua dibaca"}</button><button className={s.link} onClick={()=>setShowNotifications(false)}>Tutup</button></div>{notifications.length?notifications.map(n=><button key={n.id} className={s.notification} onClick={()=>markRead(n)} style={{fontWeight:n.read_at?400:600}}>{n.message}<small>{day(n.created_at)}</small></button>):<p className={s.tiny}>Belum ada notifikasi baru.</p>}</section>}
-    <main className={s.main}>{error&&<div className={`${s.notice} ${s.error}`} role="alert"><span>{error}</span><button aria-label="Tutup pesan" onClick={()=>setError("")}>×</button></div>}
+    <main className={s.main}>{mobileApp&&viewer&&<PwaPushControl viewerId={viewer.id} showControls={tab==="akun"||tab==="notifikasi"}/>}
+    {error&&<div className={`${s.notice} ${s.error}`} role="alert"><span>{error}</span><button aria-label="Tutup pesan" onClick={()=>setError("")}>×</button></div>}
       {!viewer?loading?<LoadingState variant="detail" label="Menyiapkan ruang kerja…"/>:<div className={s.empty}><p>Akses modul belum tersedia. Pastikan Anda mendapat izin dari superadmin.</p><Link className={s.button} href="/admin">Kembali ke platform</Link></div>:
-      tab==="akun"?<section className={s.accountSettings}><div className={s.heading}><div><h1>Pengaturan akun</h1><p>Kelola keamanan akun Anda.</p></div></div><ChangePassword initiallyOpen/></section>:
+      tab==="notifikasi"&&mobileApp?<PwaNotifications viewer={viewer} onRead={reload} refreshKey={revision}/>:tab==="akun"?<section className={s.accountSettings}><div className={s.heading}><div><h1>Pengaturan akun</h1><p>Kelola keamanan akun Anda.</p></div></div>{canManageOwnPasswordInModule(viewer)?<ChangePassword initiallyOpen/>:<div><p>Pengaturan akun dikelola melalui dashboard platform sesuai hak akses Anda.</p><a className={s.button} href="/admin/pengaturan-akun">Buka pengaturan akun platform</a></div>}{mobileApp&&<p>Pasang aplikasi melalui menu browser → Tambahkan ke layar utama. Seluruh menu tersedia melalui tombol Semua menu sesuai hak akses akun.</p>}</section>:
       tab==="pengajuan-dana"?<FundingRequests viewer={viewer} onChanged={reload}/>:
       isNew?canCreate?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} direct={applicationId==="langsung"}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
       isDetail?!detail&&!error?<LoadingState variant="detail" label="Memuat detail pengajuan…"/>:detail?isEdit?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} initial={detail}/>:<Detail origin={origin} key={`${detail.id}:${detail.status}`} row={detail} viewer={viewer} staff={staff} reload={reload}/>:<div className={s.empty}><h3>Pengajuan belum dapat dimuat</h3><button type="button" className={s.button} onClick={reload}>Coba lagi</button></div>:

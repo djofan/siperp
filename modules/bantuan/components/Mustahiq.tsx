@@ -1,5 +1,5 @@
 "use client";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { ArrowUpRight, MapPin, Phone, BadgeCheck, Clock3, IdCard } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { AidValues } from "@/contracts/modules/bantuan";

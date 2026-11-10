@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useWorkspaceRouter as useRouter } from "./WorkspaceNavigation";
 import { Trash2 } from "lucide-react";
 import { Button, Dialog } from "./ui";
 import { request } from "../api/client";

@@ -231,3 +231,8 @@
 
 /* Keep the mobile header in one row; secondary tools live in the account menu. */
 @media(max-width:760px){.app .topbar{display:flex;flex-wrap:nowrap;gap:8px;padding:10px 12px}.app .topbar>div:first-child{flex:1;min-width:0;gap:6px!important}.app .topbar .breadcrumb{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.app .topbar .breadcrumb>span{display:none}.app .topbar .breadcrumb strong{font-size:13px}.app .topbar .topActions{flex:0 0 auto;width:auto;flex-wrap:nowrap;gap:4px}.app .topActions>.platformButton,.app .topActions>.pill,.app .topActions>button[aria-label="Buka panduan penggunaan"]{display:none}.app .topbar .iconButton{flex-shrink:0;width:44px;height:44px}}
+
+/* The same dashboard runs inside the installed PWA, with space for safe-area navigation. */
+.app.mobileApp .main{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.app.mobileApp .sidebar{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+@media(max-width:760px){.app.mobileApp .main{padding:16px 12px calc(100px + env(safe-area-inset-bottom))}.app.mobileApp .heading h1{font-size:24px}.app.mobileApp .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}.app.mobileApp .topbar{position:sticky;top:0;z-index:20}.app.mobileApp .popover{max-width:calc(100vw - 24px);max-height:70dvh;overflow:auto}}

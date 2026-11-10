@@ -1,5 +1,5 @@
 /* Cache only the public offline page and icons. Authenticated HTML, API and photos always use network. */
-const CACHE = "bantuan-pwa-shell-v2";
+const CACHE = "bantuan-pwa-shell-dashboard-v1";
 const OFFLINE = "/bantuan-app/offline.html";
 const PUBLIC_FILES = [OFFLINE,"/bantuan-app/icon-192.png","/bantuan-app/icon-512.png","/bantuan-app/icon-maskable.png"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PUBLIC_FILES)));});

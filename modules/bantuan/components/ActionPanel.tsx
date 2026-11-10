@@ -1,7 +1,7 @@
 "use client";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { rolesOf } from "../permissions";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";

@@ -1,5 +1,6 @@
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
-import { hasAnyRole } from "../permissions";
+import { canViewRoute, homeByRole } from "../policy";
+import { hasAnyRole,rolesOf } from "../permissions";
 
 export const pwaRoot = "/bantuan-app";
 export const pwaHome = `${pwaRoot}/beranda`;
@@ -36,6 +37,7 @@ export function pwaTabs(viewer:BantuanViewer): {key:PwaTab;label:string}[] {
 }
 export function validPwaRoute(path:string[],viewer:BantuanViewer) {
   if(!path.length)return true;
+  if(path[0]==="workspace")return path.length>1&&path.slice(1).every(segment=>/^[a-zA-Z0-9_-]{1,80}$/.test(segment))&&(path[1]==="akun"&&path.length===2||canViewRoute(viewer,path.slice(1)));
   if(!pwaTabs(viewer).some(tab=>tab.key===path[0]))return false;
   return path.length===1 || path[0]==="tugas"&&path.length===2&&/^[a-zA-Z0-9_-]{1,80}$/.test(path[1]);
 }
@@ -62,4 +64,15 @@ export function taskQuery(viewer:BantuanViewer,kind:TaskKind,page:number,search:
     if(!hasAnyRole(viewer,["admin","call_center","treasurer"]))query.set("distributorId","me");
   }
   return query.toString();
+}
+
+
+export function pwaWorkspaceRoute(path:string[],viewer:BantuanViewer):string[]{
+  if(path[0]==="workspace")return path.slice(1);
+  if(path[0]==="beranda")return rolesOf(viewer).length>1?[]:[homeByRole[viewer.role]??""].filter(Boolean);
+  if(path[0]==="tugas")return path[1]?["pengajuan",path[1]]:navigationTaskRoute(viewer);
+  return path;
+}
+function navigationTaskRoute(viewer:BantuanViewer):string[]{
+  return canViewRoute(viewer,["proses"])?["proses"]:canViewRoute(viewer,["pengajuan"])?["pengajuan"]:[homeByRole[viewer.role]??""].filter(Boolean);
 }
