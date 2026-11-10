@@ -10,7 +10,7 @@ export const bantuanActionLabels: Record<string, string> = {
   screen_pass: "Lolos review Call Center", screen_reject: "Ditolak Call Center", request_data: "Diminta melengkapi data",
   review1_approve: "Disetujui untuk survei", review1_reject: "Ditolak pada review tahap 1",
   assign_survey: "Verifikator ditugaskan", survey_save: "Draft survei disimpan", survey_submit: "Survei dikirim",
-  survey_review_save: "Koreksi survei disimpan Call Center", survey_review_submit: "Hasil survei diteruskan ke Approver", survey_return: "Hasil survei dikembalikan", survey_decline: "Penugasan survei ditolak", survey_location: "Titik alamat survei diperbarui",
+  survey_review_withdraw: "Hasil survei dikembalikan ke pemeriksaan Call Center", survey_review_save: "Koreksi survei disimpan Call Center", survey_review_submit: "Hasil survei diteruskan ke Approver", survey_return: "Hasil survei dikembalikan", survey_decline: "Penugasan survei ditolak", survey_location: "Titik alamat survei diperbarui",
   approve: "Nominal bantuan ditetapkan", review_reject: "Pengajuan ditolak", survey_again: "Diminta survei ulang",
   assign_distributor: "Penyalur ditetapkan", fund_submit: "Dana ditandai diajukan", fund_approve: "Dana ditandai disetujui",
   fund_reject: "Dana ditolak, kembali ke penyetuju", disburse: "Pencairan dicatat", handover: "Bantuan selesai diserahkan",
@@ -38,7 +38,9 @@ export const documentLabels: Record<string, string> = {
 export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; surveyReminderDays?: number; closingText: string }
 export interface BantuanViewer { id: string; name: string; code?: string; role: string; roles?: string[]; canChooseModules?: boolean; canBypass: boolean; settings: BantuanSettings }
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
+export interface ManualActor { actorId?:string|null; name:string; phone?:string|null; channel:string; date:string; note:string; recordedBy?:string; recordedByName?:string; recordedAt?:string }
 export interface AidApplication {
+  manualVerifierName?:string|null; manualDistributorName?:string|null;
   shortLocation?: string;
   rejectionReason?: string | null;
   id: string; number: string; name: string; status: string; program: string; region: string; source: string; createdBy: string; intakeRole?: string | null;
@@ -49,6 +51,7 @@ export interface AidDependent { name:string; relationship:string; gender:string;
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
 export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
 export interface AidDetail extends AidApplication {
+  manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string}}|null;
   surveyDeadline?:{assignedAt:string;dueAt:string;days:number;overdue:boolean}|null;
   surveyLocation?: { address?: string; latitude?: number; longitude?: number } | null;
   fundingRequest?: { id:string; number:string } | null;
@@ -57,7 +60,7 @@ export interface AidDetail extends AidApplication {
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
   duplicateApplications: AidApplicantHistory[];
   documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null; location?:PhotoLocation|null }[];
-  events: { id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
+  events: { manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {

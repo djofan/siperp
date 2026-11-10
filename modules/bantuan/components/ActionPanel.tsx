@@ -1,4 +1,5 @@
 "use client";
+import { ManualProcessPanel } from "./ManualProcessPanel";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
 import Link from "./WorkspaceNavigation";
@@ -39,6 +40,7 @@ const actions: Action[] = [
   {key:"assign_survey",label:"Tugaskan / ganti Verifikator",states:["survey_assignment","survey_assigned"],roles:["call_center"]},
   {key:"survey_decline",label:"Tolak tugas survei",states:["survey_assigned"],roles:["verifier"],danger:true},
   {key:"survey_review_submit",label:"Review & kirim hasil ke Approver",states:["survey_cc_review"],roles:["call_center"]},
+  {key:"survey_review_withdraw",label:"Kembalikan ke pemeriksaan Call Center",states:["survey_submitted","review2"],roles:["call_center"]},
   {key:"survey_return",label:"Kembalikan ke Verifikator",states:["survey_cc_review"],roles:["call_center"]},
   {key:"survey_submit",label:"Isi / lanjutkan survei",states:["survey_assigned"],roles:["verifier"]},
   {key:"approve",label:"Setujui & tetapkan nominal",states:["survey_submitted","review2","bypass_review"],roles:["approver","chair"]},
@@ -135,6 +137,7 @@ const actionHelp:Record<string,string>={
   survey_submit:"Lengkapi hasil kunjungan dan foto wajib. Hasil dikirim untuk diperiksa Call Center. Jika Anda juga Call Center, Anda dapat memeriksanya sendiri lalu mengirim ke Approver.",
   survey_decline:"Tulis alasan tidak dapat menjalankan survei. Call Center akan menerima pemberitahuan dan menugaskan petugas lain.",
   survey_review_submit:"Periksa dan koreksi hasil survei serta data pemohon. Kirim setelah lengkap agar Approver dapat meninjau keputusan nominal.",
+  survey_review_withdraw:"Kembalikan hasil survei ke pemeriksaan Call Center? Data dan foto tetap tersimpan. Call Center dapat memeriksa ulang lalu mengirimkannya kembali. Hanya tersedia sebelum keputusan Approver.",
   survey_return:"Jelaskan bagian survei yang perlu dilengkapi. Hasilnya dikembalikan kepada Verifikator yang ditugaskan.",
   approve:"Tetapkan nominal bantuan berdasarkan hasil survei dan kebutuhan pemohon.",
   review_reject:"Jelaskan alasan pengajuan tidak dilanjutkan. Periksa kembali sebelum mengonfirmasi.",
@@ -154,6 +157,7 @@ const confirmLabels:Record<string,string>={
   submit:"Kirim pengajuan",screen_pass:"Teruskan ke Approver",screen_reject:"Ya, tolak pengajuan",
   request_data:"Kirim permintaan perbaikan",review1_approve:"Ya, setujui untuk survei",review1_reject:"Ya, tolak pengajuan",
   survey_decline:"Tolak tugas & beri tahu Call Center",survey_review_submit:"Kirim ke Approver",survey_return:"Kembalikan untuk diperbaiki",
+  survey_review_withdraw:"Konfirmasi pemeriksaan kembali",
   assign_survey:"Simpan penugasan",survey_submit:"Kirim hasil survei",approve:"Tetapkan nominal bantuan",
   review_reject:"Ya, tolak pengajuan",survey_again:"Minta survei ulang",assign_distributor:"Simpan penyalur",
   fund_submit:"Tandai dana diajukan",fund_approve:"Konfirmasi dana disetujui",fund_reject:"Tandai dana ditolak",
@@ -168,6 +172,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   const [returnPhotosReady,setReturnPhotosReady]=useState(false);
   const onReturnPhotosReady=useCallback((ready:boolean)=>setReturnPhotosReady(ready),[]);
   const [commentError,setCommentError]=useState("");
+  const [manualOpen,setManualOpen]=useState(false);
   const [success,setSuccess]=useState(""),[savedNotice,setSavedNotice]=useState("");
   const [surveyPhotosReady,setSurveyPhotosReady]=useState(false),[missingSurveyPhotos,setMissingSurveyPhotos]=useState<string[]>([]);
   const [handoverPhotosReady,setHandoverPhotosReady]=useState(false),[missingHandoverPhotos,setMissingHandoverPhotos]=useState<string[]>([]);
@@ -264,6 +269,8 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   if(assignedRow)return <div className={s.assignmentComplete}><SurveyReminder key={assignedRow.version} row={assignedRow} viewer={viewer} assignment/><div className={s.assignmentFooter}><span>Penugasan sudah tersimpan. Anda dapat melanjutkan pekerjaan lainnya.</span><Link className={`${s.button} ${s.secondary}`} href="/admin/bantuan/proses">Kembali ke pekerjaan saya</Link></div></div>;
   if(success)return <ProcessSuccess title="Berhasil disimpan" description={`${success}. Perubahan pengajuan ${row.number} sudah tersimpan.`}/>;
   return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>{rolesOf(viewer).every(role=>role==="observer")?"Akses baca saja. Sampaikan catatan atau pertanyaan untuk tim tanpa mengubah pengajuan.":"Keputusan dicatat beserta petugas dan waktunya."}</p></div></div><div className={s.cardBody}>
+    <ManualProcessPanel row={row} viewer={viewer} staff={staff} reload={reload} onOpenChange={setManualOpen}/>
+    <div hidden={manualOpen}>
     {row.fundingRequest&&<div className={s.notice}><strong>Termasuk kartu dana {row.fundingRequest.number}</strong><p>Keputusan dana dicatat dari kartu agar seluruh bantuan dalam kartu tetap konsisten.</p>{rolesOf(viewer).some(role=>["admin","fund_requester","treasurer","chair"].includes(role))&&<Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buka kartu pengajuan dana →</Link>}</div>}
     {row.status==="fund_ready"&&rolesOf(viewer).some(role=>["admin","fund_requester"].includes(role))&&<div className={s.notice}><strong>Ajukan bersama bantuan lainnya</strong><p>Buka Pengajuan dana, buat kartu, lalu centang bantuan yang ingin diajukan. Total nominal dihitung otomatis.</p><Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buat kartu pengajuan dana →</Link></div>}
     {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}
@@ -315,6 +322,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
       {commentError&&<p role="alert" className={s.fieldError}>{commentError}</p>}
       <div><button type="submit" className={`${s.button} ${s.secondary}`} disabled={busy}>{busy?"Menyimpan…":"Simpan catatan"}</button></div>
     </form>
+    </div>
   </div></section>;
 }
 

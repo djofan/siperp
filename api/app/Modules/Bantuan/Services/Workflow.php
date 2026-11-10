@@ -22,6 +22,7 @@ class Workflow
         'survey_decline' => [['survey_assigned'], ['verifier'], 'survey_assignment'],
         'survey_review_save' => [['survey_cc_review'], ['call_center'], 'survey_cc_review'],
         'survey_review_submit' => [['survey_cc_review'], ['call_center'], 'survey_submitted'],
+        'survey_review_withdraw' => [['survey_submitted', 'review2'], ['call_center'], 'survey_cc_review'],
         'survey_return' => [['survey_cc_review'], ['call_center'], 'survey_assigned'],
         'survey_address' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center'], null],
         'survey_location' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center', 'verifier'], null],
@@ -41,16 +42,17 @@ class Workflow
         'comment' => [[], ['call_center', 'approver', 'chair', 'verifier', 'fund_requester', 'treasurer', 'requester', 'observer', 'survey_approver'], null],
     ];
 
-    public function perform(Request $request, string $id, string $action): Application
+    public function perform(Request $request, string $id, string $action, ?array $manual = null): Application
     {
         abort_unless(isset(self::RULES[$action]), 404);
+        if ($manual !== null) { app(Access::class)->allow($request, ['call_center']); abort_unless(isset(ManualProcesses::ROLES[$action]), 422); }
         $input = $request->validate(['version' => 'required|integer|min:1']);
 
-        return DB::transaction(function () use ($request, $id, $action, $input) {
+        return DB::transaction(function () use ($request, $id, $action, $input, $manual) {
             $access = app(Access::class);
             $row = $access->find($request, $id, true);
             [$states, $roles, $next] = self::RULES[$action];
-            $access->allow($request, $roles);
+            $access->allow($request, $manual !== null ? ['call_center'] : $roles);
             abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang sebelum melanjutkan.');
             abort_unless(! $states || in_array($row->status, $states, true), 409, 'Tindakan tidak sesuai tahap pengajuan.');
             $from = $row->status;
@@ -66,7 +68,8 @@ class Workflow
                     ...($own && in_array($row->status, ['draft', 'needs_data', 'screening'], true) ? ['requester'] : [])],
                 default => $roles,
             };
-            $role = $access->allow($request, $roles);
+            $role = $access->allow($request, $manual !== null ? ['call_center'] : $roles);
+            if ($manual !== null) $role = 'admin'; // Authorization above; executor identity is never changed.
             FundingRequests::guardIndividualAction($request, $row, $action);
             if ($action === 'cancel' && $role === 'verifier') {
                 abort_unless($row->created_by === $request->user()->id && in_array($row->status, ['draft', 'needs_data'], true), 403, 'Hanya draft pengajuan sendiri yang dapat dibatalkan.');
@@ -115,14 +118,16 @@ class Workflow
                 $next = $this->intakeStage($row);
             }
             if ($action === 'assign_survey') {
-                $assignment = $request->validate(['verifierId' => 'required|string', 'surveyAddress' => 'required|string|min:10|max:1000']);
-                $verifier = $assignment['verifierId'];
-                $address = trim($assignment['surveyAddress']);
+                $address = trim($request->validate(['surveyAddress' => 'required|string|min:10|max:1000'])['surveyAddress']);
                 abort_if(mb_strlen($address) < 10, 422, 'Lengkapi alamat survei minimal 10 karakter.');
                 $reason = $request->validate(['reason' => 'sometimes|nullable|string|min:5|max:5000'])['reason'] ?? null;
-                abort_unless($access->assigned($verifier, 'verifier'), 422, 'Pilih Verifikator aktif dari modul ini.');
+                $verifier = $manual !== null ? ($manual['actorId'] ?? null) : $request->validate(['verifierId' => 'required|string'])['verifierId'];
+                if ($verifier) abort_unless($access->assigned($verifier, 'verifier'), 422, 'Pilih Verifikator aktif dari modul ini.');
                 $row->verifier_id = $verifier;
-                // A new address invalidates the old pin, but never changes the applicant's home address.
+                $meta = $row->manual_process ?? [];
+                if ($manual !== null) $meta['verifier'] = $manual;
+                else unset($meta['verifier'], $meta['distributor']);
+                $row->manual_process = $meta;
                 if (($row->survey_location['address'] ?? null) !== $address) $row->survey_location = ['address' => $address];
             }
             if ($action === 'survey_decline') {
@@ -139,7 +144,7 @@ class Workflow
                 $row->survey_location = array_replace($row->survey_location ?? [], $location);
             }
             if ($action === 'survey_return') {
-                abort_unless($row->verifier_id && $access->assigned($row->verifier_id, 'verifier'), 422, 'Verifikator penugasan harus masih aktif.');
+                abort_unless(($row->verifier_id && $access->assigned($row->verifier_id, 'verifier')) || ($manual !== null && !empty($row->manual_process['verifier'])), 422, 'Verifikator penugasan harus masih aktif.');
             }
             if (in_array($action, ['survey_save', 'survey_submit', 'survey_review_save', 'survey_review_submit'], true)) {
                 $review = in_array($action, ['survey_review_save', 'survey_review_submit'], true);
@@ -202,6 +207,10 @@ class Workflow
                     $row->distribution_type = 'verifier';
                     $next = 'fund_ready';
                 }
+                if (!$row->verifier_id && !empty($row->manual_process['verifier'])) {
+                    $row->manual_process = array_replace($row->manual_process, ['distributor' => $row->manual_process['verifier']]);
+                    $row->distribution_type = 'manual'; $row->distributor_id = null; $next = 'fund_ready';
+                }
                 // Bypass without a survey still needs an explicit accountable distributor.
             }
             if ($action === 'review_reject' && $from === 'bypass_review') {
@@ -219,7 +228,14 @@ class Workflow
                 $row->disbursed_at = null;
                 $row->completed_at = null;
             }
-            if ($action === 'assign_distributor') {
+            if ($action === 'assign_distributor' && $manual !== null) {
+                abort_if($from === 'disbursed', 409, 'Catat pengembalian dana sebelum mengganti penyalur.');
+                $row->distributor_id = $manual['actorId'] ?? null;
+                $row->distribution_type = $row->distributor_id ? 'verifier' : 'manual';
+                $row->manual_process = array_replace($row->manual_process ?? [], ['distributor' => $manual]);
+                $next = $from === 'approved' ? 'fund_ready' : $from;
+            }
+            if ($action === 'assign_distributor' && $manual === null) {
                 $input = $request->validate(['distributionType' => ['required', Rule::in($row->source === 'bypass' ? ['verifier', 'direct'] : ['verifier'])], 'distributorId' => 'nullable|string']);
                 $old = $row->distributor_id;
                 if ($input['distributionType'] === 'verifier') {
@@ -267,6 +283,26 @@ class Workflow
                 $row->handover = $handover;
                 $row->completed_at = $handover['date'];
             }
+            if ($manual !== null) {
+                $meta = $row->manual_process ?? [];
+                $meta['last'] = ['action' => $action, ...$manual];
+                if (in_array($action, ['survey_save', 'survey_submit'], true)) {
+                    $assigned = $meta['verifier'] ?? null;
+                    if ($row->verifier_id) abort_unless(($manual['actorId'] ?? null) === $row->verifier_id, 422, 'Pelaksana harus sesuai Verifikator yang ditugaskan.');
+                    elseif ($assigned) abort_unless($manual['name'] === $assigned['name'], 422, 'Nama pelaksana harus sesuai penugasan survei.');
+                    else abort(422, 'Catat penugasan Verifikator terlebih dahulu.');
+                    $meta['verifier'] = $manual;
+                }
+                if ($action === 'handover') {
+                    if ($row->distributor_id) abort_unless(($manual['actorId'] ?? null) === $row->distributor_id, 422, 'Pelaksana harus sesuai penyalur yang ditugaskan.');
+                    elseif (!empty($meta['distributor'])) abort_unless($manual['name'] === $meta['distributor']['name'], 422, 'Nama pelaksana harus sesuai penyalur yang ditugaskan.');
+                    else abort(422, 'Tentukan penyalur sebelum mencatat penyerahan.');
+                }
+                if ($action === 'disburse') abort_unless($transfer['transferDate'] === $manual['date'], 422, 'Tanggal pelaksanaan dan transfer harus sama.');
+                if ($action === 'handover') abort_unless($handover['date'] === $manual['date'], 422, 'Tanggal pelaksanaan dan penyerahan harus sama.');
+                if ($action === 'survey_submit') abort_unless($row->survey['date'] === $manual['date'], 422, 'Tanggal pelaksanaan dan survei harus sama.');
+                $row->manual_process = $meta;
+            }
             $before = $row->getOriginal();
             $row->status = $next ?? $from;
             $row->version++;
@@ -280,7 +316,7 @@ class Workflow
                     'updated_by' => $request->user()->id, 'version' => ($profile->version ?? 0) + 1])->save();
                 app(Journal::class)->record($request, $row, 'sync_mustahiq', $from, ['before' => $oldProfile, 'after' => $row->applicant]);
             }
-            $details = ['reason' => $reason, 'amount' => $row->amount, 'verifierId' => $row->verifier_id, 'distributorId' => $row->distributor_id,
+            $details = ['manual' => $manual, 'reason' => $reason, 'amount' => $row->amount, 'verifierId' => $row->verifier_id, 'distributorId' => $row->distributor_id,
                 'surveyLocation' => $row->survey_location, 'previousSurveyLocation' => $before['survey_location'] ?? null,
                 'previousVerifierId' => $before['verifier_id'] ?? null, 'previousDistributorId' => $before['distributor_id'] ?? null,
                 'previousDistributionType' => $before['distribution_type'] ?? null, 'distributionType' => $row->distribution_type,

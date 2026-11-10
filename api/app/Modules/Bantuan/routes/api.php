@@ -20,6 +20,7 @@ Route::get('funding-requests/ready', [FundingRequestController::class, 'ready'])
 Route::get('funding-requests', [FundingRequestController::class, 'index']);
 Route::post('funding-requests', [FundingRequestController::class, 'store']);
 Route::get('funding-requests/{id}', [FundingRequestController::class, 'show']);
+Route::post('funding-requests/{id}/manual-decision', [FundingRequestController::class, 'manualDecision']);
 Route::post('funding-requests/{id}/decision', [FundingRequestController::class, 'decide']);
 
 Route::get('viewer', [C::class, 'viewer']);
@@ -37,6 +38,7 @@ Route::post('applications/{id}/locations', [SurveyLocationController::class, 'se
 Route::post('applications/{id}/route', [SurveyLocationController::class, 'route'])->middleware('throttle:20,1');
 Route::put('applications/{id}', [C::class, 'update']);
 Route::delete('applications/{id}', [C::class, 'destroy']);
+Route::post('applications/{id}/manual-processes', [C::class, 'manualProcess']);
 Route::post('applications/{id}/actions/{action}', [C::class, 'action']);
 Route::post('applications/{id}/documents', [C::class, 'document'])->middleware('throttle:60,1');
 Route::get('documents/{id}', [C::class, 'download']);

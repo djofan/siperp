@@ -18,11 +18,12 @@ export function ApplicationFilters({filters,onChange,viewer,staff,programs,regio
   const personOptions=(role?:string)=>staff.filter(person=>!role||(person.roles??[person.role]).includes(role));
   return <div className={s.tools}>
     <div className={s.quickFilters}>
-      <label className={s.search}><Search size={17}/><input type="search" maxLength={191} aria-label="Cari pengajuan" placeholder="Cari nama atau nomor pengajuan…" value={filters.search} onChange={e=>update("search",e.target.value)}/></label>
+      <label className={s.search}><Search size={17}/><input type="search" maxLength={191} aria-label="Cari pengajuan" placeholder="Cari nama, alamat, nomor pengajuan, atau petugas…" aria-describedby="application-search-hint" value={filters.search} onChange={e=>update("search",e.target.value)}/></label>
       <label className={s.quickSelect}><span>Status pengajuan</span><select aria-label="Filter status" value={filters.status} onChange={e=>update("status",e.target.value)}><option value="">{states.length?"Semua pada tahap ini":"Semua status"}</option>{Object.entries(bantuanStatuses).filter(([key])=>!states.length||states.includes(key)).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
       <label className={s.quickSelect}><span>Program bantuan</span><select aria-label="Filter program" value={filters.program} onChange={e=>update("program",e.target.value)}><option value="">Semua program</option>{programs.map(program=><option key={program}>{program}</option>)}</select></label>
       <button type="button" className={`${s.filterButton} ${expanded?s.filterOpen:""}`} aria-expanded={expanded} aria-controls="application-advanced-filters" onClick={()=>{if(!expanded){setDraft(filters);setError("");}setExpanded(current=>!current);}}><SlidersHorizontal size={16}/>Filter lainnya{advancedCount>0&&<b>{advancedCount}</b>}</button>
     </div>
+    <p id="application-search-hint" className={s.searchHint}>Cari dengan beberapa kata, misalnya “Cibinong kesehatan”. Mendukung nama, alamat, nomor pengajuan, program, wilayah, petugas, status, nominal, dan nomor HP sesuai akses akun.</p>
     {expanded&&<form id="application-advanced-filters" className={s.advanced} onSubmit={apply}>
       <div className={s.advancedHeading}><div><h3>Persempit pencarian pengajuan</h3><p>Kombinasikan filter sesuai kebutuhan. Hasil tetap mengikuti menu dan akses akun Anda.</p></div><button type="button" className={s.iconButton} aria-label="Tutup filter lanjutan" onClick={()=>setExpanded(false)}><X size={17}/></button></div>
       <div className={s.filterColumns}>
@@ -35,7 +36,7 @@ export function ApplicationFilters({filters,onChange,viewer,staff,programs,regio
         </fieldset>
         <fieldset><legend><UsersRound size={16}/>Petugas & penyaluran</legend>
           {([{key:"verifierId",label:"Verifikator survei",role:"verifier"},{key:"distributorId",label:"Penyalur bantuan",role:"verifier"},{key:"createdBy",label:"Pembuat pengajuan",role:undefined}] as const).map(item=><label key={item.key}>{item.label}<select value={draft[item.key]} onChange={e=>field(item.key,e.target.value)}><option value="">Semua petugas</option><option value="me">Saya sendiri</option>{item.key!=="createdBy"&&<option value="unassigned">Belum ditugaskan</option>}{personOptions(item.role).map(person=><option key={person.id} value={person.id}>{person.name}</option>)}</select></label>)}
-          <label>Jalur penyaluran<select value={draft.distributionType} onChange={e=>field("distributionType",e.target.value)}><option value="">Semua jalur</option><option value="verifier">Melalui verifikator</option><option value="direct">Bendahara langsung</option></select></label>
+          <label>Jalur penyaluran<select value={draft.distributionType} onChange={e=>field("distributionType",e.target.value)}><option value="">Semua jalur</option><option value="verifier">Melalui verifikator</option><option value="direct">Bendahara langsung</option><option value="manual">Penyalur tanpa akun</option></select></label>
         </fieldset>
         <fieldset><legend><Wallet size={16}/>Nominal & tindak lanjut</legend>
           <label>Penetapan nominal<select value={draft.amountState} onChange={e=>field("amountState",e.target.value)}><option value="">Semua nominal</option><option value="set">Sudah ditetapkan</option><option value="unset">Belum ditetapkan</option></select></label>

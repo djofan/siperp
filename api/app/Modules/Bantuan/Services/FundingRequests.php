@@ -28,7 +28,7 @@ class FundingRequests
 
     public function visible(Request $request)
     {
-        abort_unless($this->access->has($request, ['admin', 'fund_requester', 'treasurer', 'chair', 'observer']), 403);
+        abort_unless($this->access->has($request, ['admin', 'fund_requester', 'treasurer', 'chair', 'observer', 'call_center']), 403);
         $visible = $this->access->scope(Application::query(), $request)->select('id');
 
         // A card is visible only when every member is in the caller's application scope.
@@ -74,9 +74,9 @@ class FundingRequests
         }, 3);
     }
 
-    public function decide(Request $request, string $id): FundingRequest
+    public function decide(Request $request, string $id, ?array $manual = null): FundingRequest
     {
-        $this->access->allow($request, ['fund_requester']);
+        $this->access->allow($request, $manual !== null ? ['call_center'] : ['fund_requester']);
         $data = $request->validate([
             'version' => 'required|integer|min:1', 'decision' => 'required|in:approved,rejected',
             'reason' => 'required_if:decision,rejected|nullable|string|min:5|max:5000',
@@ -84,7 +84,7 @@ class FundingRequests
             'items.*.id' => 'required|uuid|distinct', 'items.*.version' => 'required|integer|min:1',
         ]);
 
-        return DB::transaction(function () use ($request, $id, $data) {
+        return DB::transaction(function () use ($request, $id, $data, $manual) {
             $batch = $this->visible($request)->lockForUpdate()->findOrFail($id);
             abort_unless($batch->version === $data['version'] && $batch->status === 'submitted', 409,
                 'Kartu dana sudah berubah atau sudah diputuskan. Muat ulang data.');
@@ -97,7 +97,7 @@ class FundingRequests
             }
             foreach ($rows as $row) {
                 $updated = $this->transition($request, $row, $data['decision'] === 'approved' ? 'fund_approve' : 'fund_reject',
-                    ['reason' => $data['reason'] ?? null], $batch->id);
+                    ['reason' => $data['reason'] ?? null], $batch->id, $manual);
                 // Snapshot fields never change, including when a rejected application is submitted again.
                 $items[$row->id]->forceFill(['active_application_id' => null, 'decision_version' => $updated->version])->save();
             }
@@ -125,7 +125,7 @@ class FundingRequests
         return $rows;
     }
 
-    private function transition(Request $request, Application $row, string $action, array $extra, ?string $batchId = null): Application
+    private function transition(Request $request, Application $row, string $action, array $extra, ?string $batchId = null, ?array $manual = null): Application
     {
         $step = clone $request;
         $input = ['version' => $row->version, ...$extra];
@@ -133,7 +133,7 @@ class FundingRequests
         $step->request = new InputBag($input);
         $step->attributes->set('bantuan_funding_request_id', $batchId);
 
-        return $this->workflow->perform($step, $row->id, $action);
+        return $this->workflow->perform($step, $row->id, $action, $manual);
     }
 
     public static function descriptionFields(Application $row): array
@@ -162,8 +162,8 @@ class FundingRequests
                 'submittedVersion' => $item->submitted_version, 'decisionVersion' => $item->decision_version,
                 'version' => $item->application->version, 'status' => $item->application->status,
                 'currentAmount' => $item->application->amount,
-                'distributorName' => $item->application->distribution_type === 'direct' ? 'Bendahara langsung'
-                    : ($distributors[$item->application->distributor_id] ?? 'Belum ditetapkan'),
+                'distributorName' => $item->application->manual_process['distributor']['name'] ?? ($item->application->distribution_type === 'direct' ? 'Bendahara langsung'
+                    : ($distributors[$item->application->distributor_id] ?? 'Belum ditetapkan')),
                 ...self::descriptionFields($item->application),
             ])->values(),
         ];

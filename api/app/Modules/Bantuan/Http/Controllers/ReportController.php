@@ -17,8 +17,8 @@ class ReportController
     'province'=>$a['province']??'','city'=>$a['city']??'','district'=>$a['district']??'','village'=>$a['village']??'',
     'program'=>$r->program,'source'=>$r->source,'status'=>$r->status,'problem'=>$a['problem']??'','needs'=>$survey['needs']??$a['bypassNeeds']??'',
     'job'=>$a['job']??'','income'=>$a['income']??null,'incomePeriod'=>$a['incomePeriod']??'','dependents'=>$a['dependentCount']??null,
-    'amount'=>$r->amount,'paidAmount'=>$handover['amount']??null,'verifier'=>$staff[$r->verifier_id]??'',
-    'distributor'=>$r->distribution_type==='direct'?'Bendahara langsung':($staff[$r->distributor_id]??''),
+    'amount'=>$r->amount,'paidAmount'=>$handover['amount']??null,'verifier'=>$r->manual_process['verifier']['name']??($staff[$r->verifier_id]??''),
+    'distributor'=>$r->manual_process['distributor']['name']??($r->distribution_type==='direct'?'Bendahara langsung':($staff[$r->distributor_id]??'')),
     'createdBy'=>$staff[$r->created_by]??'','createdAt'=>$r->created_at?->toDateString(),'surveyDate'=>$survey['date']??'',
     'disbursedAt'=>$r->disbursed_at?->toDateString(),'completedAt'=>$r->completed_at?->toDateString(),'fundReference'=>$r->fund_reference??'',
     'reporterName'=>$a['reporterName']??'','reporterPhone'=>$a['reporterPhone']??''];

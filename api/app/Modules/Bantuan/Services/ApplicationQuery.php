@@ -19,7 +19,7 @@ class ApplicationQuery
             'from' => 'nullable|date_format:Y-m-d', 'to' => ['nullable', 'date_format:Y-m-d', ...($request->filled('from') ? ['after_or_equal:from'] : [])],
             'dateField' => 'nullable|in:created,updated,disbursed,completed',
             'verifierId' => 'nullable|string|max:64', 'distributorId' => 'nullable|string|max:64', 'createdBy' => 'nullable|string|max:64',
-            'distributionType' => 'nullable|in:verifier,direct', 'amountState' => 'nullable|in:set,unset',
+            'distributionType' => 'nullable|in:verifier,direct,manual', 'amountState' => 'nullable|in:set,unset',
             'amountMin' => 'nullable|integer|min:0|max:999999999999',
             'amountMax' => ['nullable', 'integer', 'min:0', 'max:999999999999', ...($request->filled('amountMin') ? ['gte:amountMin'] : [])],
             'surveyOverdue' => 'nullable|boolean', 'overdue' => 'nullable|boolean', 'sort' => 'nullable|in:newest,oldest,updated,amount_high,amount_low,name',
@@ -63,14 +63,7 @@ class ApplicationQuery
             $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
             $query->where('status', 'disbursed')->where('disbursed_at', '<', now()->subDays($settings['distributionDays'] ?? 7));
         }
-        if (! empty($filters['search'])) {
-            $query->where(function (Builder $nested) use ($filters, $access, $request) {
-                $nested->where('name', 'like', '%'.$filters['search'].'%')->orWhere('number', 'like', '%'.$filters['search'].'%');
-                if ($access->sensitive($request) && preg_match('/^[0-9]{16}$/D', $filters['search'])) {
-                    $nested->orWhere(fn ($private) => $access->scopeSensitive($private, $request)->where('nik_hash', app(Intake::class)->nikHash($filters['search'])));
-                }
-            });
-        }
+        if (! empty($filters['search'])) app(ApplicationSearch::class)->apply($query, $request, $access, trim($filters['search']));
         return $query;
     }
 

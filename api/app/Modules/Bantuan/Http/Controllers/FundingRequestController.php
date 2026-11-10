@@ -43,14 +43,14 @@ class FundingRequestController
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$filters['search'].'%')->orWhere('number', 'like', '%'.$filters['search'].'%'));
         }
         $summary = ['count' => (clone $query)->count(), 'totalAmount' => (int) (clone $query)->sum('amount')];
-        $page = $query->orderBy('created_at')->orderBy('id')->paginate(50, ['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status', 'applicant', 'survey', 'distributor_id', 'distribution_type']);
+        $page = $query->orderBy('created_at')->orderBy('id')->paginate(50, ['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status', 'applicant', 'survey', 'distributor_id', 'distribution_type', 'manual_process']);
         $distributors = DB::table('users')->whereIn('id', $page->getCollection()->pluck('distributor_id')->filter()->unique())->pluck('name', 'id');
 
         return response()->json(['data' => $page->getCollection()->map(fn ($row) => [
             ...$row->only(['id', 'number', 'name', 'program', 'region', 'amount', 'version', 'status']),
             ...FundingRequests::descriptionFields($row),
-            'distributorName' => $row->distribution_type === 'direct' ? 'Bendahara langsung'
-                : ($distributors[$row->distributor_id] ?? 'Belum ditetapkan'),
+            'distributorName' => $row->manual_process['distributor']['name'] ?? ($row->distribution_type === 'direct' ? 'Bendahara langsung'
+                : ($distributors[$row->distributor_id] ?? 'Belum ditetapkan')),
         ]), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'summary' => $summary]);
     }
 
@@ -62,6 +62,14 @@ class FundingRequestController
     public function store(Request $request, FundingRequests $service)
     {
         return response()->json(['data' => $service->payload($service->create($request))], 201);
+    }
+
+    public function manualDecision(Request $request, string $id, FundingRequests $service, \App\Modules\Bantuan\Services\ManualProcesses $manual)
+    {
+        app(Access::class)->allow($request, ['call_center']);
+        $decision = $request->validate(['decision'=>'required|in:approved,rejected'])['decision'];
+        $actor = $manual->context($request, $decision === 'approved' ? 'fund_approve' : 'fund_reject');
+        return response()->json(['data'=>$service->payload($service->decide($request, $id, $actor))]);
     }
 
     public function decide(Request $request, string $id, FundingRequests $service)
