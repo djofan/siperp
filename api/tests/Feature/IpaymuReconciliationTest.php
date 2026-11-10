@@ -19,6 +19,18 @@ beforeEach(function () {
     Http::preventStrayRequests();
 });
 
+it('identifies a rejected signature and retries the same unpaid transaction after configuration is corrected', function () {
+    $this->row->forceFill(['gatewayState' => 'not_started', 'gatewaySessionId' => null, 'gatewayCheckoutUrl' => null])->save();
+    Http::fake(['*/payment' => Http::sequence()->push(['Status' => 401, 'Message' => 'Unauthorized Signature', 'Private' => 'private-provider-value'], 401)->push(['Status' => 200, 'Data' => ['SessionID' => 'retry-session', 'Url' => 'https://sandbox-payment.ipaymu.com/?sid=retry-session']])]);
+    $url = '/api/v1/payment/gateway-session/'.$this->row->id;
+    $response = $this->postJson($url)->assertStatus(502);
+    expect($response->json('error.message'))->toContain('IPAYMU_SIGNATURE_REJECTED')->not->toContain('private-provider-value');
+    expect($this->row->refresh()->gatewayState)->toBe('not_started')->and($this->row->status)->toBe('pending');
+
+    $this->postJson($url)->assertOk()->assertJsonPath('url', 'https://sandbox-payment.ipaymu.com/?sid=retry-session');
+    expect($this->row->refresh()->gatewayState)->toBe('ready')->and($this->row->status)->toBe('pending')->and(PaymentTransaction::count())->toBe(1);
+});
+
 it('verifies and links gateway IDs using subtotal and finalizes only once', function () {
     Http::fake(['sandbox.ipaymu.com/*' => Http::response(['Status' => 200, 'Data' => $this->detail])]);
     $gateway = app(IpaymuService::class);

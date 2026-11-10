@@ -88,7 +88,7 @@ class StaffController
             $entry = DB::table('module_access')->where('user_id', $id)->where('module_id', $module->id)->firstOrFail();
             abort_if(($entry->role === 'admin' || in_array('admin', $input['roles'], true)) && ! $request->user()->is_superadmin, 403, 'Hanya superadmin yang dapat mengubah akun admin.');
             $shared = DB::table('module_access')->where('user_id', $id)->where('module_id', '!=', $module->id)->exists();
-            $email = array_key_exists('email', $input) ? ($input['email'] ?: strtolower($user->code).'@accounts.sip.invalid') : $user->email;
+            $email = array_key_exists('email', $input) ? ($input['email'] ?: (str_ends_with((string) $user->email, '@accounts.sip.invalid') ? $user->email : (string) Str::uuid().'@accounts.sip.invalid')) : $user->email;
             $identityChanged = (isset($input['name']) && $input['name'] !== $user->name) || $email !== $user->email || ! empty($input['password']);
             abort_if($shared && $identityChanged && ! $request->user()->is_superadmin, 403, 'Identitas akun lintas modul hanya dapat diubah superadmin. Peran bantuan tetap bisa diedit.');
             if ($input['active'] && in_array('approver', $input['roles'], true)) $this->validateApprover('approver', $module->id, $id);

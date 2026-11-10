@@ -49,7 +49,8 @@ class User extends Authenticatable
         });
         static::creating(function (User $user) {
             $user->code = $user->code ? AccountCodes::normalize($user->code) : AccountCodes::next();
-            if (! $user->email) $user->email = strtolower($user->code).'@accounts.sip.invalid';
+            // Login codes can be reused while archived identities remain for audit history.
+            if (! $user->email) $user->email = (string) \Illuminate\Support\Str::uuid().'@accounts.sip.invalid';
         });
         static::created(fn (User $user) => AccountCodes::register($user->id, $user->code));
         static::updated(function (User $user) {

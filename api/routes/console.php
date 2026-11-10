@@ -43,6 +43,39 @@ Artisan::command('payment:sync-pending', function (): void {
 Schedule::command('payment:sync-pending')->everyMinute()->withoutOverlapping();
 Schedule::command('payment:receipts-retry')->everyMinute()->withoutOverlapping();
 
+Artisan::command('payment:ipaymu-check {--remote : Test authentication with the read-only balance endpoint}', function (): int {
+    $service = app(IpaymuService::class);
+    try {
+        $config = $service->configuration();
+    } catch (Throwable) {
+        $this->error('IPAYMU_CONFIGURATION_INVALID: periksa mode, VA/API key, endpoint, dan URL publik HTTPS.');
+        return 1;
+    }
+    $this->table(['Pemeriksaan', 'Hasil'], [
+        ['Mode', $config['gateway']], ['Endpoint', $config['baseUrl']],
+        ['Cache konfigurasi', app()->configurationIsCached() ? 'Aktif' : 'Tidak aktif'],
+        ['Spasi tepi kredensial dinormalisasi', config('payment.ipaymu.api_key') !== $config['apiKey'] || config('payment.ipaymu.va') !== $config['va'] ? 'Ya; rapikan nilai di environment server' : 'Tidak diperlukan'],
+        ['Waktu server', now('Asia/Jakarta')->format('Y-m-d H:i:s P')],
+    ]);
+    if (! $this->option('remote')) {
+        $this->info('Konfigurasi lokal valid. Gunakan --remote untuk memeriksa penerimaan signature oleh iPaymu tanpa membuat pembayaran.');
+        return 0;
+    }
+    try {
+        $result = $service->checkConnection();
+        $this->line($result['code'].' | HTTP '.$result['httpStatus'].' | status provider '.($result['providerStatus'] ?? 'tidak tersedia'));
+        if ($result['ok']) {
+            $this->info('Signature dan kredensial diterima untuk cek koneksi. Tidak ada pembayaran dibuat. Persetujuan domain dan verifikasi merchant tetap diperiksa terpisah.');
+            return 0;
+        }
+        $this->warn('Cocokkan VA/API key dengan mode dashboard, jalankan config:cache setelah perubahan, dan kirim kode hasil ini ke tim teknis.');
+        return 1;
+    } catch (Throwable) {
+        $this->error('IPAYMU_CONNECTION_FAILED: server belum dapat menyelesaikan pemeriksaan. Periksa DNS, HTTPS, waktu server, dan koneksi outbound.');
+        return 1;
+    }
+})->purpose('Check iPaymu configuration and optionally authenticate without creating a payment or displaying credentials');
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

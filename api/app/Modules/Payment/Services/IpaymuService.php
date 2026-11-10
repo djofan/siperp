@@ -49,15 +49,17 @@ class IpaymuService
     {
         $gateway = config('payment.gateway');
         $sandbox = $gateway === 'ipaymu_sandbox';
-        $apiKey = config('payment.ipaymu.api_key');
-        $va = config('payment.ipaymu.va');
+        $rawKey = config('payment.ipaymu.api_key');
+        $rawVa = config('payment.ipaymu.va');
+        $apiKey = is_string($rawKey) ? trim($rawKey) : '';
+        $va = is_string($rawVa) ? trim($rawVa) : '';
         $baseUrl = rtrim((string) config('payment.ipaymu.base_url'), '/');
         $publicUrl = $this->safeOrigin(config('payment.public_url'), $sandbox);
         $apiUrl = $this->safeOrigin(config('payment.api_url'), $sandbox);
         $parsed = parse_url($baseUrl);
         abort_unless(
             in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true)
-            && is_string($apiKey) && $apiKey !== '' && is_string($va) && preg_match('/^[A-Za-z0-9]+$/D', $va)
+            && $apiKey !== '' && ! preg_match('/[\x00-\x20\x7F]/', $apiKey) && preg_match('/^[A-Za-z0-9]+$/D', $va)
             && $parsed && ($parsed['scheme'] ?? '') === 'https'
             && ($parsed['host'] ?? '') === ($sandbox ? 'sandbox.ipaymu.com' : 'my.ipaymu.com')
             && ($parsed['path'] ?? '') === '/api/v2' && ! isset($parsed['user']) && ! isset($parsed['pass']),
@@ -209,15 +211,40 @@ class IpaymuService
     private function request(string $path, array $payload, int $timeout = 20): Response
     {
         $config = $this->configuration();
+        $method = 'POST';
+        // Match the official PHP sample. Sign these exact bytes and send them unchanged;
+        // never pass the payload through a second JSON/form serializer after signing.
         $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-        $bodyHash = hash('sha256', $body);
-        $signature = hash_hmac('sha256', 'POST:'.$config['va'].':'.$bodyHash.':'.$config['apiKey'], $config['apiKey']);
+        $bodyHash = strtolower(hash('sha256', $body));
+        $signature = hash_hmac('sha256', $method.':'.$config['va'].':'.$bodyHash.':'.$config['apiKey'], $config['apiKey'], false);
 
         return Http::connectTimeout(3)->timeout($timeout)->acceptJson()->withHeaders([
             'va' => $config['va'],
             'signature' => $signature,
             'timestamp' => now('Asia/Jakarta')->format('YmdHis'),
-        ])->withBody($body, 'application/json')->send('POST', $config['baseUrl'].$path);
+        ])->withBody($body, 'application/json')->send($method, $config['baseUrl'].$path);
+    }
+
+    /** Classify only known rejection categories; never return raw provider body/headers. */
+    public function rejectionCode(Response $response): string
+    {
+        $body = $response->json();
+        $message = is_array($body) && is_string($body['Message'] ?? null) ? strtolower($body['Message']) : '';
+        if (str_contains($message, 'signature')) return 'IPAYMU_SIGNATURE_REJECTED';
+        if (str_contains($message, 'domain')) return 'IPAYMU_DOMAIN_REJECTED';
+        if (preg_match('/\bip\b/', $message)) return 'IPAYMU_IP_REJECTED';
+        return in_array($response->status(), [401, 403], true) ? 'IPAYMU_AUTH_REJECTED' : 'IPAYMU_REQUEST_REJECTED';
+    }
+
+    /** Read-only authentication probe: no checkout is created and balances are discarded. */
+    public function checkConnection(): array
+    {
+        $config = $this->configuration();
+        $response = $this->request('/balance', ['account' => $config['va']], 8);
+        $status = $response->json('Status');
+        $valid = $response->successful() && in_array($status, [200, '200'], true);
+        return ['ok' => $valid, 'httpStatus' => $response->status(), 'providerStatus' => is_numeric($status) ? (int) $status : null,
+            'code' => $valid ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
     }
 
     private function normalizeCallback(array $payload): array
