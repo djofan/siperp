@@ -3,6 +3,7 @@
 namespace App\Modules\Bantuan\Services;
 
 use App\Modules\Bantuan\Models\Application;
+use App\Modules\Bantuan\Rules\PhoneNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -44,7 +45,7 @@ class Intake
             'applicant.reporterRelationship' => 'nullable|string|max:191',
             'applicant.reporterOrganization' => 'nullable|string|max:191',
             'applicant.reporterAddress' => 'nullable|string|max:1000',
-            'applicant.reporterPhone' => 'nullable|string|max:30',
+            'applicant.reporterPhone' => ['nullable', 'string', 'max:30', new PhoneNumber],
             'applicant.reporterProgram' => 'nullable|string|max:191',
             'applicant.province' => 'nullable|string|max:191',
             'applicant.provinceId' => 'nullable|string|max:20',
@@ -68,7 +69,7 @@ class Intake
             'applicant.housing' => 'required|string|max:191', 'applicant.rent' => 'nullable|integer|min:0|max:9000000000000',
             'applicant.job' => 'required|string|max:191', 'applicant.income' => 'required|integer|min:0|max:9000000000000',
             'applicant.incomePeriod' => 'required|in:hari,pekan,bulan', 'applicant.dependentCount' => 'required|integer|min:0|max:100',
-            'applicant.dependents' => 'nullable|string|max:5000', 'applicant.phone' => 'required|string|max:30',
+            'applicant.dependents' => 'nullable|string|max:5000', 'applicant.phone' => ['required', 'string', 'max:30', new PhoneNumber],
             'applicant.prayer' => 'required|in:Ya,Jarang,Tidak', 'applicant.smoking' => 'required|in:Ya,Jarang,Tidak',
             'applicant.previousAid' => 'required|boolean', 'applicant.previousAidNotes' => 'nullable|string|max:5000',
             'applicant.publicationConsent' => 'required|boolean', 'applicant.hasSktm' => 'required|boolean',
@@ -91,7 +92,9 @@ class Intake
         if ($draft) {
             foreach ($rules as $field => $rule) {
                 if (! in_array($field, ['applicant', 'applicant.name', 'applicant.nik'], true)) {
-                    $rules[$field] = str_replace('required|', 'sometimes|nullable|', $rule);
+                    $rules[$field] = is_array($rule)
+                        ? array_values(array_unique(['sometimes', 'nullable', ...array_filter($rule, fn ($part) => $part !== 'required')], SORT_REGULAR))
+                        : str_replace('required|', 'sometimes|nullable|', $rule);
                 }
             }
         }
@@ -109,6 +112,7 @@ class Intake
             $existing = Application::find($request->input('draftKey'));
             if ($existing) {
                 abort_unless($existing->created_by === $request->user()->id && in_array($existing->status, ['draft', 'needs_data'], true), 409, 'Draft sudah diproses atau bukan milik akun ini.');
+
                 return $existing;
             }
         }

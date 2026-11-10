@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { CircleHelp } from "lucide-react";
 import { type BantuanViewer } from "@/contracts/modules/bantuan";
 import { roleLabel, rolesOf } from "../permissions";

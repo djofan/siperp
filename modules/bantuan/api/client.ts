@@ -17,6 +17,7 @@ export async function request<T>(path: string, init: RequestInit = {}, unwrap = 
   });}catch{throw new RequestError("Koneksi terputus. Draft tetap disimpan pada perangkat ini.",0);}
   const body = await response.json();
   if (!response.ok) {
+    if(response.status===401&&typeof window!=="undefined"&&window.location?.pathname?.startsWith("/bantuan-app/"))window.dispatchEvent(new Event("bantuan-session-expired"));
     const details = body.error?.details;
     const first = details && typeof details === "object" ? Object.values(details).flat()[0] : null;
     const message=typeof first === "string" ? fieldMessage(first) : typeof body.error === "string" ? body.error : body.error?.message;

@@ -1875,3 +1875,61 @@ it('records manual funding decisions for the whole card atomically without bypas
     $this->postJson($url,$data)->assertOk()->assertJsonPath('data.status','approved');
     foreach($ids as $id){$row=Application::findOrFail($id);expect($row->status)->toBe('fund_approved')->and($row->manual_process['last']['recordedBy'])->toBe($this->cc->id);}
 });
+
+it('stores photo pins encrypted and exposes them only with authorized application photos', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $location = ['latitude' => -6.2345678, 'longitude' => 106.8765432, 'source' => 'exif'];
+    $clientId = (string) Str::uuid();
+    $url = '/api/v1/bantuan/applications/'.$id.'/documents';
+    $docId = $this->post($url, ['kind' => 'supporting', 'clientId' => $clientId, 'location' => $location,
+        'file' => UploadedFile::fake()->image('house.jpg')], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $stored = DB::table('bantuan_documents')->where('id', $docId)->value('photo_location');
+    expect($stored)->not->toContain('106.8765432');
+    expect(json_decode(Crypt::decryptString($stored), true)['latitude'])->toBe(-6.2345678);
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()
+        ->assertJsonPath('data.documents.0.location.source', 'exif')
+        ->assertJsonPath('data.documents.0.location.longitude', 106.8765432)
+        ->assertJsonMissingPath('data.documents.0.photo_location');
+    $this->post($url, ['kind' => 'supporting', 'clientId' => $clientId,
+        'location' => ['latitude' => 1, 'longitude' => 2, 'source' => 'device'],
+        'file' => UploadedFile::fake()->image('retry.jpg')], ['Accept' => 'application/json'])->assertOk();
+    expect(DB::table('bantuan_documents')->where('id', $docId)->value('photo_location'))->toBe($stored);
+    $this->actingAs($this->treasurer, 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonCount(0, 'data.documents');
+    $this->actingAs(bantuanUser('verifier'), 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertNotFound();
+});
+
+it('rejects incomplete or invalid photo pins without creating documents', function ($location) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting', 'location' => $location,
+        'file' => UploadedFile::fake()->image('house.jpg')], ['Accept' => 'application/json'])->assertUnprocessable();
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->count())->toBe(0);
+})->with([
+    'missing longitude' => [['latitude' => 1, 'source' => 'device']],
+    'out of range' => [['latitude' => 91, 'longitude' => 2, 'source' => 'exif']],
+    'invalid source' => [['latitude' => 1, 'longitude' => 2, 'source' => 'home']],
+    'negative accuracy' => [['latitude' => 1, 'longitude' => 2, 'source' => 'device', 'accuracy' => -1]],
+    'unknown field' => [['latitude' => 1, 'longitude' => 2, 'source' => 'device', 'url' => 'https://example.org']],
+    'empty' => [[]],
+]);
+
+it('keeps santunan photo pins private and allows old photos without a pin', function () {
+    $volunteer = bantuanUser('volunteer');
+    $id = $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', [
+        'frequency' => 'routine', 'category' => 'widow', 'period' => now()->format('Y-m'),
+        'recipientName' => 'Penerima lokasi', 'volunteerId' => $volunteer->id, 'amount' => 300000,
+    ])->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/santunan/'.$id.'/transferred', ['version' => 1, 'transferredAt' => now()->toDateString()])->assertOk();
+    $location = ['latitude' => 0, 'longitude' => 0, 'source' => 'device', 'accuracy' => 25];
+    $this->actingAs($volunteer, 'sanctum')->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
+        'kind' => 'recipient_photo', 'location' => $location, 'file' => UploadedFile::fake()->image('recipient.jpg'),
+    ], ['Accept' => 'application/json'])->assertCreated();
+    $this->post('/api/v1/bantuan/santunan/'.$id.'/documents', [
+        'kind' => 'aid_paper', 'file' => UploadedFile::fake()->image('paper.jpg'),
+    ], ['Accept' => 'application/json'])->assertCreated();
+    $documents = $this->getJson('/api/v1/bantuan/santunan')->assertOk()->json('data.0.documents');
+    $photos = collect($documents)->keyBy('kind');
+    expect($photos['recipient_photo']['location']['source'])->toBe('device');
+    expect($photos['recipient_photo']['location']['accuracy'])->toBe(25);
+    expect($photos['aid_paper']['location'])->toBeNull();
+    $this->actingAs(bantuanUser('volunteer'), 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(0, 'data');
+});
