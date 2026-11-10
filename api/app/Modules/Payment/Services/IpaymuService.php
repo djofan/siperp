@@ -103,11 +103,19 @@ class IpaymuService
         abort_unless($row->gatewayReferenceId && $row->gatewayAccountId === $config['va'], 409);
         $row->loadMissing('donor');
         $label = $row->sourceType === 'zakat' ? 'Zakat LAZSIP' : ($row->moduleSource === 'sarsip' ? 'Donasi SARSIP' : 'Donasi LAZSIP');
+        $modules = app(\App\Support\PaymentModules::class);
+        $description = $row->sourceId && $modules->has($row->moduleSource)
+            ? $modules->for($row->moduleSource)->describe($row->sourceType, $row->sourceId) : null;
+        $program = $description ? trim(strip_tags($description['label'])) : $label;
+        $product = mb_substr(($description && $row->sourceType !== 'zakat' ? 'Donasi — ' : '').$program, 0, 191);
+        $purpose = $description
+            ? ($row->sourceType === 'zakat' ? 'Pembayaran ' : 'Donasi untuk program ').$program.' melalui '.$description['brand'].'. '
+            : $label.'. ';
         $payload = [
-            'product' => [$label],
+            'product' => [$product],
             'qty' => [1],
             'price' => [$row->amount + $row->adminFee],
-            'description' => ['Transaksi '.$row->trackingCode],
+            'description' => [mb_substr($purpose.'Kode transaksi '.$row->trackingCode.'.', 0, 1000)],
             'returnUrl' => $config['publicUrl'].'/payment/checkout/'.$row->id,
             'notifyUrl' => $config['apiUrl'].'/payment/webhook/ipaymu',
             'cancelUrl' => $config['publicUrl'].'/payment/checkout/'.$row->id,

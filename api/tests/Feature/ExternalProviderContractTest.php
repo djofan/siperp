@@ -180,3 +180,27 @@ it('sends the Resend tracking-email contract with bearer authentication', functi
         && str_contains($request['html'], 'Rp102.500')
     );
 });
+
+
+it('describes the selected donation program in the gateway checkout', function () {
+    $adapter = Mockery::mock(\App\Contracts\Payments\PaymentModule::class);
+    $adapter->shouldReceive('describe')->once()->with('donation', 'campaign-contract')
+        ->andReturn(['label' => 'Bantuan Pendidikan', 'brand' => 'LAZSIP']);
+    $modules = Mockery::mock(\App\Support\PaymentModules::class);
+    $modules->shouldReceive('has')->with('lazsip')->andReturnTrue();
+    $modules->shouldReceive('for')->with('lazsip')->andReturn($adapter);
+    app()->instance(\App\Support\PaymentModules::class, $modules);
+    Http::fake(['https://sandbox.ipaymu.com/api/v2/payment' => Http::response([
+        'Status' => 200, 'Data' => ['SessionID' => 'program-session', 'Url' => 'https://sandbox-payment.ipaymu.com/?sid=program-session'],
+    ])]);
+    $transaction = (new PaymentTransaction)->forceFill([
+        'gatewayAccountId' => '1179000899', 'id' => 'program-contract', 'gatewayReferenceId' => 'reference-contract',
+        'trackingCode' => 'LZS-ABC123', 'moduleSource' => 'lazsip',
+        'sourceType' => 'donation', 'sourceId' => 'campaign-contract', 'amount' => 250000, 'adminFee' => 0,
+    ]);
+    $transaction->setRelation('donor', (new PaymentDonor)->forceFill(['name' => 'Donatur', 'email' => 'donor@example.com', 'phone' => '081234567890']));
+    app(IpaymuService::class)->createSession($transaction);
+    Http::assertSent(fn (Request $request) => $request['product'] === ['Donasi — Bantuan Pendidikan']
+        && str_contains($request['description'][0], 'Bantuan Pendidikan')
+        && str_contains($request['description'][0], 'LZS-ABC123'));
+});

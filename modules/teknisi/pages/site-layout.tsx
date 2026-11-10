@@ -1,3 +1,4 @@
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 import styles from "./site.module.css";
 import footer from "./footer.module.css";
@@ -8,5 +9,5 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <nav className={footer.column} aria-label="Navigasi footer layanan"><h2>Jelajahi layanan</h2><Link href="/teknisi#layanan">Layanan perangkat</Link><Link href="/teknisi#proses">Cara kerja servis</Link><Link href="/teknisi#outlet">Outlet & kontak</Link><Link href="/teknisi#teknisi">Tim teknisi</Link></nav>
     <div className={footer.column}><h2>Sudah menitipkan HP?</h2><p>Simpan kode pelacakan dari outlet. Gunakan untuk melihat status terbaru dan riwayat servis tanpa login.</p><TrackingPopup className={footer.track}>Cek status perangkat <span aria-hidden="true">↗</span></TrackingPopup></div>
     <div className={footer.column}><h2>Butuh bantuan?</h2><p>Untuk estimasi biaya, jadwal pengambilan, atau pertanyaan servis, hubungi outlet yang menangani perangkat Anda.</p><Link className={footer.contact} href="/teknisi#outlet">Lihat kontak outlet →</Link><Link href="/teknisi/masuk">Masuk akun teknisi ↗</Link></div>
-    </div><div className={footer.bottom}><span>© {new Date().getFullYear()} Teknisi HP · Platform SIP</span><span>Penerimaan → Pemeriksaan → Perbaikan → Pengambilan</span><Link href="/">Kunjungi website SIP ↗</Link></div></footer></div>;
+    </div><OrganizationContact/><div className={footer.bottom}><span>© {new Date().getFullYear()} Teknisi HP · Platform SIP</span><span>Penerimaan → Pemeriksaan → Perbaikan → Pengambilan</span><Link href="/">Kunjungi website SIP ↗</Link></div></footer></div>;
 }
