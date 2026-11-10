@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation";
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { FormField, Input, Select } from "@/components/ui/FormField";
 import { panelClasses } from "@/components/ui/panel";
+import { ResetOperationalPassword } from "./ResetOperationalPassword";
+import { describeApiProblem } from "@/lib/api-problem";
 
 export interface ManagedAccountData {
   modules: {id:string;name:string;slug:string;roles:Record<string,string>;links:{label:string;href:string}[]}[];
-  accounts: {id:string;name:string;code:string;active:boolean;moduleName:string;role:string}[];
+  accounts: {id:string;name:string;code:string;active:boolean;moduleName:string;role:string;canResetPassword?:boolean}[];
 }
 
 export function ModuleAccounts({initial, initialModule}:{initial:ManagedAccountData; initialModule?:string}) {
@@ -29,7 +31,7 @@ export function ModuleAccounts({initial, initialModule}:{initial:ManagedAccountD
       const values=Object.fromEntries(new FormData(form));
       const response=await fetch("/api/core/module-accounts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...values,moduleId})});
       const result=await response.json();
-      if(!response.ok)throw new Error(result.error?.message??"Akun belum berhasil dibuat.");
+      if(!response.ok)throw new Error(describeApiProblem(result,response.status,"Akun belum berhasil dibuat."));
       setCreated(result.data);form.reset();router.refresh();
     }catch(cause){setError(cause instanceof Error?cause.message:"Gagal terhubung. Silakan coba lagi.");}
     finally{lock.current=false;setBusy(false);}
@@ -56,7 +58,7 @@ export function ModuleAccounts({initial, initialModule}:{initial:ManagedAccountD
       {error&&<p role="alert" className="mt-5 text-sm text-danger">{error}</p>}
       {created&&<div role="status" className="mt-6 rounded-xl bg-accent-soft p-5"><p className="text-sm font-semibold">Akun {created.name} berhasil dibuat.</p><p className="mt-2 font-mono text-xl font-bold text-accent">{created.code}</p><p className="mt-2 text-sm text-foreground/60">Bagikan kode ini dan password awal kepada pemilik akun.</p></div>}
     </section>
-    <section className={panelClasses("p-6")}><div className="mb-5 flex flex-wrap items-center justify-between gap-4"><h2 className="font-semibold">Akun operasional pada modul Anda</h2><Input aria-label="Cari akun operasional" placeholder="Cari nama, kode, atau modul…" value={search} onChange={event=>setSearch(event.target.value)} className="max-w-sm"/></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{accounts.filter((account,index,list)=>list.findIndex(item=>item.id===account.id)===index).map(account=><article key={account.id+account.moduleName} className="rounded-xl bg-surface-muted p-4"><strong className="text-sm">{account.name}</strong><p className="mt-1 font-mono text-sm text-accent">{account.code}</p><p className="mt-3 text-xs text-foreground/60">{account.moduleName} · {accounts.filter(item=>item.id===account.id).map(item=>selected?.roles[item.role]??item.role).join(", ")}</p><p className="mt-1 text-xs text-foreground/60">{account.active?"Aktif":"Nonaktif"}</p></article>)}</div>{!accounts.length&&<p className="py-5 text-sm text-foreground/50">Belum ada akun yang cocok. Akun peserta dan petugas lapangan juga dapat dilihat di menu pendaftaran masing-masing modul.</p>}</section>
+    <section className={panelClasses("p-6")}><div className="mb-5 flex flex-wrap items-center justify-between gap-4"><h2 className="font-semibold">Akun operasional pada modul Anda</h2><Input aria-label="Cari akun operasional" placeholder="Cari nama, kode, atau modul…" value={search} onChange={event=>setSearch(event.target.value)} className="max-w-sm"/></div><div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{accounts.filter((account,index,list)=>list.findIndex(item=>item.id===account.id)===index).map(account=><article key={account.id+account.moduleName} className="rounded-xl bg-surface-muted p-4"><strong className="text-sm">{account.name}</strong><p className="mt-1 font-mono text-sm text-accent">{account.code}</p><p className="mt-3 text-xs text-foreground/60">{account.moduleName} · {accounts.filter(item=>item.id===account.id).map(item=>selected?.roles[item.role]??item.role).join(", ")}</p><p className="mt-1 text-xs text-foreground/60">{account.active?"Aktif":"Nonaktif"}</p>{account.canResetPassword&&<div className="mt-4"><ResetOperationalPassword id={account.id} name={account.name} code={account.code}/></div>}</article>)}</div>{!accounts.length&&<p className="py-5 text-sm text-foreground/50">Belum ada akun yang cocok. Akun peserta dan petugas lapangan juga dapat dilihat di menu pendaftaran masing-masing modul.</p>}</section>
     </>}
     {!initial.modules.length && <p>Belum ada modul yang dapat Anda kelola.</p>}
   </div>;

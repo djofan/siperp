@@ -20,6 +20,14 @@ class ManagedAccountController
             ->join('modules', 'modules.id', '=', 'module_access.module_id')
             ->whereIn('modules.id', array_column($modules, 'id'))->where('module_access.role', '!=', 'admin')->where('users.is_superadmin', false)
             ->orderBy('users.name')->get(['users.id', 'users.name', 'users.code', 'users.is_active as active', 'modules.name as moduleName', 'module_access.role']);
+        $allAccess = DB::table('module_access')->whereIn('user_id', $users->pluck('id'))->get()->groupBy('user_id');
+        $managedIds = array_column($modules, 'id');
+        foreach ($users as $user) {
+            $entries = $allAccess->get($user->id, collect());
+            $user->canResetPassword = $user->id !== $request->user()->id && ! preg_match('/^AMSIP[0-9]+$/D', $user->code)
+                && ! $entries->contains('role', 'admin')
+                && ($request->user()->is_superadmin || ! $entries->contains(fn ($entry) => ! in_array($entry->module_id, $managedIds, true)));
+        }
         return response()->json(['data' => ['modules' => $modules, 'accounts' => $users]]);
     }
 

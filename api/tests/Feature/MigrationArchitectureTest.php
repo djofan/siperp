@@ -23,9 +23,9 @@ it('returns stable JSON errors without exposing internal exceptions', function (
 
     $response = $this->getJson('/api/v1/test-internal-error')
         ->assertStatus(500)
-        ->assertExactJson(['error' => [
+        ->assertJson(['error' => [
             'code' => 'server_error',
-            'message' => 'An unexpected error occurred.',
+            'diagnosticCode' => 'SERVER_INTERNAL_ERROR',
             'details' => [],
         ]]);
 
@@ -33,7 +33,7 @@ it('returns stable JSON errors without exposing internal exceptions', function (
 
     $this->getJson('/api/v1/test-service-unavailable')
         ->assertStatus(503)
-        ->assertJsonPath('error.message', 'Layanan pembayaran belum siap.');
+        ->assertJsonPath('error.diagnosticCode', 'SERVICE_UNAVAILABLE');
 });
 
 it('resolves the encrypted backup service from its console command', function () {

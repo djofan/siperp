@@ -90,11 +90,11 @@ test("Core creates regular AMSIP admins and does not expose a second-superadmin 
 
 test("module account management shows only the authorized roles and native registration links",()=>{
   const {ModuleAccounts}=load("components/admin-shell/ModuleAccounts.tsx");
-  const simple=renderToStaticMarkup(React.createElement(ModuleAccounts,{initial:{modules:[{id:"sip",name:"SIP",slug:"sip",roles:{editor:"Editor konten"},links:[]}],accounts:[]}}));
+  const simple=renderToStaticMarkup(React.createElement(ModuleAccounts,{initialModule:"sip",initial:{modules:[{id:"sip",name:"SIP",slug:"sip",roles:{editor:"Editor konten"},links:[]}],accounts:[]}}));
   assert.match(simple,/Buat akun operasional SIP/);
   assert.match(simple,/value="editor"/);
   assert.doesNotMatch(simple,/value="admin"|name="isSuperadmin"|name="moduleIds"/);
-  const native=renderToStaticMarkup(React.createElement(ModuleAccounts,{initial:{modules:[{id:"bantuan",name:"Bantuan",slug:"bantuan",roles:{},links:[{label:"Kelola tim Bantuan",href:"/admin/bantuan/tim"}]}],accounts:[]}}));
+  const native=renderToStaticMarkup(React.createElement(ModuleAccounts,{initialModule:"bantuan",initial:{modules:[{id:"bantuan",name:"Bantuan",slug:"bantuan",roles:{},links:[{label:"Kelola tim Bantuan",href:"/admin/bantuan/tim"}]}],accounts:[]}}));
   assert.match(native,/href="\/admin\/bantuan\/tim"/);
   assert.doesNotMatch(native,/<form/);
 });

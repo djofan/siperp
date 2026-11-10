@@ -4,6 +4,39 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Reset password akun operasional: `POST /api/v1/core/module-accounts/{id}/password-reset`
+memerlukan akun aktif dan otorisasi admin. Admin modul hanya boleh mereset akun operasional
+yang seluruh akses modulnya berada dalam cakupan pengelolaannya; Superadmin boleh lintas modul.
+Akun admin, Superadmin, akun sendiri, dan akun tanpa akses operasional ditolak. Request berisi
+`password` dan `password_confirmation` (12–72 karakter), tanpa password lama. Respons tidak
+mengandung password; server menyimpan hash, mencabut seluruh token target, dan mencatat aktor
+serta target tanpa kredensial. Batas 10 permintaan/menit; header respons `no-store, private`.
+Daftar akun menyediakan `canResetPassword` untuk UI, tetapi endpoint tetap mengotorisasi ulang.
+
+### Diagnosis error untuk pengelola
+
+Respons error mempertahankan `error.code`, `message`, dan `details`, serta menambahkan
+`diagnosticCode`, `requestId`, dan `retryAfter` (detik atau null). ID dibuat oleh server,
+dikembalikan juga dalam header `X-Request-ID`. Untuk error server, cari ID yang sama pada
+catatan `api_request_failed` di `storage/logs/laravel.log`. Jangan meminta pengguna mengirim
+password, `.env`, token, atau dump database. Jangan menyalakan `APP_DEBUG` di production.
+
+| Kode diagnosis | Arti dan tindak lanjut |
+| --- | --- |
+| `DB_SCHEMA_MISMATCH` | Tabel/kolom tidak sesuai kode. Periksa status migration dan versi deployment; backup sebelum menerapkan migration. |
+| `DB_UNAVAILABLE` | Database tidak terjangkau, akses ditolak, atau konfigurasi database tidak sesuai. Periksa layanan dan konfigurasi koneksi di server. |
+| `DATA_ALREADY_EXISTS` | Nilai unik bentrok. Periksa apakah akun/kode/email sudah terdaftar sebelum mengulang. |
+| `DATA_CONSTRAINT` | Isian atau referensi data ditolak database. Cocokkan log dengan request ID dan periksa relasi serta skema. |
+| `DB_BUSY` | Deadlock atau batas tunggu penguncian. Periksa hasil penyimpanan, tunggu, lalu ulangi bila belum tersimpan. |
+| `APP_KEY_MISSING` / `ENCRYPTION_DATA_UNREADABLE` | Periksa konfigurasi enkripsi dan kunci asli. Jangan membuat kunci baru pada deployment rutin. |
+| `ORIGIN_NOT_ALLOWED` | Sesuaikan domain HTTPS frontend dengan origin yang diizinkan API. |
+| `TOO_MANY_REQUESTS` | Tunggu sesuai `retryAfter` atau header `Retry-After`. |
+| `SERVER_INTERNAL_ERROR` / `DB_QUERY_FAILED` | Penyebab belum dapat diklasifikasikan lebih rinci; periksa log memakai request ID. |
+
+Log diagnosis tidak menyertakan request body, SQL/binding, password, token, atau isi exception.
+Respons HTTP yang dibuat proxy sebelum mencapai Laravel memakai kode HTTP di frontend dan
+belum memiliki ID laporan Laravel; periksa log proxy jika respons berupa HTML/non-JSON.
+
 Kontak pengajuan Bantuan: `applicant.phone` pada POST/PUT applications wajib berisi 8–15 angka
 (maksimal 30 karakter dengan format). `applicant.reporterPhone` opsional/nullable, tetapi bila diisi
 memakai validasi yang sama. Diperbolehkan satu `+` di awal untuk kode internasional yang tidak diawali 0,
