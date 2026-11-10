@@ -2801,6 +2801,293 @@
           }
         }
       }
+    },
+    "/api/v1/bantuan/applications/{id}/manual-processes": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Record an externally performed workflow step",
+        "description": "Call Center, module admin or Superadmin only. Executes the existing stage transition and completeness/evidence/version checks without impersonating the field officer. No arbitrary status writes. manual identifies the real performer (active matching account or external name), channel, actual date and source note; recorder identity comes from authentication. Survey and handover performer must match assignment. Funding groups remain protected. External verifier becomes distributor automatically after amount approval. Phones and source notes are encrypted and shown only in authorized detail/history. Other roles cannot use this endpoint or bypass checks through the regular action endpoint.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "action",
+                  "version",
+                  "manual"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "manual": {
+                    "type": "object",
+                    "required": [
+                      "channel",
+                      "date",
+                      "note"
+                    ],
+                    "properties": {
+                      "actorId": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "name": {
+                        "type": "string",
+                        "maxLength": 191,
+                        "description": "Required without actorId"
+                      },
+                      "phone": {
+                        "type": "string",
+                        "maxLength": 30,
+                        "nullable": true
+                      },
+                      "channel": {
+                        "enum": [
+                          "whatsapp",
+                          "telegram",
+                          "other"
+                        ]
+                      },
+                      "date": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "note": {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 5000
+                      }
+                    }
+                  },
+                  "survey": {
+                    "type": "object"
+                  },
+                  "applicant": {
+                    "type": "object"
+                  },
+                  "handover": {
+                    "type": "object"
+                  },
+                  "surveyAddress": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "integer"
+                  },
+                  "transferDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "transferAmount": {
+                    "type": "integer"
+                  },
+                  "account": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorized application detail with persisted manual attribution"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/funding-requests/{id}/manual-decision": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Record external decision for a complete funding group",
+        "description": "Call Center or module admin/Superadmin. Same decision, reason, group version and complete item versions as the normal decision endpoint plus manual attribution (actorId or name, channel, date, note). The entire group is updated atomically, existing state/version/amount checks apply, and every application audit preserves the real performer and authenticated recorder.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "decision",
+                  "items",
+                  "manual"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer"
+                  },
+                  "decision": {
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "manual": {
+                    "type": "object"
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 100,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Funding group with synchronized application decisions"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -2864,5 +3151,25 @@
       "call_center"
     ],
     "description": "May permanently delete applications at any stage, including applications created by another officer. Non-draft deletion requires exact application number confirmation; version locking remains mandatory. Other operational roles retain owned-draft deletion only."
+  },
+  "x-bantuan-application-search": {
+    "parameter": "search",
+    "maxLength": 191,
+    "matching": "Case-insensitive literal tokens; all tokens may match different supported fields. Pagination, menu filters, task assignment and row visibility remain in force.",
+    "fields": [
+      "name",
+      "number",
+      "program",
+      "region",
+      "status",
+      "source",
+      "amount",
+      "created date",
+      "creator name/code",
+      "verifier name/code",
+      "distributor name/code",
+      "manual field officer names"
+    ],
+    "privateFields": "Address, survey address, phone, job, problem and application notes only for rows the current officer can read sensitively. NIK only exact 16 digits. Encrypted private fields are streamed in the scoped server query, never stored as plaintext indexes or returned by search."
   }
 }

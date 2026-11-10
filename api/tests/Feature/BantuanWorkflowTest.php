@@ -1425,7 +1425,8 @@ it('stores optional education evidence privately for the assigned distributor',f
     $png=base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
     $url='/api/v1/bantuan/applications/'.$id.'/documents';
     $data=['kind'=>'education_other','file'=>UploadedFile::fake()->createWithContent('bukti.png',$png),'caption'=>'Bukti pembelian perlengkapan'];
-    $this->post($url,$data,['Accept'=>'application/json'])->assertForbidden();
+    $this->actingAs(bantuanUser('verifier'),'sanctum')->post($url,$data,['Accept'=>'application/json'])->assertNotFound();
+    $this->actingAs($this->cc,'sanctum')->post($url,$data,['Accept'=>'application/json'])->assertCreated();
     $doc=$this->actingAs($this->verifier,'sanctum')->post($url,$data,['Accept'=>'application/json'])->assertCreated()->json('data.id');
     $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertContent($png);
 });
@@ -1774,3 +1775,103 @@ it('allows Call Center to permanently delete another officers application at eve
     $this->deleteJson($url, ['version' => 1, 'confirmation' => $row->number])->assertOk();
     $this->assertDatabaseMissing('bantuan_applications', ['id' => $id]);
 })->with(['draft','review1','survey_submitted','fund_submitted','completed','rejected_t2']);
+
+
+it('records a complete external workflow without turning the recorder into the verifier', function (string $recorderRole) {
+    $recorder = $recorderRole === 'call_center' ? $this->cc : bantuanUser('admin');
+    if ($recorderRole === 'superadmin') $recorder->forceFill(['is_superadmin' => true])->save();
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['status'=>'review1'])->save();
+    $version = 1;
+    $run = function (string $action, string $name, array $extra = []) use ($id, $recorder, &$version) {
+        return $this->actingAs($recorder, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/manual-processes', [
+            'action'=>$action, 'version'=>$version++,
+            'manual'=>['name'=>$name,'phone'=>'081234567890','channel'=>'telegram','date'=>now()->toDateString(),'note'=>'Laporan kegiatan diterima dari petugas melalui Telegram.'], ...$extra,
+        ])->assertOk();
+    };
+    $run('review1_approve', 'Penyetuju Eksternal')->assertJsonPath('data.status','survey_assignment');
+    $run('assign_survey', 'Petugas Survei Eksternal', ['surveyAddress'=>'Jalan Melati nomor 12, Bogor'])
+        ->assertJsonPath('data.verifierId',null)->assertJsonPath('data.manualVerifierName','Petugas Survei Eksternal');
+    $run('survey_save', 'Petugas Survei Eksternal', ['survey'=>['background'=>'Kondisi dari petugas']]);
+    foreach (['ktp','kk','survey_recipient','survey_front','survey_inside','survey_inside','survey_environment'] as $kind) bantuanDoc($id,$kind);
+    $run('survey_submit','Petugas Survei Eksternal',['survey'=>bantuanSurvey()])->assertJsonPath('data.status','survey_cc_review');
+    $run('survey_review_submit',$recorder->name)->assertJsonPath('data.status','survey_submitted');
+    $run('approve','Penyetuju Eksternal',['amount'=>1500000])->assertJsonPath('data.status','fund_ready')
+        ->assertJsonPath('data.manualDistributorName','Petugas Survei Eksternal');
+    $run('fund_submit','Pengaju Dana Eksternal');
+    $run('fund_approve','Pengaju Dana Eksternal');
+    $run('disburse','Bendahara Eksternal',['transferDate'=>now()->toDateString(),'transferAmount'=>1500000,'account'=>'Rekening penyalur uji'])->assertJsonPath('data.status','disbursed');
+    foreach (['handover','certificate'] as $kind) bantuanDoc($id,$kind);
+    $run('handover','Petugas Survei Eksternal',['handover'=>['date'=>now()->toDateString(),'method'=>'tunai','amount'=>1500000]])
+        ->assertJsonPath('data.status','completed')->assertJsonPath('data.manualProcess.last.recordedBy',$recorder->id);
+    $row = Application::findOrFail($id);
+    expect($row->verifier_id)->toBeNull()->and($row->distributor_id)->toBeNull()
+        ->and($row->manual_process['verifier']['name'])->toBe('Petugas Survei Eksternal')
+        ->and($row->manual_process['last']['name'])->toBe('Petugas Survei Eksternal');
+    $events = DB::table('bantuan_events')->where('application_id',$id)->where('action','survey_submit')->first();
+    expect($events->actor_id)->toBe($recorder->id);
+    $details = json_decode(Crypt::decryptString($events->details),true);
+    expect($details['manual']['name'])->toBe('Petugas Survei Eksternal');
+})->with(['call_center','admin','superadmin']);
+
+it('protects manual process authorization evidence stage and assigned identity', function () {
+    $id = $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id])->save();
+    $url='/api/v1/bantuan/applications/'.$id.'/manual-processes';
+    $data=['action'=>'survey_submit','version'=>1,'manual'=>['actorId'=>$this->verifier->id,'channel'=>'whatsapp','date'=>now()->toDateString(),'note'=>'Hasil diterima melalui WhatsApp.'],'survey'=>bantuanSurvey()];
+    foreach (['requester','verifier','approver','observer','fund_requester','treasurer'] as $role) {
+        $this->actingAs(bantuanUser($role),'sanctum')->postJson($url,$data)->assertForbidden();
+    }
+    $this->actingAs($this->cc,'sanctum')->postJson($url,$data)->assertUnprocessable(); // Evidence cannot be skipped.
+    foreach (['ktp','kk','survey_recipient','survey_front','survey_inside','survey_inside','survey_environment'] as $kind) bantuanDoc($id,$kind);
+    $wrong=$data;unset($wrong['manual']['actorId']);$wrong['manual']['name']='Petugas berbeda';
+    $this->postJson($url,$wrong)->assertUnprocessable();
+    $wrong=$data;$wrong['manual']['actorId']=$this->approver->id;
+    $this->postJson($url,$wrong)->assertUnprocessable();
+    $wrong=$data;$wrong['version']=99;$this->postJson($url,$wrong)->assertConflict();
+    $wrong=$data;$wrong['action']='handover';$this->postJson($url,$wrong)->assertConflict();
+    $wrong=$data;$wrong['manual']['date']=now()->addDay()->toDateString();$this->postJson($url,$wrong)->assertUnprocessable();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit',$data)->assertForbidden(); // JSON cannot grant manual authority.
+    $this->postJson($url,$data)->assertOk()->assertJsonPath('data.verifierId',$this->verifier->id)->assertJsonPath('data.status','survey_cc_review');
+});
+
+
+it('searches address and combined fields without widening visibility or private access', function () {
+    $input=bantuanInput();$input['applicant']['street']='Jalan Cempaka Nomor 12';$input['applicant']['district']='Cibinong';$input['applicant']['city']='Bogor';
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated()->json('data.id');
+    $row=Application::findOrFail($id);
+    $row->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id,'amount'=>2500000,'survey_location'=>['address'=>'Gang Anggrek dekat Masjid Bogor']])->save();
+    $other=bantuanInput();$other['applicant']['name']='Pemohon lain';$other['applicant']['nik']='3271051234567891';
+    $other['applicant']['street']='Jalan Cempaka Nomor 99';
+    $this->postJson('/api/v1/bantuan/applications',$other)->assertCreated();
+    foreach (['CEMPAKA 12','Cibinong Kesehatan','Anggrek Masjid',$this->verifier->name.' Cempaka','2.500.000','sedang survei','3271051234567890'] as $term) {
+        $this->getJson('/api/v1/bantuan/applications?'.http_build_query(['search'=>$term]))->assertOk()->assertJsonPath('total',1)->assertJsonPath('data.0.id',$id);
+    }
+    $this->getJson('/api/v1/bantuan/applications?'.http_build_query(['search'=>'Cempaka','status'=>'completed']))->assertOk()->assertJsonPath('total',0);
+    $this->getJson('/api/v1/bantuan/applications?'.http_build_query(['search'=>'%_']))->assertOk()->assertJsonPath('total',0);
+    $this->actingAs($this->verifier,'sanctum')->getJson('/api/v1/bantuan/applications?search=Cempaka')->assertOk()->assertJsonPath('total',1);
+    $this->actingAs($this->treasurer,'sanctum')->getJson('/api/v1/bantuan/applications?search=Cempaka')->assertOk()->assertJsonPath('total',0);
+    $this->getJson('/api/v1/bantuan/applications?search=Kesehatan')->assertOk()->assertJsonPath('total',2);
+    $raw=DB::table('bantuan_applications')->where('id',$id)->value('applicant');expect($raw)->not->toContain('Cempaka');
+});
+
+
+it('records manual funding decisions for the whole card atomically without bypassing item versions', function () {
+    $ids=[];
+    for($i=0;$i<2;$i++) {
+        $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status'=>'fund_ready','amount'=>1000000,'distribution_type'=>'manual','manual_process'=>['distributor'=>['name'=>'Petugas eksternal']]])->save();
+        $ids[]=$id;
+    }
+    $group=$this->actingAs(bantuanUser('fund_requester'),'sanctum')->postJson('/api/v1/bantuan/funding-requests',['title'=>'Kartu dana uji','items'=>array_map(fn($id)=>['id'=>$id,'version'=>1],$ids)])->assertCreated()->json('data');
+    $data=['version'=>$group['version'],'decision'=>'approved','items'=>array_map(fn($id)=>['id'=>$id,'version'=>2],$ids),
+        'manual'=>['name'=>'Pengaju dana eksternal','date'=>now()->toDateString(),'channel'=>'telegram','note'=>'Persetujuan diterima lewat Telegram.']];
+    $url='/api/v1/bantuan/funding-requests/'.$group['id'].'/manual-decision';
+    $this->postJson($url,$data)->assertForbidden();
+    $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications/'.$ids[0].'/manual-processes',['action'=>'fund_approve','version'=>2,'manual'=>$data['manual']])->assertConflict();
+    $stale=$data;$stale['items'][1]['version']=99;$this->postJson($url,$stale)->assertConflict();
+    foreach($ids as $id)expect(Application::findOrFail($id)->status)->toBe('fund_submitted');
+    $this->postJson($url,$data)->assertOk()->assertJsonPath('data.status','approved');
+    foreach($ids as $id){$row=Application::findOrFail($id);expect($row->status)->toBe('fund_approved')->and($row->manual_process['last']['recordedBy'])->toBe($this->cc->id);}
+});

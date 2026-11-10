@@ -45,6 +45,8 @@ class BantuanController
             ->map(fn ($value) => preg_replace('/^(?:kecamatan|kec\.?|kabupaten|kab\.?|kota)\s+/iu', '', trim((string) $value)))
             ->filter()->unique()->implode(', ');
         return ['id' => $row->id, 'number' => $row->number, 'name' => $row->name, 'status' => $row->status,
+            'manualVerifierName' => $row->manual_process['verifier']['name'] ?? null,
+            'manualDistributorName' => $row->manual_process['distributor']['name'] ?? null,
             'shortLocation' => mb_substr($location ?: trim((string) $row->region), 0, 100),
             'createdBy' => $row->created_by, 'intakeRole' => $row->intake_role,
             'program' => $row->program, 'region' => $row->region, 'source' => $row->source, 'amount' => $row->amount,
@@ -118,6 +120,7 @@ class BantuanController
             ->orderBy('bantuan_events.created_at')->get(['bantuan_events.id', 'action', 'from_status', 'to_status', 'actor_role', 'bantuan_events.created_at', 'users.name as actorName', 'details'])
             ->map(function ($event) use ($sensitive) {
                 $details = json_decode(Crypt::decryptString($event->details), true);
+                $event->manual = $sensitive ? ($details['manual'] ?? null) : null;
                 $event->reason = $details['reason'] ?? null;
                 if ($event->reason && ! $sensitive) {
                     $event->reason = preg_replace('/[0-9]{7,}/', '********', $event->reason);
@@ -131,6 +134,7 @@ class BantuanController
             ->where('active_application_id', $row->id)->first(['bantuan_funding_requests.id', 'bantuan_funding_requests.number']);
         return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'fundingRequest' => $funding,
             'surveyDeadline' => app(\App\Modules\Bantuan\Services\Reminders::class)->surveyDeadline($row),
+              'manualProcess' => $sensitive ? $row->manual_process : null,
               'surveyLocation' => $sensitive ? $row->survey_location : null,
             'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
@@ -148,6 +152,12 @@ class BantuanController
     public function update(Request $request, string $id, Intake $intake)
     {
         return response()->json(['data' => $this->summary($intake->save($request, $id))]);
+    }
+
+    public function manualProcess(Request $request, string $id, \App\Modules\Bantuan\Services\ManualProcesses $manual)
+    {
+        $manual->record($request, $id);
+        return $this->show($request, $id, app(Access::class));
     }
 
     public function action(Request $request, string $id, string $action, Workflow $workflow)

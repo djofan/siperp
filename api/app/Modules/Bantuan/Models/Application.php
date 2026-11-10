@@ -16,7 +16,7 @@ class Application extends Model
 
     protected function casts(): array
     {
-        return ['applicant' => 'encrypted:array', 'survey' => 'encrypted:array', 'survey_location' => 'encrypted:array', 'handover' => 'encrypted:array',
+        return ['manual_process' => 'encrypted:array', 'applicant' => 'encrypted:array', 'survey' => 'encrypted:array', 'survey_location' => 'encrypted:array', 'handover' => 'encrypted:array',
             'bypass_reason' => 'encrypted', 'fund_reference' => 'encrypted',
             'amount' => 'integer', 'version' => 'integer', 'disbursed_at' => 'datetime', 'completed_at' => 'datetime'];
     }

@@ -1,4 +1,5 @@
 "use client";
+import { ManualProcessPanel } from "./ManualProcessPanel";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
 import Link from "next/link";
@@ -166,6 +167,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   const [returnPhotosReady,setReturnPhotosReady]=useState(false);
   const onReturnPhotosReady=useCallback((ready:boolean)=>setReturnPhotosReady(ready),[]);
   const [commentError,setCommentError]=useState("");
+  const [manualOpen,setManualOpen]=useState(false);
   const [success,setSuccess]=useState(""),[savedNotice,setSavedNotice]=useState("");
   const [surveyPhotosReady,setSurveyPhotosReady]=useState(false),[missingSurveyPhotos,setMissingSurveyPhotos]=useState<string[]>([]);
   const [handoverPhotosReady,setHandoverPhotosReady]=useState(false),[missingHandoverPhotos,setMissingHandoverPhotos]=useState<string[]>([]);
@@ -262,6 +264,8 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
   if(assignedRow)return <div className={s.assignmentComplete}><SurveyReminder key={assignedRow.version} row={assignedRow} viewer={viewer} assignment/><div className={s.assignmentFooter}><span>Penugasan sudah tersimpan. Anda dapat melanjutkan pekerjaan lainnya.</span><Link className={`${s.button} ${s.secondary}`} href="/admin/bantuan/proses">Kembali ke pekerjaan saya</Link></div></div>;
   if(success)return <ProcessSuccess title="Berhasil disimpan" description={`${success}. Perubahan pengajuan ${row.number} sudah tersimpan.`}/>;
   return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>{rolesOf(viewer).every(role=>role==="observer")?"Akses baca saja. Sampaikan catatan atau pertanyaan untuk tim tanpa mengubah pengajuan.":"Keputusan dicatat beserta petugas dan waktunya."}</p></div></div><div className={s.cardBody}>
+    <ManualProcessPanel row={row} viewer={viewer} staff={staff} reload={reload} onOpenChange={setManualOpen}/>
+    <div hidden={manualOpen}>
     {row.fundingRequest&&<div className={s.notice}><strong>Termasuk kartu dana {row.fundingRequest.number}</strong><p>Keputusan dana dicatat dari kartu agar seluruh bantuan dalam kartu tetap konsisten.</p>{rolesOf(viewer).some(role=>["admin","fund_requester","treasurer","chair"].includes(role))&&<Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buka kartu pengajuan dana →</Link>}</div>}
     {row.status==="fund_ready"&&rolesOf(viewer).some(role=>["admin","fund_requester"].includes(role))&&<div className={s.notice}><strong>Ajukan bersama bantuan lainnya</strong><p>Buka Pengajuan dana, buat kartu, lalu centang bantuan yang ingin diajukan. Total nominal dihitung otomatis.</p><Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buat kartu pengajuan dana →</Link></div>}
     {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}
@@ -313,6 +317,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
       {commentError&&<p role="alert" className={s.fieldError}>{commentError}</p>}
       <div><button type="submit" className={`${s.button} ${s.secondary}`} disabled={busy}>{busy?"Menyimpan…":"Simpan catatan"}</button></div>
     </form>
+    </div>
   </div></section>;
 }
 
