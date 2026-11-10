@@ -1,3 +1,4 @@
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 import { Wordmark } from "@/modules/tanwir/components/Wordmark";
 import { Icon } from "@/modules/tanwir/components/icons";
@@ -15,6 +16,6 @@ export default function TanwirSiteLayout({children}:{children:React.ReactNode}){
       <nav className={f.column} aria-label="Akses akun Tanwir"><h2>Akses belajar</h2><Link href="/tanwir/masuk">Masuk akun <Icon name="arrowRight"/></Link><Link href="/tanwir#fitur">Fitur pembelajaran</Link><div className={f.codes}><span>Peserta <code>PTQ…</code></span><span>Guru PIC <code>GTQ…</code></span></div><small>Gunakan kode dan password dari admin.</small></nav>
       <div className={f.help}><span className={f.helpIcon}><Icon name="whatsapp"/></span><h2>Perlu bantuan?</h2><p>Informasi pendaftaran, kode akun, atau lupa password? Hubungi pengelola program.</p><a href={whatsappAdminHref()} className={f.contact}>Hubungi admin <Icon name="arrowRight"/></a></div>
     </div>
-    <div className={f.bottom}><span>© {new Date().getFullYear()} Tanwir Qurani · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP <Icon name="arrowRight"/></Link></div>
+    <OrganizationContact/><div className={f.bottom}><span>© {new Date().getFullYear()} Tanwir Qurani · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP <Icon name="arrowRight"/></Link></div>
   </div></footer>
 </div>;}

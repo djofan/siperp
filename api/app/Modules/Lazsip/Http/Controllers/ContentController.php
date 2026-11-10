@@ -162,6 +162,13 @@ class ContentController
     {
         abort_unless(in_array($key, ['hero', 'tentang', 'legalitas', 'kontak', 'zakatFitrah', 'transparansi'], true), 404);
         $data = $request->validate(['content' => 'required|array', 'content.*' => 'nullable|string|max:1000000']);
+        if ($key === 'kontak') {
+            $request->validate([
+                'content.address'=>'required|string|min:10|max:2000',
+                'content.phone'=>['required','string','max:50','regex:/^\+?[0-9][0-9\s().-]{7,49}$/D'],
+                'content.email'=>'required|email:rfc|max:191',
+            ], ['content.address.required'=>'Alamat kantor wajib diisi.', 'content.phone.required'=>'Nomor telepon resmi wajib diisi.', 'content.phone.regex'=>'Nomor telepon resmi tidak valid.', 'content.email.required'=>'Email resmi wajib diisi.', 'content.email.email'=>'Alamat email resmi tidak valid.']);
+        }
         // Blank optional fields become null in middleware; site content uses strings.
         $data['content'] = array_map(static fn ($value) => $value ?? '', $data['content']);
         $row = LazsipSiteContent::where('section_key', $key)->first() ?? new LazsipSiteContent;

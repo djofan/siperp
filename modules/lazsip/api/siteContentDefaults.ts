@@ -1,3 +1,4 @@
+import { ORGANIZATION_CONTACT } from "@/lib/organization-contact";
 import type { SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 
 // Salinan persis dari teks fallback yang tampil di halaman publik (Hero, TentangSection,
@@ -23,9 +24,9 @@ export const LAZSIP_SITE_CONTENT_DEFAULTS: Record<SiteContentSectionKey, Record<
     body: "LAZSIP adalah Lembaga Amil Zakat Solidaritas Insan Peduli, bernaung di bawah Yayasan Solidaritas Insan Peduli.",
   },
   kontak: {
-    address: "",
-    phone: "",
-    email: "",
+    address: ORGANIZATION_CONTACT.address,
+    phone: ORGANIZATION_CONTACT.phone,
+    email: ORGANIZATION_CONTACT.email,
     instagram: "",
     facebook: "",
     youtube: "",

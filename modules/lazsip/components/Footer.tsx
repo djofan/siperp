@@ -1,3 +1,4 @@
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 import { serviceLinks } from "./ServiceInfoPage";
 import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
@@ -61,7 +62,7 @@ export function Footer({
         aria-hidden
       />
 
-      <div className="relative">
+      <OrganizationContact className="text-white/85"/><div className="relative">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-4 py-10 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left">
           <div>
             <p className="text-lg font-semibold text-white">

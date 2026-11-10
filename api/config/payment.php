@@ -7,7 +7,7 @@ return [
     'ipaymu' => [
         'api_key' => env('IPAYMU_API_KEY'),
         'va' => env('IPAYMU_VA'),
-        'base_url' => env('IPAYMU_BASE_URL', 'https://sandbox.ipaymu.com/api/v2'),
+        'base_url' => env('IPAYMU_BASE_URL', env('PAYMENT_GATEWAY', 'simulation') === 'ipaymu' ? 'https://my.ipaymu.com/api/v2' : 'https://sandbox.ipaymu.com/api/v2'),
     ],
     'resend' => ['key' => env('RESEND_API_KEY'), 'from' => env('RESEND_FROM_EMAIL')],
 ];

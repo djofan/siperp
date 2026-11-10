@@ -79,11 +79,11 @@ export default async function KontenUmumPage() {
           {
             sectionKey: "kontak",
             title: "Kontak",
-            description: "Alamat, nomor, dan tautan media sosial yang tampil di halaman Kontak dan footer.",
+            description: "Lengkapi alamat kantor, email resmi, dan telepon aktif sesuai identitas bisnis iPaymu. Data tampil di halaman Kontak dan footer publik; tautan media sosial opsional.",
             fields: [
-              { key: "address", label: "Alamat", multiline: true, rows: 3 },
-              { key: "phone", label: "Telepon / WhatsApp" },
-              { key: "email", label: "Email" },
+              { key: "address", label: "Alamat kantor lengkap", multiline: true, rows: 3, required: true, hint: "Cantumkan jalan, nomor/blok, kelurahan, kecamatan, kota/kabupaten, provinsi, dan kode pos." },
+              { key: "phone", label: "Telepon / WhatsApp", required: true, type: "tel" },
+              { key: "email", label: "Email resmi", required: true, type: "email" },
               { key: "instagram", label: "URL Instagram" },
               { key: "facebook", label: "URL Facebook" },
               { key: "youtube", label: "URL YouTube" },

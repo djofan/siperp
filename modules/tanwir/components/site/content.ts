@@ -1,3 +1,4 @@
+import { ORGANIZATION_CONTACT } from "@/lib/organization-contact";
 // Konten situs publik Tanwir — diadaptasi dari situs lama (resources/views/*.blade.php),
 // tanpa angka klaim yang tidak bisa diverifikasi (prd-tanwir §5.1).
 
@@ -9,7 +10,7 @@ export const SITE_NAV = [
 ];
 
 export function whatsappAdminHref(message = "Assalamu'alaikum, saya ingin bertanya tentang program Tanwir Qurani.") {
-  const number = (process.env.NEXT_PUBLIC_TANWIR_WHATSAPP ?? process.env.NEXT_PUBLIC_SIP_WHATSAPP ?? "").replace(/\D/g, "");
+  const number = (process.env.NEXT_PUBLIC_TANWIR_WHATSAPP ?? process.env.NEXT_PUBLIC_SIP_WHATSAPP ?? ORGANIZATION_CONTACT.phoneDigits).replace(/\D/g, "");
   return number ? `https://wa.me/${number}?text=${encodeURIComponent(message)}` : "/tanwir/kontak";
 }
 
