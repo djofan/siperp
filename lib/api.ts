@@ -1,9 +1,10 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME } from "./session";
+import { describeApiProblem } from "./api-problem";
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number, public readonly details?: Record<string, string[]>) {
+  constructor(message: string, public readonly status: number, public readonly details?: Record<string, string[]>, public readonly diagnosticCode?: string, public readonly requestId?: string) {
     super(message);
     this.name = "ApiError";
   }
@@ -38,17 +39,17 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}, unwrap
   } else if (bodyInput) headers.set("Content-Type", "application/json");
   let response: Response;
   try { response = await fetch(backendUrl(path), { ...init, method, body: bodyInput, headers, cache: "no-store" }); }
-  catch { throw new ApiError("Backend Laravel belum dapat dihubungi. Periksa layanan API.", 503); }
+  catch { throw new ApiError("Backend Laravel belum dapat dihubungi. Periksa layanan API. (Kode: API_CONNECTION_FAILED)", 503, undefined, "API_CONNECTION_FAILED"); }
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   let body;
   try {
     body = JSON.parse(text, (_key, value) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value) ? new Date(value) : value);
   } catch {
-    throw new ApiError("Backend mengembalikan respons yang tidak valid.", response.status);
+    throw new ApiError(describeApiProblem(null, response.status, "Backend mengembalikan respons yang tidak valid. Hubungi admin untuk memeriksa proxy/API."), response.ok ? 502 : response.status, undefined, "INVALID_API_RESPONSE");
   }
   if (!response.ok) {
-    throw new ApiError(typeof body.error === "string" ? body.error : body.error?.message ?? "Request gagal.", response.status, body.error?.details);
+    throw new ApiError(describeApiProblem(body,response.status), response.status, body.error?.details, body.error?.diagnosticCode, body.error?.requestId);
   }
   return (unwrap && Object.prototype.hasOwnProperty.call(body, "data") ? body.data : body) as T;
 }

@@ -11,6 +11,7 @@ class ErrorResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        return ['error' => ['code' => $this->resource['code'], 'message' => $this->resource['message'], 'details' => $this->resource['details']]];
+        return ['error' => array_merge(['code' => $this->resource['code'], 'message' => $this->resource['message'], 'details' => $this->resource['details']],
+            array_intersect_key($this->resource, array_flip(['diagnosticCode', 'requestId', 'retryAfter'])))];
     }
 }

@@ -162,6 +162,22 @@ document.paths['/api/v1/bantuan/santunan'].get={tags:['Bantuan'],summary:'Read a
 document['x-bantuan-photo-locations']={applicationDetail:'Authorized GET /api/v1/bantuan/applications/{id}: documents[].location',santunanList:'Authorized GET /api/v1/bantuan/santunan: data[].documents[].location',schema:{$ref:'#/components/schemas/BantuanPhotoLocation'},visibility:'Same document filtering and record ownership as private photos. No public location endpoint. Browser builds a map link only after authorization. Opening it shares coordinates with the map provider.'};
 
 document.components.schemas.BantuanTelephone = {type:'string',minLength:8,maxLength:30,pattern:'^\\+?[0-9 ()-]+$',description:'Applicant phone and optional reporterPhone on application create/update: 8–15 digits, optional leading + (international code cannot start with 0), spaces/hyphens and balanced numeric area-code parentheses. Letters, extensions and invalid digit counts return 422. Enforced on drafts too when present; reporterPhone remains nullable. Formatting is preserved.'};
+document.paths['/api/v1/core/module-accounts/{id}/password-reset'] = { post: {
+  tags: ['Core'], summary: 'Reset an operational account password without its old password',
+  security: [{bearerAuth: []}], parameters: [{name:'id',in:'path',required:true,schema:{type:'string'}}],
+  description: 'Active module admins may reset operational accounts only when every target module is managed by that admin. Superadmin may reset operational accounts across modules. Admin identities, superadmin, self and unassigned accounts are excluded. Writes only a password hash, revokes every target token and logs actor/target without credentials. No password is returned. Rate limit 10 requests/minute.',
+  requestBody: {required:true,content:json({type:'object',required:['password','password_confirmation'],properties:{password:{type:'string',minLength:12,maxLength:72,writeOnly:true},password_confirmation:{type:'string',minLength:12,maxLength:72,writeOnly:true}}})},
+  responses: {200:{description:'Reset completed; Cache-Control: no-store, private',content:json({type:'object',properties:{ok:{const:true},data:{type:'object',properties:{id:{type:'string'},code:{type:'string'}}}}})},401:error,403:error,404:error,422:error,429:error},
+} };
+document['x-core-operational-password-reset'] = {accountList:'GET /api/v1/core/module-accounts: accounts[].canResetPassword is a UI hint only; authorization is repeated on mutation.',passwordVisibility:'Only the new password entered in the browser can be copied after success. Existing passwords are never retrievable.'};
+
+Object.assign(document.components.schemas.Error.properties.error.properties, {
+  diagnosticCode: {type:'string',description:'Stable public diagnostic category such as DB_SCHEMA_MISMATCH, DB_UNAVAILABLE or APP_KEY_MISSING. Does not expose SQL or configuration values.'},
+  requestId: {type:'string',format:'uuid',description:'Server-generated support reference, also returned as X-Request-ID and recorded in api_request_failed logs for server failures.'},
+  retryAfter: {type:['integer','null'],minimum:0,description:'Seconds until retry when the server supplies Retry-After.'},
+});
+document['x-api-error-diagnostics']={compatibility:'Existing error.code/message/details remain. Diagnostic metadata is additive. Database duplicates/constraints and busy states return 409; unavailable connections return 503; schema mismatches and unknown database errors return 500.',privacy:'No SQL, bindings, password, exception message, stack or configuration values in public diagnostics. api_request_failed logs include correlation ID, category, route template, exception class and source location, with SQLSTATE/driver code for database failures; request bodies, full URLs, SQL and bindings are not logged by this handler.'};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
