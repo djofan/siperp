@@ -3171,5 +3171,21 @@
       "manual field officer names"
     ],
     "privateFields": "Address, survey address, phone, job, problem and application notes only for rows the current officer can read sensitively. NIK only exact 16 digits. Encrypted private fields are streamed in the scoped server query, never stored as plaintext indexes or returned by search."
+  },
+  "x-lazsip-contact-validation": {
+    "endpoint": "/api/v1/lazsip/site-content/kontak",
+    "method": "PUT",
+    "requiredContentFields": {
+      "address": "string, 10-2000 characters",
+      "phone": "string, 8-50 characters; optional leading +, digits, spaces, parentheses, dots and hyphens",
+      "email": "RFC-valid email, max 191 characters"
+    },
+    "optionalSocialFields": [
+      "instagram",
+      "facebook",
+      "youtube"
+    ],
+    "invalidResponse": 422,
+    "description": "Invalid updates preserve the previously saved public contact details."
   }
 }

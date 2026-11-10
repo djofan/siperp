@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
 
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 
 export function Footer() {
@@ -25,7 +26,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
+        <OrganizationContact className="text-gray-700"/><div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
           &copy; {new Date().getFullYear()} Insan Academy &middot; LAZSIP. Semua hak dilindungi.
         </div>
       </div>

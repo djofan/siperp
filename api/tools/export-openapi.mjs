@@ -138,6 +138,13 @@ document['x-bantuan-application-search'] = {parameter:'search',maxLength:191,mat
 
 document.paths['/api/v1/bantuan/funding-requests/{id}/manual-decision']={post:{tags:['Bantuan'],summary:'Record external decision for a complete funding group',description:'Call Center or module admin/Superadmin. Same decision, reason, group version and complete item versions as the normal decision endpoint plus manual attribution (actorId or name, channel, date, note). The entire group is updated atomically, existing state/version/amount checks apply, and every application audit preserves the real performer and authenticated recorder.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version','decision','items','manual'],properties:{version:{type:'integer'},decision:{enum:['approved','rejected']},reason:{type:'string',nullable:true},manual:{type:'object'},items:{type:'array',minItems:1,maxItems:100,items:{type:'object',required:['id','version'],properties:{id:{type:'string'},version:{type:'integer'}}}}}})},responses:{200:{description:'Funding group with synchronized application decisions'},403:error,404:error,409:error,422:error}}};
 
+document['x-lazsip-contact-validation'] = {
+  endpoint: '/api/v1/lazsip/site-content/kontak', method: 'PUT',
+  requiredContentFields: { address: 'string, 10-2000 characters', phone: 'string, 8-50 characters; optional leading +, digits, spaces, parentheses, dots and hyphens', email: 'RFC-valid email, max 191 characters' },
+  optionalSocialFields: ['instagram', 'facebook', 'youtube'],
+  invalidResponse: 422, description: 'Invalid updates preserve the previously saved public contact details.',
+};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

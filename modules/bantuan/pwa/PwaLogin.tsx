@@ -1,4 +1,5 @@
 "use client";
+import { OrganizationContact } from "@/components/OrganizationContact";
 import { useState,type FormEvent } from "react";
 import Link from "next/link";
 import { Eye,EyeOff,ArrowRight,HeartHandshake,ShieldCheck } from "lucide-react";
@@ -29,6 +30,6 @@ export function PwaLogin() {
       <p className={s.help}>Lupa kode akun atau password? Hubungi admin pengelola Bantuan.</p>
     </form>
     <div className={s.loginFoot}><ShieldCheck size={16}/>Akses internal · Akun dan hak akses yang sama dengan web</div>
-    <Link className={s.webLink} href="/">Kembali ke website SIP</Link>
+    <OrganizationContact/><Link className={s.webLink} href="/">Kembali ke website SIP</Link>
   </main>;
 }

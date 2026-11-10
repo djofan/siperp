@@ -1,3 +1,4 @@
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 import { filterNavByHidden, sipSiteConfig } from "@/modules/sip/components/siteConfig";
 import { SipMark } from "@/modules/sip/components/SipMark";
@@ -220,7 +221,7 @@ export function Footer({
         </div>
       )}
 
-      {/* Rata kiri: pojok kanan bawah dipakai tombol WhatsApp melayang. */}
+      <OrganizationContact className="text-white/85"/>{/* Rata kiri: pojok kanan bawah dipakai tombol WhatsApp melayang. */}
       <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 pb-8 text-xs text-white/45 sm:flex-row sm:items-center sm:gap-6 sm:px-6">
         <p>
           © {new Date().getFullYear()} {footer.copyright}
