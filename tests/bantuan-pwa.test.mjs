@@ -7,7 +7,8 @@ const require=createRequire(import.meta.url),ts=require("typescript");
 function compile(file,dependencies={}){const context={exports:{},URLSearchParams,Response,require:key=>{if(key in dependencies)return dependencies[key];throw new Error(key);}};vm.runInNewContext(ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText,context);return context.exports;}
 const contract=compile("contracts/modules/bantuan.ts");
 const permissions=compile("modules/bantuan/permissions.ts",{"@/contracts/modules/bantuan":contract});
-const policy=compile("modules/bantuan/pwa/policy.ts",{"../permissions":permissions});
+const webPolicy=compile("modules/bantuan/policy.ts",{"./permissions":permissions});
+const policy=compile("modules/bantuan/pwa/policy.ts",{"../permissions":permissions,"../policy":webPolicy});
 function viewer(roles){return {id:"me",name:"Petugas",role:roles[0],roles,canBypass:false,settings:{}};}
 test("PWA tabs and routes follow operational permissions including combined roles",()=>{
   const penyalur=viewer(["volunteer"]),verifier=viewer(["verifier"]),bendahara=viewer(["treasurer"]);
@@ -80,10 +81,27 @@ test("server gate redirects anonymous users before reading module data and rejec
     "next/navigation":{redirect,notFound:()=>{throw new Error("not-found");}},
     "@/lib/auth":{getSession:async()=>session,hasModuleAccess:user=>user?.moduleSlugs.includes("bantuan")},
     "@/lib/api":{apiRequest:async()=>{apiCalls++;return viewer(["volunteer"]);},ApiError:class extends Error{}},
-    "./PwaApp":{PwaApp:()=>null},"./policy":policy,"next/link":{default:()=>null},"./Pwa.module.css":{default:{}},
+    "../permissions":permissions,"./PwaApp":{PwaApp:()=>null},"./policy":policy,"next/link":{default:()=>null},"./Pwa.module.css":{default:{}},
   }).default;
   await assert.rejects(page({params:Promise.resolve({path:["beranda"]})}),/redirect:\/bantuan-app\/login/);
   assert.equal(apiCalls,0);
   session={moduleSlugs:[]};await page({params:Promise.resolve({path:["beranda"]})});assert.equal(apiCalls,0);
   session={moduleSlugs:["bantuan"]};await assert.rejects(page({params:Promise.resolve({path:["tugas"]})}),/not-found/);
+});
+
+test("PWA edit routes apply the web record ownership check before rendering a form",async()=>{
+  const user=viewer(["requester"]);
+  let row={id:"aid",status:"draft",source:"online",createdBy:"another-user"};
+  const page=compile("modules/bantuan/pwa/page.tsx",{
+    "react/jsx-runtime":{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})},
+    "next/navigation":{redirect:()=>{throw new Error("redirect");},notFound:()=>{throw new Error("not-found");}},
+    "@/lib/auth":{getSession:async()=>({}),hasModuleAccess:()=>true},
+    "@/lib/api":{apiRequest:async path=>path==="bantuan/viewer"?user:row,ApiError:class extends Error{}},
+    "../permissions":permissions,"./PwaApp":{PwaApp:()=>null},"./policy":policy,"next/link":{default:()=>null},"./Pwa.module.css":{default:{}},
+  }).default;
+  const params=()=>({params:Promise.resolve({path:["workspace","pengajuan","aid","edit"]})});
+  await assert.rejects(page(params()),/not-found/);
+  row={...row,createdBy:user.id};
+  const result=await page(params());
+  assert.equal(result.props.route.join("/"),"workspace/pengajuan/aid/edit");
 });

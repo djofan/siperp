@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import Link from "./WorkspaceNavigation";
+import { useSearchParams } from "next/navigation";
+import { useWorkspaceRouter as useRouter } from "./WorkspaceNavigation";
 import { discardLocalPhotos, pausePhotos, photoSnapshot } from "../api/photo-queue";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, ChevronLeft, ChevronRight, CloudCheck, LoaderCircle, Save } from "lucide-react";

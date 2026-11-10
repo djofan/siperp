@@ -1,6 +1,6 @@
 "use client";
 import {useRef,useState,type FormEvent} from "react";
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import {Check,Wallet,ChevronDown} from "lucide-react";
 import type {AidApplication,AidDashboard,AidPage,BantuanStaff} from "@/contracts/modules/bantuan";
 import {money,request} from "../api/client";

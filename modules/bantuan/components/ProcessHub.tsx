@@ -2,7 +2,7 @@
 import { roleLabel } from "../permissions";
 
 
-import Link from "next/link";
+import Link from "./WorkspaceNavigation";
 import { useState } from "react";
 import { ArrowRight, Plus, CheckCheck, ChevronDown, BookOpen, FileText, Clock3, ClipboardList, Search, RotateCcw } from "lucide-react";
 import { type AidDashboard, type BantuanViewer } from "@/contracts/modules/bantuan";
