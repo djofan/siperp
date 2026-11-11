@@ -148,10 +148,28 @@ class IpaymuService
         if ($row->donor->phone) {
             $payload['buyerPhone'] = $row->donor->phone;
         }
-        $data = $this->request('/payment', $payload)->throw()->json();
+        $response = $this->request('/payment', $payload)->throw();
+        $data = $response->json();
         $sessionId = $data['Data']['SessionID'] ?? null;
         $url = $data['Data']['Url'] ?? null;
         if (($data['Status'] ?? null) !== 200 || ! is_string($sessionId) || $sessionId === '' || ! is_string($url) || ! $this->safeUrl($url)) {
+            $host = is_string($url) ? parse_url($url, PHP_URL_HOST) : null;
+            try {
+                Log::warning('iPaymu checkout response validation failed.', [
+                    'transaction_id' => $row->id,
+                    'http_status' => $response->status(),
+                    'provider_status_type' => get_debug_type($data['Status'] ?? null),
+                    'provider_status_is_200' => in_array($data['Status'] ?? null, [200, '200'], true),
+                    'session_id_type' => get_debug_type($sessionId),
+                    'session_id_present' => is_string($sessionId) && $sessionId !== '',
+                    'url_type' => get_debug_type($url),
+                    'url_allowed' => is_string($url) && $this->safeUrl($url),
+                    // Host only: never log session-bearing paths, query strings or fragments.
+                    'url_host' => is_string($host) && strlen($host) <= 253 && preg_match('/^[a-z0-9.-]+$/iD', $host) ? $host : null,
+                ]);
+            } catch (\Throwable) {
+                // Diagnostics must not change the payment outcome.
+            }
             throw new \RuntimeException('Invalid iPaymu checkout response.');
         }
 

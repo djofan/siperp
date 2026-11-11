@@ -154,3 +154,10 @@ Berdasarkan perbandingan tersebut, default serializer request iPaymu kini memaka
 UTF-8 langsung. Probe tetap secara eksplisit menguji kedua encoding. Ini belum
 membuktikan checkout production berhasil; setelah deploy, uji satu kali memakai
 transaksi pending yang sama dan periksa hasilnya. Tidak perlu migration database.
+
+Jika HTTP checkout tidak melempar error tetapi status provider, SessionID atau URL
+tidak lolos validasi, log `iPaymu checkout response validation failed.` mencatat
+tipe status/session/URL, boolean kelengkapan, status HTTP, ID transaksi, dan hostname
+URL saja. Path, query, fragment, SessionID dan isi respons tidak dicatat. URL baru
+tidak otomatis dipercaya; periksa hostname dan format resmi sebelum mengubah
+allowlist. Hasil sesi tetap ditandai belum pasti sehingga tidak dibuat ulang otomatis.
