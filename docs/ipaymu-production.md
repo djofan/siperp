@@ -64,3 +64,29 @@ pending yang sama; jangan membuat donasi berulang untuk mencoba konfigurasi.
 Referensi: [panduan signature](https://docs.ipaymu.com/id/docs/signature),
 [contoh PHP resmi](https://github.com/ipaymu/ipaymu-payment-v2-sample-php/blob/main/ipaymu.php),
 [cek koneksi melalui saldo](https://docs.ipaymu.com/id/docs/balance/check-balance).
+
+## Timeout untuk respons provider yang lambat
+
+`api/.env` mendukung `IPAYMU_TIMEOUT=90` (detik, dibatasi 60–120) dan
+`IPAYMU_CONNECT_TIMEOUT=15`. Berlaku untuk checkout, balance, history, dan detail
+transaksi. Signature tetap menggunakan byte JSON yang dikirim. Tidak ada retry
+HTTP otomatis pada pembuatan sesi; timeout tetap memerlukan rekonsiliasi sebelum
+mengulang pembayaran.
+
+Seluruh pencarian history dan verifikasi detail berbagi batas total dua kali
+`IPAYMU_TIMEOUT` (180 detik secara default). Job callback/rekonsiliasi mendapat
+tambahan 30 detik, dan reservasi antrean payment tambahan 60 detik lagi. Job
+rekonsiliasi mendukung produksi serta sandbox, sesuai mode transaksi aktif.
+
+Saat deployment, muat ulang cache konfigurasi dan restart worker agar job baru
+memakai batas terbaru. Selesaikan job lama sebelum menghentikan worker. Untuk
+systemd worker gunakan `--timeout=270` dan `TimeoutStopSec=300`; nilai tersebut
+mencakup seluruh rentang konfigurasi. Next.js meneruskan request maksimal 300 detik.
+Pada blok Nginx frontend pastikan `proxy_read_timeout 300s;`, dan pada location PHP
+backend pastikan `fastcgi_read_timeout 300s;`. Periksa pula batas PHP-FPM
+`request_terminate_timeout` bila diaktifkan: gunakan setidaknya 300 detik.
+Validasi konfigurasi sebelum reload layanan. Perubahan kode ini tidak mengubah
+konfigurasi Nginx/systemd VPS secara otomatis dan tidak memerlukan migration.
+
+Setelah deployment jalankan `php artisan payment:ipaymu-check --remote`.
+Tes tersebut hanya memeriksa autentikasi tanpa membuat pembayaran atau menampilkan saldo.
