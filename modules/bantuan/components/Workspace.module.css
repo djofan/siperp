@@ -236,3 +236,5 @@
 .app.mobileApp .main{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .app.mobileApp .sidebar{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
 @media(max-width:760px){.app.mobileApp .main{padding:16px 12px calc(100px + env(safe-area-inset-bottom))}.app.mobileApp .heading h1{font-size:24px}.app.mobileApp .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}.app.mobileApp .topbar{position:sticky;top:0;z-index:20}.app.mobileApp .popover{max-width:calc(100vw - 24px);max-height:70dvh;overflow:auto}}
+
+.pwaAccount{display:flex;align-items:center;gap:16px;padding:22px;background:#fff;border-radius:20px;margin-bottom:24px}.pwaAccount>div{flex:1;min-width:0}.pwaAccount h2{font-size:18px;margin:0 0 6px;overflow-wrap:anywhere}.pwaAccount p{font-size:12px;color:var(--muted);margin:4px 0;overflow-wrap:anywhere}.app.mobileApp{background:#f7f8f7}.app.mobileApp .body{background:#f7f8f7}.app.mobileApp .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}@media(max-width:480px){.pwaAccount{flex-wrap:wrap;padding:18px}.pwaAccount>.button{width:100%}}

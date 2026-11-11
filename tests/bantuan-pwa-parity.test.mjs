@@ -73,7 +73,8 @@ test("PWA renders the actual web dashboard menus for all roles and keeps interna
  for(const role of roles){
   const user=viewer(role);
   const html=renderToStaticMarkup(React.createElement(PwaApp,{viewer:user,route:["beranda"]}));
-  assert.match(html,/Semua menu/);
+  assert.doesNotMatch(html,/aria-controls="bantuan-sidebar"/);
+  assert.doesNotMatch(html,/Tutup semua menu/);
   assert.match(html,/Navigasi aplikasi/);
   assert.doesNotMatch(html,/href="\/admin\/bantuan(?:[\/"?#])/);
   assert.match(html,/href="\/bantuan-app\/akun"/);
