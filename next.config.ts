@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: { serverActions: { bodySizeLimit: "51mb" } },
+  experimental: {
+    serverActions: { bodySizeLimit: "51mb" },
+    // Allow Laravel's bounded iPaymu reconciliation (up to 240s) to complete.
+    proxyTimeout: 300_000,
+  },
   async headers() {
     return [{source:"/bantuan-app/:path*",headers:[
       {key:"Cache-Control",value:"no-store, private"},
