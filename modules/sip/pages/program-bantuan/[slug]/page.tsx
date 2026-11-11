@@ -1,3 +1,4 @@
+import { SipGallery } from "@/modules/sip/components/SipGallery";
 import { notFound } from "next/navigation";
 import { getProgramBantuanBySlug } from "@/modules/sip/api/programBantuan";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
@@ -30,6 +31,7 @@ export default async function ProgramBantuanDetailPage({ params }: { params: Pro
             </svg>
           </a>
         )}
+        <SipGallery photos={program.documentationPhotos??[]} title={program.title} kind="program"/>
       </div>
     </div>
   );

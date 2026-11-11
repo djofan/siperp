@@ -16,9 +16,9 @@ class SipProgramBantuan extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['campaignUrl' => 'campaign_url', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['documentationPhotos' => 'documentation_photos', 'campaignUrl' => 'campaign_url', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
 
-    protected $casts = ['is_pinned' => 'boolean', 'created_at' => 'immutable_datetime'];
+    protected $casts = ['documentation_photos' => 'array', 'is_pinned' => 'boolean', 'created_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 }

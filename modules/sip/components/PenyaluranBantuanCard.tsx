@@ -1,13 +1,17 @@
+import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { SipGallery } from "./SipGallery";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
 import { formatDate } from "@/modules/sip/components/format";
 
 export function PenyaluranBantuanCard({
+  documentationPhotos = [],
   title,
   description,
   image,
   location,
   date,
 }: {
+  documentationPhotos?: SipDocumentationPhoto[];
   title: string;
   description: string;
   image: string | null;
@@ -38,6 +42,7 @@ export function PenyaluranBantuanCard({
         <h3 className="line-clamp-2 text-base font-semibold leading-snug text-sip-primary-900">{title}</h3>
         <p className="line-clamp-2 text-sm leading-relaxed text-sip-primary-900/55">{description}</p>
       </div>
+      {documentationPhotos.length>0&&<details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-sip-primary-700">Lihat galeri · {documentationPhotos.length} foto</summary><SipGallery photos={documentationPhotos} title={title} kind="activity"/></details>}
     </div>
   );
 }

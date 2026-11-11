@@ -180,9 +180,9 @@ document['x-api-error-diagnostics']={compatibility:'Existing error.code/message/
 
 document['x-ipaymu-request-authentication'] = {method:'POST',serialization:'One JSON string with JSON_UNESCAPED_SLASHES; the same bytes are signed and sent as application/json.',stringToSign:'POST:VA:lowercase(SHA256(body)):ApiKey',signature:'HMAC-SHA256 hexadecimal using ApiKey as key',timestamp:'Asia/Jakarta YYYYMMDDHHmmss',credentials:'Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.',diagnostics:'payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction.'};
 
+document.components.schemas.SipDocumentationPhoto = {type:'object',additionalProperties:false,required:['id','image'],properties:{id:{type:'string',format:'uuid'},image:{type:'string',maxLength:191,pattern:'^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$'},caption:{type:['string','null'],maxLength:500},isDemo:{type:'boolean'}}};
+document['x-sip-content-galleries'] = {resources:['news','program-bantuan','penyaluran-bantuan'],field:'documentationPhotos',schema:{type:'array',maxItems:50,items:{$ref:'#/components/schemas/SipDocumentationPhoto'}},behavior:'Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private.'};
 document['x-bantuan-survey-photo-replacement'] = 'DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.';
-
-
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

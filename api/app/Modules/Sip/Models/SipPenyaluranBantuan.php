@@ -16,9 +16,9 @@ class SipPenyaluranBantuan extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['createdAt' => 'created_at'];
+    protected array $fieldMap = ['documentationPhotos' => 'documentation_photos', 'createdAt' => 'created_at'];
 
-    protected $casts = ['date' => 'immutable_datetime', 'created_at' => 'immutable_datetime'];
+    protected $casts = ['documentation_photos' => 'array', 'date' => 'immutable_datetime', 'created_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 }

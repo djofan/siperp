@@ -1,5 +1,7 @@
 "use client";
 
+import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { DocumentationEditor, useDocumentationEditor } from "./SipDocumentationEditor";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SipImageUploadField } from "@/modules/sip/components/admin/SipImageUploadField";
@@ -7,6 +9,7 @@ import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButto
 import { panelClasses } from "@/components/ui/panel";
 
 interface PenyaluranBantuanFormValues {
+  documentationPhotos: SipDocumentationPhoto[];
   title: string;
   description: string;
   image: string;
@@ -22,6 +25,7 @@ export function PenyaluranBantuanForm({
   initialValues?: Partial<PenyaluranBantuanFormValues>;
 }) {
   const router = useRouter();
+  const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!itemId;
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [description, setDescription] = useState(initialValues?.description ?? "");
@@ -34,6 +38,7 @@ export function PenyaluranBantuanForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if(gallery.uploading || gallery.photos.some(photo=>!photo.image)){setError("Tunggu unggahan foto selesai dan hapus baris galeri yang kosong.");return;}
 
     if (!isEdit && !image) {
       setError("Gambar dokumentasi wajib diunggah.");
@@ -48,7 +53,7 @@ export function PenyaluranBantuanForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, image, location, date }),
+      body: JSON.stringify({ documentationPhotos: gallery.photos, title, description, image, location, date }),
     });
 
     if (!response.ok) {
@@ -67,7 +72,7 @@ export function PenyaluranBantuanForm({
       <div className={panelClasses("p-6 sm:p-8")}>
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <SipImageUploadField label="Gambar Dokumentasi" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+            <SipImageUploadField label="Gambar Dokumentasi" initialUrl={image} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -121,9 +126,10 @@ export function PenyaluranBantuanForm({
         </div>
       </div>
 
+      <DocumentationEditor editor={gallery} kind="penyaluran" saving={isSubmitting}/>
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
         {error && <p className="text-sm text-red-400">{error}</p>}
-        <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
+        <SipLoadingButton type="submit" loading={isSubmitting} disabled={gallery.uploading} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Penyaluran Bantuan"}
         </SipLoadingButton>
       </div>
