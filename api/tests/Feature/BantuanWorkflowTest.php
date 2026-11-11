@@ -92,11 +92,11 @@ it('reviews and corrects a full survey and applicant before explicitly forwardin
     $this->postJson($url.'survey_review_submit', ['version' => 3])->assertUnprocessable();
     $original = DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'survey_front')->value('id');
     DB::table('bantuan_documents')->where('id', $original)->update(['deleted_at' => now()]);
-    bantuanDoc($id, 'survey_front'); // An unused replacement cannot stand in for original survey evidence.
-    $this->postJson($url.'survey_review_submit', ['version' => 3, 'survey' => ['needs' => 'Kebutuhan dikoreksi']])->assertUnprocessable();
-    DB::table('bantuan_documents')->where('id', $original)->update(['deleted_at' => null]);
+    $replacement = bantuanDoc($id, 'survey_front'); // CC validates the corrected evidence before forwarding.
     $this->postJson($url.'survey_review_submit', ['version' => 3, 'survey' => ['needs' => 'Kebutuhan dikoreksi']])
         ->assertOk()->assertJsonPath('data.status', 'survey_submitted');
+    expect(DB::table('bantuan_documents')->where('id', $replacement)->value('used_at'))->not->toBeNull();
+    expect(DB::table('bantuan_documents')->where('id', $original)->value('deleted_at'))->not->toBeNull();
     $row = Application::findOrFail($id);
     expect($row->applicant['name'])->toBe('Nama dikoreksi')->and($row->applicant['income'])->toBe(200000)
         ->and($row->nik_hash)->toBe(app(\App\Modules\Bantuan\Services\Intake::class)->nikHash('3271051234567891'))
@@ -1932,4 +1932,27 @@ it('keeps santunan photo pins private and allows old photos without a pin', func
     expect($photos['recipient_photo']['location']['accuracy'])->toBe(25);
     expect($photos['aid_paper']['location'])->toBeNull();
     $this->actingAs(bantuanUser('volunteer'), 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(0, 'data');
+});
+
+
+it('allows assigned verifiers to replace incorrect survey evidence before approval', function (string $status, string $kind, bool $used) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => $status, 'verifier_id' => $this->verifier->id])->save();
+    $doc = bantuanDoc($id, $kind);
+    DB::table('bantuan_documents')->where('id', $doc)->update(['uploaded_by' => $this->verifier->id, 'used_at' => $used ? now() : null]);
+    $this->actingAs($this->verifier, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertOk();
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->not->toBeNull();
+})->with([
+    ['survey_assigned', 'ktp', false], ['survey_assigned', 'kk', false],
+    ['survey_assigned', 'survey_front', true], ['survey_cc_review', 'survey_front', true],
+    ['survey_cc_review', 'sktm', false],
+]);
+
+it('locks survey evidence again after it is forwarded to approval', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_submitted', 'verifier_id' => $this->verifier->id])->save();
+    $doc = bantuanDoc($id, 'survey_front');
+    DB::table('bantuan_documents')->where('id', $doc)->update(['uploaded_by' => $this->verifier->id, 'used_at' => now()]);
+    $this->actingAs($this->verifier, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertStatus(409);
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->toBeNull();
 });

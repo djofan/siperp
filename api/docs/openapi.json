@@ -3852,5 +3852,6 @@
       }
     },
     "behavior": "Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private."
-  }
+  },
+  "x-bantuan-survey-photo-replacement": "DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval."
 }

@@ -187,6 +187,7 @@ class Workflow
                 }
                 if ($action === 'survey_review_submit') {
                     // CC corrects the existing survey; its consumed evidence remains valid.
+                    DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->update(['used_at' => now()]);
                     $this->requiredDocuments($row, ['survey_recipient' => 1, 'survey_front' => 1, 'survey_inside' => 2, 'survey_environment' => 1], consumed: true);
                     $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
                     abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')
