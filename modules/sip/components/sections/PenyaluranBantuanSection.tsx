@@ -28,6 +28,7 @@ export async function PenyaluranBantuanSection({ content }: { content: Record<st
               items={shown}
               renderItem={(item) => (
                 <PenyaluranBantuanCard
+                  documentationPhotos={item.documentationPhotos}
                   title={item.title}
                   description={item.description}
                   image={item.image}

@@ -695,6 +695,35 @@
         "maxLength": 30,
         "pattern": "^\\+?[0-9 ()-]+$",
         "description": "Applicant phone and optional reporterPhone on application create/update: 8–15 digits, optional leading + (international code cannot start with 0), spaces/hyphens and balanced numeric area-code parentheses. Letters, extensions and invalid digit counts return 422. Enforced on drafts too when present; reporterPhone remains nullable. Formatting is preserved."
+      },
+      "SipDocumentationPhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "image"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "image": {
+            "type": "string",
+            "maxLength": 191,
+            "pattern": "^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "isDemo": {
+            "type": "boolean"
+          }
+        }
       }
     }
   },
@@ -3807,5 +3836,21 @@
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
     "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
     "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
+  },
+  "x-sip-content-galleries": {
+    "resources": [
+      "news",
+      "program-bantuan",
+      "penyaluran-bantuan"
+    ],
+    "field": "documentationPhotos",
+    "schema": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/components/schemas/SipDocumentationPhoto"
+      }
+    },
+    "behavior": "Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private."
   }
 }
