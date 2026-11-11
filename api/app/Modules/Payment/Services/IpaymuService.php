@@ -9,8 +9,12 @@ use GuzzleHttp\TransferStats;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class IpaymuService
 {
@@ -99,7 +103,8 @@ class IpaymuService
     {
         $parsed = $url ? parse_url($url) : false;
 
-        if (! $parsed || ($parsed['scheme'] ?? '') !== 'https' || isset($parsed['user']) || isset($parsed['pass'])) {
+        if (! $parsed || ($parsed['scheme'] ?? '') !== 'https' || isset($parsed['user']) || isset($parsed['pass'])
+            || (isset($parsed['port']) && $parsed['port'] !== 443) || preg_match('/[\x00-\x20\x7F\\\\]/', $url)) {
             return false;
         }
 
@@ -112,8 +117,8 @@ class IpaymuService
         }
 
         return config('payment.gateway') === 'ipaymu'
-            && $host === 'my.ipaymu.com'
-            && str_starts_with($path, '/payment/');
+            && (($host === 'my.ipaymu.com' && str_starts_with($path, '/payment/'))
+                || ($host === 'payment.ipaymu.com' && in_array($path, ['', '/'], true)));
     }
 
     public function createSession(PaymentTransaction $row): array
@@ -152,8 +157,9 @@ class IpaymuService
         $data = $response->json();
         $sessionId = $data['Data']['SessionID'] ?? null;
         $url = $data['Data']['Url'] ?? null;
-        if (($data['Status'] ?? null) !== 200 || ! is_string($sessionId) || $sessionId === '' || ! is_string($url) || ! $this->safeUrl($url)) {
+        if (! in_array($data['Status'] ?? null, [200, '200'], true) || ! is_string($sessionId) || $sessionId === '' || ! is_string($url) || ! $this->safeUrl($url)) {
             $host = is_string($url) ? parse_url($url, PHP_URL_HOST) : null;
+            $preserved = $this->preserveSessionEvidence($row, $data);
             try {
                 Log::warning('iPaymu checkout response validation failed.', [
                     'transaction_id' => $row->id,
@@ -164,6 +170,7 @@ class IpaymuService
                     'session_id_present' => is_string($sessionId) && $sessionId !== '',
                     'url_type' => get_debug_type($url),
                     'url_allowed' => is_string($url) && $this->safeUrl($url),
+                    'evidence_preserved' => $preserved,
                     // Host only: never log session-bearing paths, query strings or fragments.
                     'url_host' => is_string($host) && strlen($host) <= 253 && preg_match('/^[a-z0-9.-]+$/iD', $host) ? $host : null,
                 ]);
@@ -174,6 +181,69 @@ class IpaymuService
         }
 
         return ['sessionId' => $sessionId, 'url' => $url];
+    }
+
+    private function evidencePath(string $id): string
+    {
+        return 'payment/ipaymu-session-evidence/'.hash('sha256', $id).'.enc';
+    }
+
+    private function preserveSessionEvidence(PaymentTransaction $row, mixed $data): bool
+    {
+        if (! $row->exists) {
+            return false;
+        }
+        try {
+            $session = $data['Data']['SessionID'] ?? null;
+            $url = $data['Data']['Url'] ?? null;
+            $evidence = ['transactionId' => $row->id, 'gateway' => $row->gateway,
+                'referenceId' => $row->gatewayReferenceId, 'accountId' => $row->gatewayAccountId,
+                'status' => in_array($data['Status'] ?? null, [200, '200'], true) ? 200 : null,
+                'sessionId' => is_string($session) && strlen($session) <= 191 ? $session : null,
+                'url' => is_string($url) && strlen($url) <= 4096 ? $url : null];
+            $disk = Storage::disk('local');
+            $path = $this->evidencePath($row->id);
+            $directory = dirname($disk->path($path));
+            // Shared private runtime: FPM and the CLI worker use the www-data group.
+            File::ensureDirectoryExists(dirname($directory), 02770, true);
+            File::ensureDirectoryExists($directory, 02770, true);
+            $saved = $disk->put($path, Crypt::encryptString(json_encode($evidence, JSON_THROW_ON_ERROR)));
+
+            return $saved && chmod($disk->path($path), 0660);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** Recover only preserved provider evidence; never create or retry a checkout. */
+    public function recoverCheckoutSession(PaymentTransaction $row, bool $apply = false): string
+    {
+        $config = $this->configuration();
+        abort_unless($row->gateway === $config['gateway'] && $row->gatewayAccountId === $config['va'], 409);
+        $path = $this->evidencePath($row->id);
+        if (! Storage::disk('local')->exists($path)) {
+            return 'NO_EVIDENCE';
+        }
+        $evidence = json_decode(Crypt::decryptString(Storage::disk('local')->get($path)), true, 512, JSON_THROW_ON_ERROR);
+        abort_unless(is_array($evidence) && ($evidence['transactionId'] ?? null) === $row->id
+            && ($evidence['gateway'] ?? null) === $row->gateway && ($evidence['accountId'] ?? null) === $config['va']
+            && filled($row->gatewayReferenceId) && ($evidence['referenceId'] ?? null) === $row->gatewayReferenceId
+            && ($evidence['status'] ?? null) === 200 && is_string($evidence['sessionId'] ?? null) && $evidence['sessionId'] !== ''
+            && is_string($evidence['url'] ?? null) && $this->safeUrl($evidence['url']), 409);
+        if (! $apply) {
+            return 'EVIDENCE_VALID';
+        }
+
+        DB::transaction(function () use ($row, $evidence, $config): void {
+            $current = PaymentTransaction::whereKey($row->id)->lockForUpdate()->firstOrFail();
+            abort_unless($current->status === 'pending' && $current->gatewayState === 'needs_review'
+                && $current->gateway === $config['gateway'] && $current->gatewayAccountId === $config['va']
+                && $current->gatewayReferenceId === $evidence['referenceId']
+                && ! filled($current->gatewaySessionId) && ! filled($current->gatewayCheckoutUrl), 409);
+            $current->forceFill(['gatewaySessionId' => $evidence['sessionId'], 'gatewayCheckoutUrl' => $evidence['url'], 'gatewayState' => 'ready'])->save();
+        });
+
+        return 'SESSION_RECOVERED';
     }
 
     public function verifyCallback(array $payload, ?string $signature): bool

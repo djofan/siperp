@@ -146,8 +146,8 @@ it('explains invalid successful checkout responses without exposing session toke
     });
     Http::assertSentCount(1);
 })->with([
-    ['200', 'SECRET_SESSION', 'https://my.ipaymu.com/payment/SECRET_SESSION', 'provider_status_type', 'string'],
+    [201, 'SECRET_SESSION', 'https://my.ipaymu.com/payment/SECRET_SESSION', 'provider_status_is_200', false],
     [200, null, 'https://my.ipaymu.com/payment/SECRET_SESSION', 'session_id_present', false],
-    [200, 'SECRET_SESSION', 'https://payment.ipaymu.com/?id=SECRET_QUERY#SECRET_FRAGMENT', 'url_host', 'payment.ipaymu.com'],
+    [200, 'SECRET_SESSION', 'https://untrusted.example.test/?id=SECRET_QUERY#SECRET_FRAGMENT', 'url_host', 'untrusted.example.test'],
     [200, 'SECRET_SESSION', null, 'url_type', 'null'],
 ]);

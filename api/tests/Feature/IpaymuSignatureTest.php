@@ -95,3 +95,27 @@ it('reports a signature rejection with a failing command exit code', function ()
     Http::fake(['*/balance' => Http::response(['Status' => 401, 'Message' => 'Unauthorized Signature'], 401)]);
     $this->artisan('payment:ipaymu-check', ['--remote' => true])->expectsOutputToContain('IPAYMU_SIGNATURE_REJECTED')->assertExitCode(1);
 });
+
+it('accepts hosted production checkout with numeric or string success status', function ($status) {
+    $url = 'https://payment.ipaymu.com/#91538218-5158-459b-8716-dd97ffe3edab';
+    Http::fake(['*/payment' => Http::response(['Status' => $status, 'Data' => ['SessionID' => 'hosted-session', 'Url' => $url]])]);
+    $row = (new PaymentTransaction)->forceFill(['id' => 'hosted-test', 'gatewayReferenceId' => 'hosted-reference', 'gatewayAccountId' => '1179000899',
+        'trackingCode' => 'LZS-TEST', 'moduleSource' => 'lazsip', 'sourceType' => 'campaign', 'amount' => 10007, 'adminFee' => 0]);
+    $row->setRelation('donor', (new PaymentDonor)->forceFill(['name' => 'Test']));
+    expect(app(IpaymuService::class)->createSession($row))->toBe(['sessionId' => 'hosted-session', 'url' => $url]);
+    Http::assertSentCount(1);
+})->with([200, '200']);
+
+it('rejects unsafe or cross-environment checkout addresses', function ($url) {
+    expect(app(IpaymuService::class)->safeUrl($url))->toBeFalse();
+    Http::assertNothingSent();
+})->with([
+    'http://payment.ipaymu.com/#session',
+    'https://payment.ipaymu.com.evil.test/#session',
+    'https://payment.ipaymu.com@evil.test/#session',
+    'https://evil.test@payment.ipaymu.com/#session',
+    'https://payment.ipaymu.com:8443/#session',
+    'https://payment.ipaymu.com/other-path/#session',
+    'https://sandbox-payment.ipaymu.com/#session',
+    "https://payment.ipaymu.com/\n#session",
+]);
