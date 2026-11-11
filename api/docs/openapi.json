@@ -3807,5 +3807,6 @@
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
     "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
     "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
-  }
+  },
+  "x-bantuan-survey-photo-replacement": "DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval."
 }
