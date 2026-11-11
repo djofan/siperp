@@ -253,3 +253,8 @@ Lokasi disimpan terenkripsi, tidak ditulis ke log/audit. Representasi dokumen
 privat menambahkan `location` nullable; foto lama null. Filtering dan izin foto
 berlaku juga untuk koordinat. Source menandakan asal klaim klien, bukan bukti
 terverifikasi. Tidak ada endpoint lokasi publik atau perubahan izin dokumen.
+
+### Penggantian foto survei
+
+DELETE dokumen Bantuan mengizinkan penggantian KTP, KK, SKTM, foto pendukung dan survey_* pada survey_assigned atau survey_cc_review, termasuk bukti survei yang pernah dikirim. Otorisasi tetap memeriksa penugasan serta pengunggah/Admin. Penghapusan menandai deleted_at dan mempertahankan file privat untuk audit. Setelah diteruskan ke persetujuan, bukti terkunci kembali. Kirim hasil pemeriksaan memvalidasi ulang kelengkapan foto aktif dan menandai bukti pengganti sebagai digunakan.
+

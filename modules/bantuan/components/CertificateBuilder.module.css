@@ -10,3 +10,5 @@
 .body p{font-size:13px;line-height:1.7;color:#617b70;margin:20px 0}.body .error{color:#a33028}
 .body button{display:inline-flex;align-items:center;gap:9px;background:#267449;color:white;border:0;border-radius:24px;padding:14px 20px;font:inherit;font-weight:600;cursor:pointer}.body button:hover{background:#195d37}.body button:disabled{opacity:.65;cursor:wait}
 @media(max-width:600px){.grid{grid-template-columns:1fr}.panel summary{padding:18px}.body{padding:0 18px 18px}}
+
+.grid .dateField{font-weight:700}.grid .dateField input{font-size:21px;font-weight:700;min-height:56px;letter-spacing:.02em}.grid .dateField small{font-size:12px;font-weight:400;line-height:1.6;color:#617b70}
