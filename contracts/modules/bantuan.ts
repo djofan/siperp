@@ -1,7 +1,7 @@
 export interface PhotoLocation { latitude:number; longitude:number; source:"exif"|"device"; accuracy?:number|null }
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", requester: "Petugas Pengajuan", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
-  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Pengurus", survey_approver: "Penyetuju Survei",
+  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Monitoring", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
