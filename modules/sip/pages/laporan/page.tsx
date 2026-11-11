@@ -1,3 +1,4 @@
+import { BackButton } from "@/modules/sip/components/ui/BackButton";
 import { listLaporan } from "@/modules/sip/api/laporan";
 import { SectionHeading, AccentText } from "@/modules/sip/components/ui/SectionHeading";
 import { LaporanCard } from "@/modules/sip/components/LaporanCard";
@@ -31,6 +32,9 @@ export default async function LaporanPage() {
   return (
     <div className="min-h-screen bg-white pb-16 pt-24 sm:pt-28">
       <div data-reveal className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-6 sm:mb-8">
+          <BackButton href="/#laporan" label="Kembali ke beranda" />
+        </div>
         <SectionHeading
           eyebrow="Transparansi"
           title={

@@ -1,3 +1,4 @@
+import { BackButton } from "@/modules/sip/components/ui/BackButton";
 import { listProgramBantuan } from "@/modules/sip/api/programBantuan";
 import { ProgramBantuanCard } from "@/modules/sip/components/ProgramBantuanCard";
 import { SectionHeading, AccentText } from "@/modules/sip/components/ui/SectionHeading";
@@ -9,6 +10,9 @@ export default async function ProgramBantuanListPage() {
   return (
     <div className="min-h-screen bg-white pb-16 pt-24 sm:pt-28">
       <div data-reveal className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-6 sm:mb-8">
+          <BackButton href="/#program" label="Kembali ke beranda" />
+        </div>
         <SectionHeading
           eyebrow="Program"
           title={
