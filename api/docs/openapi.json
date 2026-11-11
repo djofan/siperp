@@ -3830,7 +3830,7 @@
   },
   "x-ipaymu-request-authentication": {
     "method": "POST",
-    "serialization": "One JSON string with JSON_UNESCAPED_SLASHES; the same bytes are signed and sent as application/json.",
+    "serialization": "One JSON string with JSON_UNESCAPED_SLASHES and JSON_UNESCAPED_UNICODE (literal UTF-8); the same bytes are signed and sent as application/json.",
     "stringToSign": "POST:VA:lowercase(SHA256(body)):ApiKey",
     "signature": "HMAC-SHA256 hexadecimal using ApiKey as key",
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",

@@ -239,11 +239,12 @@ class IpaymuService
         return min((float) config('payment.ipaymu.timeout', 90), $remaining);
     }
 
-    private function request(string $path, array $payload, ?float $timeout = null, bool $unescapedUnicode = false): Response
+    private function request(string $path, array $payload, ?float $timeout = null, bool $unescapedUnicode = true): Response
     {
         $config = $this->configuration();
         $method = 'POST';
-        // Match the official PHP sample. Sign these exact bytes and send them unchanged;
+        // UTF-8 Unicode was accepted by the production balance comparison; escaped Unicode was rejected.
+        // Sign these exact bytes and send them unchanged;
         // never pass the payload through a second JSON/form serializer after signing.
         $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | ($unescapedUnicode ? JSON_UNESCAPED_UNICODE : 0));
         $bodyHash = strtolower(hash('sha256', $body));

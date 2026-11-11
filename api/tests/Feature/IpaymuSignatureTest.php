@@ -3,8 +3,11 @@
 use App\Modules\Payment\Models\PaymentDonor;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Modules\Payment\Services\IpaymuService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     config(['payment.gateway' => 'ipaymu', 'payment.ipaymu.va' => '1179000899', 'payment.ipaymu.api_key' => 'signature-test-key',
@@ -14,7 +17,7 @@ beforeEach(function () {
 
 it('matches an independently calculated HMAC vector on the exact outgoing bytes', function () {
     Http::fake(['https://my.ipaymu.com/api/v2/balance' => Http::response(['Status' => 200, 'Data' => ['MerchantBalance' => 'private-balance']])]);
-    $this->travelTo(Carbon\CarbonImmutable::parse('2026-11-10 12:34:56', 'Asia/Jakarta'));
+    $this->travelTo(CarbonImmutable::parse('2026-11-10 12:34:56', 'Asia/Jakarta'));
     expect(app(IpaymuService::class)->checkConnection())->toBe(['ok' => true, 'httpStatus' => 200, 'providerStatus' => 200, 'code' => 'IPAYMU_AUTH_OK']);
     Http::assertSent(fn (Request $request) => $request->method() === 'POST'
         && $request->body() === '{"account":"1179000899"}'
@@ -35,8 +38,12 @@ it('normalizes accidental edge whitespace consistently for the header body and s
 
 it('rejects internal whitespace in API keys before calling iPaymu', function () {
     config(['payment.ipaymu.api_key' => "signature\r\ntest-key"]);
-    try { app(IpaymuService::class)->checkConnection(); $this->fail('Invalid key must be rejected'); }
-    catch (Symfony\Component\HttpKernel\Exception\HttpException $error) { expect($error->getStatusCode())->toBe(503); }
+    try {
+        app(IpaymuService::class)->checkConnection();
+        $this->fail('Invalid key must be rejected');
+    } catch (HttpException $error) {
+        expect($error->getStatusCode())->toBe(503);
+    }
     Http::assertNothingSent();
 });
 
@@ -48,11 +55,14 @@ it('signs production checkout JSON containing unicode and URLs exactly as transm
     app(IpaymuService::class)->createSession($row);
     Http::assertSent(function (Request $request) {
         $data = json_decode($request->body(), true);
-        $officialBody = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $officialBody = json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $officialSignature = hash_hmac('sha256', 'POST:1179000899:'.strtolower(hash('sha256', $officialBody)).':signature-test-key', 'signature-test-key');
+
         return $request->body() === $officialBody && $data['buyerName'] === 'Penguji É & 日本'
             && $request->method() === 'POST' && $request->hasHeader('signature', $officialSignature)
-            && str_contains($request->body(), 'https://erp.example.test/');
+            && str_contains($request->body(), 'https://erp.example.test/')
+            && str_contains($request->body(), 'Penguji É & 日本')
+            && ! str_contains($request->body(), '\\u');
     });
 });
 
@@ -74,8 +84,8 @@ it('does not make a remote request for the default configuration command', funct
 
 it('checks authentication with the balance endpoint only and does not print balance or credentials', function () {
     Http::fake(['*/balance' => Http::response(['Status' => 200, 'Data' => ['MerchantBalance' => '999999999PRIVATE']])]);
-    Illuminate\Support\Facades\Artisan::call('payment:ipaymu-check', ['--remote' => true]);
-    $output = Illuminate\Support\Facades\Artisan::output();
+    Artisan::call('payment:ipaymu-check', ['--remote' => true]);
+    $output = Artisan::output();
     expect($output)->toContain('IPAYMU_AUTH_OK')->not->toContain('999999999PRIVATE', 'signature-test-key', '1179000899');
     Http::assertSentCount(1);
     Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/balance'));
