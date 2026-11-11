@@ -1,10 +1,15 @@
 <?php
 
+$ipaymuTimeout = max(60, min(120, (int) env('IPAYMU_TIMEOUT', 90)));
+
 return [
     'gateway' => env('PAYMENT_GATEWAY', 'simulation'),
     'public_url' => env('PAYMENT_PUBLIC_URL', 'http://localhost:3000'),
     'api_url' => env('PAYMENT_API_URL', rtrim(env('APP_URL', 'http://localhost:8000'), '/').'/api/v1'),
     'ipaymu' => [
+        'timeout' => $ipaymuTimeout,
+        'connect_timeout' => max(1, min($ipaymuTimeout, (int) env('IPAYMU_CONNECT_TIMEOUT', 15))),
+        'sync_timeout' => 2 * $ipaymuTimeout,
         'api_key' => env('IPAYMU_API_KEY'),
         'va' => env('IPAYMU_VA'),
         'base_url' => env('IPAYMU_BASE_URL', env('PAYMENT_GATEWAY', 'simulation') === 'ipaymu' ? 'https://my.ipaymu.com/api/v2' : 'https://sandbox.ipaymu.com/api/v2'),

@@ -2,28 +2,38 @@
 
 namespace App\Modules\Payment\Services;
 
+use App\Modules\Payment\Jobs\ReconcileIpaymuTransaction;
 use App\Modules\Payment\Models\PaymentTransaction;
+use App\Support\PaymentModules;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class IpaymuService
 {
     public function enqueueReconciliation(PaymentTransaction $row): void
     {
-        if ($row->status !== 'pending' || ! in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) || $row->gateway !== config('payment.gateway') || ! $row->gatewaySessionId) return;
+        if ($row->status !== 'pending' || ! in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) || $row->gateway !== config('payment.gateway') || ! $row->gatewaySessionId) {
+            return;
+        }
         $key = 'ipaymu-reconcile:'.$row->id;
-        if (! \Illuminate\Support\Facades\Cache::add($key, true, 60)) return;
+        if (! Cache::add($key, true, (int) config('queue.connections.payment.retry_after'))) {
+            return;
+        }
         try {
-            \App\Modules\Payment\Jobs\ReconcileIpaymuTransaction::dispatch($row->id);
+            ReconcileIpaymuTransaction::dispatch($row->id);
         } catch (\Throwable $error) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
             report($error);
         }
     }
 
-    private function discoverTransactionId(PaymentTransaction $row): ?string
+    private function discoverTransactionId(PaymentTransaction $row, float $deadline): ?string
     {
-        if (! $row->gatewayReferenceId || ! $row->gatewaySessionId) return null;
+        if (! $row->gatewayReferenceId || ! $row->gatewaySessionId) {
+            return null;
+        }
         // Bounded recent-history lookup; the detail endpoint still verifies all fields afterward.
         for ($page = 1; $page <= 5; $page++) {
             $body = $this->request('/history', [
@@ -31,17 +41,22 @@ class IpaymuService
                 'startdate' => $row->createdAt->setTimezone('Asia/Jakarta')->format('Y-m-d'),
                 'enddate' => now('Asia/Jakarta')->format('Y-m-d'),
                 'orderBy' => 'id', 'order' => 'DESC', 'limit' => 20, 'page' => $page,
-            ], 5)->throw()->json();
+            ], $this->remainingTimeout($deadline))->throw()->json();
             abort_unless(($body['Status'] ?? null) === 200, 502, 'Riwayat iPaymu belum dapat diperiksa.');
             $data = $body['Data'] ?? [];
             $items = $data['Transaction'] ?? $data['Results'] ?? [];
             abort_unless(is_array($items), 502, 'Format riwayat iPaymu tidak valid.');
             $matches = array_values(array_filter($items, fn ($item) => is_array($item) && (string) ($item['ReferenceId'] ?? '') === $row->gatewayReferenceId));
             abort_if(count($matches) > 1, 409, 'Referensi iPaymu ganda; perlu pemeriksaan admin.');
-            if ($matches) return (string) ($matches[0]['TransactionId'] ?? '');
+            if ($matches) {
+                return (string) ($matches[0]['TransactionId'] ?? '');
+            }
             $pages = (int) ($data['Pagination']['total_pages'] ?? $data['Total_Page'] ?? 1);
-            if ($page >= $pages || ! $items) break;
+            if ($page >= $pages || ! $items) {
+                break;
+            }
         }
+
         return null;
     }
 
@@ -105,7 +120,7 @@ class IpaymuService
         abort_unless($row->gatewayReferenceId && $row->gatewayAccountId === $config['va'], 409);
         $row->loadMissing('donor');
         $label = $row->sourceType === 'zakat' ? 'Zakat LAZSIP' : ($row->moduleSource === 'sarsip' ? 'Donasi SARSIP' : 'Donasi LAZSIP');
-        $modules = app(\App\Support\PaymentModules::class);
+        $modules = app(PaymentModules::class);
         $description = $row->sourceId && $modules->has($row->moduleSource)
             ? $modules->for($row->moduleSource)->describe($row->sourceType, $row->sourceId) : null;
         $program = $description ? trim(strip_tags($description['label'])) : $label;
@@ -167,6 +182,7 @@ class IpaymuService
             abort_unless(hash_equals($row->gatewaySessionId, (string) $payload['sid']), 422, 'Sesi iPaymu tidak sesuai.');
         }
         abort_unless(isset($payload['trx_id']) && preg_match('/^[1-9][0-9]*$/D', (string) $payload['trx_id']), 422, 'ID transaksi callback tidak valid.');
+
         // A signed callback is a hint; verify authoritative transaction details before persisting.
         return $this->sync($row, (string) $payload['trx_id']);
     }
@@ -176,12 +192,13 @@ class IpaymuService
         $config = $this->configuration();
         abort_unless($row->gateway === $config['gateway'], 409);
         abort_unless($row->gatewayAccountId === $config['va'], 409, 'Akun transaksi berbeda dari konfigurasi iPaymu saat ini.');
-        $transactionId = $candidateId ?? $row->gatewayTransactionId ?? $this->discoverTransactionId($row);
+        $deadline = microtime(true) + (int) config('payment.ipaymu.sync_timeout', 180);
+        $transactionId = $candidateId ?? $row->gatewayTransactionId ?? $this->discoverTransactionId($row, $deadline);
         abort_unless(is_string($transactionId) && preg_match('/^[1-9][0-9]*$/D', $transactionId), 409, 'ID iPaymu belum diterima. Callback belum masuk; hubungi admin untuk rekonsiliasi.');
         if ($row->gatewayTransactionId) {
             abort_unless(hash_equals($row->gatewayTransactionId, $transactionId), 422, 'ID transaksi iPaymu berbeda dari yang tersimpan.');
         }
-        $data = $this->request('/transaction', ['transactionId' => $transactionId])->throw()->json();
+        $data = $this->request('/transaction', ['transactionId' => $transactionId], $this->remainingTimeout($deadline))->throw()->json();
         $transaction = $data['Data'] ?? null;
         abort_unless(($data['Status'] ?? null) === 200 && is_array($transaction), 502, 'Respons status iPaymu tidak valid.');
         abort_unless((string) ($transaction['TransactionId'] ?? '') === $transactionId, 422, 'ID transaksi iPaymu tidak sesuai.');
@@ -191,7 +208,9 @@ class IpaymuService
         }
         abort_unless($this->sameAmount($transaction['SubTotal'] ?? $transaction['Amount'] ?? null, $row->amount + $row->adminFee), 422, 'Subtotal transaksi iPaymu tidak sesuai.');
         $status = (int) ($transaction['Status'] ?? 0);
-        $state = match ($status) { 1 => 'settled', 6 => 'unsettled', 7 => 'escrow', -2 => 'expired', 2, 3, 4, 5 => 'failed', default => 'ready' };
+        $state = match ($status) {
+            1 => 'settled', 6 => 'unsettled', 7 => 'escrow', -2 => 'expired', 2, 3, 4, 5 => 'failed', default => 'ready'
+        };
         abort_if(in_array($status, [1, 6, 7], true) && ($transaction['PaidStatus'] ?? null) !== 'paid', 422, 'Status pembayaran iPaymu tidak konsisten.');
         $row->forceFill(['gatewayTransactionId' => $transactionId, 'gatewayState' => $state])->save();
         // Escrow remains excluded from spendable paid totals until the provider releases it.
@@ -208,7 +227,17 @@ class IpaymuService
         return $row->refresh();
     }
 
-    private function request(string $path, array $payload, int $timeout = 20): Response
+    private function remainingTimeout(float $deadline): float
+    {
+        $remaining = $deadline - microtime(true);
+        if ($remaining <= 0) {
+            throw new ConnectionException('iPaymu synchronization time budget exhausted.');
+        }
+
+        return min((float) config('payment.ipaymu.timeout', 90), $remaining);
+    }
+
+    private function request(string $path, array $payload, ?float $timeout = null): Response
     {
         $config = $this->configuration();
         $method = 'POST';
@@ -218,7 +247,9 @@ class IpaymuService
         $bodyHash = strtolower(hash('sha256', $body));
         $signature = hash_hmac('sha256', $method.':'.$config['va'].':'.$bodyHash.':'.$config['apiKey'], $config['apiKey'], false);
 
-        return Http::connectTimeout(3)->timeout($timeout)->acceptJson()->withHeaders([
+        $timeout ??= (float) config('payment.ipaymu.timeout', 90);
+
+        return Http::connectTimeout(min((float) config('payment.ipaymu.connect_timeout', 15), $timeout))->timeout($timeout)->acceptJson()->withHeaders([
             'va' => $config['va'],
             'signature' => $signature,
             'timestamp' => now('Asia/Jakarta')->format('YmdHis'),
@@ -230,9 +261,16 @@ class IpaymuService
     {
         $body = $response->json();
         $message = is_array($body) && is_string($body['Message'] ?? null) ? strtolower($body['Message']) : '';
-        if (str_contains($message, 'signature')) return 'IPAYMU_SIGNATURE_REJECTED';
-        if (str_contains($message, 'domain')) return 'IPAYMU_DOMAIN_REJECTED';
-        if (preg_match('/\bip\b/', $message)) return 'IPAYMU_IP_REJECTED';
+        if (str_contains($message, 'signature')) {
+            return 'IPAYMU_SIGNATURE_REJECTED';
+        }
+        if (str_contains($message, 'domain')) {
+            return 'IPAYMU_DOMAIN_REJECTED';
+        }
+        if (preg_match('/\bip\b/', $message)) {
+            return 'IPAYMU_IP_REJECTED';
+        }
+
         return in_array($response->status(), [401, 403], true) ? 'IPAYMU_AUTH_REJECTED' : 'IPAYMU_REQUEST_REJECTED';
     }
 
@@ -240,9 +278,10 @@ class IpaymuService
     public function checkConnection(): array
     {
         $config = $this->configuration();
-        $response = $this->request('/balance', ['account' => $config['va']], 8);
+        $response = $this->request('/balance', ['account' => $config['va']]);
         $status = $response->json('Status');
         $valid = $response->successful() && in_array($status, [200, '200'], true);
+
         return ['ok' => $valid, 'httpStatus' => $response->status(), 'providerStatus' => is_numeric($status) ? (int) $status : null,
             'code' => $valid ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
     }
