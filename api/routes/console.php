@@ -106,6 +106,26 @@ Artisan::command('payment:ipaymu-unicode-check {--remote : Send three read-only 
     }
 })->purpose('Compare Unicode JSON encodings on balance without creating payments or displaying financial data');
 
+Artisan::command('payment:ipaymu-recover-session {transactionId} {--apply : Restore a validated preserved session}', function (): int {
+    try {
+        $row = PaymentTransaction::findOrFail($this->argument('transactionId'));
+        $result = app(IpaymuService::class)->recoverCheckoutSession($row, (bool) $this->option('apply'));
+        $this->line($result);
+        $this->line('Tidak ada request ke iPaymu atau pembayaran baru dibuat. Token sesi dan URL tidak ditampilkan.');
+        if ($result === 'NO_EVIDENCE') {
+            $this->warn('Respons lama tidak tersedia. Status needs_review tidak diubah; jangan membuat sesi ulang.');
+
+            return 1;
+        }
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('RECOVERY_REJECTED: bukti tidak dapat diverifikasi, konfigurasi berbeda, atau status transaksi tidak memenuhi syarat.');
+
+        return 1;
+    }
+})->purpose('Inspect or recover an encrypted checkout session without contacting iPaymu');
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

@@ -161,3 +161,48 @@ tipe status/session/URL, boolean kelengkapan, status HTTP, ID transaksi, dan hos
 URL saja. Path, query, fragment, SessionID dan isi respons tidak dicatat. URL baru
 tidak otomatis dipercaya; periksa hostname dan format resmi sebelum mengubah
 allowlist. Hasil sesi tetap ditandai belum pasti sehingga tidak dibuat ulang otomatis.
+
+### Respons hosted checkout dan pemulihan sesi
+
+Produksi menerima URL HTTPS pada host tepat `my.ipaymu.com` dengan path `/payment/…`,
+atau `payment.ipaymu.com` dengan path root (termasuk sesi di fragment). Sandbox tetap
+menggunakan host sandbox. Host tiruan/subdomain tambahan, userinfo, port selain 443,
+backslash dan whitespace/control ditolak. Status sukses provider menerima angka
+`200` atau string `"200"`; SessionID tetap wajib string terisi. Dukungan format ini
+memperbaiki keterbatasan validator, tetapi bukan bukti bahwa respons checkout lama
+memakai format tersebut.
+
+Jika validasi respons checkout gagal pada transaksi tersimpan, aplikasi menyimpan
+hanya metadata transaksi, status, SessionID dan URL yang diperlukan untuk recovery
+ke disk `local`, folder `payment/ipaymu-session-evidence/`, dalam bentuk terenkripsi
+dengan APP_KEY. Tidak ada raw response, data donatur, saldo atau API key dalam bukti.
+Folder ini berada di `storage/app/private`, tidak dilayani web. Kegagalan penyimpanan
+tidak mengubah hasil pembayaran; log mencantumkan `evidence_preserved`.
+Pada VPS, pastikan folder privat dapat diakses FPM dan worker melalui grup www-data:
+
+```bash
+install -d -o siperp -g www-data -m 2770 \
+  /var/www/siperp/api/storage/app/private/payment \
+  /var/www/siperp/api/storage/app/private/payment/ipaymu-session-evidence
+```
+
+Pemeriksaan bukti (tanpa request jaringan, tanpa perubahan database):
+
+```bash
+php artisan payment:ipaymu-recover-session ID_TRANSAKSI
+```
+
+`NO_EVIDENCE` berarti tidak ada bukti tersimpan dan transaksi tidak dibuka ulang.
+Respons lama sebelum fitur ini tidak dapat dipulihkan dari log. `EVIDENCE_VALID`
+berarti bukti berhasil didekripsi dan sesuai dengan transaksi, mode, akun, referensi,
+status sukses, SessionID dan allowlist URL. Untuk menerapkan bukti yang sudah valid:
+
+```bash
+php artisan payment:ipaymu-recover-session ID_TRANSAKSI --apply
+```
+
+Apply mengunci baris database dan hanya berlaku untuk transaksi pending berstatus
+`needs_review` yang belum memiliki sesi/URL. Hasilnya `ready`, bukan `paid`.
+Tidak ada reset menjadi `not_started`, pembuatan checkout ulang, atau penggantian
+transaksi lunas. Output tidak menampilkan SessionID/URL. Bukti tetap privat untuk
+audit dan ikut backup storage; simpan APP_KEY asli agar tetap bisa didekripsi.
