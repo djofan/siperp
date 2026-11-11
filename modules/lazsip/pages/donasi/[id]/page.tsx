@@ -48,7 +48,7 @@ export default async function LazsipDonasiDetailPage({
         isActive={campaign.status === "active"}
         articleTop={
           <>
-            <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} className="w-full aspect-[21/9] rounded-3xl" />
+            <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} naturalSize className={`w-full rounded-3xl ${campaign.image ? "" : "aspect-[21/9]"}`} />
 
             <div className="mt-8 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
               <ProgressBar percent={percent} />
