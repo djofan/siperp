@@ -3,6 +3,7 @@ import { useRef } from "react";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { GatewayHandoff } from "@/modules/payment/components/GatewayHandoff";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { calculateFee } from "@/modules/lazsip/api/feeCalculation";
 import { applyUniqueCode } from "@/modules/lazsip/api/uniqueCode";
@@ -18,6 +19,7 @@ interface FeeRef {
 
 export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: string; uniqueCode: string; feeRefs: FeeRef[] }) {
   const router = useRouter();
+  const [transactionId, setTransactionId] = useState<string | null>(null);
   const checkoutKey = useRef<string | null>(null);
   const [nominal, setNominal] = useState("");
   const [paymentMethod, setPaymentMethod] = useState(feeRefs[0]?.method ?? "");
@@ -104,13 +106,16 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
       if (typeof data.transactionId !== "string" || !data.transactionId) {
         throw new Error("Respons checkout tidak valid.");
       }
-      router.push(`/payment/checkout/${data.transactionId}`);
+      if (isIpaymu) setTransactionId(data.transactionId);
+      else router.push(`/payment/checkout/${data.transactionId}`);
     } catch {
       setError("Gagal membuka pembayaran. Periksa koneksi lalu coba lagi.");
     } finally {
       setSubmitting(false);
     }
   }
+
+  if (transactionId) return <GatewayHandoff key={transactionId} transactionId={transactionId} />;
 
   return (
     <form
@@ -150,7 +155,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
         </div>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      {!(isIpaymu && feeRefs.length === 1) && <div className="flex flex-col gap-2.5">
         <label className="text-sm font-medium text-lazsip-primary-900">Metode pembayaran</label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {feeRefs.length === 0 && <p role="status" className="sm:col-span-2 text-sm text-lazsip-primary-800/70">Metode pembayaran belum tersedia. Silakan hubungi pengelola untuk mengaktifkannya.</p>}
@@ -172,9 +177,9 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
             </button>
           ))}
         </div>
-      </div>
+      </div>}
 
-      {isIpaymu ? <p className="rounded-2xl bg-lazsip-primary-50 p-4 text-sm leading-relaxed text-lazsip-primary-800">Pilih metode pembayaran di halaman iPaymu. Biaya transaksi mengikuti ketentuan iPaymu; periksa rincian sebelum membayar.</p> : (
+      {isIpaymu ? <p className="rounded-2xl bg-lazsip-primary-50 p-4 text-sm leading-relaxed text-lazsip-primary-800">Setelah klik bayar, Anda langsung memilih metode di iPaymu tanpa konfirmasi tambahan. Biaya mengikuti ketentuan iPaymu dan ditampilkan sebelum pembayaran.</p> : (
       <label className="flex items-start gap-3 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-4">
         <input
           type="checkbox"
