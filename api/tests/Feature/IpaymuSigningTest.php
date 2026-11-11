@@ -5,7 +5,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
-it('signs and sends identical JSON bytes using the official PHP sample format', function (string $gateway, string $host) {
+it('signs and sends identical UTF-8 JSON bytes in production and sandbox', function (string $gateway, string $host) {
     config([
         'payment.gateway' => $gateway,
         'payment.ipaymu.va' => '1179000000000000',
@@ -21,7 +21,7 @@ it('signs and sends identical JSON bytes using the official PHP sample format', 
     // Fixed vector calculated independently using Python hashlib/hmac, not the
     // implementation under test. Includes URL slashes and a Unicode label.
     $payload = ['account' => '1179000000000000', 'url' => 'https://erp.example.test/callback', 'label' => 'Donasi — Air Bersih'];
-    $body = '{"account":"1179000000000000","url":"https://erp.example.test/callback","label":"Donasi \u2014 Air Bersih"}';
+    $body = '{"account":"1179000000000000","url":"https://erp.example.test/callback","label":"Donasi — Air Bersih"}';
     $method = new ReflectionMethod(IpaymuService::class, 'request');
     $method->invoke(app(IpaymuService::class), '/balance', $payload);
 
@@ -30,7 +30,7 @@ it('signs and sends identical JSON bytes using the official PHP sample format', 
             ->and($request->url())->toBe('https://'.$host.'/api/v2/balance')
             ->and($request->body())->toBe($body)
             ->and($request->header('va'))->toBe(['1179000000000000'])
-            ->and($request->header('signature'))->toBe(['ce5274abe3835781b5b248e271dc04975993fcb4120ab1c5969a8a5976f34a65'])
+            ->and($request->header('signature'))->toBe(['61a82d468ccb6d80eb2150733422a77259d35ae1baf4084fe7b6c3379679747a'])
             ->and($request->header('timestamp'))->toBe(['20261110130000'])
             ->and($request->header('Content-Type'))->toBe(['application/json']);
 

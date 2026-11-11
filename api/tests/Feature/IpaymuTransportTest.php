@@ -55,7 +55,7 @@ it('preserves checkout bytes and numeric types through Guzzle serialization', fu
     expect($history)->toHaveCount(1);
     $request = $history[0]['request'];
     $body = (string) $request->getBody();
-    $expected = '{"product":["Donasi LAZSIP"],"qty":[1],"price":[10007],"description":["Donasi LAZSIP. Kode transaksi LZS-TEST01."],"returnUrl":"https://erp.example.test/payment/checkout/transport-test","notifyUrl":"https://erp.example.test/api/v1/payment/webhook/ipaymu","cancelUrl":"https://erp.example.test/payment/checkout/transport-test","referenceId":"reference-test","buyerName":"\u00c9 \u2014 \u65e5\u672c / &","expired":24,"buyerEmail":"donor@example.test","buyerPhone":"628123456789"}';
+    $expected = '{"product":["Donasi LAZSIP"],"qty":[1],"price":[10007],"description":["Donasi LAZSIP. Kode transaksi LZS-TEST01."],"returnUrl":"https://erp.example.test/payment/checkout/transport-test","notifyUrl":"https://erp.example.test/api/v1/payment/webhook/ipaymu","cancelUrl":"https://erp.example.test/payment/checkout/transport-test","referenceId":"reference-test","buyerName":"É — 日本 / &","expired":24,"buyerEmail":"donor@example.test","buyerPhone":"628123456789"}';
     expect($body)->toBe($expected)
         ->and($request->getMethod())->toBe('POST')
         ->and((string) $request->getUri())->toBe('https://my.ipaymu.com/api/v2/payment')
@@ -91,7 +91,7 @@ it('logs only safe transport evidence for a rejected checkout', function () {
             ->and($context['http_status'])->toBe(401)
             ->and($context['body_unchanged'])->toBeTrue()
             ->and($context['signature_header_unchanged'])->toBeTrue()
-            ->and($context['contains_unicode_escape'])->toBeTrue();
+            ->and($context['contains_unicode_escape'])->toBeFalse();
         expect(json_encode($context))->not->toContain('private-donor-name', 'transport-test-key', '1179000899', 'do-not-log');
 
         return true;

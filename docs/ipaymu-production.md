@@ -26,8 +26,8 @@ Transaksi `ipaymu` adalah transaksi uang nyata dan masuk ke laporan keuangan. Tr
 
 ## Memeriksa 401 Unauthorized Signature di VPS
 
-Rumus request mengikuti contoh PHP resmi iPaymu: JSON dibentuk sekali dengan
-`JSON_UNESCAPED_SLASHES`, SHA-256 menghasilkan hex huruf kecil, StringToSign adalah
+Rumus HMAC mengikuti contoh resmi iPaymu. JSON dibentuk sekali dengan
+`JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE`, SHA-256 menghasilkan hex huruf kecil, StringToSign adalah
 `POST:VA:bodyHash:ApiKey`, lalu HMAC-SHA256 memakai API key sebagai key. Body JSON
 yang dihitung adalah string yang sama persis dengan body HTTP, tanpa serialisasi ulang.
 Header `va`, `signature`, `timestamp` (Asia/Jakarta, `YmdHis`) dikirim bersama Content-Type JSON.
@@ -93,8 +93,8 @@ Tes tersebut hanya memeriksa autentikasi tanpa membuat pembayaran atau menampilk
 
 ### Diagnosis serialisasi dan transport checkout
 
-Checkout menggunakan `json_encode(..., JSON_UNESCAPED_SLASHES)` sesuai contoh PHP
-resmi; Unicode tetap di-escape, `qty` dan `price` tetap angka JSON. Byte yang
+Checkout menggunakan `json_encode(..., JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)`;
+Unicode dikirim sebagai UTF-8 langsung, `qty` dan `price` tetap angka JSON. Byte yang
 ditandatangani dikirim melalui `withBody`, tanpa serializer JSON kedua. Tes
 transport memeriksa body PSR-7 setelah middleware Guzzle, termasuk Unicode,
 URL, angka, Content-Length, signature dan larangan redirect. Tes lokal tidak
@@ -132,8 +132,8 @@ php artisan payment:ipaymu-unicode-check --remote
 Tanpa `--remote` tidak ada jaringan. Dengan opsi tersebut, tiga POST berurutan
 hanya menuju `/balance`: kontrol dengan `account`, lalu dua body dengan nilai
 `account` dan `description` yang identik. Description statis mengandung `— É 日本`.
-Varian `unicode_escaped` memakai escape Unicode sesuai serializer checkout saat
-ini; `unicode_utf8` memakai karakter UTF-8 langsung. Masing-masing menandatangani
+Varian `unicode_escaped` mempertahankan escape Unicode sebagai pembanding lama;
+`unicode_utf8` memakai karakter UTF-8 langsung seperti checkout saat ini. Masing-masing menandatangani
 byte body yang dikirim; timeout dan TLS tetap sama. Tidak ada retry otomatis,
 akses transaksi database, perubahan status atau pembuatan pembayaran. Kegagalan
 koneksi satu varian tidak mencegah pemeriksaan varian berikutnya. Hasil dicetak
@@ -147,3 +147,10 @@ tidak membuktikan masalah serialisasi. Jika semua berhasil, kedua encoding diter
 di balance tetapi checkout masih perlu ditelusuri terpisah. Jika hanya satu encoding
 diterima, itu petunjuk untuk pemeriksaan provider, bukan alasan mengganti serializer
 checkout secara otomatis. Command tidak mengubah encoding checkout.
+
+Pada uji VPS 11 November 2026, kontrol diterima (HTTP 200), Unicode escaped
+ditolak sebagai signature (HTTP 401), dan UTF-8 langsung diterima (HTTP 200).
+Berdasarkan perbandingan tersebut, default serializer request iPaymu kini memakai
+UTF-8 langsung. Probe tetap secara eksplisit menguji kedua encoding. Ini belum
+membuktikan checkout production berhasil; setelah deploy, uji satu kali memakai
+transaksi pending yang sama dan periksa hasilnya. Tidak perlu migration database.
