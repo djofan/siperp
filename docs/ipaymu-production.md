@@ -121,3 +121,29 @@ signature lama. `curl_error=28` menunjukkan timeout. Jika HTTP 401 tetap terjadi
 dengan body, header, dan method utuh, log itu belum membuktikan kesalahan rumus
 signature ataupun penyebab penolakan di provider. Jangan mengganti escape JSON,
 tipe angka atau kredensial secara acak, dan jangan mengulang checkout otomatis.
+
+### Pembanding Unicode baca-saja
+
+```bash
+php artisan payment:ipaymu-unicode-check
+php artisan payment:ipaymu-unicode-check --remote
+```
+
+Tanpa `--remote` tidak ada jaringan. Dengan opsi tersebut, tiga POST berurutan
+hanya menuju `/balance`: kontrol dengan `account`, lalu dua body dengan nilai
+`account` dan `description` yang identik. Description statis mengandung `— É 日本`.
+Varian `unicode_escaped` memakai escape Unicode sesuai serializer checkout saat
+ini; `unicode_utf8` memakai karakter UTF-8 langsung. Masing-masing menandatangani
+byte body yang dikirim; timeout dan TLS tetap sama. Tidak ada retry otomatis,
+akses transaksi database, perubahan status atau pembuatan pembayaran. Kegagalan
+koneksi satu varian tidak mencegah pemeriksaan varian berikutnya. Hasil dicetak
+setelah setiap request; total dapat mencapai tiga kali timeout request.
+
+Output hanya varian, kode diagnosis, HTTP/provider status dan durasi. Tidak
+menampilkan saldo, kredensial, signature, body maupun isi exception. Kolom
+`description` bukan parameter balance yang dijamin didukung provider; respons
+validasi/penolakan dapat membuat hasil belum konklusif. Kontrol gagal/timeout juga
+tidak membuktikan masalah serialisasi. Jika semua berhasil, kedua encoding diterima
+di balance tetapi checkout masih perlu ditelusuri terpisah. Jika hanya satu encoding
+diterima, itu petunjuk untuk pemeriksaan provider, bukan alasan mengganti serializer
+checkout secara otomatis. Command tidak mengubah encoding checkout.
