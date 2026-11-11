@@ -126,3 +126,28 @@ it('records a curl timeout without its error message or request secrets', functi
         return true;
     });
 });
+
+it('explains invalid successful checkout responses without exposing session tokens', function ($status, $session, $url, $field, $expected) {
+    Http::preventStrayRequests();
+    Http::fake(['*/payment' => Http::response(['Status' => $status, 'Data' => ['SessionID' => $session, 'Url' => $url]])]);
+    Log::spy();
+    $row = (new PaymentTransaction)->forceFill(['id' => 'validation-test', 'gatewayReferenceId' => 'reference-test',
+        'gatewayAccountId' => '1179000899', 'trackingCode' => 'LZS-TEST01', 'moduleSource' => 'lazsip',
+        'sourceType' => 'campaign', 'amount' => 10007, 'adminFee' => 0]);
+    $row->setRelation('donor', (new PaymentDonor)->forceFill(['name' => 'private-donor']));
+    expect(fn () => app(IpaymuService::class)->createSession($row))->toThrow(RuntimeException::class);
+    Log::shouldHaveReceived('warning')->once()->withArgs(function ($message, $context) use ($field, $expected) {
+        expect($message)->toBe('iPaymu checkout response validation failed.')
+            ->and($context[$field])->toBe($expected)
+            ->and($context['http_status'])->toBe(200)
+            ->and(json_encode($context))->not->toContain('SECRET_SESSION', 'SECRET_QUERY', 'SECRET_FRAGMENT', 'private-donor', 'transport-test-key', '1179000899');
+
+        return true;
+    });
+    Http::assertSentCount(1);
+})->with([
+    ['200', 'SECRET_SESSION', 'https://my.ipaymu.com/payment/SECRET_SESSION', 'provider_status_type', 'string'],
+    [200, null, 'https://my.ipaymu.com/payment/SECRET_SESSION', 'session_id_present', false],
+    [200, 'SECRET_SESSION', 'https://payment.ipaymu.com/?id=SECRET_QUERY#SECRET_FRAGMENT', 'url_host', 'payment.ipaymu.com'],
+    [200, 'SECRET_SESSION', null, 'url_type', 'null'],
+]);
