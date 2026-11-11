@@ -239,13 +239,13 @@ class IpaymuService
         return min((float) config('payment.ipaymu.timeout', 90), $remaining);
     }
 
-    private function request(string $path, array $payload, ?float $timeout = null): Response
+    private function request(string $path, array $payload, ?float $timeout = null, bool $unescapedUnicode = false): Response
     {
         $config = $this->configuration();
         $method = 'POST';
         // Match the official PHP sample. Sign these exact bytes and send them unchanged;
         // never pass the payload through a second JSON/form serializer after signing.
-        $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | ($unescapedUnicode ? JSON_UNESCAPED_UNICODE : 0));
         $bodyHash = strtolower(hash('sha256', $body));
         $signature = hash_hmac('sha256', $method.':'.$config['va'].':'.$bodyHash.':'.$config['apiKey'], $config['apiKey'], false);
 
@@ -314,6 +314,32 @@ class IpaymuService
 
         return ['ok' => $valid, 'httpStatus' => $response->status(), 'providerStatus' => is_numeric($status) ? (int) $status : null,
             'code' => $valid ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
+    }
+
+    /** Fixed read-only probes. No caller-supplied endpoint, payment data or credentials. */
+    public function probeUnicodeSerialization(): \Generator
+    {
+        $config = $this->configuration();
+        $control = ['account' => $config['va']];
+        $unicode = $control + ['description' => 'SIPERP Unicode probe — É 日本'];
+
+        foreach ([['control', $control, false], ['unicode_escaped', $unicode, false], ['unicode_utf8', $unicode, true]] as [$variant, $payload, $unescaped]) {
+            $started = microtime(true);
+            try {
+                // Always sign and send the same bytes. Never retry, create a session, or persist results.
+                $response = $this->request('/balance', $payload, null, $unescaped);
+                $status = $response->json('Status');
+                $ok = $response->successful() && in_array($status, [200, '200'], true);
+                $result = ['variant' => $variant, 'ok' => $ok, 'httpStatus' => $response->status(),
+                    'providerStatus' => is_numeric($status) ? (int) $status : null,
+                    'code' => $ok ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
+            } catch (ConnectionException) {
+                $result = ['variant' => $variant, 'ok' => false, 'httpStatus' => null,
+                    'providerStatus' => null, 'code' => 'IPAYMU_CONNECTION_FAILED'];
+            }
+            $result['durationMs'] = (int) round((microtime(true) - $started) * 1000);
+            yield $result;
+        }
     }
 
     private function normalizeCallback(array $payload): array
