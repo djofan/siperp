@@ -5,10 +5,12 @@ namespace App\Modules\Payment\Services;
 use App\Modules\Payment\Jobs\ReconcileIpaymuTransaction;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Support\PaymentModules;
+use GuzzleHttp\TransferStats;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class IpaymuService
 {
@@ -249,7 +251,35 @@ class IpaymuService
 
         $timeout ??= (float) config('payment.ipaymu.timeout', 90);
 
-        return Http::connectTimeout(min((float) config('payment.ipaymu.connect_timeout', 15), $timeout))->timeout($timeout)->acceptJson()->withHeaders([
+        return Http::connectTimeout(min((float) config('payment.ipaymu.connect_timeout', 15), $timeout))->timeout($timeout)->acceptJson()->withOptions([
+            // Signed POST requests must not be redirected into a different method/endpoint.
+            'allow_redirects' => false,
+            'verify' => true,
+            'on_stats' => function (TransferStats $stats) use ($path, $body, $signature): void {
+                $status = $stats->getResponse()?->getStatusCode();
+                if ($status !== null && $status >= 200 && $status < 300) {
+                    return;
+                }
+                // Inspect the PSR-7 body handed to the transport, not a reserialized payload.
+                // Never log bodies, hashes, credentials, signatures or response headers.
+                $request = $stats->getRequest();
+                try {
+                    Log::warning('iPaymu transport diagnostic.', [
+                        'endpoint' => $path,
+                        'runtime' => PHP_SAPI,
+                        'http_status' => $status,
+                        'duration_ms' => (int) round($stats->getTransferTime() * 1000),
+                        'curl_error' => is_int($stats->getHandlerErrorData()) ? $stats->getHandlerErrorData() : null,
+                        'method_is_post' => $request->getMethod() === 'POST',
+                        'body_unchanged' => hash_equals($body, (string) $request->getBody()),
+                        'signature_header_unchanged' => hash_equals($signature, $request->getHeaderLine('signature')),
+                        'contains_unicode_escape' => (bool) preg_match('/\\\\u[0-9a-f]{4}/i', $body),
+                    ]);
+                } catch (\Throwable) {
+                    // A logging failure must not change the outcome of a payment request.
+                }
+            },
+        ])->withHeaders([
             'va' => $config['va'],
             'signature' => $signature,
             'timestamp' => now('Asia/Jakarta')->format('YmdHis'),

@@ -90,3 +90,34 @@ konfigurasi Nginx/systemd VPS secara otomatis dan tidak memerlukan migration.
 
 Setelah deployment jalankan `php artisan payment:ipaymu-check --remote`.
 Tes tersebut hanya memeriksa autentikasi tanpa membuat pembayaran atau menampilkan saldo.
+
+### Diagnosis serialisasi dan transport checkout
+
+Checkout menggunakan `json_encode(..., JSON_UNESCAPED_SLASHES)` sesuai contoh PHP
+resmi; Unicode tetap di-escape, `qty` dan `price` tetap angka JSON. Byte yang
+ditandatangani dikirim melalui `withBody`, tanpa serializer JSON kedua. Tes
+transport memeriksa body PSR-7 setelah middleware Guzzle, termasuk Unicode,
+URL, angka, Content-Length, signature dan larangan redirect. Tes lokal tidak
+membuktikan penerimaan request oleh provider.
+
+Request API bertanda tangan tidak mengikuti redirect otomatis. Respons selain
+2xx atau kegagalan koneksi mencatat `iPaymu transport diagnostic.` di log Laravel:
+endpoint, runtime CLI/FPM, status HTTP, durasi milidetik, kode cURL bila tersedia,
+serta boolean `body_unchanged`, `signature_header_unchanged`, `method_is_post`, dan
+`contains_unicode_escape`. Tidak ada body, hash, signature, VA, API key, isi respons,
+atau data donatur dalam catatan tersebut. Kegagalan menulis log tidak mengganti
+hasil request pembayaran. TLS tetap diverifikasi.
+
+Setelah deploy dan restart PHP-FPM/worker, bandingkan log checkout `/payment`
+dengan tes baca-saja `/balance` melalui `payment:ipaymu-check --remote`:
+
+```bash
+grep -F 'iPaymu transport diagnostic.' storage/logs/laravel.log | tail -n 10
+```
+
+`body_unchanged=false` menunjukkan perubahan setelah signing di sisi aplikasi.
+HTTP 3xx menunjukkan redirect yang kini dihentikan, bukan diteruskan menggunakan
+signature lama. `curl_error=28` menunjukkan timeout. Jika HTTP 401 tetap terjadi
+dengan body, header, dan method utuh, log itu belum membuktikan kesalahan rumus
+signature ataupun penyebab penolakan di provider. Jangan mengganti escape JSON,
+tipe angka atau kredensial secara acak, dan jangan mengulang checkout otomatis.
