@@ -129,7 +129,7 @@ Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select co
 
 ### Predikat nilai dan sertifikat
 
-Predikat mengikuti nilai akhir: 0–50 Maqbul, di atas 50–70 Jayyid, di atas 70–85 Jayyid Jiddan, di atas 85–95 Mumtaz, dan di atas 95–100 Mumtaz Murtafi. Nilai desimal mengikuti batas atas ini tanpa pembulatan tambahan. Sertifikat tidak memiliki batas nilai minimum: seluruh ujian harian, pekanan, serta akhir harus selesai dan sudah dinilai. Penyelesaian materi bukan syarat sertifikat. Status lulus ujian lama tetap tersimpan untuk kompatibilitas, tetapi tidak menghalangi sertifikat.
+Predikat mengikuti nilai akhir: 0–50 Maqbul, di atas 50–70 Jayyid, di atas 70–85 Jayyid Jiddan, di atas 85–95 Mumtaz, dan di atas 95–100 Mumtaz Murtafi. Nilai desimal mengikuti batas atas ini tanpa pembulatan tambahan. Sertifikat tidak memiliki batas nilai minimum atau syarat pengerjaan: semua peserta terdaftar memperoleh sertifikat keikutsertaan setelah seluruh tenggat ujian berakhir. Minimal ada ujian akhir terpublikasi, dan semua ujian terpublikasi harus memiliki tenggat. Penyelesaian materi bukan syarat sertifikat. Status lulus ujian lama tetap tersimpan untuk kompatibilitas, tetapi tidak menghalangi sertifikat.
 
 ### Rencana kalender evaluasi bulanan
 
@@ -138,3 +138,15 @@ Acuan penyusunan jadwal oleh admin: 12 ujian harian (Senin–Kamis pada tiga pek
 ### Poin jawaban evaluasi
 
 Ujian harian dan pekanan memberikan bobot penuh untuk jawaban benar dan setengah bobot soal untuk jawaban salah yang terisi. Soal kosong tetap nol. Pada soal MULTIPLE, kombinasi jawaban harus tepat untuk poin penuh; kombinasi tidak tepat yang terisi mendapat setengah bobot. Ujian akhir memberi nol untuk jawaban salah atau kosong. Jenis ujian disimpan dalam snapshot saat mulai; snapshot lama yang belum selesai menggunakan jenis ujian saat diselesaikan. Nilai yang sudah selesai tidak dihitung ulang otomatis.
+
+### Hasil pengerjaan peserta
+
+Peserta dapat melihat soal snapshot, jawaban yang dipilih, kunci benar dan pembahasan miliknya segera setelah ujian selesai, tanpa menunggu tenggat ujian. Jawaban benar/salah/tidak dijawab diberi label. Snapshot ujian yang belum selesai tetap menyembunyikan kunci dan pembahasan; endpoint tetap membatasi akses pada pemilik ujian. Halaman hasil tidak menampilkan panel nilai.
+
+### Card Progres dan status hasil
+
+Progres peserta menampilkan tiga card: ujian selesai/total ujian dipublikasikan, rata-rata nilai ujian yang sudah dinilai, dan nilai total dari perhitungan bobot Laravel yang sama dengan peringkat. Label sementara berubah menjadi Hasil akhir setelah seluruh ujian akhir yang dipublikasikan telah selesai dan dinilai; nilai nol tetap sah. Status ini terpisah dari akses sertifikat yang dibuka setelah seluruh tenggat ujian berakhir. Jika tidak ada ujian akhir, status tetap sementara.
+
+### Peringkat dan menu Sertifikat
+
+Menu Peringkat berdiri sendiri. Menu Sertifikat muncul langsung di bawah Peringkat setelah periode semua ujian berakhir, meskipun peserta tidak mengerjakan ujian. Tidak adanya tenggat atau ujian akhir membuat menu tetap tersembunyi. Sertifikat keikutsertaan memakai tanggal tenggat terakhir. Nilai sama dibandingkan dengan total durasi pengerjaan: durasi tercepat dari pengerjaan dengan nilai terbaik per ujian dijumlahkan; ujian kosong/tanpa nilai menggunakan batas waktu penuh. Nilai dan durasi sama dibandingkan dengan waktu selesai seluruh ujian yang lebih awal, lalu nama secara abjad tanpa membedakan kapital. Nomor peringkat selalu berurutan dan unik; ID profil internal menjadi penentu stabil terakhir bila nama pun identik. Daftar semua peserta aktif ditampilkan hanya pada angkatan yang diikuti pengguna; hanya nama, nilai, durasi dan waktu selesai ditampilkan, tanpa kontak atau jawaban peserta lain.

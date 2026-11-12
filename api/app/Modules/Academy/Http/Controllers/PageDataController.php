@@ -93,7 +93,7 @@ class PageDataController
         if (! $this->context->released($row->chapter->course->startsAt, $row->releaseDay)) {
             return $this->data(['lesson' => ['id' => $row->id, 'title' => $row->title, 'releaseDay' => $row->releaseDay, 'contentSummary' => null, 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'attachments' => [], 'lessonProgress' => []], 'note' => null]);
         }
-        $row->load(['attachments:id,lesson_id,title,file_url', 'lessonProgress' => fn ($q) => $q->where('profile_id', $profile->id)->select('id', 'lesson_id', 'completed', 'audio_position', 'audio_source')]);
+        $row->load(['attachments:id,lesson_id,title,file_url,file_type', 'lessonProgress' => fn ($q) => $q->where('profile_id', $profile->id)->select('id', 'lesson_id', 'completed', 'audio_position', 'audio_source')]);
         $data = $row->toArray();
         unset($data['chapter']);
 

@@ -6,13 +6,14 @@ import { safeResourceUrl } from "../../api/policy";
 import { EmptyState, linkButton } from "../ui";
 
 export async function ParticipantCertificates({ profileId }: { profileId: string }) {
-  const [courses, records] = await Promise.all([
+  const [overview, records] = await Promise.all([
     getLearningOverview(profileId),
     academyPage<AcademyPage6["records"]>("academy/learning/certificates"),
   ]);
+  const courses = overview.filter(course => course.certificateVisible);
   return <section id="sertifikat" aria-labelledby="academy-certificates-heading" className="mt-8 scroll-mt-6">
-    <h2 id="academy-certificates-heading" className="text-lg font-semibold">Sertifikat saya</h2>
-    <p className="mb-5 mt-2 text-sm leading-6 text-gray-500">Selesaikan seluruh ujian harian, pekanan, serta akhir. Sertifikat tidak mensyaratkan nilai minimum.</p>
+    <h1 id="academy-certificates-heading" className="text-2xl font-semibold">Sertifikat</h1>
+    <p className="mb-5 mt-2 text-sm leading-6 text-gray-500">Sertifikat tersedia setelah seluruh periode ujian berakhir, termasuk bagi peserta yang tidak mengerjakan seluruh ujian. Tidak ada nilai minimum.</p>
     {!courses.length ? <EmptyState>Belum ada data sertifikat.</EmptyState> : <div className="space-y-4">{courses.map(course => {
       const url = safeResourceUrl(records.find(record => record.courseId === course.id)?.certificateUrl);
       return <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 sm:p-6">

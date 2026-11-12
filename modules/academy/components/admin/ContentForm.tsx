@@ -18,7 +18,7 @@ type Values = {
 
 type Field = { name: keyof Values; label: string; required?: boolean; long?: boolean; number?: boolean; hint?: string };
 
-export function ContentForm({ kind, action, initial = {}, flat = false, contextField, uploadAudio = false, existingAudio }: {
+export function ContentForm({ kind, action, initial = {}, flat = false, contextField, uploadAudio = false, existingAudio, existingPdfs = [] }: {
   kind: "course" | "chapter" | "lesson" | "attachment";
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   initial?: Values;
@@ -26,6 +26,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
   contextField?: ReactNode;
   uploadAudio?: boolean;
   existingAudio?: { url: string | null; title?: string };
+  existingPdfs?: { id: string; title: string; url: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [values, setValues] = useState<Values>({ order: kind === "lesson" ? 1 : 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
@@ -80,7 +81,10 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
       </FormField>;
     })}
     {uploadAudio && <AudioUploadField />}
-    {flat && kind === "lesson" && <PdfUploadField />}
+    {flat && kind === "lesson" && <div className="space-y-3">
+      <PdfUploadField />
+      {existingPdfs.length > 0 && <div className="space-y-2"><h2 className="text-sm font-semibold">File PDF tersimpan</h2><ul className="space-y-2">{existingPdfs.map(pdf => <li key={pdf.id}><a href={pdf.url} target="_blank" rel="noopener noreferrer" className="break-words text-sm text-green-700 underline">{pdf.title} ↗</a></li>)}</ul><p className="text-xs text-gray-500">PDF baru ditambahkan saat materi disimpan. File sebelumnya tetap tersedia.</p></div>}
+    </div>}
     {flat && kind === "lesson" && <FormField label="Status publikasi" htmlFor={`${prefix}-status`} hint="Draft disimpan untuk pengelola. Terpublikasi ditampilkan kepada peserta sesuai jadwal rilis.">
       <Select id={`${prefix}-status`} name="isPublished" value={values.isPublished ? "1" : "0"} onChange={event => setValues({ ...values, isPublished: event.target.value === "1" })}>
         <option value="0">Draft</option>

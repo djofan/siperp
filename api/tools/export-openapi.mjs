@@ -3,14 +3,20 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/academy/learning/lessons/{courseSlug}/{lessonSlug}'] = {get: {
+  tags:['Academy'],summary:'Own published lesson details and attachments',security:[{bearerAuth:[]}],
+  description:'Requires enrollment and a published course, chapter and lesson. Unreleased content has no attachments. Released lesson attachments expose only id, lessonId, title, fileUrl and fileType (nullable MIME), never storage paths. PDFs added after enrollment remain visible. File URLs enforce participant permissions separately.',
+  parameters:['courseSlug','lessonSlug'].map(name=>({name,in:'path',required:true,schema:{type:'string'}})),
+  responses:{200:{description:'data contains lesson and own note; lesson.attachments includes MIME fileType for distinguishing PDF from audio'},401:{description:'Unauthenticated'},403:{description:'Access denied'},404:{description:'Lesson not accessible'}},
+}};
 document.paths['/api/v1/academy/learning/rankings'] = {get: {
   tags:['Academy'],summary:'Own ranking among enrolled participants',security:[{bearerAuth:[]}],
-  description:'total counts distinct active enrolled participants, including those without completed exams. rank is null until the participant has a completed exam; equal scores share rank. Uncompleted published exams count as zero in the weighted score.',
-  responses:{200:{description:'Own rankings with courseId, title, rank, total, score, predicate and complete'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
+  description:'total counts distinct active enrolled participants, including those without completed exams. Returns one group per enrolled cohort (legacy courses without cohort stay separate). Includes all active nondeleted participants in the same cohort, including unattempted participants. participants contains only rank, name, score, predicate, complete, finalCompleted, durationMs, finishedAt and isSelf. Sort by score descending, durationMs ascending, finishedAt ascending (null last), case-insensitive name alphabetically, then stable internal profile ID if names also coincide. Sequential ranks are unique. Best scoring attempt per exam is chosen, ties by duration then submission time; finishedAt is the latest such submission when all published exams are finished. Missing/unscored exams use full time limits and zero score. Contacts, answer snapshots and other cohorts are not exposed. finalCompleted is true only when all published FINAL exams in that enrollment have a completed scored attempt; absence of FINAL exams remains temporary. participants without completed exams also receive unique ranks. Uncompleted published exams count as zero in the weighted score.',
+  responses:{200:{description:'Own cohort ranking groups with cohortId, courseId, title, rank, total, score, predicate, complete, finalCompleted, durationMs, finishedAt and ordered participants'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
 }};
 document.paths['/api/v1/academy/learning/overview'] = {get: {
   tags:['Academy'],summary:'Own learning and certificate progress',security:[{bearerAuth:[]}],
-  description:'Enrollment overview includes totalQuizzes, completedQuizzes (distinct completed exams with non-null scores), legacy passedQuizzes, lesson counters and grading. Certificate eligibility requires a published course and all published DAILY/WEEKLY/FINAL exams completed and graded, without a minimum score or lesson completion requirement. completedAt uses exam completion dates.',
+  description:'Enrollment overview includes totalQuizzes, completedQuizzes (distinct completed exams with non-null scores), legacy passedQuizzes, lesson counters and grading. certificateVisible and isEligible require a published course, at least one published FINAL exam, and all published exams having a closesAt deadline that has elapsed. Eligibility applies to every enrolled participant, including those with no completed exams. Missing deadlines keep certificates hidden. completedAt is the latest exam deadline.',
   responses:{200:{description:'Own enrollment overview; completedQuizzes is a nonnegative integer'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
 }};
 // Participant scoring is performed by Laravel; browser submissions cannot set the kind or score.
@@ -21,9 +27,9 @@ for (const [path, method, summary] of [
 ]) {
   document.paths[path] = { [method]: {
     tags: ['Academy'], summary, security: [{ bearerAuth: [] }],
-    description: 'Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden until review is permitted.',
+    description: 'Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden for unfinished attempts; the owner can review them immediately after completion.',
     parameters: [...path.matchAll(/\{(\w+)\}/g)].map(match => ({name:match[1],in:'path',required:true,schema:{type:'string'}})),
-    responses: { [method === 'post' ? 201 : 200]: {description:method === 'get' ? 'Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted before review.' : 'Attempt started or answers saved; grading is server-controlled'},401:{description:'Unauthenticated'},403:{description:'Not permitted or unavailable'},404:{description:'Not found'},409:{description:'Retake not allowed'},422:{description:'Invalid answers'}},
+    responses: { [method === 'post' ? 201 : 200]: {description:method === 'get' ? 'Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted while the attempt is unfinished.' : 'Attempt started or answers saved; grading is server-controlled'},401:{description:'Unauthenticated'},403:{description:'Not permitted or unavailable'},404:{description:'Not found'},409:{description:'Retake not allowed'},422:{description:'Invalid answers'}},
   } };
 }
 document.paths['/api/v1/bantuan/santunan/imports'] = { post: {

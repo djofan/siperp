@@ -3,6 +3,8 @@
 namespace App\Modules\Academy\Http\Controllers;
 
 use App\Modules\Academy\Models\AcademyCohort as Cohort;
+use App\Modules\Academy\Models\AcademyCohortMembership as Membership;
+use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment as Enrollment;
 use App\Modules\Academy\Models\ZakatAcademyQuiz as Quiz;
@@ -10,6 +12,7 @@ use App\Modules\Academy\Models\ZakatAcademyQuizAttempt as Attempt;
 use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Academy\Services\AcademyDto;
 use App\Modules\Academy\Services\ProgressService;
+use App\Modules\Academy\Services\RankingTiming;
 use Illuminate\Http\Request;
 
 class CourseController
@@ -102,20 +105,42 @@ class CourseController
     public function rankings(Request $request)
     {
         $profile = $this->context->profile($request);
-        $own = Enrollment::where('profile_id', $profile->id)->whereHas('course', fn ($q) => $q->where('is_published', true))->with('course')->get();
+        $own = Enrollment::where('profile_id', $profile->id)->whereHas('course', fn ($q) => $q->where('is_published', true))->with('course.cohort')->get();
+        $groups = $own->groupBy(fn ($row) => $row->course->cohortId ? 'cohort:'.$row->course->cohortId : 'course:'.$row->courseId);
+        $weights = $this->context->settings()['weights'];
         $rows = [];
-        foreach ($own as $enrollment) {
-            $quizzes = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->where('course_id', $enrollment->courseId)->where('is_published', true))->select('id', 'kind')->get()->toArray();
-            $attempts = Attempt::where('is_completed', true)->whereIn('quiz_id', array_column($quizzes, 'id'))->select('profile_id', 'quiz_id', 'score')->get()->groupBy('profileId');
-            $people = Enrollment::where('course_id', $enrollment->courseId)->whereHas('profile.user', fn ($q) => $q->where('is_active', true))->pluck('profile_id');
+        foreach ($groups as $group) {
+            $enrollment = $group->first();
+            $cohortId = $enrollment->course->cohortId;
+            $courseIds = $cohortId ? Course::where('cohort_id', $cohortId)->where('is_published', true)->pluck('id')->all() : [$enrollment->courseId];
+            $quizzes = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->whereIn('course_id', $courseIds)->where('is_published', true))->select('id', 'kind', 'time_limit_minutes')->get()->toArray();
+            // No answer snapshots or private participant contact fields are loaded.
+            $attempts = Attempt::where('is_completed', true)->whereIn('quiz_id', array_column($quizzes, 'id'))->select('profile_id', 'quiz_id', 'score', 'started_at', 'submitted_at')->get()->groupBy('profileId');
+            $people = Profile::whereNull('deleted_at')->whereHas('user', fn ($q) => $q->where('is_active', true))->where(function ($query) use ($courseIds, $cohortId) {
+                $query->whereIn('id', Enrollment::whereIn('course_id', $courseIds)->select('profile_id'));
+                if ($cohortId) {
+                    $query->orWhereIn('id', Membership::where('cohort_id', $cohortId)->select('profile_id'));
+                }
+            })->select('id', 'user_id')->with('user:id,name')->get();
             $grades = [];
-            foreach ($people as $id) {
-                if (isset($attempts[$id])) {
-                    $grades[$id] = $this->context->weighted($quizzes, $attempts[$id]->toArray());
+            foreach ($people as $person) {
+                $values = isset($attempts[$person->id]) ? $attempts[$person->id]->toArray() : [];
+                $grade = $this->context->weighted($quizzes, $values, $weights);
+                $timing = RankingTiming::summary($quizzes, $values);
+                $grades[] = ['profileId' => $person->id, 'name' => $person->user->name, 'score' => $grade['score'], 'predicate' => $grade['predicate'], 'complete' => $grade['complete'], 'finalCompleted' => $grade['finalCompleted'], 'durationMs' => $timing['durationMs'], 'finishedAt' => $timing['finishedAt'], 'isSelf' => $person->id === $profile->id];
+            }
+            usort($grades, [RankingTiming::class, 'compare']);
+            $participants = [];
+            $self = null;
+            foreach ($grades as $index => $grade) {
+                unset($grade['profileId']);
+                $grade['rank'] = $index + 1;
+                $participants[] = $grade;
+                if ($grade['isSelf']) {
+                    $self = $grade;
                 }
             }
-            $self = $grades[$profile->id] ?? null;
-            $rows[] = ['courseId' => $enrollment->courseId, 'title' => $enrollment->course->title, 'rank' => $self ? 1 + count(array_filter($grades, fn ($g) => $g['score'] > $self['score'])) : null, 'total' => $people->unique()->count(), 'score' => $self['score'] ?? 0, 'predicate' => $self['predicate'] ?? null, 'complete' => $self['complete'] ?? false];
+            $rows[] = ['courseId' => $enrollment->courseId, 'cohortId' => $cohortId, 'title' => $enrollment->course->cohort?->title ?? $enrollment->course->title, 'rank' => $self['rank'] ?? null, 'total' => count($participants), 'score' => $self['score'] ?? 0, 'predicate' => $self['predicate'] ?? null, 'complete' => $self['complete'] ?? false, 'finalCompleted' => $self['finalCompleted'] ?? false, 'durationMs' => $self['durationMs'] ?? null, 'finishedAt' => $self['finishedAt'] ?? null, 'participants' => $participants];
         }
 
         return $this->data($rows);
