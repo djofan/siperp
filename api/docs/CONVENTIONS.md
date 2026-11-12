@@ -296,3 +296,26 @@ Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib 
 Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
 ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
 no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
+
+### PDF materi Academy
+
+POST `/api/v1/academy/admin/materials` dan PUT `/api/v1/academy/admin/materials/{id}`
+menerima multipart `pdfFile` opsional (PDF maksimal 10 MiB) selain `file` audio
+maksimal 50 MiB. Total kedua file maksimal 50 MiB. Nama ekstensi bukan satu-satunya
+validasi: PDF diperiksa MIME dan header. Admin Academy saja; file tetap di storage
+privat dan endpoint download memakai izin peserta serta jadwal rilis yang sama.
+Materi hanya-PDF dapat dipublikasikan. PDF baru menambah lampiran; omission pada
+edit mempertahankan PDF/audio lama. `file` tetap hanya menerima audio pada formulir
+materi. Gagal menyimpan salah satu file membatalkan transaksi database dan membersihkan
+file baru yang sempat tersimpan. Listing menambahkan `_count.pdfs` tanpa membuka URL
+lampiran privat. Tidak memerlukan migration.
+
+### Profil peserta Academy
+
+GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
+berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
+Respons `{data:{name,code,email,nis,phone,address,gender}}` hanya field yang diizinkan,
+tanpa hash password, token, atau metadata angkatan. Header `no-store, private`.
+Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
+Tidak ada update data pribadi melalui endpoint ini; perubahan password tetap memakai
+PUT `/api/v1/academy/profile/password` dengan verifikasi password saat ini.

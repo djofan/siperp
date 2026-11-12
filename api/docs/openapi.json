@@ -832,6 +832,43 @@
             "type": "boolean"
           }
         }
+      },
+      "AcademyMaterialUpload": {
+        "type": "object",
+        "properties": {
+          "cohortId": {
+            "type": "string",
+            "description": "Required when creating a material; existing scoped material cannot move cohorts."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "shortDescription": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A."
+          },
+          "pdfFile": {
+            "type": "string",
+            "format": "binary",
+            "description": "Optional PDF attachment, maximum 10 MiB. MIME and file header validated. Appends to existing attachments."
+          }
+        }
       }
     }
   },
@@ -4124,6 +4161,305 @@
         }
       }
     },
+    "/api/v1/academy/admin/materials": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Create audio or PDF material",
+        "description": "Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AcademyMaterialUpload"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "cohortId",
+                      "title"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved material ID in data.id"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/materials/{id}": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Update material and optionally upload audio or PDF",
+        "description": "Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyMaterialUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved material ID in data.id"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/profile": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Read the signed-in participant profile",
+        "description": "Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "name",
+                        "code",
+                        "email",
+                        "nis",
+                        "phone",
+                        "address",
+                        "gender"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "nis": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "phone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "gender": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "IKHWAN",
+                            "AKHWAT",
+                            null
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/bantuan/applications/{id}/actions/survey_revise": {
       "post": {
         "tags": [
@@ -4361,5 +4697,9 @@
     "behavior": "Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private."
   },
   "x-bantuan-survey-photo-replacement": "DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.",
+  "x-academy-material-pdfs": {
+    "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
+    "access": "Existing private file endpoint and enrollment/release checks remain unchanged."
+  },
   "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked."
 }

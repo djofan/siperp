@@ -254,6 +254,37 @@ document['x-ipaymu-request-authentication'] = {method:'POST',serialization:'One 
 document.components.schemas.SipDocumentationPhoto = {type:'object',additionalProperties:false,required:['id','image'],properties:{id:{type:'string',format:'uuid'},image:{type:'string',maxLength:191,pattern:'^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$'},caption:{type:['string','null'],maxLength:500},isDemo:{type:'boolean'}}};
 document['x-sip-content-galleries'] = {resources:['news','program-bantuan','penyaluran-bantuan'],field:'documentationPhotos',schema:{type:'array',maxItems:50,items:{$ref:'#/components/schemas/SipDocumentationPhoto'}},behavior:'Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private.'};
 document['x-bantuan-survey-photo-replacement'] = 'DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.';
+const academyMaterialUpload = {
+  type:'object', properties:{
+    cohortId:{type:'string',description:'Required when creating a material; existing scoped material cannot move cohorts.'},
+    title:{type:'string',maxLength:191}, order:{type:'integer',minimum:1},
+    isPublished:{type:'boolean'}, shortDescription:{type:['string','null'],maxLength:2000},
+    file:{type:'string',format:'binary',description:'Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A.'},
+    pdfFile:{type:'string',format:'binary',description:'Optional PDF attachment, maximum 10 MiB. MIME and file header validated. Appends to existing attachments.'},
+  },
+};
+document.components.schemas.AcademyMaterialUpload = academyMaterialUpload;
+for (const [path, method] of [['/api/v1/academy/admin/materials','post'],['/api/v1/academy/admin/materials/{id}','put']]) {
+  document.paths[path] ??= {};
+  document.paths[path][method] = {
+    tags:['Academy'],summary:method==='post'?'Create audio or PDF material':'Update material and optionally upload audio or PDF',
+    description:'Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.',
+    security:[{bearerAuth:[]}],
+    ...(method==='put'?{parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}]}:{}),
+    requestBody:{required:true,content:{'multipart/form-data':{schema:method==='post'?{allOf:[{$ref:'#/components/schemas/AcademyMaterialUpload'},{type:'object',required:['cohortId','title']}]}:{$ref:'#/components/schemas/AcademyMaterialUpload'}}}},
+    responses:{200:{description:'Saved material ID in data.id'},401:error,403:error,404:error,409:error,422:error},
+  };
+}
+document['x-academy-material-pdfs'] = {listing:'Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.',access:'Existing private file endpoint and enrollment/release checks remain unchanged.'};
+const academyOwnProfile = {
+  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender'],
+  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]}},
+};
+document.paths['/api/v1/academy/profile'] = {get:{
+  tags:['Academy'], summary:'Read the signed-in participant profile',
+  description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.',
+  security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
+}};
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};
 const login = document.paths['/api/v1/auth/login'].post;
 login.requestBody.content['application/json'].schema.properties.pwa = {type:'boolean',description:'Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply.'};

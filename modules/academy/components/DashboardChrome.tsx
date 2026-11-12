@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { ArrowUpRight, Bell, BookOpen, ChevronRight, GraduationCap, Headphones, LayoutDashboard, Menu, MessageCircle, Settings, Trophy, Users, ClipboardList, Layers, CalendarDays, NotebookPen } from "lucide-react";
+import { ArrowUpRight, Bell, BookOpen, ChevronRight, GraduationCap, Headphones, Heart, LayoutDashboard, Menu, MessageCircle, Settings, Trophy, Users, ClipboardList, Layers, CalendarDays, NotebookPen } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "./ui/sheet";
@@ -34,7 +34,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const items = groups.flatMap(group => group.items);
-  const active = items.filter(item => pathname === item.href || pathname.startsWith(`${item.href}/`)).sort((a, b) => b.href.length - a.href.length)[0];
+  const active = items.filter(item => pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.href === "/academy/peringkat" && pathname.startsWith("/academy/sertifikat/"))).sort((a, b) => b.href.length - a.href.length)[0];
   const sidebar = <>
     <Link href="/academy" onClick={() => setOpen(false)} className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
       <span className="academy-brand-icon flex size-10 items-center justify-center rounded-xl bg-emerald-600 text-white"><GraduationCap className="size-6" /></span>
@@ -54,7 +54,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
         })}
       </div>)}
     </nav>
-    {csPhone && <div className="academy-sidebar-note mx-4 mb-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4"><Headphones className="mb-2 size-5 text-emerald-600" /><p className="text-xs font-semibold text-slate-800">Butuh bantuan?</p><a href={`https://wa.me/${csPhone}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">Hubungi customer service <ArrowUpRight className="size-3" /></a></div>}
+    {role === "Peserta" ? <div className="academy-sidebar-note mx-4 mb-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4"><Heart className="mb-2 size-5 text-emerald-600" /><p className="text-xs font-semibold text-slate-800">Support Donasi</p><p className="mt-1 text-xs leading-5 text-slate-600">Dukung program kebaikan melalui LAZSIP.</p><Link href="/lazsip/donasi" className="mt-2 inline-flex min-h-10 items-center gap-1 text-xs font-semibold text-emerald-700">Donasi sekarang <ArrowUpRight className="size-3" /></Link></div> : csPhone && <div className="academy-sidebar-note mx-4 mb-4 rounded-xl border border-emerald-100 bg-emerald-50/50 p-4"><Headphones className="mb-2 size-5 text-emerald-600" /><p className="text-xs font-semibold text-slate-800">Butuh bantuan?</p><a href={`https://wa.me/${csPhone}`} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700">Hubungi customer service <ArrowUpRight className="size-3" /></a></div>}
     <div className="flex items-center gap-3 border-t border-slate-100 px-5 py-4">
       <span className="academy-user-avatar flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-700">{userName.charAt(0).toUpperCase()}</span>
       <div className="min-w-0"><p className="truncate text-sm font-medium text-slate-800">{userName}</p><p className="text-xs text-slate-500">{userNumber ? `NIP ${userNumber}` : role}</p></div>
