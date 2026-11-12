@@ -318,6 +318,7 @@ export type AcademyPage10 = {
         id: string;
         title: string;
         course: {
+            id: string;
             title: string;
         };
         lessons: {
@@ -333,6 +334,7 @@ export type AcademyPage10 = {
         id: string;
         title: string;
         course: {
+            id: string;
             title: string;
         };
         lessons: {
@@ -414,6 +416,9 @@ export type AcademyPage12 = {
             type: import("@/contracts/modules/academy").AcademyQuestionType;
             weight: number;
             explanation: string | null;
+            mediaMime?: string | null;
+            mediaName?: string | null;
+            mediaAlt?: string | null;
             options: {
                 id: string;
                 isCorrect: boolean;
@@ -446,6 +451,9 @@ export type AcademyPage12 = {
             type: import("@/contracts/modules/academy").AcademyQuestionType;
             weight: number;
             explanation: string | null;
+            mediaMime?: string | null;
+            mediaName?: string | null;
+            mediaAlt?: string | null;
             options: {
                 id: string;
                 isCorrect: boolean;

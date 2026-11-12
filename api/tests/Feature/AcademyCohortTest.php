@@ -35,9 +35,10 @@ function newAcademyCohort(string $title = 'Angkatan 1', int $quota = 200): Acade
     return $cohort;
 }
 
-it('creates cohorts without requiring or copying a program', function () {
+it('creates cohorts with a fresh twelve chapter curriculum', function () {
     $this->postJson('/api/v1/academy/admin/cohorts', ['title' => 'Angkatan Mandiri', 'quota' => 30])->assertSuccessful();
-    expect(ZakatAcademyCourse::count())->toBe(0);
+    expect(ZakatAcademyCourse::count())->toBe(1);
+    expect(DB::table('zakat_academy_chapters')->count())->toBe(12);
     $this->getJson('/api/v1/academy/admin/cohorts')->assertJsonPath('data.0.title', 'Angkatan Mandiri')->assertJsonPath('data.0.participants_count', 0);
     $this->postJson('/api/v1/academy/admin/cohorts', ['title' => 'Angkatan Mandiri', 'quota' => 30])->assertUnprocessable();
 });

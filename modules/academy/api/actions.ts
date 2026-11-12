@@ -58,15 +58,6 @@ export async function beginQuiz(quizId: string): Promise<ActionState> {
     }
     redirect(`/academy/kuis/${quizId}/percobaan/${attemptId}`);
 }
-export async function saveQuizAnswer(attemptId: string, questionId: string, optionId: string | string[]) {
-    const { profileId } = await requireAcademyProfile();
-    try {
-        return { ...await updateAttempt(profileId, attemptId, { questionId, optionId }), error: "" };
-    }
-    catch (error) {
-        return { completed: false, ...errorState(error) };
-    }
-}
 export async function saveStudyNote(lessonId: string, _: ActionState, form: FormData): Promise<ActionState> { const result = await mutate(`academy/lessons/${encodeURIComponent(lessonId)}/note`, form, "PUT"); return result.error ? result : { ...result, message: "Catatan pribadi tersimpan." }; }
 export async function changeAcademyPassword(_: ActionState, form: FormData): Promise<ActionState> { const result = await mutate("academy/profile/password", form, "PUT"); if (result.error)
     return result; (await cookies()).delete(SESSION_COOKIE_NAME); redirect("/academy/masuk?password=1"); }
@@ -74,10 +65,10 @@ export async function askTeacher(courseId: string, _: ActionState, form: FormDat
 export async function answerParticipant(id: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/discussions/${encodeURIComponent(id)}/answer`, form, "PUT"); }
 export async function saveTeacherAudio(lessonId: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/lessons/${encodeURIComponent(lessonId)}/audio`, form, "PUT"); }
 export async function saveTeacherSession(courseId: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/courses/${encodeURIComponent(courseId)}/sessions`, form); }
-export async function finishQuiz(attemptId: string) {
+export async function finishQuiz(attemptId: string, answers: Record<string, string | string[]>) {
     const { profileId } = await requireAcademyProfile();
     try {
-        const result = await updateAttempt(profileId, attemptId, undefined, true);
+        const result = await updateAttempt(profileId, attemptId, { answers, submit: true });
         revalidatePath("/academy", "layout");
         return { error: "", href: `/academy/kuis/${result.quizId}/hasil/${attemptId}` };
     }

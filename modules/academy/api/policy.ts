@@ -2,7 +2,7 @@ export interface QuizSnapshot {
   passingScore: number;
   timeLimitMinutes: number;
   closesAt?: string | null;
-  questions: { id: string; question: string; explanation?: string | null; type?: "SINGLE" | "TRUE_FALSE" | "MULTIPLE"; weight?: number; options: { id: string; label: string; isCorrect: boolean }[] }[];
+  questions: { id: string; question: string; explanation?: string | null; type?: "SINGLE" | "TRUE_FALSE" | "MULTIPLE"; weight?: number; mediaMime?: string | null; mediaName?: string | null; mediaAlt?: string | null; options: { id: string; label: string; isCorrect: boolean }[] }[];
   responses: Record<string, string | string[]>;
 }
 

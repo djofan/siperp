@@ -52,6 +52,11 @@ batas upload 50 MB dan request minimal 51 MB.
   mengumpulkan ujian, tetapi kunci jawaban dan penjelasan hanya dirender setelah
   batas tutup. Tetapkan batas tutup di form ujian; tanpa batas tersebut pembahasan
   tetap terkunci. Snapshot percobaan menjaga kunci dan pembahasan saat pengerjaan.
+- Setiap soal dapat diberi satu gambar JPG/PNG/WebP (maksimal 5 MB) atau audio
+  MP3/WAV/OGG/M4A/WebM (maksimal 15 MB), lengkap dengan teks alternatif.
+  Media disimpan privat dan hanya dapat dibuka oleh pengajar/admin atau peserta
+  yang memiliki akses ke ujian tersebut. Pengajar dapat mengganti atau menghapus
+  media melalui editor soal; peserta melihat atau memutarnya di soal dan pembahasan.
 - Dashboard pengajar dan menu Nilai menampilkan peserta yang melewatkan tenggat,
   mendapat nilai terbaik di bawah batas lulus, atau belum mengerjakan ujian yang
   sudah tersedia. Ujian yang belum dibuka tidak menjadi alasan tindak lanjut.
@@ -65,3 +70,25 @@ batas upload 50 MB dan request minimal 51 MB.
   lama dari program. Peserta dengan beberapa program memakai program pertama
   sebagai angkatan awal. Peserta tanpa program resmi dapat ditetapkan angkatannya
   melalui edit peserta. Enrollment dan riwayat belajar tidak dihapus.
+
+## Bab per angkatan
+
+Angkatan baru otomatis memiliki 12 bab dan durasi 30 hari. Untuk angkatan lama, admin membuka Peserta > Angkatan > Siapkan 12 bab. Editor program terbuka untuk mengubah judul dan susunan bab. Persiapan idempoten, tidak menghapus konten/progres lama atau memangkas bab yang sudah lebih dari 12. Pengajar mengatur hari rilis materi 1-30.
+
+Teacher materials support file upload or direct browser recording (microphone permission and HTTPS/localhost required). Recordings are previewed before saving with the material, with a 50 MB limit. Release day counts from course startsAt in WIB (1 = first day); order sorts materials inside a chapter.
+
+Daily teacher material form: release day and order inputs removed. New lessons append under a chapter lock; edits retain position. Teacher saves set releaseDay=1, respecting course start and publication/access rules. Existing unsaved materials and quiz schedules remain unchanged.
+
+Teacher material table: GET /api/v1/academy/teacher/materials?view=table&cohort={cohortId}&page=1 returns paginated lesson rows (10/page), actual cohort/chapter labels, publication/audio information, selector metadata and totals. Cohort filter is applied in Laravel before pagination; changing filters resets the page in the UI. Legacy requests without view=table keep their chapter response.
+
+Teacher exam and question tables: GET teacher/quizzes?view=table supports cohort filter and page; GET teacher/quizzes/{id}?view=table supports question page. Both use 10 rows/page in Laravel with stable ordering and clamp excess pages. Legacy response remains without view=table. Question keys/options require teacher/admin authorization. UI exposes exam configuration and question editing separately from table rows.
+
+Teacher exam creation: DAILY selects cohort curriculum and chapter; WEEKLY/FINAL select cohort curriculum only (courseId). Backend retains an internal chapter relationship for compatibility and preserves existing relationships on edit. The UI labels weekly/final scope as all chapters.
+
+Academy UX: teacher/admin dashboards include workflow guides; participant dashboard prioritizes recent cohort materials and exam reminders. GET materials accepts sort=latest (created_at desc,id desc), preserving cohort/publication access. Material forms offer explicit draft/publish actions. Exam activation includes a review of scope, question count, duration and WIB schedule; server publication validation remains authoritative. No automatic activation or messaging is performed by dashboard guides.
+
+Teacher Q&A: GET teacher/questions?view=table&page=1 returns 10 discussions/page (unanswered first); GET teacher/questions/{id} reads private detail. Teacher/admin authorization applies to both and the existing answer PUT. The dedicated answer page redirects back to the table after a successful save, preserving page and showing confirmation; validation errors remain on the answer form.
+
+Participant Q&A now has a 10-row paginated table, separate create/detail pages, and return-to-table confirmation on successful submission. GET learning/discussions?view=table uses the existing participant/enrollment scope; GET learning/discussions/{id} returns only owned discussions in published enrolled courses (foreign IDs 404). Session schedules remain accessible below the table.
+
+Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select cohort curriculum, title, future WIB datetime and meeting URL. Existing POST courses/{courseId}/sessions creates the schedule; new GET teacher/sessions returns manager-only options and a 10-row paginated session list. Enrolled participants see the meeting under Q&A session schedules; other cohorts cannot see it.

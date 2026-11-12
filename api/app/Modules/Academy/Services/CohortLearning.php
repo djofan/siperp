@@ -35,6 +35,7 @@ class CohortLearning
     public function finished(string $profileId, string $cohortId): bool
     {
         $quizzes = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->where('is_published', true)->whereHas('course', fn ($c) => $c->where('cohort_id', $cohortId)->where('is_published', true)))->get(['id', 'kind']);
+
         return $quizzes->contains('kind', 'FINAL') && $quizzes->count() === Attempt::where('profile_id', $profileId)->where('is_completed', true)->whereIn('quiz_id', $quizzes->pluck('id'))->distinct()->count('quiz_id');
     }
 
@@ -45,6 +46,7 @@ class CohortLearning
         Profile::where('id', $profile->id)->lockForUpdate()->firstOrFail();
         if ($this->owns($profile->id, $cohort->id)) {
             $this->enrollCourses($profile->id, $cohort->id);
+
             return;
         }
         foreach (Membership::where('profile_id', $profile->id)->whereNull('finished_at')->lockForUpdate()->get() as $old) {
@@ -60,6 +62,26 @@ class CohortLearning
         $profile->cohortId = $cohort->id;
         $profile->save();
         $this->enrollCourses($profile->id, $cohort->id);
+    }
+
+    public function prepareChapters(string $cohortId): string
+    {
+        $container = $this->container($cohortId);
+        $course = $container->course;
+        $course->durationDays = 30;
+        $course->save();
+        $count = $course->chapters()->count();
+        if ($container->title === $course->title) {
+            $container->title = 'Bab 1';
+            $container->save();
+        }
+        for ($number = $count + 1; $number <= 12; $number++) {
+            $chapter = new Chapter;
+            $chapter->forceFill(['courseId' => $course->id, 'title' => 'Bab '.$number,
+                'slug' => 'bab-'.$number.'-'.Str::uuid(), 'order' => $number - 1, 'isPublished' => true])->save();
+        }
+
+        return $course->id;
     }
 
     public function container(string $cohortId): Chapter
@@ -85,6 +107,7 @@ class CohortLearning
                 ])->all());
             });
         }
+
         return $chapter;
     }
 }

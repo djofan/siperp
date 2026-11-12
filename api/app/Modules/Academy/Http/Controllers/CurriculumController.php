@@ -11,13 +11,14 @@ use App\Modules\Academy\Models\ZakatAcademyQuizOption as Option;
 use App\Modules\Academy\Models\ZakatAcademyQuizQuestion as Question;
 use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Academy\Services\AcademyDto;
+use App\Modules\Academy\Services\QuestionMedia;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CurriculumController
 {
-    public function __construct(private AcademyContext $context) {}
+    public function __construct(private AcademyContext $context, private QuestionMedia $questionMedia) {}
 
     private function data($data)
     {
@@ -236,11 +237,15 @@ class CurriculumController
             $query->where('title', 'like', '%'.mb_substr($request->input('search'), 0, 100).'%');
         }
 
-        if ($request->filled('cohort')) { $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort'))); }
+        if ($request->filled('cohort')) {
+            $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort')));
+        }
         if ($request->boolean('all')) {
             $items = $query->get()->map(fn ($row) => AcademyDto::make($row));
+
             return $this->data(['items' => $items, 'total' => $items->count(), 'page' => 1, 'pages' => 1]);
         }
+
         return $this->data(AcademyDto::page($query, (int) $request->input('page', 1)));
     }
 
@@ -316,51 +321,78 @@ class CurriculumController
             $options = json_decode($request->input('options'), true);
             $request->merge(['options' => $options]);
         }
-        $data = $request->validate(['question' => 'required|string|max:10000', 'order' => 'required|integer|min:0|max:2147483647', 'type' => 'sometimes|in:SINGLE,TRUE_FALSE,MULTIPLE', 'weight' => 'sometimes|integer|min:1|max:100', 'explanation' => 'nullable|string|max:10000', 'options' => 'required|array|min:2|max:10', 'options.*.id' => 'present|nullable|string|max:191', 'options.*.label' => 'required|string|max:4000', 'options.*.isCorrect' => 'required|boolean']);
+        $data = $request->validate(['question' => 'required|string|max:10000', 'order' => 'required|integer|min:0|max:2147483647', 'type' => 'sometimes|in:SINGLE,TRUE_FALSE,MULTIPLE', 'weight' => 'sometimes|integer|min:1|max:100', 'explanation' => 'nullable|string|max:10000', 'mediaAlt' => 'nullable|string|max:500', 'removeMedia' => 'sometimes|boolean', 'media' => 'nullable|file|max:15360', 'options' => 'required|array|min:2|max:10', 'options.*.id' => 'present|nullable|string|max:191', 'options.*.label' => 'required|string|max:4000', 'options.*.isCorrect' => 'required|boolean']);
         $data += ['type' => 'SINGLE', 'weight' => 1];
         $options = $data['options'];
-        unset($data['options']);
+        $removeMedia = (bool) ($data['removeMedia'] ?? false);
+        unset($data['options'], $data['removeMedia'], $data['media']);
         $correct = count(array_filter($options, fn ($o) => $o['isCorrect']));
         abort_unless($data['type'] === 'MULTIPLE' ? $correct > 0 && $correct < count($options) : $correct === 1, 422, 'Kunci jawaban tidak valid.');
         $labels = array_map(fn ($o) => mb_strtolower(trim($o['label'])), $options);
         $ids = array_filter(array_column($options, 'id'));
         abort_if(count(array_unique($labels)) !== count($labels) || count(array_unique($ids)) !== count($ids), 422, 'Opsi tidak boleh berulang.');
         abort_if($data['type'] === 'TRUE_FALSE' && (count($options) !== 2 || array_diff(['benar', 'salah'], $labels)), 422, 'Gunakan opsi Benar dan Salah.');
+        $uploaded = $request->hasFile('media') ? $this->questionMedia->store($request->file('media')) : null;
 
-        return $this->data(DB::transaction(function () use ($courseId, $chapterId, $quizId, $id, $data, $options) {
-            $this->course($courseId);
-            $quiz = $this->quiz($courseId, $chapterId, $quizId);
-            $quiz->updatedAt = now();
-            $quiz->save();
-            $row = $id ? Question::where('id', $id)->where('quiz_id', $quizId)->firstOrFail() : new Question;
-            $owned = $row->exists ? $row->options()->pluck('id')->all() : [];
-            abort_if(array_diff(array_filter(array_column($options, 'id')), $owned) !== [], 422, 'Opsi bukan milik pertanyaan ini.');
-            $this->assign($row, $data + ['quizId' => $quizId]);
-            $retained = array_filter(array_column($options, 'id'));
-            $row->options()->whereNotIn('id', $retained)->delete();
-            foreach ($options as $option) {
-                $value = empty($option['id']) ? new Option : $row->options()->findOrFail($option['id']);
-                $this->assign($value, ['questionId' => $row->id, 'label' => trim($option['label']), 'isCorrect' => $option['isCorrect']]);
-            }
-            if ($quiz->isPublished) {
-                $this->ready($quiz);
-            }
+        $oldPath = null;
+        try {
+            $result = DB::transaction(function () use ($courseId, $chapterId, $quizId, $id, $data, $options, $uploaded, $removeMedia, &$oldPath) {
+                $this->course($courseId);
+                $quiz = $this->quiz($courseId, $chapterId, $quizId);
+                $quiz->updatedAt = now();
+                $quiz->save();
+                $row = $id ? Question::where('id', $id)->where('quiz_id', $quizId)->firstOrFail() : new Question;
+                $owned = $row->exists ? $row->options()->pluck('id')->all() : [];
+                abort_if(array_diff(array_filter(array_column($options, 'id')), $owned) !== [], 422, 'Opsi bukan milik pertanyaan ini.');
+                if ($uploaded || $removeMedia) {
+                    $oldPath = $row->mediaPath;
+                    $data['mediaPath'] = $uploaded['mediaPath'] ?? null;
+                    $data['mediaMime'] = $uploaded['mediaMime'] ?? null;
+                    $data['mediaName'] = $uploaded['mediaName'] ?? null;
+                    if ($removeMedia && ! $uploaded) {
+                        $data['mediaAlt'] = null;
+                    }
+                }
+                $this->assign($row, $data + ['quizId' => $quizId]);
+                $retained = array_filter(array_column($options, 'id'));
+                $row->options()->whereNotIn('id', $retained)->delete();
+                foreach ($options as $option) {
+                    $value = empty($option['id']) ? new Option : $row->options()->findOrFail($option['id']);
+                    $this->assign($value, ['questionId' => $row->id, 'label' => trim($option['label']), 'isCorrect' => $option['isCorrect']]);
+                }
+                if ($quiz->isPublished) {
+                    $this->ready($quiz);
+                }
 
-            return ['id' => $row->id];
-        }, 3));
+                return ['id' => $row->id];
+            }, 3);
+        } catch (\Throwable $error) {
+            $this->questionMedia->delete($uploaded['mediaPath'] ?? null);
+            throw $error;
+        }
+        if ($oldPath && $oldPath !== ($uploaded['mediaPath'] ?? null)) {
+            $this->questionMedia->delete($oldPath);
+        }
+
+        return $this->data($result);
     }
 
     public function destroyQuestion(Request $request, string $courseId, string $chapterId, string $quizId, string $id)
     {
         $this->context->admin($request);
-        DB::transaction(function () use ($courseId, $chapterId, $quizId, $id) {
+        $path = DB::transaction(function () use ($courseId, $chapterId, $quizId, $id) {
             $this->course($courseId);
             $quiz = $this->quiz($courseId, $chapterId, $quizId);
-            Question::where('id', $id)->where('quiz_id', $quizId)->firstOrFail()->delete();
+            $question = Question::where('id', $id)->where('quiz_id', $quizId)->firstOrFail();
+            $path = $question->mediaPath;
+            $question->delete();
             if ($quiz->isPublished) {
                 $this->ready($quiz);
             }
+
+            return $path;
         }, 3);
+        $this->questionMedia->delete($path);
 
         return $this->data(true);
     }
@@ -368,12 +400,18 @@ class CurriculumController
     public function destroyQuiz(Request $request, string $courseId, string $chapterId, string $quizId)
     {
         $this->context->admin($request);
-        DB::transaction(function () use ($courseId, $chapterId, $quizId) {
+        $paths = DB::transaction(function () use ($courseId, $chapterId, $quizId) {
             $this->course($courseId);
             $quiz = $this->quiz($courseId, $chapterId, $quizId);
             abort_if($quiz->attempts()->exists(), 409, 'Ujian memiliki riwayat percobaan.');
+            $paths = $quiz->questions()->whereNotNull('media_path')->pluck('media_path')->all();
             $quiz->delete();
+
+            return $paths;
         }, 3);
+        foreach ($paths as $path) {
+            $this->questionMedia->delete($path);
+        }
 
         return $this->data(true);
     }

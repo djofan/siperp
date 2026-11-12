@@ -4,6 +4,7 @@ namespace App\Modules\Academy\Http\Controllers;
 
 use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use App\Modules\Academy\Models\AcademyDiscussion as Discussion;
+use App\Modules\Academy\Models\AcademyLiveSession;
 use App\Modules\Academy\Models\AcademyNotificationRead as NotificationRead;
 use App\Modules\Academy\Models\AcademyStudyNote as Note;
 use App\Modules\Academy\Models\ZakatAcademyChapter as Chapter;
@@ -53,11 +54,11 @@ class PageDataController
             ->orderBy('nis')
             ->orderBy(DB::table('users')->select('name')->whereColumn('users.id', 'zakat_academy_profiles.user_id')->limit(1))
             ->orderBy('id')->skip(($page - 1) * 25)->take(25)->get()->map(function ($row) {
-            $data = $row->toArray();
-            $data['user'] = ['name' => $row->user->name, 'isActive' => (bool) $row->user->is_active];
+                $data = $row->toArray();
+                $data['user'] = ['name' => $row->user->name, 'isActive' => (bool) $row->user->is_active];
 
-            return $data;
-        });
+                return $data;
+            });
         $counts = $this->students()->select('gender')->selectRaw('COUNT(*) AS total')->groupBy('gender')->get()->map(fn ($row) => ['gender' => $row->gender, '_count' => ['_all' => (int) $row->total]]);
 
         return $this->data(['people' => $people, 'total' => $total, 'counts' => $counts, 'cohorts' => Cohort::withCount('participants')->orderByDesc('created_at')->get(), 'courses' => Course::withCount('enrollments')->orderBy('order')->get()->map(fn ($row) => AcademyDto::make($row))]);
@@ -111,7 +112,21 @@ class PageDataController
         $profile = $this->context->profile($request);
         $enrollments = Enrollment::where('profile_id', $profile->id)->whereHas('course', fn ($q) => $q->where('is_published', true))->with(['course:id,title', 'course.sessions' => fn ($q) => $q->orderBy('starts_at')])->get();
 
-        return $this->data(['enrollments' => $enrollments, 'questions' => Discussion::where('profile_id', $profile->id)->whereIn('course_id', $enrollments->pluck('courseId'))->orderByDesc('created_at')->take(100)->get()]);
+        $query = Discussion::where('profile_id', $profile->id)->whereIn('course_id', $enrollments->pluck('courseId'))->with('course:id,title,cohort_id', 'course.cohort:id,title')->orderByDesc('created_at')->orderBy('id');
+        if ($request->query('view') === 'table') {
+            $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
+
+            return $this->data(['enrollments' => $enrollments, 'questions' => AcademyDto::page($query, (int) ($input['page'] ?? 1), 10)]);
+        }
+
+        return $this->data(['enrollments' => $enrollments, 'questions' => $query->take(100)->get()]);
+    }
+
+    public function discussion(Request $request, string $id)
+    {
+        $profile = $this->context->profile($request);
+
+        return $this->data(Discussion::where('profile_id', $profile->id)->whereHas('course', fn ($q) => $q->where('is_published', true)->whereHas('enrollments', fn ($e) => $e->where('profile_id', $profile->id)))->with('course:id,title,cohort_id', 'course.cohort:id,title')->findOrFail($id));
     }
 
     public function certificates(Request $request)
@@ -132,12 +147,64 @@ class PageDataController
     {
         $this->context->teacher($request);
 
-        return $this->data(Chapter::with('course:id,title', 'lessons')->orderBy('order')->get());
+        if ($request->query('view') === 'table') {
+            $input = $request->validate(['cohort' => 'nullable|string|max:191', 'page' => 'sometimes|integer|min:1|max:100000']);
+            $query = Lesson::with('chapter.course.cohort');
+            if (! empty($input['cohort'])) {
+                $query->whereHas('chapter.course', fn ($q) => $q->where('cohort_id', $input['cohort']));
+            }
+            $total = (clone $query)->count();
+            $lastPage = max(1, (int) ceil($total / 10));
+            $page = min((int) ($input['page'] ?? 1), $lastPage);
+            $items = $query->orderBy('created_at')->orderBy('id')->skip(($page - 1) * 10)->take(10)->get()->map(fn ($lesson) => [
+                'id' => $lesson->id, 'title' => $lesson->title, 'chapterId' => $lesson->chapterId,
+                'chapterTitle' => $lesson->chapter->title,
+                'cohortTitle' => $lesson->chapter->course->cohort?->title ?? 'Arsip tanpa angkatan',
+                'contentSummary' => $lesson->contentSummary, 'videoUrl' => $lesson->videoUrl,
+                'isPublished' => $lesson->isPublished,
+            ]);
+            $chapters = Chapter::with('course.cohort')->orderBy('order')->orderBy('id')->get()->map(fn ($chapter) => [
+                'id' => $chapter->id, 'title' => $chapter->title,
+                'course' => ['id' => $chapter->course->id, 'title' => $chapter->course->cohort?->title ?? $chapter->course->title],
+            ]);
+
+            return $this->data(['items' => $items, 'chapters' => $chapters,
+                'cohorts' => Cohort::orderBy('title')->get(['id', 'title']),
+                'page' => $page, 'lastPage' => $lastPage, 'total' => $total, 'perPage' => 10]);
+        }
+
+        return $this->data(Chapter::with(['course:id,title', 'lessons' => fn ($q) => $q->orderBy('order')->orderBy('created_at')->orderBy('id')])->orderBy('order')->get());
     }
 
     public function teacherQuizzes(Request $request)
     {
         $this->context->teacher($request);
+
+        if ($request->query('view') === 'table') {
+            $input = $request->validate(['cohort' => 'nullable|string|max:191', 'page' => 'sometimes|integer|min:1|max:100000']);
+            $query = Quiz::with('chapter.course.cohort')->withCount('questions');
+            if (! empty($input['cohort'])) {
+                $query->whereHas('chapter.course', fn ($q) => $q->where('cohort_id', $input['cohort']));
+            }
+            $total = (clone $query)->count();
+            $lastPage = max(1, (int) ceil($total / 10));
+            $page = min((int) ($input['page'] ?? 1), $lastPage);
+            $items = $query->orderBy('created_at')->orderBy('id')->skip(($page - 1) * 10)->take(10)->get()->map(fn ($quiz) => [
+                'id' => $quiz->id, 'title' => $quiz->title, 'chapterTitle' => $quiz->chapter->title,
+                'cohortTitle' => $quiz->chapter->course->cohort?->title ?? 'Arsip tanpa angkatan',
+                'kind' => $quiz->kind, 'isPublished' => $quiz->isPublished, 'isActive' => $quiz->isActive,
+                'quizDate' => $quiz->quizDate?->toIso8601String(), 'closesAt' => $quiz->closesAt?->toIso8601String(),
+                'timeLimitMinutes' => $quiz->timeLimitMinutes, 'questionCount' => $quiz->questions_count,
+            ]);
+            $chapters = Chapter::with('course.cohort')->orderBy('order')->orderBy('id')->get()->map(fn ($chapter) => [
+                'id' => $chapter->id, 'title' => $chapter->title,
+                'course' => ['id' => $chapter->course->id, 'title' => $chapter->course->cohort?->title ?? $chapter->course->title],
+            ]);
+
+            return $this->data(['items' => $items, 'chapters' => $chapters,
+                'cohorts' => Cohort::orderBy('title')->get(['id', 'title']),
+                'page' => $page, 'lastPage' => $lastPage, 'total' => $total, 'perPage' => 10]);
+        }
 
         return $this->data(Chapter::with(['course:id,title', 'quizzes' => fn ($q) => $q->withCount('questions')->orderBy('release_day')])->orderBy('order')->get()->map(fn ($row) => AcademyDto::make($row)));
     }
@@ -145,6 +212,19 @@ class PageDataController
     public function teacherQuiz(Request $request, string $id)
     {
         $this->context->teacher($request);
+        if ($request->query('view') === 'table') {
+            $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
+            $quiz = Quiz::with('chapter.course.cohort')->withCount('attempts')->findOrFail($id);
+            $total = $quiz->questions()->count();
+            $lastPage = max(1, (int) ceil($total / 10));
+            $page = min((int) ($input['page'] ?? 1), $lastPage);
+            $quiz->setRelation('questions', $quiz->questions()->with('options')->orderBy('order')->orderBy('id')->skip(($page - 1) * 10)->take(10)->get());
+
+            return $this->data(['scope' => ['chapterId' => $quiz->chapterId, 'chapter' => ['courseId' => $quiz->chapter->courseId]],
+                'quiz' => AcademyDto::make($quiz),
+                'cohortTitle' => $quiz->chapter->course->cohort?->title ?? 'Arsip tanpa angkatan',
+                'pagination' => ['page' => $page, 'lastPage' => $lastPage, 'total' => $total, 'perPage' => 10]]);
+        }
         $quiz = Quiz::with('chapter')->with(['questions' => fn ($q) => $q->orderBy('order')->orderBy('id'), 'questions.options'])->withCount('attempts')->findOrFail($id);
 
         return $this->data(['scope' => ['chapterId' => $quiz->chapterId, 'chapter' => ['courseId' => $quiz->chapter->courseId]], 'quiz' => AcademyDto::make($quiz)]);
@@ -154,7 +234,31 @@ class PageDataController
     {
         $this->context->teacher($request);
 
+        if ($request->query('view') === 'table') {
+            $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
+            $result = AcademyDto::page(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->orderByRaw('CASE WHEN answered_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('created_at')->orderBy('id'), (int) ($input['page'] ?? 1), 10);
+
+            return $this->data($result);
+        }
+
         return $this->data(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title')->orderBy('answered_at')->orderByDesc('created_at')->take(100)->get());
+    }
+
+    public function teacherSessions(Request $request)
+    {
+        $this->context->teacher($request);
+        $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
+        $courses = Course::whereNotNull('cohort_id')->with('cohort:id,title')->orderBy('title')->get(['id', 'title', 'cohort_id']);
+        $sessions = AcademyDto::page(AcademyLiveSession::with('course:id,title,cohort_id', 'course.cohort:id,title')->orderByDesc('starts_at')->orderBy('id'), (int) ($input['page'] ?? 1), 10);
+
+        return $this->data(['courses' => $courses, 'sessions' => $sessions]);
+    }
+
+    public function teacherQuestion(Request $request, string $id)
+    {
+        $this->context->teacher($request);
+
+        return $this->data(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->findOrFail($id));
     }
 
     public function teacherGrades(Request $request)
