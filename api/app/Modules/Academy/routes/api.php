@@ -45,6 +45,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
     Route::get('admin/intake', [$pages, 'intake']);
+    Route::post('admin/participant-imports', [App\Modules\Academy\Http\Controllers\ParticipantImportController::class, 'store']);
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
