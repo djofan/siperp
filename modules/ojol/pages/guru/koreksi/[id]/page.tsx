@@ -6,7 +6,7 @@ import { reviewAction } from "@/modules/ojol/api/actions/guru";
 import { QuizReview } from "@/modules/ojol/components/app/QuizReview";
 import { ReviewForm } from "@/modules/ojol/components/app/ReviewForm";
 import { ReviewHistory } from "@/modules/ojol/components/app/ReviewHistory";
-import { submissionFileUrl } from "@/modules/ojol/components/app/media";
+import { SubmissionMedia } from "@/modules/ojol/components/app/SubmissionMedia";
 import { Icon } from "@/modules/ojol/components/icons";
 import { Card, LatePill, ScoreBadge, SectionTitle, SubmissionPill, TypePill, formatDateTime } from "@/modules/ojol/components/ui";
 
@@ -49,11 +49,7 @@ export default async function GuruReviewPage({ params }: { params: Promise<{ id:
           {submission.fileMime && (
             <Card>
               <SectionTitle>Setoran</SectionTitle>
-              {submission.fileMime.startsWith("video") && task.type === "video" ? (
-                <video src={submissionFileUrl(submission.id)} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-ojol-ink" />
-              ) : (
-                <audio src={submissionFileUrl(submission.id)} controls preload="metadata" className="w-full" />
-              )}
+              <SubmissionMedia submission={submission}/>
             </Card>
           )}
           {isQuiz && <QuizReview questions={questions} answers={answers} />}
