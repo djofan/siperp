@@ -24,10 +24,10 @@ export function LearningOverview({ quizzes }: { quizzes: ListParticipantQuizzesR
       <div className="academy-section-heading"><h2 id="exam-history-heading">Riwayat ujian ({attempts.length})</h2><Link href="/academy/kuis">Lihat ujian →</Link></div>
       <div className="space-y-3">{attempts.length ? attempts.map(attempt => <article className="academy-card flex flex-wrap items-center gap-4 p-5" key={attempt.id}>
         <span className="academy-icon-tile"><AcademyIcon name="Quiz" className="h-5 w-5" /></span>
-        <div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{attempt.quiz.title}</h3><p className="academy-muted">Percobaan {attempt.attemptNumber}</p>
-          <p className="mt-1 text-sm">{attempt.score === null ? "Menunggu penilaian" : `Nilai ${Number(attempt.score).toFixed(1)} · ${attempt.passed ? "Lulus" : "Belum lulus"}`}</p>
+        <div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{attempt.quiz.title}</h3>
+          <p className="mt-1 text-sm">{attempt.score === null ? "Menunggu penilaian" : `Nilai ${Number(attempt.score).toFixed(1)}`}</p>
         </div>
-        <Link className="academy-outline-button" href={`/academy/kuis/${attempt.quiz.id}/hasil/${attempt.id}`}>Lihat hasil →</Link>
+        <Link className="academy-outline-button" href={`/academy/kuis/${attempt.quiz.id}#hasil-ujian`}>Lihat hasil →</Link>
       </article>) : <EmptyState>Belum ada riwayat ujian. Hasil akan tampil setelah Anda menyelesaikan ujian.</EmptyState>}</div>
     </section>
   </>;

@@ -12,6 +12,7 @@ const links = [
   { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
   { path: "progres", label: "Progres Saya", icon: "Progress" },
   { path: "peringkat", label: "Peringkat & Sertifikat", icon: "Trophy" },
+  { path: "tanya-jawab", label: "Tanya Ustadz", icon: "Users" },
   { path: "akun", label: "Profil", icon: "Users" },
 ] as const;
 const teacherLinks = [

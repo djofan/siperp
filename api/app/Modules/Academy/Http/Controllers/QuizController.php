@@ -21,8 +21,9 @@ class QuizController
         return empty($snapshot['closesAt']) ? $deadline : min($deadline, CarbonImmutable::parse($snapshot['closesAt']));
     }
 
-    private function finish($attempt, array $snapshot, $submittedAt): void
+    private function finish($attempt, array $snapshot, $submittedAt, string $kind): void
     {
+        $halfCredit = in_array($snapshot['kind'] ?? $kind, ['DAILY', 'WEEKLY'], true);
         $earned = 0;
         $possible = 0;
         foreach ($snapshot['questions'] as $question) {
@@ -35,6 +36,8 @@ class QuizController
             }
             if (count($correct) && count($selected) === count($correct) && count(array_unique($selected)) === count($selected) && ! array_diff($selected, $correct)) {
                 $earned += $weight;
+            } elseif ($halfCredit && count($selected) > 0 && count(array_unique($selected)) === count($selected) && ! array_diff($selected, array_column($question['options'], 'id'))) {
+                $earned += $weight / 2;
             }
         }
         $score = $possible ? round($earned / $possible * 100, 2) : 0;
@@ -69,7 +72,7 @@ class QuizController
             if ($latest && ! $latest->isCompleted) {
                 $deadline = $this->deadline($latest);
                 if (! $deadline->isFuture()) {
-                    $this->finish($latest, $latest->answers, $deadline);
+                    $this->finish($latest, $latest->answers, $deadline, $quiz->kind);
                     $latest->save();
                 }
 
@@ -80,7 +83,7 @@ class QuizController
             $row->profileId = $profile->id;
             $row->quizId = $quizId;
             $row->attemptNumber = ($latest ? $latest->attemptNumber : 0) + 1;
-            $row->answers = ['passingScore' => $quiz->passingScore, 'timeLimitMinutes' => $quiz->timeLimitMinutes, 'closesAt' => $quiz->closesAt?->toISOString(), 'questions' => $quiz->questions->toArray(), 'responses' => new \stdClass];
+            $row->answers = ['kind' => $quiz->kind, 'passingScore' => $quiz->passingScore, 'timeLimitMinutes' => $quiz->timeLimitMinutes, 'closesAt' => $quiz->closesAt?->toISOString(), 'questions' => $quiz->questions->toArray(), 'responses' => new \stdClass];
             $row->save();
 
             return $row->id;
@@ -118,7 +121,7 @@ class QuizController
             $completed = ($data['submit'] ?? false) || $expired;
             $attempt->answers = $snapshot;
             if ($completed) {
-                $this->finish($attempt, $snapshot, $expired ? $deadline : now());
+                $this->finish($attempt, $snapshot, $expired ? $deadline : now(), $quiz->kind);
             } $attempt->save();
 
             return ['completed' => $completed, 'quizId' => $attempt->quizId];

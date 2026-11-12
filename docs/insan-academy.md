@@ -129,4 +129,12 @@ Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select co
 
 ### Predikat nilai dan sertifikat
 
-Predikat mengikuti nilai akhir: 0–50 Maqbul, di atas 50–70 Jayyid, di atas 70–85 Jayyid Jiddan, di atas 85–95 Mumtaz, dan di atas 95–100 Mumtaz Murtafi. Nilai desimal mengikuti batas atas ini tanpa pembulatan tambahan. Sertifikat tidak memiliki batas nilai minimum: seluruh materi dan seluruh evaluasi harian, mingguan, serta akhir harus selesai dan sudah dinilai. Status lulus ujian lama tetap tersimpan untuk kompatibilitas, tetapi tidak menghalangi sertifikat.
+Predikat mengikuti nilai akhir: 0–50 Maqbul, di atas 50–70 Jayyid, di atas 70–85 Jayyid Jiddan, di atas 85–95 Mumtaz, dan di atas 95–100 Mumtaz Murtafi. Nilai desimal mengikuti batas atas ini tanpa pembulatan tambahan. Sertifikat tidak memiliki batas nilai minimum: seluruh ujian harian, pekanan, serta akhir harus selesai dan sudah dinilai. Penyelesaian materi bukan syarat sertifikat. Status lulus ujian lama tetap tersimpan untuk kompatibilitas, tetapi tidak menghalangi sertifikat.
+
+### Rencana kalender evaluasi bulanan
+
+Acuan penyusunan jadwal oleh admin: 12 ujian harian (Senin–Kamis pada tiga pekan pertama), 3 ujian pekanan (akhir pekan pada tiga pekan pertama), pekan keempat tanpa ujian harian/pekanan, lalu ujian akhir pada akhir periode. Ini adalah rencana penyusunan kalender, bukan otomatisasi atau perubahan jadwal ujian yang sudah tersimpan.
+
+### Poin jawaban evaluasi
+
+Ujian harian dan pekanan memberikan bobot penuh untuk jawaban benar dan setengah bobot soal untuk jawaban salah yang terisi. Soal kosong tetap nol. Pada soal MULTIPLE, kombinasi jawaban harus tepat untuk poin penuh; kombinasi tidak tepat yang terisi mendapat setengah bobot. Ujian akhir memberi nol untuk jawaban salah atau kosong. Jenis ujian disimpan dalam snapshot saat mulai; snapshot lama yang belum selesai menggunakan jenis ujian saat diselesaikan. Nilai yang sudah selesai tidak dihitung ulang otomatis.

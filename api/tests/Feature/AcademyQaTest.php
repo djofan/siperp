@@ -254,7 +254,7 @@ it('requires authentication to update a participant profile', function () {
 });
 
 
-it('allows certificates below seventy after all learning and evaluations are completed', function () {
+it('allows certificates below seventy after all exams regardless of lesson completion', function () {
     $chapter = $this->quiz->chapter;
     $lesson = new ZakatAcademyLesson;
     $lesson->forceFill(['chapterId' => $chapter->id, 'title' => 'Certificate lesson', 'slug' => 'certificate-lesson', 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'order' => 1, 'isPublished' => true])->save();
@@ -271,8 +271,67 @@ it('allows certificates below seventy after all learning and evaluations are com
     $enrollment = \App\Modules\Academy\Models\ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->where('course_id', $chapter->courseId)->firstOrFail();
     $service = app(\App\Modules\Academy\Services\ProgressService::class);
     expect($service->forEnrollment($enrollment)['isEligible'])->toBeTrue();
+    $progress->delete();
+    expect($service->forEnrollment($enrollment)['isEligible'])->toBeTrue()
+        ->and($service->forEnrollment($enrollment)['completedQuizzes'])->toBe(3);
     ZakatAcademyQuizAttempt::where('profile_id', $this->profile->id)->where('quiz_id', $this->quiz->id)->update(['score' => null]);
     expect($service->forEnrollment($enrollment)['isEligible'])->toBeFalse();
     ZakatAcademyQuizAttempt::where('profile_id', $this->profile->id)->where('quiz_id', $this->quiz->id)->update(['score' => 0, 'is_completed' => false]);
     expect($service->forEnrollment($enrollment)['isEligible'])->toBeFalse();
+});
+
+
+it('scores wrong answers by the snapshotted exam kind and leaves blanks at zero', function (string $kind, string $answer, float $expected) {
+    $this->quiz->kind = $kind;
+    $this->quiz->save();
+    $question = $this->quiz->questions->first();
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    // An administrator changing kind later must not change this attempt's rule.
+    $this->quiz->kind = $kind === 'FINAL' ? 'DAILY' : 'FINAL';
+    $this->quiz->save();
+    $payload = ['submit' => true];
+    if ($answer !== 'blank') {
+        $payload['answers'] = [$question->id => $question->options->firstWhere('isCorrect', $answer === 'correct')->id];
+    }
+    $this->putJson('/api/v1/academy/attempts/'.$id, $payload)->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['submit' => true])->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+})->with([
+    ['DAILY', 'wrong', 50.0], ['WEEKLY', 'wrong', 50.0], ['FINAL', 'wrong', 0.0],
+    ['DAILY', 'blank', 0.0], ['WEEKLY', 'blank', 0.0], ['FINAL', 'blank', 0.0],
+    ['DAILY', 'correct', 100.0], ['WEEKLY', 'correct', 100.0], ['FINAL', 'correct', 100.0],
+]);
+
+it('weights multiple choice answers and leaves empty selections at zero', function (string $choice, float $expected) {
+    $this->quiz->kind = 'WEEKLY';
+    $this->quiz->save();
+    $question = $this->quiz->questions->first();
+    $question->type = 'MULTIPLE';
+    $question->weight = 3;
+    $question->save();
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $snapshot = ZakatAcademyQuizAttempt::findOrFail($id)->answers;
+    // Include a second unanswered question of weight one to verify per-question weighting.
+    $snapshot['questions'][] = array_replace($snapshot['questions'][0], ['id' => 'unanswered', 'weight' => 1]);
+    ZakatAcademyQuizAttempt::findOrFail($id)->forceFill(['answers' => $snapshot])->save();
+    $selected = $choice === 'blank' ? [] : [$question->options->firstWhere('isCorrect', $choice === 'correct')->id];
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['answers' => [$question->id => $selected], 'submit' => true])->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+})->with([['wrong', 37.5], ['correct', 75.0], ['blank', 0.0]]);
+
+
+it('counts enrolled active participants in rankings including those who have not taken an exam', function () {
+    $other = new User;
+    $other->forceFill(['name' => 'Other participant', 'email' => 'other-ranking@example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $profile = new ZakatAcademyProfile;
+    $profile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-RANK'])->save();
+    app(CohortLearning::class)->join($profile, $this->cohort);
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['submit' => true])->assertSuccessful();
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()
+        ->assertJsonPath('data.0.rank', 1)->assertJsonPath('data.0.total', 2);
+    $other->is_active = false;
+    $other->save();
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.total', 1);
 });

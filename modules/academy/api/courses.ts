@@ -214,6 +214,7 @@ export type GetLearningOverviewResult = {
     completedLessons: number;
     totalQuizzes: number;
     passedQuizzes: number;
+    completedQuizzes: number;
     percent: number;
     isEligible: boolean;
     grading: {
@@ -238,6 +239,7 @@ export async function getLearningOverview(_profileId: string): Promise<GetLearni
         completedLessons: number;
         totalQuizzes: number;
         passedQuizzes: number;
+        completedQuizzes: number;
         percent: number;
         isEligible: boolean;
         grading: {
