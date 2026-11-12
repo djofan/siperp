@@ -14,7 +14,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return ['code' => ['required', 'string', 'max:32', 'regex:/^[a-zA-Z0-9][a-zA-Z0-9_-]{2,31}$/D'],
-            'password' => ['required', 'string', 'max:72'], 'remember' => ['sometimes', 'boolean']];
+            'password' => ['required', 'string', 'max:72'], 'remember' => ['sometimes', 'boolean'], 'pwa' => ['sometimes', 'boolean']];
     }
 
     protected function prepareForValidation(): void

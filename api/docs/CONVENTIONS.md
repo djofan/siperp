@@ -4,6 +4,29 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Setoran Tanwir dan Ojol mendukung `files[]` (1–10 audio/video, total maksimal 50 MiB)
+pada `POST /api/v1/{module}/submissions`. Field lama `file` tetap didukung, tetapi
+tidak boleh digabung dengan `files`. Semua berkas harus sesuai jenis tugas. Batch
+disimpan atomik sebagai satu percobaan, dan pengiriman ulang mengganti seluruh batch
+yang ditolak. Detail peserta/guru mengembalikan `files` berisi index/nama/MIME/ukuran,
+tanpa path privat. Pemutaran memakai endpoint berizin dengan `?index=0..9`.
+
+Deployment perubahan ini memerlukan migration `2026_11_12_150000_add_learning_submission_media_files`.
+Backup database sebelum migration di VPS; kemudian build/restart frontend dan backend.
+PHP `upload_max_filesize` minimal 50M, `post_max_size` dan Nginx `client_max_body_size`
+minimal 64M untuk menampung multipart. File lama tetap bisa diputar tanpa backfill.
+
+Login Bantuan PWA memakai `pwa: true` pada `POST /api/v1/auth/login` dan memerlukan
+akses Bantuan aktif. Cookie HttpOnly dan token berlaku 30 hari, terpisah dari durasi
+login browser biasa. Tidak ada logout karena idle; logout eksplisit, pencabutan token,
+penggantian password yang mencabut sesi, dan penonaktifan akun tetap berlaku. Sesi PWA
+lama perlu login ulang sekali agar mendapat durasi baru.
+
+`POST /api/v1/bantuan/applications/{id}/actions/survey_revise` memerlukan `version`.
+Hanya verifikator penugasan dapat membuka kembali survei pada `survey_cc_review` atau
+`survey_submitted`, sebelum persetujuan nominal. Data dan dokumen dipertahankan; survei
+kembali ke `survey_assigned` dan dikirim ulang melalui pemeriksaan Call Center.
+
 Reset password akun operasional: `POST /api/v1/core/module-accounts/{id}/password-reset`
 memerlukan akun aktif dan otorisasi admin. Admin modul hanya boleh mereset akun operasional
 yang seluruh akses modulnya berada dalam cakupan pengelolaannya; Superadmin boleh lintas modul.
@@ -115,6 +138,7 @@ Daftar berikut membedakan endpoint aktif dari rancangan migrasi; tidak ada endpo
 | --- | --- | --- | --- |
 | `/api/v1/bantuan/mobile/login` | POST | Aktif | Login akun ERP melalui `LoginRequest` Core dan `throttle:login`; JSON `{code,password}`. Akun aktif dan akses Bantuan diperiksa sebelum `TokenIssuer` menerbitkan token `bantuan-mobile`. Respons 200 `{data:{token,expires_at}}` dengan `Cache-Control: no-store`, tanpa cookie. Error 401/403/422/429 memakai `ErrorResource`. Superadmin mengikuti pengecualian status modul Core; modul wajib terdaftar. |
 | `/api/v1/health` | GET | Aktif | Singleton diagnostik yang sudah disepakati; bukan koleksi atau aksi CRUD bisnis |
+| `/api/v1/academy/admin/participant-imports` | POST | Aktif | Aksi impor atomik maksimal 200 peserta dari Excel; admin Academy/superadmin saja. Respons 200 Resource berisi jumlah dibuat/dilewati dan akun baru, dengan `Cache-Control: no-store, private`. Password awal hanya pada respons ini, disimpan sebagai hash; impor ulang data sama di angkatan/grup sama melewati akun tanpa mengganti password. Konflik nomor HP dengan data/angkatan berbeda membatalkan semua baris (422). |
 | `/api/v1/auth/login` | POST | Placeholder 501 | Aksi autentikasi yang kelak menerbitkan token; password tidak boleh menjadi query GET |
 | `/api/v1/payment/transactions/{id}/checkout-sessions` | POST | Rancangan; belum aktif | Membuat sub-resource sesi checkout pada provider pembayaran; ada efek eksternal |
 | `/api/v1/payment/webhook-deliveries` | POST | Rancangan; belum aktif | Menerima event provider dan membuat catatan penerimaan; verifikasi signature serta deduplikasi event wajib |
@@ -275,3 +299,56 @@ Teacher Q&A: GET teacher/questions?view=table&page=1 returns 10 discussions/page
 Participant Q&A now has a 10-row paginated table, separate create/detail pages, and return-to-table confirmation on successful submission. GET learning/discussions?view=table uses the existing participant/enrollment scope; GET learning/discussions/{id} returns only owned discussions in published enrolled courses (foreign IDs 404). Session schedules remain accessible below the table.
 
 Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select cohort curriculum, title, future WIB datetime and meeting URL. Existing POST courses/{courseId}/sessions creates the schedule; new GET teacher/sessions returns manager-only options and a 10-row paginated session list. Enrolled participants see the meeting under Q&A session schedules; other cohorts cannot see it.
+### Galeri konten SIP
+
+Resource news, program-bantuan, dan penyaluran-bantuan mendukung documentationPhotos opsional (maks. 50 foto berurutan). Setiap foto berisi id UUID unik, image URL HTTP(S) atau /uploads/sip/UUID.jpg|png|webp, caption opsional maks. 500 karakter, serta isDemo opsional. Field yang tidak dikirim saat update dipertahankan; array kosong menghapus galeri dari konten. Akses penulisan mengikuti editor SIP; galeri berita draft tidak dibuka endpoint publik. Terapkan migration 2026_11_11_000001_add_sip_content_galleries setelah backup database sebelum deploy frontend.
+
+### Penggantian foto survei
+
+DELETE dokumen Bantuan mengizinkan penggantian KTP, KK, SKTM, foto pendukung dan survey_* pada survey_assigned atau survey_cc_review, termasuk bukti survei yang pernah dikirim. Otorisasi tetap memeriksa penugasan serta pengunggah/Admin. Penghapusan menandai deleted_at dan mempertahankan file privat untuk audit. Setelah diteruskan ke persetujuan, bukti terkunci kembali. Kirim hasil pemeriksaan memvalidasi ulang kelengkapan foto aktif dan menandai bukti pengganti sebagai digunakan.
+
+Ekspor lengkap Pengajuan Bantuan `GET /api/v1/bantuan/reports/full` diizinkan untuk
+Superadmin, admin modul, dan Call Center (termasuk akun multi-role yang memiliki Call Center).
+Role lain tidak memperoleh akses XLSX lengkap. Filter daftar dan scope data tetap diterapkan;
+ekspor dicatat di jurnal, dibatasi 5/menit, dan respons memakai `no-store, private`.
+
+LAZSIP: `DELETE /api/v1/lazsip/admin/transactions/{source}/{id}` menghapus catatan transaksi
+uji setelah admin modul/Superadmin mengonfirmasi `testTransaction=true` serta `confirmationCode`
+yang cocok dengan kode pelacakan (ID untuk legacy). Sumber: `payment`, `legacy-donation`, `zakat`.
+Termasuk transaksi uji Production, tanpa panggilan pembatalan/refund ke provider. Pencocokan bank,
+pembuatan sesi aktif, atau pengiriman receipt aktif ditolak 409. Receipt serta detail zakat yang
+sudah tidak dipakai dibersihkan; donor, campaign, dan tombstone idempotensi tetap disimpan.
+Target nominal campaign opsional: kosong/null/0 berarti tanpa target (disimpan sebagai 0).
+Omission saat update mempertahankan target lama; nilai negatif/noninteger ditolak.
+
+### Impor santunan Excel
+
+`POST /api/v1/bantuan/santunan/imports`: admin/bendahara, maksimal 200 baris JSON
+`{period, volunteerId, rows:[{recipientName, category, amount}]}` setelah Excel dibaca klien.
+Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib aktif.
+Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
+ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
+no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
+
+### PDF materi Academy
+
+POST `/api/v1/academy/admin/materials` dan PUT `/api/v1/academy/admin/materials/{id}`
+menerima multipart `pdfFile` opsional (PDF maksimal 10 MiB) selain `file` audio
+maksimal 50 MiB. Total kedua file maksimal 50 MiB. Nama ekstensi bukan satu-satunya
+validasi: PDF diperiksa MIME dan header. Admin Academy saja; file tetap di storage
+privat dan endpoint download memakai izin peserta serta jadwal rilis yang sama.
+Materi hanya-PDF dapat dipublikasikan. PDF baru menambah lampiran; omission pada
+edit mempertahankan PDF/audio lama. `file` tetap hanya menerima audio pada formulir
+materi. Gagal menyimpan salah satu file membatalkan transaksi database dan membersihkan
+file baru yang sempat tersimpan. Listing menambahkan `_count.pdfs` tanpa membuka URL
+lampiran privat. Tidak memerlukan migration.
+
+### Profil peserta Academy
+
+GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
+berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
+Respons `{data:{name,code,email,nis,phone,address,gender}}` hanya field yang diizinkan,
+tanpa hash password, token, atau metadata angkatan. Header `no-store, private`.
+Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
+Tidak ada update data pribadi melalui endpoint ini; perubahan password tetap memakai
+PUT `/api/v1/academy/profile/password` dengan verifikasi password saat ini.

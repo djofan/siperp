@@ -21,3 +21,13 @@ test('a replacement audio file is preserved for backend validation', async () =>
   assert.equal(file.name, 'audio.mp3');
   assert.equal(await file.text(), 'ID3audio');
 });
+
+test('optional PDF inputs preserve an actual document and omit empty replacements', async () => {
+  const form = new FormData();
+  form.set('pdfFile', new File([], 'empty.pdf', { type: 'application/pdf' }));
+  assert.equal(prepareMaterialForm(form).has('pdfFile'), false);
+  form.set('pdfFile', new File(['%PDF-1.4'], 'modul.pdf', { type: 'application/pdf' }));
+  const file = prepareMaterialForm(form).get('pdfFile');
+  assert.equal(file.name, 'modul.pdf');
+  assert.equal(await file.text(), '%PDF-1.4');
+});

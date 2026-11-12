@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { DeleteTestTransaction } from "./DeleteTestTransaction";
 import { TransactionActions } from "@/modules/lazsip/components/admin/TransactionActions";
 import { AdminFilterBar, AdminSearchInput, AdminFilterSelect, AdminDateInput, AdminFilterResetButton, useAdminFilter, useAdminDateFilter } from "@/modules/lazsip/components/admin/AdminFilterBar";
 import { AdminEmptyState } from "@/modules/lazsip/components/admin/AdminEmptyState";
@@ -165,7 +166,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
                       <AdminBadge tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</AdminBadge>
                     </td>
                     <td className="px-4 py-3.5 text-right">
-                      {(row.status === "pending" || row.status === "escrow") && <TransactionActions id={row.id} source={row.source} gateway={row.gateway} />}
+                      <div className="flex flex-col items-end gap-2">{(row.status === "pending" || row.status === "escrow") && <TransactionActions id={row.id} source={row.source} gateway={row.gateway} />}<DeleteTestTransaction row={row}/></div>
                     </td>
                   </tr>
                 ))}

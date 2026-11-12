@@ -6,7 +6,7 @@ import { reviewAction } from "@/modules/tanwir/api/actions/guru";
 import { QuizReview } from "@/modules/tanwir/components/app/QuizReview";
 import { ReviewForm } from "@/modules/tanwir/components/app/ReviewForm";
 import { ReviewHistory } from "@/modules/tanwir/components/app/ReviewHistory";
-import { submissionFileUrl } from "@/modules/tanwir/components/app/media";
+import { SubmissionMedia } from "@/modules/tanwir/components/app/SubmissionMedia";
 import { Icon } from "@/modules/tanwir/components/icons";
 import { Card, LatePill, ScoreBadge, SectionTitle, SubmissionPill, TypePill, formatDateTime } from "@/modules/tanwir/components/ui";
 
@@ -49,11 +49,7 @@ export default async function GuruReviewPage({ params }: { params: Promise<{ id:
           {submission.fileMime && (
             <Card>
               <SectionTitle>Setoran</SectionTitle>
-              {submission.fileMime.startsWith("video") && task.type === "video" ? (
-                <video src={submissionFileUrl(submission.id)} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-tanwir-ink" />
-              ) : (
-                <audio src={submissionFileUrl(submission.id)} controls preload="metadata" className="w-full" />
-              )}
+              <SubmissionMedia submission={submission}/>
             </Card>
           )}
           {isQuiz && <QuizReview questions={questions} answers={answers} />}

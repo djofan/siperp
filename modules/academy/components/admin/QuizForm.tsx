@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
-import { FormField, Input } from "@/modules/academy/components/ui/FieldCompat";
+import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 
@@ -75,12 +75,18 @@ export function QuizForm({ action, initial, creating = false, chapterField, chap
       {questionRows.map((row, index) => <section key={row.key} className="space-y-4 rounded-xl border border-gray-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Pertanyaan {index + 1}</h3><Button type="button" variant="secondary" size="sm" disabled={pending || questionRows.length <= 1} onClick={() => setQuestionRows(questionRows.filter(item => item.key !== row.key))}>Hapus pertanyaan</Button></div><QuestionFields initial={row.initial} pending={pending} namePrefix={`questions[${index}]`} /></section>)}
       <Button type="button" variant="secondary" disabled={pending || questionRows.length >= 100} onClick={() => { setQuestionRows([...questionRows, { key: nextQuestionKey, initial: undefined }]); setNextQuestionKey(nextQuestionKey + 1); }}>Tambah Pertanyaan</Button>
     </section>}
+    <FormField label="Status publikasi" htmlFor={prefix + "-publication"} hint="Draft menyembunyikan ujian dari peserta. Publikasi diperiksa kembali sebelum ujian diaktifkan.">
+      <Select id={prefix + "-publication"} value={values.isActive ? "on" : ""} disabled={creating && !withQuestions} onChange={event => setValues({ ...values, isActive: event.target.value === "on", isPublished: event.target.value === "on" })}>
+        <option value="">Draft</option>
+        <option value="on">Terpublikasi</option>
+      </Select>
+    </FormField>
     <p className="text-sm text-foreground/60">Simpan draft untuk menyiapkan soal. Aktifkan ujian setelah soal dan jadwal sudah benar.</p>
     {state.message && <p role="status" className="rounded-xl bg-green-50 p-4 text-sm text-green-800">{state.message}</p>}
     {(creating && !withQuestions || questionCount === 0) && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Ujian belum memiliki soal. Simpan draft, buka Kelola soal, lalu tambahkan soal dan jawaban benar sebelum mengaktifkan.</p>}
     <div className="flex flex-wrap gap-3">
       <Button type="submit" name="intent" value="draft" variant="secondary" disabled={pending}>{pending ? "Menyimpan..." : initial?.isActive ? "Nonaktifkan & simpan draft" : "Simpan draft"}</Button>
-      <Button type="submit" name="intent" value="activate" disabled={pending || (creating && !withQuestions) || questionCount === 0}>Periksa & aktifkan ujian</Button>
+      <Button type="submit" name="intent" value={values.isActive ? "activate" : "draft"} disabled={pending || (values.isActive && ((creating && !withQuestions) || questionCount === 0))}>{values.isActive ? "Periksa & aktifkan ujian" : "Simpan perubahan"}</Button>
     </div>
     {review && <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
       <section onKeyDown={event => {

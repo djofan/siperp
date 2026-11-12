@@ -19,6 +19,7 @@ class Workflow
         'assign_survey' => [['survey_assignment', 'survey_assigned'], ['call_center'], 'survey_assigned'],
         'survey_save' => [['survey_assigned'], ['verifier'], 'survey_assigned'],
         'survey_submit' => [['survey_assigned'], ['verifier'], 'survey_cc_review'],
+        'survey_revise' => [['survey_cc_review', 'survey_submitted'], ['verifier'], 'survey_assigned'],
         'survey_decline' => [['survey_assigned'], ['verifier'], 'survey_assignment'],
         'survey_review_save' => [['survey_cc_review'], ['call_center'], 'survey_cc_review'],
         'survey_review_submit' => [['survey_cc_review'], ['call_center'], 'survey_submitted'],
@@ -56,6 +57,7 @@ class Workflow
             abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang sebelum melanjutkan.');
             abort_unless(! $states || in_array($row->status, $states, true), 409, 'Tindakan tidak sesuai tahap pengajuan.');
             $from = $row->status;
+            if ($action === 'survey_revise') abort_unless($row->verifier_id === $request->user()->id, 403, 'Hanya verifikator yang ditugaskan dapat memperbaiki survei ini.');
             $own = $row->created_by === $request->user()->id;
             $roles = match ($action) {
                 'request_data' => $row->status === 'screening' ? ['call_center'] : ['approver', 'chair', 'survey_approver'],
@@ -187,6 +189,7 @@ class Workflow
                 }
                 if ($action === 'survey_review_submit') {
                     // CC corrects the existing survey; its consumed evidence remains valid.
+                    DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->update(['used_at' => now()]);
                     $this->requiredDocuments($row, ['survey_recipient' => 1, 'survey_front' => 1, 'survey_inside' => 2, 'survey_environment' => 1], consumed: true);
                     $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
                     abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')
@@ -335,7 +338,7 @@ class Workflow
                 'fund_ready', 'fund_submitted' => ['fund_requester'], 'fund_approved' => ['treasurer'], default => [],
             };
             if ($action === 'fund_reject') $targets[] = 'call_center';
-            if ($action === 'survey_decline') $targets = ['call_center'];
+            if (in_array($action, ['survey_decline', 'survey_revise'], true)) $targets = ['call_center'];
             // Notify the next responsible team; field staff only receive events affecting their task.
             $users = match ($action) {
                 'assign_survey', 'survey_return', 'survey_again', 'survey_address' => [$row->verifier_id],

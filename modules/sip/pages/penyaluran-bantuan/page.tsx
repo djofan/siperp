@@ -1,3 +1,4 @@
+import { BackButton } from "@/modules/sip/components/ui/BackButton";
 import { listPenyaluranBantuan } from "@/modules/sip/api/penyaluranBantuan";
 import { PenyaluranBantuanCard } from "@/modules/sip/components/PenyaluranBantuanCard";
 import { SectionHeading, AccentText } from "@/modules/sip/components/ui/SectionHeading";
@@ -9,6 +10,9 @@ export default async function PenyaluranBantuanListPage() {
   return (
     <div className="min-h-screen bg-white pb-16 pt-24 sm:pt-28">
       <div data-reveal className="mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="mb-6 sm:mb-8">
+          <BackButton href="/#penyaluran-bantuan" label="Kembali ke beranda" />
+        </div>
         <SectionHeading
           eyebrow="Penyaluran Bantuan"
           title={
@@ -26,6 +30,7 @@ export default async function PenyaluranBantuanListPage() {
             {penyaluran.map((item) => (
               <PenyaluranBantuanCard
                 key={item.id}
+                documentationPhotos={item.documentationPhotos}
                 title={item.title}
                 description={item.description}
                 image={item.image}

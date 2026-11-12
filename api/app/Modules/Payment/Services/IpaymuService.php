@@ -2,28 +2,44 @@
 
 namespace App\Modules\Payment\Services;
 
+use App\Modules\Payment\Jobs\ReconcileIpaymuTransaction;
 use App\Modules\Payment\Models\PaymentTransaction;
+use App\Support\PaymentModules;
+use GuzzleHttp\TransferStats;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class IpaymuService
 {
     public function enqueueReconciliation(PaymentTransaction $row): void
     {
-        if ($row->status !== 'pending' || ! in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) || $row->gateway !== config('payment.gateway') || ! $row->gatewaySessionId) return;
+        if ($row->status !== 'pending' || ! in_array($row->gateway, ['ipaymu', 'ipaymu_sandbox'], true) || $row->gateway !== config('payment.gateway') || ! $row->gatewaySessionId) {
+            return;
+        }
         $key = 'ipaymu-reconcile:'.$row->id;
-        if (! \Illuminate\Support\Facades\Cache::add($key, true, 60)) return;
+        if (! Cache::add($key, true, (int) config('queue.connections.payment.retry_after'))) {
+            return;
+        }
         try {
-            \App\Modules\Payment\Jobs\ReconcileIpaymuTransaction::dispatch($row->id);
+            ReconcileIpaymuTransaction::dispatch($row->id);
         } catch (\Throwable $error) {
-            \Illuminate\Support\Facades\Cache::forget($key);
+            Cache::forget($key);
             report($error);
         }
     }
 
-    private function discoverTransactionId(PaymentTransaction $row): ?string
+    private function discoverTransactionId(PaymentTransaction $row, float $deadline): ?string
     {
-        if (! $row->gatewayReferenceId || ! $row->gatewaySessionId) return null;
+        if (! $row->gatewayReferenceId || ! $row->gatewaySessionId) {
+            return null;
+        }
         // Bounded recent-history lookup; the detail endpoint still verifies all fields afterward.
         for ($page = 1; $page <= 5; $page++) {
             $body = $this->request('/history', [
@@ -31,17 +47,22 @@ class IpaymuService
                 'startdate' => $row->createdAt->setTimezone('Asia/Jakarta')->format('Y-m-d'),
                 'enddate' => now('Asia/Jakarta')->format('Y-m-d'),
                 'orderBy' => 'id', 'order' => 'DESC', 'limit' => 20, 'page' => $page,
-            ], 5)->throw()->json();
+            ], $this->remainingTimeout($deadline))->throw()->json();
             abort_unless(($body['Status'] ?? null) === 200, 502, 'Riwayat iPaymu belum dapat diperiksa.');
             $data = $body['Data'] ?? [];
             $items = $data['Transaction'] ?? $data['Results'] ?? [];
             abort_unless(is_array($items), 502, 'Format riwayat iPaymu tidak valid.');
             $matches = array_values(array_filter($items, fn ($item) => is_array($item) && (string) ($item['ReferenceId'] ?? '') === $row->gatewayReferenceId));
             abort_if(count($matches) > 1, 409, 'Referensi iPaymu ganda; perlu pemeriksaan admin.');
-            if ($matches) return (string) ($matches[0]['TransactionId'] ?? '');
+            if ($matches) {
+                return (string) ($matches[0]['TransactionId'] ?? '');
+            }
             $pages = (int) ($data['Pagination']['total_pages'] ?? $data['Total_Page'] ?? 1);
-            if ($page >= $pages || ! $items) break;
+            if ($page >= $pages || ! $items) {
+                break;
+            }
         }
+
         return null;
     }
 
@@ -82,7 +103,8 @@ class IpaymuService
     {
         $parsed = $url ? parse_url($url) : false;
 
-        if (! $parsed || ($parsed['scheme'] ?? '') !== 'https' || isset($parsed['user']) || isset($parsed['pass'])) {
+        if (! $parsed || ($parsed['scheme'] ?? '') !== 'https' || isset($parsed['user']) || isset($parsed['pass'])
+            || (isset($parsed['port']) && $parsed['port'] !== 443) || preg_match('/[\x00-\x20\x7F\\\\]/', $url)) {
             return false;
         }
 
@@ -95,8 +117,8 @@ class IpaymuService
         }
 
         return config('payment.gateway') === 'ipaymu'
-            && $host === 'my.ipaymu.com'
-            && str_starts_with($path, '/payment/');
+            && (($host === 'my.ipaymu.com' && str_starts_with($path, '/payment/'))
+                || ($host === 'payment.ipaymu.com' && in_array($path, ['', '/'], true)));
     }
 
     public function createSession(PaymentTransaction $row): array
@@ -105,7 +127,7 @@ class IpaymuService
         abort_unless($row->gatewayReferenceId && $row->gatewayAccountId === $config['va'], 409);
         $row->loadMissing('donor');
         $label = $row->sourceType === 'zakat' ? 'Zakat LAZSIP' : ($row->moduleSource === 'sarsip' ? 'Donasi SARSIP' : 'Donasi LAZSIP');
-        $modules = app(\App\Support\PaymentModules::class);
+        $modules = app(PaymentModules::class);
         $description = $row->sourceId && $modules->has($row->moduleSource)
             ? $modules->for($row->moduleSource)->describe($row->sourceType, $row->sourceId) : null;
         $program = $description ? trim(strip_tags($description['label'])) : $label;
@@ -131,14 +153,97 @@ class IpaymuService
         if ($row->donor->phone) {
             $payload['buyerPhone'] = $row->donor->phone;
         }
-        $data = $this->request('/payment', $payload)->throw()->json();
+        $response = $this->request('/payment', $payload)->throw();
+        $data = $response->json();
         $sessionId = $data['Data']['SessionID'] ?? null;
         $url = $data['Data']['Url'] ?? null;
-        if (($data['Status'] ?? null) !== 200 || ! is_string($sessionId) || $sessionId === '' || ! is_string($url) || ! $this->safeUrl($url)) {
+        if (! in_array($data['Status'] ?? null, [200, '200'], true) || ! is_string($sessionId) || $sessionId === '' || ! is_string($url) || ! $this->safeUrl($url)) {
+            $host = is_string($url) ? parse_url($url, PHP_URL_HOST) : null;
+            $preserved = $this->preserveSessionEvidence($row, $data);
+            try {
+                Log::warning('iPaymu checkout response validation failed.', [
+                    'transaction_id' => $row->id,
+                    'http_status' => $response->status(),
+                    'provider_status_type' => get_debug_type($data['Status'] ?? null),
+                    'provider_status_is_200' => in_array($data['Status'] ?? null, [200, '200'], true),
+                    'session_id_type' => get_debug_type($sessionId),
+                    'session_id_present' => is_string($sessionId) && $sessionId !== '',
+                    'url_type' => get_debug_type($url),
+                    'url_allowed' => is_string($url) && $this->safeUrl($url),
+                    'evidence_preserved' => $preserved,
+                    // Host only: never log session-bearing paths, query strings or fragments.
+                    'url_host' => is_string($host) && strlen($host) <= 253 && preg_match('/^[a-z0-9.-]+$/iD', $host) ? $host : null,
+                ]);
+            } catch (\Throwable) {
+                // Diagnostics must not change the payment outcome.
+            }
             throw new \RuntimeException('Invalid iPaymu checkout response.');
         }
 
         return ['sessionId' => $sessionId, 'url' => $url];
+    }
+
+    private function evidencePath(string $id): string
+    {
+        return 'payment/ipaymu-session-evidence/'.hash('sha256', $id).'.enc';
+    }
+
+    private function preserveSessionEvidence(PaymentTransaction $row, mixed $data): bool
+    {
+        if (! $row->exists) {
+            return false;
+        }
+        try {
+            $session = $data['Data']['SessionID'] ?? null;
+            $url = $data['Data']['Url'] ?? null;
+            $evidence = ['transactionId' => $row->id, 'gateway' => $row->gateway,
+                'referenceId' => $row->gatewayReferenceId, 'accountId' => $row->gatewayAccountId,
+                'status' => in_array($data['Status'] ?? null, [200, '200'], true) ? 200 : null,
+                'sessionId' => is_string($session) && strlen($session) <= 191 ? $session : null,
+                'url' => is_string($url) && strlen($url) <= 4096 ? $url : null];
+            $disk = Storage::disk('local');
+            $path = $this->evidencePath($row->id);
+            $directory = dirname($disk->path($path));
+            // Shared private runtime: FPM and the CLI worker use the www-data group.
+            File::ensureDirectoryExists(dirname($directory), 02770, true);
+            File::ensureDirectoryExists($directory, 02770, true);
+            $saved = $disk->put($path, Crypt::encryptString(json_encode($evidence, JSON_THROW_ON_ERROR)));
+
+            return $saved && chmod($disk->path($path), 0660);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** Recover only preserved provider evidence; never create or retry a checkout. */
+    public function recoverCheckoutSession(PaymentTransaction $row, bool $apply = false): string
+    {
+        $config = $this->configuration();
+        abort_unless($row->gateway === $config['gateway'] && $row->gatewayAccountId === $config['va'], 409);
+        $path = $this->evidencePath($row->id);
+        if (! Storage::disk('local')->exists($path)) {
+            return 'NO_EVIDENCE';
+        }
+        $evidence = json_decode(Crypt::decryptString(Storage::disk('local')->get($path)), true, 512, JSON_THROW_ON_ERROR);
+        abort_unless(is_array($evidence) && ($evidence['transactionId'] ?? null) === $row->id
+            && ($evidence['gateway'] ?? null) === $row->gateway && ($evidence['accountId'] ?? null) === $config['va']
+            && filled($row->gatewayReferenceId) && ($evidence['referenceId'] ?? null) === $row->gatewayReferenceId
+            && ($evidence['status'] ?? null) === 200 && is_string($evidence['sessionId'] ?? null) && $evidence['sessionId'] !== ''
+            && is_string($evidence['url'] ?? null) && $this->safeUrl($evidence['url']), 409);
+        if (! $apply) {
+            return 'EVIDENCE_VALID';
+        }
+
+        DB::transaction(function () use ($row, $evidence, $config): void {
+            $current = PaymentTransaction::whereKey($row->id)->lockForUpdate()->firstOrFail();
+            abort_unless($current->status === 'pending' && $current->gatewayState === 'needs_review'
+                && $current->gateway === $config['gateway'] && $current->gatewayAccountId === $config['va']
+                && $current->gatewayReferenceId === $evidence['referenceId']
+                && ! filled($current->gatewaySessionId) && ! filled($current->gatewayCheckoutUrl), 409);
+            $current->forceFill(['gatewaySessionId' => $evidence['sessionId'], 'gatewayCheckoutUrl' => $evidence['url'], 'gatewayState' => 'ready'])->save();
+        });
+
+        return 'SESSION_RECOVERED';
     }
 
     public function verifyCallback(array $payload, ?string $signature): bool
@@ -167,6 +272,7 @@ class IpaymuService
             abort_unless(hash_equals($row->gatewaySessionId, (string) $payload['sid']), 422, 'Sesi iPaymu tidak sesuai.');
         }
         abort_unless(isset($payload['trx_id']) && preg_match('/^[1-9][0-9]*$/D', (string) $payload['trx_id']), 422, 'ID transaksi callback tidak valid.');
+
         // A signed callback is a hint; verify authoritative transaction details before persisting.
         return $this->sync($row, (string) $payload['trx_id']);
     }
@@ -176,12 +282,13 @@ class IpaymuService
         $config = $this->configuration();
         abort_unless($row->gateway === $config['gateway'], 409);
         abort_unless($row->gatewayAccountId === $config['va'], 409, 'Akun transaksi berbeda dari konfigurasi iPaymu saat ini.');
-        $transactionId = $candidateId ?? $row->gatewayTransactionId ?? $this->discoverTransactionId($row);
+        $deadline = microtime(true) + (int) config('payment.ipaymu.sync_timeout', 180);
+        $transactionId = $candidateId ?? $row->gatewayTransactionId ?? $this->discoverTransactionId($row, $deadline);
         abort_unless(is_string($transactionId) && preg_match('/^[1-9][0-9]*$/D', $transactionId), 409, 'ID iPaymu belum diterima. Callback belum masuk; hubungi admin untuk rekonsiliasi.');
         if ($row->gatewayTransactionId) {
             abort_unless(hash_equals($row->gatewayTransactionId, $transactionId), 422, 'ID transaksi iPaymu berbeda dari yang tersimpan.');
         }
-        $data = $this->request('/transaction', ['transactionId' => $transactionId])->throw()->json();
+        $data = $this->request('/transaction', ['transactionId' => $transactionId], $this->remainingTimeout($deadline))->throw()->json();
         $transaction = $data['Data'] ?? null;
         abort_unless(($data['Status'] ?? null) === 200 && is_array($transaction), 502, 'Respons status iPaymu tidak valid.');
         abort_unless((string) ($transaction['TransactionId'] ?? '') === $transactionId, 422, 'ID transaksi iPaymu tidak sesuai.');
@@ -191,7 +298,9 @@ class IpaymuService
         }
         abort_unless($this->sameAmount($transaction['SubTotal'] ?? $transaction['Amount'] ?? null, $row->amount + $row->adminFee), 422, 'Subtotal transaksi iPaymu tidak sesuai.');
         $status = (int) ($transaction['Status'] ?? 0);
-        $state = match ($status) { 1 => 'settled', 6 => 'unsettled', 7 => 'escrow', -2 => 'expired', 2, 3, 4, 5 => 'failed', default => 'ready' };
+        $state = match ($status) {
+            1 => 'settled', 6 => 'unsettled', 7 => 'escrow', -2 => 'expired', 2, 3, 4, 5 => 'failed', default => 'ready'
+        };
         abort_if(in_array($status, [1, 6, 7], true) && ($transaction['PaidStatus'] ?? null) !== 'paid', 422, 'Status pembayaran iPaymu tidak konsisten.');
         $row->forceFill(['gatewayTransactionId' => $transactionId, 'gatewayState' => $state])->save();
         // Escrow remains excluded from spendable paid totals until the provider releases it.
@@ -208,17 +317,58 @@ class IpaymuService
         return $row->refresh();
     }
 
-    private function request(string $path, array $payload, int $timeout = 20): Response
+    private function remainingTimeout(float $deadline): float
+    {
+        $remaining = $deadline - microtime(true);
+        if ($remaining <= 0) {
+            throw new ConnectionException('iPaymu synchronization time budget exhausted.');
+        }
+
+        return min((float) config('payment.ipaymu.timeout', 90), $remaining);
+    }
+
+    private function request(string $path, array $payload, ?float $timeout = null, bool $unescapedUnicode = true): Response
     {
         $config = $this->configuration();
         $method = 'POST';
-        // Match the official PHP sample. Sign these exact bytes and send them unchanged;
+        // UTF-8 Unicode was accepted by the production balance comparison; escaped Unicode was rejected.
+        // Sign these exact bytes and send them unchanged;
         // never pass the payload through a second JSON/form serializer after signing.
-        $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
+        $body = json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | ($unescapedUnicode ? JSON_UNESCAPED_UNICODE : 0));
         $bodyHash = strtolower(hash('sha256', $body));
         $signature = hash_hmac('sha256', $method.':'.$config['va'].':'.$bodyHash.':'.$config['apiKey'], $config['apiKey'], false);
 
-        return Http::connectTimeout(3)->timeout($timeout)->acceptJson()->withHeaders([
+        $timeout ??= (float) config('payment.ipaymu.timeout', 90);
+
+        return Http::connectTimeout(min((float) config('payment.ipaymu.connect_timeout', 15), $timeout))->timeout($timeout)->acceptJson()->withOptions([
+            // Signed POST requests must not be redirected into a different method/endpoint.
+            'allow_redirects' => false,
+            'verify' => true,
+            'on_stats' => function (TransferStats $stats) use ($path, $body, $signature): void {
+                $status = $stats->getResponse()?->getStatusCode();
+                if ($status !== null && $status >= 200 && $status < 300) {
+                    return;
+                }
+                // Inspect the PSR-7 body handed to the transport, not a reserialized payload.
+                // Never log bodies, hashes, credentials, signatures or response headers.
+                $request = $stats->getRequest();
+                try {
+                    Log::warning('iPaymu transport diagnostic.', [
+                        'endpoint' => $path,
+                        'runtime' => PHP_SAPI,
+                        'http_status' => $status,
+                        'duration_ms' => (int) round($stats->getTransferTime() * 1000),
+                        'curl_error' => is_int($stats->getHandlerErrorData()) ? $stats->getHandlerErrorData() : null,
+                        'method_is_post' => $request->getMethod() === 'POST',
+                        'body_unchanged' => hash_equals($body, (string) $request->getBody()),
+                        'signature_header_unchanged' => hash_equals($signature, $request->getHeaderLine('signature')),
+                        'contains_unicode_escape' => (bool) preg_match('/\\\\u[0-9a-f]{4}/i', $body),
+                    ]);
+                } catch (\Throwable) {
+                    // A logging failure must not change the outcome of a payment request.
+                }
+            },
+        ])->withHeaders([
             'va' => $config['va'],
             'signature' => $signature,
             'timestamp' => now('Asia/Jakarta')->format('YmdHis'),
@@ -230,9 +380,16 @@ class IpaymuService
     {
         $body = $response->json();
         $message = is_array($body) && is_string($body['Message'] ?? null) ? strtolower($body['Message']) : '';
-        if (str_contains($message, 'signature')) return 'IPAYMU_SIGNATURE_REJECTED';
-        if (str_contains($message, 'domain')) return 'IPAYMU_DOMAIN_REJECTED';
-        if (preg_match('/\bip\b/', $message)) return 'IPAYMU_IP_REJECTED';
+        if (str_contains($message, 'signature')) {
+            return 'IPAYMU_SIGNATURE_REJECTED';
+        }
+        if (str_contains($message, 'domain')) {
+            return 'IPAYMU_DOMAIN_REJECTED';
+        }
+        if (preg_match('/\bip\b/', $message)) {
+            return 'IPAYMU_IP_REJECTED';
+        }
+
         return in_array($response->status(), [401, 403], true) ? 'IPAYMU_AUTH_REJECTED' : 'IPAYMU_REQUEST_REJECTED';
     }
 
@@ -240,11 +397,38 @@ class IpaymuService
     public function checkConnection(): array
     {
         $config = $this->configuration();
-        $response = $this->request('/balance', ['account' => $config['va']], 8);
+        $response = $this->request('/balance', ['account' => $config['va']]);
         $status = $response->json('Status');
         $valid = $response->successful() && in_array($status, [200, '200'], true);
+
         return ['ok' => $valid, 'httpStatus' => $response->status(), 'providerStatus' => is_numeric($status) ? (int) $status : null,
             'code' => $valid ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
+    }
+
+    /** Fixed read-only probes. No caller-supplied endpoint, payment data or credentials. */
+    public function probeUnicodeSerialization(): \Generator
+    {
+        $config = $this->configuration();
+        $control = ['account' => $config['va']];
+        $unicode = $control + ['description' => 'SIPERP Unicode probe — É 日本'];
+
+        foreach ([['control', $control, false], ['unicode_escaped', $unicode, false], ['unicode_utf8', $unicode, true]] as [$variant, $payload, $unescaped]) {
+            $started = microtime(true);
+            try {
+                // Always sign and send the same bytes. Never retry, create a session, or persist results.
+                $response = $this->request('/balance', $payload, null, $unescaped);
+                $status = $response->json('Status');
+                $ok = $response->successful() && in_array($status, [200, '200'], true);
+                $result = ['variant' => $variant, 'ok' => $ok, 'httpStatus' => $response->status(),
+                    'providerStatus' => is_numeric($status) ? (int) $status : null,
+                    'code' => $ok ? 'IPAYMU_AUTH_OK' : $this->rejectionCode($response)];
+            } catch (ConnectionException) {
+                $result = ['variant' => $variant, 'ok' => false, 'httpStatus' => null,
+                    'providerStatus' => null, 'code' => 'IPAYMU_CONNECTION_FAILED'];
+            }
+            $result['durationMs'] = (int) round((microtime(true) - $started) * 1000);
+            yield $result;
+        }
     }
 
     private function normalizeCallback(array $payload): array

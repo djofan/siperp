@@ -52,7 +52,8 @@ class MaterialController
             $query->where('is_published', $request->input('status') === 'published');
         }
         $query->select('id', 'chapter_id', 'title', 'slug', 'short_description', 'video_provider', 'is_published', 'order', 'release_day')
-            ->with('chapter:id,course_id,is_published', 'chapter.course:id,slug,is_published,cohort_id', 'chapter.course.cohort:id,title')->withCount('attachments')->orderBy('order')->orderBy('id');
+            ->with('chapter:id,course_id,is_published', 'chapter.course:id,slug,is_published,cohort_id', 'chapter.course.cohort:id,title')
+            ->withCount(['attachments', 'attachments as pdfs_count' => fn ($q) => $q->where('file_type', 'application/pdf')])->orderBy('order')->orderBy('id');
 
         if ($admin) {
             $query->addSelect('video_url')->with('attachments:id,lesson_id,title,file_url,file_type');
@@ -97,10 +98,12 @@ class MaterialController
     public function save(Request $request, ?string $id = null)
     {
         $this->context->admin($request);
-        $request->validate(['file' => 'sometimes|file|max:51200']);
-        $storedPath = null;
+        $request->validate(['file' => 'sometimes|file|max:51200', 'pdfFile' => 'sometimes|file|max:10240|mimetypes:application/pdf']);
+        $hasUploads = $request->hasFile('file') || $request->hasFile('pdfFile');
+        abort_if(($request->file('file')?->getSize() ?? 0) + ($request->file('pdfFile')?->getSize() ?? 0) > 50 * 1024 * 1024, 422, 'Total audio dan PDF maksimal 50 MB.');
+        $storedPaths = [];
         try {
-            $lesson = DB::transaction(function () use ($id, $request, &$storedPath) {
+            $lesson = DB::transaction(function () use ($id, $request, $hasUploads, &$storedPaths) {
                 $lesson = $id ? Lesson::where('id', $id)->lockForUpdate()->firstOrFail() : new Lesson;
                 $currentCohort = $id ? $lesson->chapter->course->cohortId : null;
                 $cohortId = $request->validate(['cohortId' => ($currentCohort ? 'sometimes' : 'required').'|string|exists:academy_cohorts,id'])['cohortId'] ?? $currentCohort;
@@ -115,11 +118,12 @@ class MaterialController
                 ];
                 $request->merge(array_replace($defaults, $request->all()));
                 $request->validate(['order' => 'required|integer|min:1|max:2147483647']);
-                $publishAfterUpload = $request->hasFile('file') && in_array($request->input('isPublished'), ['on', '1', 1, true], true);
-                if ($request->hasFile('file')) {
+                $publishAfterUpload = $hasUploads && in_array($request->input('isPublished'), ['on', '1', 1, true], true);
+                if ($hasUploads) {
                     $request->merge(['isPublished' => false]);
                 }
-                $data = $this->curriculum->lessonInput($request);
+                $hasPdf = $lesson->exists && $lesson->attachments()->where('file_type', 'application/pdf')->exists();
+                $data = $this->curriculum->lessonInput($request, $hasPdf);
                 if (! $id || ! $currentCohort) {
                     abort_if($id && ($lesson->lessonProgress()->exists() || $lesson->chapter->course->enrollments()->exists()), 409, 'Materi arsip memiliki riwayat. Duplikat ke angkatan tujuan untuk menjaga riwayat lama.');
                     $lesson->chapterId = $this->container($cohortId)->id;
@@ -130,17 +134,23 @@ class MaterialController
                 $lesson->save();
                 if ($request->hasFile('file')) {
                     $upload = app(FileController::class)->storeFile($lesson, $request->file('file'), true);
-                    $storedPath = $upload['storagePath'];
+                    $storedPaths[] = $upload['storagePath'];
+                }
+                if ($request->hasFile('pdfFile')) {
+                    $upload = app(FileController::class)->storeFile($lesson, $request->file('pdfFile'));
+                    $storedPaths[] = $upload['storagePath'];
+                }
+                if ($hasUploads) {
                     $lesson->refresh();
                     $lesson->isPublished = $publishAfterUpload;
                     $lesson->save();
                 }
 
                 return $lesson;
-            }, $request->hasFile('file') ? 1 : 3);
+            }, $hasUploads ? 1 : 3);
         } catch (\Throwable $error) {
-            if ($storedPath) {
-                Storage::disk('local')->delete($storedPath);
+            if ($storedPaths) {
+                Storage::disk('local')->delete($storedPaths);
             }
             throw $error;
         }

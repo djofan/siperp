@@ -31,6 +31,7 @@ import { nextStep } from "../policy";
 
 type Action = { key: string; label: string; states: string[]; roles: string[]; danger?: boolean };
 const actions: Action[] = [
+  {key:"survey_revise",label:"Perbaiki hasil survei",states:["survey_cc_review","survey_submitted"],roles:["verifier"]},
   {key:"submit",label:"Ajukan sekarang",states:["draft","needs_data"],roles:["call_center","verifier","requester"]},
   {key:"screen_pass",label:"Teruskan ke Approver",states:["screening"],roles:["call_center"]},
   {key:"screen_reject",label:"Tolak pengajuan",states:["screening"],roles:["call_center"],danger:true},
@@ -75,7 +76,7 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
   }));
   async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const {file:prepared,location}=await preparePhotoUpload(file,deviceLocation);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});}setDeviceLocation(null);reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
   return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · JPG, PNG, WEBP · maks. 2 MB</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
-    {row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
+    {["survey_assigned","survey_cc_review"].includes(row.status)&&kinds.some(k=>k.startsWith("survey_"))?<><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={kinds.map(kind=>({kind,minimum:0}))} allowSurveyRevision onUploaded={reload}/>{row.documents.some(doc=>!kinds.includes(doc.kind))&&<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents.filter(doc=>!kinds.includes(doc.kind))} allDocuments/>}</>:row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
     {kinds.length>0&&<form onSubmit={upload} style={{display:"grid",gap:12,marginTop:20}}>
       <label className={s.field}>Jenis dokumen<select className={s.input} value={kind||kinds[0]} onChange={e=>setKind(e.target.value)}>{kinds.map(k=><option key={k} value={k}>{documentLabels[k]}</option>)}</select></label>
       <PhotoLocationPicker value={deviceLocation} onChange={setDeviceLocation} disabled={busy}/>
@@ -92,6 +93,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
     .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
     .filter(a=>viewer.role!=="requester"||row.createdBy===viewer.id&&row.source!=="bypass"&&["draft","needs_data",...(a.key==="cancel"?["screening"]:[])].includes(row.status))
     .filter(a=>viewer.role==="admin"||!(row.intakeRole==="requester"&&row.createdBy===viewer.id&&["screen_pass","screen_reject"].includes(a.key)))
+    .filter(a=>a.key!=="survey_revise"||row.verifierId===viewer.id)
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
@@ -135,6 +137,7 @@ const actionHelp:Record<string,string>={
   review1_reject:"Tulis alasan penolakan. Keputusan dan alasannya akan tercatat pada riwayat pengajuan.",
   assign_survey:"Pilih petugas yang akan mengunjungi pemohon dan mengisi hasil survei.",
   survey_submit:"Lengkapi hasil kunjungan dan foto wajib. Hasil dikirim untuk diperiksa Call Center. Jika Anda juga Call Center, Anda dapat memeriksanya sendiri lalu mengirim ke Approver.",
+  survey_revise:"Buka kembali hasil survei untuk diperbaiki. Data dan foto tetap tersimpan. Setelah selesai, kirim kembali kepada Call Center untuk diperiksa sebelum diteruskan ke Approver.",
   survey_decline:"Tulis alasan tidak dapat menjalankan survei. Call Center akan menerima pemberitahuan dan menugaskan petugas lain.",
   survey_review_submit:"Periksa dan koreksi hasil survei serta data pemohon. Kirim setelah lengkap agar Approver dapat meninjau keputusan nominal.",
   survey_review_withdraw:"Kembalikan hasil survei ke pemeriksaan Call Center? Data dan foto tetap tersimpan. Call Center dapat memeriksa ulang lalu mengirimkannya kembali. Hanya tersedia sebelum keputusan Approver.",
@@ -291,7 +294,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
         <div className={s.actions}><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>setContacts(v=>[...v,{name:"",relationship:"",phone:""}])}>+ Tambah kontak</button><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>navigator.geolocation?.getCurrentPosition(p=>setGeo({latitude:p.coords.latitude,longitude:p.coords.longitude}),()=>reportFailure("Lokasi tidak diizinkan. Survei tetap dapat disimpan."))}>{geo?"✓ Lokasi tercatat":"Catat lokasi (opsional)"}</button></div>
         <label className={s.field} style={{margin:"25px 0 15px",flexDirection:"row"}}><input className={s.check} type="checkbox" checked={correct} onChange={e=>setCorrect(e.target.checked)}/> Koreksi data pemohon sesuai hasil kunjungan</label>{correct&&<Fields fields={applicantFields} prefix="correction-" errors={correctionErrors} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/>}
         {active==="survey_submit"?<section className={s.surveyEvidence} aria-label="Foto hasil survei"><h3 className={s.sectionTitle}>Dokumen & foto hasil survei</h3><p>Foto yang sudah dikirim tetap tersedia dan dihitung. Saat revisi, cukup tambahkan foto yang kurang sesuai catatan pemeriksa. Foto tambahan juga tampil di Dokumen pendukung.</p>
-          <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotosFor(row.source)} minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
+          <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotosFor(row.source)} allowSurveyRevision minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
           {!surveyPhotosReady&&<small className={s.tiny}>Sebelum konfirmasi: {missingSurveyPhotos.join(", ")||"memeriksa kelengkapan foto…"}. Draft tetap bisa disimpan.</small>}
         </section>:<section className={s.surveyEvidence}><h3 className={s.sectionTitle}>Foto hasil survei Verifikator</h3><p>Periksa bukti kunjungan sebelum meneruskan hasilnya. Foto asli tetap tersimpan.</p><PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/></section>}
       </>:<div className={s.formGrid}>

@@ -24,6 +24,40 @@
   kembali. Pustaka bersama dengan lebih dari satu calon angkatan tetap ada di
   **Arsip belum memiliki angkatan**, lalu diduplikasi admin ke angkatan tujuan.
 
+## Impor pendaftaran peserta dari Excel
+
+1. Buka panel **Pendaftaran** di `/admin/academy/pendaftaran`, lalu pilih
+   **Unduh template Excel**. Panel **Peserta** hanya menampilkan daftar peserta;
+   pengelolaan angkatan berada di panel **Angkatan**.
+2. Isi satu lembar dengan judul kolom **Nama**, **No HP**, **Alamat** pada baris
+   pertama. Data dimulai baris kedua. Semua kolom wajib diisi; maksimal 200 peserta
+   dan ukuran file 5 MB dalam format `.xlsx`. Simpan file `.xls` lama sebagai `.xlsx`.
+3. Pilih angkatan dan grup **Ikhwan/Akhwat** untuk seluruh peserta pada file.
+   Pisahkan file bila grup berbeda. Angkatan tidak harus dibuka untuk pendaftaran
+   publik dan tidak perlu memiliki materi terlebih dahulu.
+4. Pilih file, periksa pratinjau, lalu tekan **Impor peserta**. Nomor HP menerima
+   awalan `08`, `628`, `+628`, atau `8` jika Excel menghilangkan nol pertama.
+   Gunakan format teks pada kolom No HP agar angka awal tetap terlihat.
+5. Setelah berhasil, segera pilih **Unduh akun peserta** sebelum meninggalkan
+   halaman atau memilih file lain. Bagikan NIP dan password awal kepada peserta
+   terkait. Password awal peserta baru dari impor adalah `12345678`; peserta
+   wajib menggantinya sebelum belajar dengan password baru minimal 10 karakter.
+   Password disimpan sebagai hash. Impor ulang tidak mereset akun lama; perubahan
+   ini juga tidak mengubah password akun yang sudah dibuat sebelumnya.
+
+Validasi backend menyebut nomor baris yang bermasalah. Satu baris salah membatalkan
+seluruh batch, termasuk akun yang sempat dibuat dalam transaksi tersebut. Perbaiki
+file lalu pilih ulang; pilihan angkatan/grup dan pratinjau tidak hilang saat validasi
+gagal. Peserta aktif yang sama (nama tanpa membedakan kapital, nomor HP, alamat,
+keanggotaan angkatan, dan grup) dilewati tanpa mengganti akun/password. Nomor HP
+yang sudah dipakai dengan data, grup, atau angkatan berbeda ditolak; koreksi melalui
+Daftar Peserta. Kepindahan angkatan tetap mengikuti aturan penyelesaian ujian.
+
+File dibaca di browser; hanya data baris dikirim ke API Laravel. File Excel sumber
+tidak disimpan sebagai upload. Endpoint impor khusus admin Academy/superadmin dan
+respons akun menggunakan `Cache-Control: no-store, private`. Fitur ini tidak
+memerlukan migration baru.
+
 ## Batas upload
 
 Audio maksimal 50 MB. Next Server Actions menyediakan ruang request 51 MB.

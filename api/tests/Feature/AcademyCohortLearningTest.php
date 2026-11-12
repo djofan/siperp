@@ -5,6 +5,7 @@ use App\Modules\Academy\Models\AcademyCohortMembership;
 use App\Modules\Academy\Models\AcademyDiscussion;
 use App\Modules\Academy\Models\AcademyLiveSession;
 use App\Modules\Academy\Models\ZakatAcademyLesson;
+use App\Modules\Academy\Models\ZakatAcademyLessonAttachment;
 use App\Modules\Academy\Models\ZakatAcademyProfile;
 use App\Modules\Academy\Models\ZakatAcademyQuiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
@@ -16,6 +17,7 @@ use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -52,6 +54,80 @@ function scopedStudent(AcademyCohort $cohort, string $email): ZakatAcademyProfil
 it('requires a cohort before creating materials or quizzes', function () {
     $this->postJson('/api/v1/academy/admin/materials', ['title' => 'Audio', 'order' => 1])->assertUnprocessable();
     $this->postJson('/api/v1/academy/admin/material-quizzes', ['title' => 'Kuis'])->assertUnprocessable();
+});
+
+it('publishes PDF-only materials and keeps private downloads scoped to enrolled participants', function () {
+    Storage::fake('local');
+    $id = $this->post('/api/v1/academy/admin/materials', ['title' => 'Modul PDF', 'order' => 1, 'cohortId' => $this->first->id,
+        'isPublished' => '1', 'pdfFile' => UploadedFile::fake()->createWithContent('modul.pdf', "%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF")], ['Accept' => 'application/json'])->assertSuccessful()->json('data.id');
+    $lesson = ZakatAcademyLesson::findOrFail($id);
+    $pdf = $lesson->attachments()->firstOrFail();
+    $download = str_replace('/api/academy/', '/api/v1/academy/', $pdf->fileUrl);
+    expect($lesson->isPublished)->toBeTrue()->and($lesson->videoUrl)->toBe('')->and($pdf->fileType)->toBe('application/pdf');
+    $this->get($download)->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['title' => 'PDF diperbarui', 'isPublished' => true])->assertSuccessful();
+    expect($lesson->refresh()->attachments()->count())->toBe(1);
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['isPublished' => false])->assertSuccessful();
+    expect($lesson->refresh()->isPublished)->toBeFalse()->and($lesson->attachments()->count())->toBe(1);
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['isPublished' => true])->assertSuccessful();
+    expect($lesson->refresh()->isPublished)->toBeTrue()->and($lesson->attachments()->count())->toBe(1);
+
+    $lesson->chapter->course->forceFill(['startsAt' => now()->subDay()])->save();
+    $own = scopedStudent($this->first, 'pdf-own@scope.test');
+    $other = scopedStudent($this->second, 'pdf-other@scope.test');
+    Sanctum::actingAs(User::findOrFail($own->userId));
+    $this->get($download)->assertOk();
+    $this->getJson('/api/v1/academy/materials')->assertOk()->assertJsonPath('data.items.0._count.pdfs', 1);
+    Sanctum::actingAs(User::findOrFail($other->userId));
+    $this->get($download)->assertNotFound();
+    $this->post('/api/v1/academy/admin/materials', ['title' => 'Tidak berizin', 'order' => 2, 'cohortId' => $this->first->id,
+        'pdfFile' => UploadedFile::fake()->createWithContent('modul.pdf', "%PDF-1.4\n%%EOF")], ['Accept' => 'application/json'])->assertForbidden();
+});
+
+it('uploads audio and PDF together and preserves both when editing without replacements', function () {
+    Storage::fake('local');
+    $id = $this->post('/api/v1/academy/admin/materials', ['title' => 'Audio dan PDF', 'order' => 1, 'cohortId' => $this->first->id,
+        'isPublished' => '1', 'file' => UploadedFile::fake()->createWithContent('audio.mp3', 'ID3'.str_repeat('a', 64)),
+        'pdfFile' => UploadedFile::fake()->createWithContent('modul.pdf', "%PDF-1.4\n%%EOF")], ['Accept' => 'application/json'])->assertSuccessful()->json('data.id');
+    $lesson = ZakatAcademyLesson::findOrFail($id);
+    expect($lesson->attachments()->count())->toBe(2)->and($lesson->isPublished)->toBeTrue()->and($lesson->videoUrl)->not->toBe('');
+    $audio = $lesson->videoUrl;
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['title' => 'Judul baru'])->assertSuccessful();
+    expect($lesson->refresh()->attachments()->count())->toBe(2)->and($lesson->videoUrl)->toBe($audio);
+});
+
+it('rejects non-PDF files renamed as PDF before storing material or files', function () {
+    Storage::fake('local');
+    $this->post('/api/v1/academy/admin/materials', ['title' => 'PDF palsu', 'order' => 1, 'cohortId' => $this->first->id,
+        'pdfFile' => UploadedFile::fake()->createWithContent('palsu.pdf', '<script>alert(1)</script>')], ['Accept' => 'application/json'])->assertUnprocessable();
+    expect(ZakatAcademyLesson::count())->toBe(0)->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+it('rejects PDFs larger than 10 MB and combined uploads larger than 50 MB', function () {
+    Storage::fake('local');
+    $base = ['title' => 'Batas PDF', 'order' => 1, 'cohortId' => $this->first->id];
+    $this->post('/api/v1/academy/admin/materials', $base + ['pdfFile' => UploadedFile::fake()->create('besar.pdf', 10241, 'application/pdf')], ['Accept' => 'application/json'])->assertUnprocessable();
+    $this->post('/api/v1/academy/admin/materials', $base + ['file' => UploadedFile::fake()->create('audio.mp3', 45000, 'audio/mpeg'),
+        'pdfFile' => UploadedFile::fake()->create('modul.pdf', 7000, 'application/pdf')], ['Accept' => 'application/json'])->assertUnprocessable();
+    expect(ZakatAcademyLesson::count())->toBe(0)->and(Storage::disk('local')->allFiles())->toBe([]);
+});
+
+it('removes both new files and rolls back material when the PDF attachment cannot be saved', function () {
+    Storage::fake('local');
+    $event = 'eloquent.creating: '.ZakatAcademyLessonAttachment::class;
+    Event::listen($event, function ($attachment) {
+        if ($attachment->fileType === 'application/pdf') {
+            throw new RuntimeException('Simulated persistence failure');
+        }
+    });
+    try {
+        $this->post('/api/v1/academy/admin/materials', ['title' => 'Gagal atomik', 'order' => 1, 'cohortId' => $this->first->id,
+            'file' => UploadedFile::fake()->createWithContent('audio.mp3', 'ID3'.str_repeat('a', 64)),
+            'pdfFile' => UploadedFile::fake()->createWithContent('modul.pdf', "%PDF-1.4\n%%EOF")], ['Accept' => 'application/json'])->assertStatus(500);
+        expect(ZakatAcademyLesson::count())->toBe(0)->and(Storage::disk('local')->allFiles())->toBe([]);
+    } finally {
+        Event::forget($event);
+    }
 });
 
 it('duplicates audio into an independent draft with protected shared storage and no progress', function () {

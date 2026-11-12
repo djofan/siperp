@@ -281,3 +281,12 @@ test("survey approver buttons are limited to early decisions and respect self ap
  assert.ok(canViewRoute(combined,["pengajuan-dana"]));
  assert.ok(getAvailableActions(row,combined).some(a=>a.key==="review1_approve"));
 });
+
+test("report heading uses readable dates and staff names instead of query codes",()=>{
+ const {reportFilterDescription,defaultFilters}=load("modules/bantuan/list-filters.ts");
+ const text=reportFilterDescription({...defaultFilters,from:"2026-11-01",to:"2026-11-30",dateField:"disbursed",status:"completed",verifierId:"staff-123"},{"staff-123":"Suparta"});
+ assert.match(text,/Tanggal pencairan: 1 November 2026 – 30 November 2026/);
+ assert.match(text,/Suparta/);assert.doesNotMatch(text,/staff-123|dateField=|page=|completed/);
+ assert.match(reportFilterDescription(defaultFilters),/semua tanggal/);
+ assert.match(reportFilterDescription({...defaultFilters,to:"2026-11-30"}),/sampai 30 November 2026/);
+});

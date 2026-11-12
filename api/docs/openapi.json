@@ -569,6 +569,114 @@
           }
         }
       },
+      "AcademyParticipantImport": {
+        "type": "object",
+        "required": [
+          "cohortId",
+          "gender",
+          "rows"
+        ],
+        "properties": {
+          "cohortId": {
+            "type": "string",
+            "description": "Existing Academy cohort ID; no program or open registration required."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ],
+            "description": "One group for every participant in the workbook."
+          },
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rowNumber",
+                "name",
+                "phone",
+                "address"
+              ],
+              "properties": {
+                "rowNumber": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 10001
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 100
+                },
+                "phone": {
+                  "type": "string",
+                  "description": "Indonesian mobile number; 08, 8, 628 and +628 prefixes accepted. Spaces, parentheses, dots and hyphens removed; stored as 628 followed by 7–12 digits. Duplicate normalized numbers within one batch rejected."
+                },
+                "address": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              }
+            }
+          }
+        }
+      },
+      "AcademyParticipantImportResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "createdCount",
+          "skippedCount",
+          "credentials"
+        ],
+        "properties": {
+          "createdCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "skippedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "credentials": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "phone",
+                "code",
+                "password"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string",
+                  "description": "Default initial password 12345678 for newly imported participants. Must be changed on first login; persisted only as a password hash. Existing accounts are never reset by re-importing."
+                }
+              }
+            }
+          }
+        }
+      },
       "BantuanMobileLogin": {
         "type": "object",
         "required": [
@@ -625,7 +733,7 @@
           "shortLocation": {
             "type": "string",
             "maxLength": 100,
-            "description": "District and city without administrative prefixes, falling back to region. Empty when unavailable."
+            "description": "District and city without administrative prefixes. Falls back to locality segments from applicant.street, then region. House numbers and the street line are excluded. Empty when unavailable."
           }
         }
       },
@@ -695,6 +803,142 @@
         "maxLength": 30,
         "pattern": "^\\+?[0-9 ()-]+$",
         "description": "Applicant phone and optional reporterPhone on application create/update: 8–15 digits, optional leading + (international code cannot start with 0), spaces/hyphens and balanced numeric area-code parentheses. Letters, extensions and invalid digit counts return 422. Enforced on drafts too when present; reporterPhone remains nullable. Formatting is preserved."
+      },
+      "SipDocumentationPhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "image"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "image": {
+            "type": "string",
+            "maxLength": 191,
+            "pattern": "^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "isDemo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AcademyMaterialUpload": {
+        "type": "object",
+        "properties": {
+          "cohortId": {
+            "type": "string",
+            "description": "Required when creating a material; existing scoped material cannot move cohorts."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "isPublished": {
+            "type": "boolean"
+          },
+          "shortDescription": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "description": "Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A."
+          },
+          "pdfFile": {
+            "type": "string",
+            "format": "binary",
+            "description": "Optional PDF attachment, maximum 10 MiB. MIME and file header validated. Appends to existing attachments."
+          }
+        }
+      },
+      "tanwirSubmissionMedia": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": [
+            "index",
+            "name",
+            "mime",
+            "size"
+          ],
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 191
+            },
+            "mime": {
+              "type": "string"
+            },
+            "size": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "description": "files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item."
+      },
+      "ojolSubmissionMedia": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": [
+            "index",
+            "name",
+            "mime",
+            "size"
+          ],
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 191
+            },
+            "mime": {
+              "type": "string"
+            },
+            "size": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "description": "files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item."
       }
     }
   },
@@ -767,6 +1011,10 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 72
+                  },
+                  "pwa": {
+                    "type": "boolean",
+                    "description": "Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply."
                   }
                 },
                 "required": [
@@ -1273,6 +1521,213 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan/imports": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Impor santunan rutin dari Excel yang telah dibaca klien",
+        "description": "Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "period",
+                  "volunteerId",
+                  "rows"
+                ],
+                "properties": {
+                  "period": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+                  },
+                  "volunteerId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "recipientName",
+                        "category",
+                        "amount"
+                      ],
+                      "properties": {
+                        "recipientName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 191
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "orphan",
+                            "widow"
+                          ]
+                        },
+                        "amount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9000000000000
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Impor berhasil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "createdCount"
+                      ],
+                      "properties": {
+                        "createdCount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 200
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Peran tidak diizinkan"
+          },
+          "422": {
+            "description": "Data invalid, penerima ganda, atau penyalur tidak aktif; tidak ada baris disimpan"
+          },
+          "429": {
+            "description": "Batas impor tercapai"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/admin/transactions/{source}/{id}": {
+      "delete": {
+        "summary": "Delete a test donation or zakat ledger record (LAZSIP admin or Superadmin)",
+        "description": "Requires confirmationCode matching tracking code (legacy: ID), and accepted testTransaction acknowledgement, including Production tests. Does not call iPaymu or refund. Blocks active session creation/email delivery and Core-reconciled payments. Removes receipts and orphan zakat details, preserves donor/campaign and idempotency tombstones, and logs administrator deletion without donor PII. Limited to 10/minute.",
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "payment",
+                "legacy-donation",
+                "zakat"
+              ]
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirmationCode",
+                  "testTransaction"
+                ],
+                "properties": {
+                  "confirmationCode": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "testTransaction": {
+                    "type": "boolean",
+                    "const": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test transaction deleted; no-store, private"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "LAZSIP admin or Superadmin required"
+          },
+          "404": {
+            "description": "Unknown source or LAZSIP transaction"
+          },
+          "409": {
+            "description": "Reconciled or busy transaction"
+          },
+          "422": {
+            "description": "Missing acknowledgement or mismatching confirmation code"
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/reports/full": {
+      "get": {
+        "summary": "Export complete Bantuan report for module admin, Superadmin and Call Center",
+        "description": "Uses application listing filters and access scope. Other operational roles are forbidden, including Monitoring. Records an export audit event and returns Cache-Control: no-store, private. Limited to 5 requests per minute.",
+        "responses": {
+          "200": {
+            "description": "Private report rows for XLSX generation, without pagination."
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Requires module admin, Superadmin or Call Center role"
+          },
+          "422": {
+            "description": "Invalid application filters"
+          },
+          "429": {
+            "description": "Export rate limit exceeded"
           }
         }
       }
@@ -2592,6 +3047,98 @@
             }
           },
           "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/participant-imports": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Import participant registrations from parsed Excel rows",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Explicit bulk-registration action returning 200. Active Academy admin/superadmin only. The browser reads one .xlsx worksheet (up to 5 MiB) with Nama, No HP, Alamat headers; only parsed rows are sent to Laravel. Atomic transaction: any invalid/conflicting row rolls back the batch. Exact existing active participants (same normalized phone, case-insensitive name, trimmed address, cohort membership and group) are skipped; passwords and memberships remain unchanged. Other matches are rejected with row-specific 422 details; old accounts are never moved to another cohort. New accounts receive PAZ login codes, mandatory password change and cohort/program enrollment. Response has Cache-Control: no-store, private; no stored import file or plaintext-password history. Re-imports never return old passwords.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantImport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atomic import result; download credentials before leaving the page.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AcademyParticipantImportResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Request rejected",
             "content": {
               "application/json": {
@@ -5010,10 +5557,747 @@
           }
         }
       }
+    },
+    "/api/v1/academy/admin/materials": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Create audio or PDF material",
+        "description": "Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/AcademyMaterialUpload"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "cohortId",
+                      "title"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved material ID in data.id"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/materials/{id}": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Update material and optionally upload audio or PDF",
+        "description": "Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyMaterialUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved material ID in data.id"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/profile": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Read the signed-in participant profile",
+        "description": "Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "name",
+                        "code",
+                        "email",
+                        "nis",
+                        "phone",
+                        "address",
+                        "gender"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "code": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "email": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "nis": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "phone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "address": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "gender": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "enum": [
+                            "IKHWAN",
+                            "AKHWAT",
+                            null
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/survey_revise": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Reopen the assigned verifier survey for correction",
+        "description": "Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey reopened with preserved evidence"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/submissions": {
+      "post": {
+        "tags": [
+          "tanwir"
+        ],
+        "summary": "Submit one or multiple private audio/video files",
+        "description": "Participant in the assigned task group, before deadline. 1–10 files, combined maximum 50 MiB. Every file is inspected and must match the task type. Legacy file field remains supported but cannot be combined with files. Atomically replaces the entire rejected attempt; pending/approved submissions reject duplicates. One review and attempt count per batch.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "taskId"
+                ],
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "file"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch submitted for review"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/files/submission/{id}": {
+      "get": {
+        "tags": [
+          "tanwir"
+        ],
+        "summary": "Play a private submission attachment",
+        "description": "Same owner/assigned teacher/module-admin authorization for every file; index defaults to zero for legacy players. Private no-store; storage paths are not exposed in files metadata.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized media stream"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ojol/submissions": {
+      "post": {
+        "tags": [
+          "ojol"
+        ],
+        "summary": "Submit one or multiple private audio/video files",
+        "description": "Participant in the assigned task group, before deadline. 1–10 files, combined maximum 50 MiB. Every file is inspected and must match the task type. Legacy file field remains supported but cannot be combined with files. Atomically replaces the entire rejected attempt; pending/approved submissions reject duplicates. One review and attempt count per batch.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "taskId"
+                ],
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "file"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch submitted for review"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ojol/files/submission/{id}": {
+      "get": {
+        "tags": [
+          "ojol"
+        ],
+        "summary": "Play a private submission attachment",
+        "description": "Same owner/assigned teacher/module-admin authorization for every file; index defaults to zero for legacy players. Private no-store; storage paths are not exposed in files metadata.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized media stream"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
     "description": "Core module access grants are only for module administrators (AMSIP or existing admin access), and entries must use role admin. Operational accounts retain their home-module roles; Core identity updates must omit entries. Attempts to change their access return 422. Superadmin access is automatic."
+  },
+  "x-lazsip-campaign-target": {
+    "field": "targetAmount",
+    "required": false,
+    "nullable": true,
+    "minimum": 0,
+    "maximum": 2147483647,
+    "description": "Campaign target is optional. Missing on create, null and zero mean no target (stored and returned as zero). Missing on update preserves existing target. Donations remain available without a target."
   },
   "x-bantuan-application-visibility": {
     "restrictedRoles": [
@@ -5128,11 +6412,33 @@
   },
   "x-ipaymu-request-authentication": {
     "method": "POST",
-    "serialization": "One JSON string with JSON_UNESCAPED_SLASHES; the same bytes are signed and sent as application/json.",
+    "serialization": "One JSON string with JSON_UNESCAPED_SLASHES and JSON_UNESCAPED_UNICODE (literal UTF-8); the same bytes are signed and sent as application/json.",
     "stringToSign": "POST:VA:lowercase(SHA256(body)):ApiKey",
     "signature": "HMAC-SHA256 hexadecimal using ApiKey as key",
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
     "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
     "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
-  }
+  },
+  "x-sip-content-galleries": {
+    "resources": [
+      "news",
+      "program-bantuan",
+      "penyaluran-bantuan"
+    ],
+    "field": "documentationPhotos",
+    "schema": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/components/schemas/SipDocumentationPhoto"
+      }
+    },
+    "behavior": "Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private."
+  },
+  "x-bantuan-survey-photo-replacement": "DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.",
+  "x-academy-material-pdfs": {
+    "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
+    "access": "Existing private file endpoint and enrollment/release checks remain unchanged."
+  },
+  "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked."
 }

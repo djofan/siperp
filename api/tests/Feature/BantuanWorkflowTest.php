@@ -92,11 +92,11 @@ it('reviews and corrects a full survey and applicant before explicitly forwardin
     $this->postJson($url.'survey_review_submit', ['version' => 3])->assertUnprocessable();
     $original = DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'survey_front')->value('id');
     DB::table('bantuan_documents')->where('id', $original)->update(['deleted_at' => now()]);
-    bantuanDoc($id, 'survey_front'); // An unused replacement cannot stand in for original survey evidence.
-    $this->postJson($url.'survey_review_submit', ['version' => 3, 'survey' => ['needs' => 'Kebutuhan dikoreksi']])->assertUnprocessable();
-    DB::table('bantuan_documents')->where('id', $original)->update(['deleted_at' => null]);
+    $replacement = bantuanDoc($id, 'survey_front'); // CC validates the corrected evidence before forwarding.
     $this->postJson($url.'survey_review_submit', ['version' => 3, 'survey' => ['needs' => 'Kebutuhan dikoreksi']])
         ->assertOk()->assertJsonPath('data.status', 'survey_submitted');
+    expect(DB::table('bantuan_documents')->where('id', $replacement)->value('used_at'))->not->toBeNull();
+    expect(DB::table('bantuan_documents')->where('id', $original)->value('deleted_at'))->not->toBeNull();
     $row = Application::findOrFail($id);
     expect($row->applicant['name'])->toBe('Nama dikoreksi')->and($row->applicant['income'])->toBe(200000)
         ->and($row->nik_hash)->toBe(app(\App\Modules\Bantuan\Services\Intake::class)->nikHash('3271051234567891'))
@@ -1282,9 +1282,9 @@ it('authorizes intake edits submissions cancellations and photos per owned row e
     $this->putJson('/api/v1/bantuan/applications/'.$own, [...$input, 'version' => 1, 'intakeRole' => 'call_center'])->assertOk()->assertJsonPath('data.intakeRole', $actor);
     expect(DB::table('bantuan_events')->where('application_id', $own)->where('action', 'edit_intake')->value('actor_role'))->toBe($actor);
     Application::findOrFail($own)->forceFill(['status' => $actor === 'requester' ? 'screening' : 'bypass_review'])->save();
-    $this->putJson('/api/v1/bantuan/applications/'.$own, [...$input, 'version' => 2])->assertStatus($actor === 'requester' ? 403 : 409);
+    $this->putJson('/api/v1/bantuan/applications/'.$own, [...$input, 'version' => 2])->assertStatus($actor === 'requester' ? 403 : 200);
     Application::findOrFail($own)->forceFill(['status' => 'needs_data'])->save();
-    $this->putJson('/api/v1/bantuan/applications/'.$own, [...$input, 'version' => 2])->assertOk();
+    $this->putJson('/api/v1/bantuan/applications/'.$own, [...$input, 'version' => $actor === 'requester' ? 2 : 3])->assertOk();
 })->with([
     [['fund_requester', 'requester'], 'online', 'requester'],
     [['requester', 'fund_requester'], 'online', 'requester'],
@@ -1375,10 +1375,16 @@ it('automatically assigns the survey verifier as distributor after amount approv
     expect(DB::table('bantuan_notifications')->where('application_id',$id)->where('user_id',$this->fund->id)->exists())->toBeTrue();
 });
 
-it('limits full report to admin and includes validated filter and private applicant fields',function(){
+it('allows admin and call center full reports while enforcing filters and other roles',function(){
     $input=bantuanInput();$input['applicant']['reporterName']='Pelapor uji';
     $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated();
-    $this->getJson('/api/v1/bantuan/reports/full')->assertForbidden();
+    $this->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data')->assertJsonPath('data.0.reporterName','Pelapor uji')->assertHeader('Cache-Control','no-store, private');
+    $this->getJson('/api/v1/bantuan/reports/full?status=completed')->assertOk()->assertJsonCount(0,'data');
+    foreach (['verifier','volunteer','requester','observer','approver','treasurer','fund_requester','chair'] as $role) {
+        $this->actingAs(bantuanUser($role),'sanctum')->getJson('/api/v1/bantuan/reports/full')->assertForbidden();
+    }
+    bantuanRoles($this->cc,['call_center','verifier']);
+    $this->actingAs($this->cc,'sanctum')->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data');
     $this->actingAs(bantuanUser('admin'),'sanctum')->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data')->assertJsonPath('data.0.reporterName','Pelapor uji');
     $this->getJson('/api/v1/bantuan/reports/full?status=completed')->assertOk()->assertJsonCount(0,'data');
 });
@@ -1838,6 +1844,7 @@ it('protects manual process authorization evidence stage and assigned identity',
 
 
 it('searches address and combined fields without widening visibility or private access', function () {
+    $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-04 09:00:00'));
     $input=bantuanInput();$input['applicant']['street']='Jalan Cempaka Nomor 12';$input['applicant']['district']='Cibinong';$input['applicant']['city']='Bogor';
     $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated()->json('data.id');
     $row=Application::findOrFail($id);
@@ -1932,4 +1939,90 @@ it('keeps santunan photo pins private and allows old photos without a pin', func
     expect($photos['recipient_photo']['location']['accuracy'])->toBe(25);
     expect($photos['aid_paper']['location'])->toBeNull();
     $this->actingAs(bantuanUser('volunteer'), 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(0, 'data');
+});
+
+
+it('allows assigned verifiers to replace incorrect survey evidence before approval', function (string $status, string $kind, bool $used) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => $status, 'verifier_id' => $this->verifier->id])->save();
+    $doc = bantuanDoc($id, $kind);
+    DB::table('bantuan_documents')->where('id', $doc)->update(['uploaded_by' => $this->verifier->id, 'used_at' => $used ? now() : null]);
+    $this->actingAs($this->verifier, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertOk();
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->not->toBeNull();
+})->with([
+    ['survey_assigned', 'ktp', false], ['survey_assigned', 'kk', false],
+    ['survey_assigned', 'survey_front', true], ['survey_cc_review', 'survey_front', true],
+    ['survey_cc_review', 'sktm', false],
+]);
+
+it('locks survey evidence again after it is forwarded to approval', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'survey_submitted', 'verifier_id' => $this->verifier->id])->save();
+    $doc = bantuanDoc($id, 'survey_front');
+    DB::table('bantuan_documents')->where('id', $doc)->update(['uploaded_by' => $this->verifier->id, 'used_at' => now()]);
+    $this->actingAs($this->verifier, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertStatus(409);
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->toBeNull();
+});
+
+it('imports routine santunan atomically and prevents duplicate imports', function () {
+    $volunteer = bantuanUser('volunteer');
+    $input = ['period' => '2026-11', 'volunteerId' => $volunteer->id, 'rows' => [
+        ['recipientName' => 'Anak Impor', 'category' => 'orphan', 'amount' => 300000],
+        ['recipientName' => 'Ibu Impor', 'category' => 'widow', 'amount' => 250000],
+    ]];
+    $url = '/api/v1/bantuan/santunan/imports';
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url, $input)->assertForbidden();
+    $this->actingAs($this->treasurer, 'sanctum')->postJson($url, $input)->assertOk()->assertJsonPath('data.createdCount', 2);
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $this->assertDatabaseHas('bantuan_santunan', ['category' => 'widow', 'frequency' => 'routine', 'transfer_status' => 'pending', 'distribution_status' => 'process']);
+    $input['rows'] = [
+        ['recipientName' => 'Penerima baru', 'category' => 'orphan', 'amount' => 100000],
+        ['recipientName' => ' anak impor ', 'category' => 'orphan', 'amount' => 300000],
+    ];
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $this->assertDatabaseCount('bantuan_santunan_events', 2);
+    $input['rows'][1]['amount'] = -1;
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $input['volunteerId'] = $this->verifier->id;
+    $this->postJson($url, $input)->assertUnprocessable();
+});
+
+
+it('lets only the assigned verifier reopen a pending survey for corrections without losing evidence', function (string $state) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $survey = bantuanSurvey();
+    Application::findOrFail($id)->forceFill(['status'=>$state,'verifier_id'=>$this->verifier->id,'survey'=>$survey])->save();
+    $doc = bantuanDoc($id, 'survey_front');
+    $url='/api/v1/bantuan/applications/'.$id.'/actions/survey_revise';
+    $this->actingAs(bantuanUser('verifier'), 'sanctum')->postJson($url,['version'=>1])->assertNotFound();
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url,['version'=>1])->assertOk();
+    $row=Application::findOrFail($id);
+    expect($row->status)->toBe('survey_assigned')->and($row->survey)->toBe($survey);
+    expect(DB::table('bantuan_documents')->where('id',$doc)->value('deleted_at'))->toBeNull();
+    $this->postJson($url,['version'=>1])->assertConflict();
+    $row->forceFill(['status'=>'approved'])->save();
+    $this->postJson($url,['version'=>$row->version])->assertConflict();
+})->with(['survey_cc_review','survey_submitted']);
+
+it('summarizes locality from a full street address when region dropdowns were not filled', function () {
+    expect(\App\Modules\Bantuan\Services\AddressSummary::make(['street'=>'Jl. Swadaya 3, RT.05/RW.11, Mekarsari, Kec. Cimanggis, Kota Depok, Jawa Barat 16452']))->toBe('Cimanggis, Depok');
+    expect(\App\Modules\Bantuan\Services\AddressSummary::make(['street'=>'Jalan Mawar No. 12, Cileungsi, Bogor, Jawa Barat']))->toBe('Cileungsi, Bogor');
+    expect(\App\Modules\Bantuan\Services\AddressSummary::make(['street'=>'Jalan Mawar No.12']))->toBe('');
+});
+
+it('lets a verifier correct their own submitted intake without changing its stage or another officers application', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $row = Application::findOrFail($id);
+    $row->forceFill(['created_by' => $this->verifier->id, 'status' => 'review1'])->save();
+    $input = [...bantuanInput(), 'version' => 1];
+    $input['applicant']['problem'] = 'Perbaikan keterangan kebutuhan biaya pengobatan';
+    $url = '/api/v1/bantuan/applications/'.$id;
+    $this->actingAs($this->verifier, 'sanctum')->putJson($url, $input)->assertOk()->assertJsonPath('data.status', 'review1');
+    expect($row->fresh()->applicant['problem'])->toBe($input['applicant']['problem']);
+    $this->putJson($url, $input)->assertConflict();
+    $this->actingAs(bantuanUser('verifier'), 'sanctum')->putJson($url, [...$input, 'version' => 2])->assertNotFound();
+    $row->refresh()->forceFill(['status' => 'approved'])->save();
+    $this->actingAs($this->verifier, 'sanctum')->putJson($url, [...$input, 'version' => 2])->assertConflict();
 });

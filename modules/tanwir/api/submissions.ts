@@ -49,6 +49,7 @@ export type GetStudentTaskDetailResult = {
         }[];
         submittedAt: Date;
         fileMime: string | null;
+        files: {index:number;name:string;mime:string;size:number|null}[];
         status: Domain.TanwirSubmissionStatus;
         attemptsCount: number;
         isLate: boolean;
@@ -138,6 +139,7 @@ export type GetSubmissionForReviewResult = {
     submittedAt: Date;
     filePath: string | null;
     fileMime: string | null;
+        files: {index:number;name:string;mime:string;size:number|null}[];
     status: Domain.TanwirSubmissionStatus;
     attemptsCount: number;
     isLate: boolean;

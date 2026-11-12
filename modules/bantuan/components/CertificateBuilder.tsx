@@ -16,7 +16,7 @@ export function CertificateBuilder({ row, verifier, defaultOpen=false }: { defau
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   async function download() {
     setError("");
-    if (!date) { setError("Tanggal penerimaan belum tercatat. Minta Bendahara melengkapi tanggal transfer ke penyalur."); return; }
+    if (!date) { setError("Tanggal belum tercatat. Minta Bendahara melengkapi tanggal transfer ke penyalur."); return; }
     if (!template) { setError("Pilih template sesuai program bantuan."); return; }
     setBusy(true);
     try {
@@ -34,7 +34,7 @@ export function CertificateBuilder({ row, verifier, defaultOpen=false }: { defau
     <div className={s.body}>
       <div className={s.grid}>
         <label>Template bantuan<select value={template} onChange={event => setTemplate(event.target.value as CertificateTemplate)}><option value="">Pilih template</option>{Object.entries(certificateTemplates).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
-        <label>Tanggal penerimaan<input type="date" value={date} readOnly aria-describedby="certificate-received-date-help"/><small id="certificate-received-date-help">Otomatis dari tanggal transfer Bendahara ke penyalur. Tidak dapat diubah di sini.</small></label>
+        <label className={s.dateField}>Tanggal<input type="date" value={date} readOnly aria-describedby="certificate-received-date-help"/><small id="certificate-received-date-help">Tanggal pada sertifikat mengikuti tanggal transfer Bendahara ke penyalur.</small></label>
         <label>Nama penerima manfaat<input maxLength={80} value={recipient} onChange={event => setRecipient(event.target.value)}/></label>
         <label>Nama verifikator<input maxLength={80} value={officer} onChange={event => setOfficer(event.target.value)}/></label>
         <label>Nominal pada sertifikat (Rp)<input inputMode="numeric" value={amount ? Number(amount).toLocaleString("id-ID") : ""} onChange={event => setAmount(event.target.value.replace(/\D/g, "").slice(0,13))}/></label>

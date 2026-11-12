@@ -3,6 +3,22 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
+  tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
+  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
+  security: [{ bearerAuth: [] }],
+  requestBody: { required: true, content: { 'application/json': { schema: {
+    type: 'object', required: ['period', 'volunteerId', 'rows'], properties: {
+      period: { type: 'string', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$' }, volunteerId: { type: 'string', maxLength: 191 },
+      rows: { type: 'array', minItems: 1, maxItems: 200, items: { type: 'object', additionalProperties: false,
+        required: ['recipientName', 'category', 'amount'], properties: {
+          recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
+          amount: { type: 'integer', minimum: 1, maximum: 9000000000000 },
+        } } },
+    },
+  } } } },
+  responses: { 200: { description: 'Impor berhasil', content: { 'application/json': { schema: { type: 'object', required: ['data'], properties: { data: { type: 'object', required: ['createdCount'], properties: { createdCount: { type: 'integer', minimum: 1, maximum: 200 } } } } } } } }, 403: { description: 'Peran tidak diizinkan' }, 422: { description: 'Data invalid, penerima ganda, atau penyalur tidak aktif; tidak ada baris disimpan' }, 429: { description: 'Batas impor tercapai' } },
+} };
 const image = {
   type: ['string', 'null'], maxLength: 191,
   pattern: '^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$',
@@ -22,7 +38,26 @@ document.components.schemas.SarsipProfile = {
 document.components.schemas.SarsipProfileUpdate = {
   type: 'object', required: ['headline', 'description'], properties: fields,
 };
+document['x-lazsip-campaign-target'] = { field: 'targetAmount', required: false, nullable: true, minimum: 0, maximum: 2147483647, description: 'Campaign target is optional. Missing on create, null and zero mean no target (stored and returned as zero). Missing on update preserves existing target. Donations remain available without a target.' };
+
+document.paths['/api/v1/lazsip/admin/transactions/{source}/{id}'] = { delete: { summary: 'Delete a test donation or zakat ledger record (LAZSIP admin or Superadmin)', description: 'Requires confirmationCode matching tracking code (legacy: ID), and accepted testTransaction acknowledgement, including Production tests. Does not call iPaymu or refund. Blocks active session creation/email delivery and Core-reconciled payments. Removes receipts and orphan zakat details, preserves donor/campaign and idempotency tombstones, and logs administrator deletion without donor PII. Limited to 10/minute.', parameters: [{name:'source',in:'path',required:true,schema:{type:'string',enum:['payment','legacy-donation','zakat']}},{name:'id',in:'path',required:true,schema:{type:'string'}}], requestBody:{required:true,content:{'application/json':{schema:{type:'object',required:['confirmationCode','testTransaction'],properties:{confirmationCode:{type:'string',maxLength:191},testTransaction:{type:'boolean',const:true}}}}}},responses:{200:{description:'Test transaction deleted; no-store, private'},401:{description:'Authentication required'},403:{description:'LAZSIP admin or Superadmin required'},404:{description:'Unknown source or LAZSIP transaction'},409:{description:'Reconciled or busy transaction'},422:{description:'Missing acknowledgement or mismatching confirmation code'}} } };
+
 const json = schema => ({ 'application/json': { schema } });
+
+document.paths['/api/v1/bantuan/reports/full'] = {
+  get: {
+    summary: 'Export complete Bantuan report for module admin, Superadmin and Call Center',
+    description: 'Uses application listing filters and access scope. Other operational roles are forbidden, including Monitoring. Records an export audit event and returns Cache-Control: no-store, private. Limited to 5 requests per minute.',
+    responses: {
+      200: { description: 'Private report rows for XLSX generation, without pagination.' },
+      401: { description: 'Authentication required' },
+      403: { description: 'Requires module admin, Superadmin or Call Center role' },
+      422: { description: 'Invalid application filters' },
+      429: { description: 'Export rate limit exceeded' },
+    },
+  },
+};
+
 const error = { description: 'Request rejected', content: json({ $ref: '#/components/schemas/Error' }) };
 for (const path of ['/api/v1/academy/teacher/materials', '/api/v1/academy/teacher/materials/{id}']) {
   document.paths[path] = { post: {
@@ -157,6 +192,42 @@ document.paths['/api/v1/academy/admin/cohorts/{id}/chapters'] = {
     responses: { 200: { description: 'Chapters prepared', content: json({ type: 'object', properties: { data: { type: 'object', properties: { courseId: { type: 'string' }, error: { type: 'string' }, message: { type: 'string' } } } } }) }, 401: error, 403: error, 404: error }
   }
 };
+document.components.schemas.AcademyParticipantImport = {
+  type: 'object', required: ['cohortId', 'gender', 'rows'],
+  properties: {
+    cohortId: { type: 'string', description: 'Existing Academy cohort ID; no program or open registration required.' },
+    gender: { type: 'string', enum: ['IKHWAN', 'AKHWAT'], description: 'One group for every participant in the workbook.' },
+    rows: { type: 'array', minItems: 1, maxItems: 200, items: {
+      type: 'object', additionalProperties: false, required: ['rowNumber', 'name', 'phone', 'address'],
+      properties: {
+        rowNumber: { type: 'integer', minimum: 2, maximum: 10001 },
+        name: { type: 'string', minLength: 2, maxLength: 100 },
+        phone: { type: 'string', description: 'Indonesian mobile number; 08, 8, 628 and +628 prefixes accepted. Spaces, parentheses, dots and hyphens removed; stored as 628 followed by 7–12 digits. Duplicate normalized numbers within one batch rejected.' },
+        address: { type: 'string', minLength: 1, maxLength: 2000 },
+      },
+    } },
+  },
+};
+document.components.schemas.AcademyParticipantImportResult = {
+  type: 'object', additionalProperties: false, required: ['createdCount', 'skippedCount', 'credentials'],
+  properties: {
+    createdCount: { type: 'integer', minimum: 0, maximum: 200 },
+    skippedCount: { type: 'integer', minimum: 0, maximum: 200 },
+    credentials: { type: 'array', maxItems: 200, items: {
+      type: 'object', additionalProperties: false, required: ['name', 'phone', 'code', 'password'],
+      properties: { name: { type: 'string' }, phone: { type: 'string' }, code: { type: 'string' }, password: { type: 'string', description: 'Default initial password 12345678 for newly imported participants. Must be changed on first login; persisted only as a password hash. Existing accounts are never reset by re-importing.' } },
+    } },
+  },
+};
+document.paths['/api/v1/academy/admin/participant-imports'] = { post: {
+  tags: ['Academy'], summary: 'Import participant registrations from parsed Excel rows', security: [{ bearerAuth: [] }],
+  description: 'Explicit bulk-registration action returning 200. Active Academy admin/superadmin only. The browser reads one .xlsx worksheet (up to 5 MiB) with Nama, No HP, Alamat headers; only parsed rows are sent to Laravel. Atomic transaction: any invalid/conflicting row rolls back the batch. Exact existing active participants (same normalized phone, case-insensitive name, trimmed address, cohort membership and group) are skipped; passwords and memberships remain unchanged. Other matches are rejected with row-specific 422 details; old accounts are never moved to another cohort. New accounts receive PAZ login codes, mandatory password change and cohort/program enrollment. Response has Cache-Control: no-store, private; no stored import file or plaintext-password history. Re-imports never return old passwords.',
+  requestBody: { required: true, content: json({ $ref: '#/components/schemas/AcademyParticipantImport' }) },
+  responses: {
+    200: { description: 'Atomic import result; download credentials before leaving the page.', headers: { 'Cache-Control': { schema: { type: 'string', const: 'no-store, private' } } }, content: json({ type: 'object', required: ['data'], properties: { data: { $ref: '#/components/schemas/AcademyParticipantImportResult' } } }) },
+    401: error, 403: error, 404: error, 422: error,
+  },
+} };
 document.paths['/api/v1/sarsip/profile'] = {
   get: {
     summary: 'Read public SARSIP profile and hero image', security: [],
@@ -256,7 +327,7 @@ document['x-bantuan-application-visibility'] = {
 // Compact location metadata for the authorized Bantuan listing; never full street/NIK/phone.
 document.components.schemas.BantuanApplicationSummary = {
   type: 'object', additionalProperties: true,
-  properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes, falling back to region. Empty when unavailable.' } },
+  properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes. Falls back to locality segments from applicant.street, then region. House numbers and the street line are excluded. Empty when unavailable.' } },
 };
 
 document['x-bantuan-application-notes'] = { field: 'applicant.applicationNotes', type: 'string', nullable: true, maxLength: 10000, required: false, description: 'Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments.' };
@@ -311,8 +382,52 @@ Object.assign(document.components.schemas.Error.properties.error.properties, {
 });
 document['x-api-error-diagnostics']={compatibility:'Existing error.code/message/details remain. Diagnostic metadata is additive. Database duplicates/constraints and busy states return 409; unavailable connections return 503; schema mismatches and unknown database errors return 500.',privacy:'No SQL, bindings, password, exception message, stack or configuration values in public diagnostics. api_request_failed logs include correlation ID, category, route template, exception class and source location, with SQLSTATE/driver code for database failures; request bodies, full URLs, SQL and bindings are not logged by this handler.'};
 
-document['x-ipaymu-request-authentication'] = {method:'POST',serialization:'One JSON string with JSON_UNESCAPED_SLASHES; the same bytes are signed and sent as application/json.',stringToSign:'POST:VA:lowercase(SHA256(body)):ApiKey',signature:'HMAC-SHA256 hexadecimal using ApiKey as key',timestamp:'Asia/Jakarta YYYYMMDDHHmmss',credentials:'Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.',diagnostics:'payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction.'};
+document['x-ipaymu-request-authentication'] = {method:'POST',serialization:'One JSON string with JSON_UNESCAPED_SLASHES and JSON_UNESCAPED_UNICODE (literal UTF-8); the same bytes are signed and sent as application/json.',stringToSign:'POST:VA:lowercase(SHA256(body)):ApiKey',signature:'HMAC-SHA256 hexadecimal using ApiKey as key',timestamp:'Asia/Jakarta YYYYMMDDHHmmss',credentials:'Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.',diagnostics:'payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction.'};
 
+document.components.schemas.SipDocumentationPhoto = {type:'object',additionalProperties:false,required:['id','image'],properties:{id:{type:'string',format:'uuid'},image:{type:'string',maxLength:191,pattern:'^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$'},caption:{type:['string','null'],maxLength:500},isDemo:{type:'boolean'}}};
+document['x-sip-content-galleries'] = {resources:['news','program-bantuan','penyaluran-bantuan'],field:'documentationPhotos',schema:{type:'array',maxItems:50,items:{$ref:'#/components/schemas/SipDocumentationPhoto'}},behavior:'Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private.'};
+document['x-bantuan-survey-photo-replacement'] = 'DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.';
+const academyMaterialUpload = {
+  type:'object', properties:{
+    cohortId:{type:'string',description:'Required when creating a material; existing scoped material cannot move cohorts.'},
+    title:{type:'string',maxLength:191}, order:{type:'integer',minimum:1},
+    isPublished:{type:'boolean'}, shortDescription:{type:['string','null'],maxLength:2000},
+    file:{type:'string',format:'binary',description:'Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A.'},
+    pdfFile:{type:'string',format:'binary',description:'Optional PDF attachment, maximum 10 MiB. MIME and file header validated. Appends to existing attachments.'},
+  },
+};
+document.components.schemas.AcademyMaterialUpload = academyMaterialUpload;
+for (const [path, method] of [['/api/v1/academy/admin/materials','post'],['/api/v1/academy/admin/materials/{id}','put']]) {
+  document.paths[path] ??= {};
+  document.paths[path][method] = {
+    tags:['Academy'],summary:method==='post'?'Create audio or PDF material':'Update material and optionally upload audio or PDF',
+    description:'Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.',
+    security:[{bearerAuth:[]}],
+    ...(method==='put'?{parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}]}:{}),
+    requestBody:{required:true,content:{'multipart/form-data':{schema:method==='post'?{allOf:[{$ref:'#/components/schemas/AcademyMaterialUpload'},{type:'object',required:['cohortId','title']}]}:{$ref:'#/components/schemas/AcademyMaterialUpload'}}}},
+    responses:{200:{description:'Saved material ID in data.id'},401:error,403:error,404:error,409:error,422:error},
+  };
+}
+document['x-academy-material-pdfs'] = {listing:'Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.',access:'Existing private file endpoint and enrollment/release checks remain unchanged.'};
+const academyOwnProfile = {
+  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender'],
+  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]}},
+};
+document.paths['/api/v1/academy/profile'] = {get:{
+  tags:['Academy'], summary:'Read the signed-in participant profile',
+  description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.',
+  security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
+}};
+document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};
+const login = document.paths['/api/v1/auth/login'].post;
+login.requestBody.content['application/json'].schema.properties.pwa = {type:'boolean',description:'Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply.'};
+document['x-bantuan-verifier-intake-edit'] = 'Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked.';
+for (const module of ['tanwir','ojol']) {
+  const media = {type:'object',required:['index','name','mime','size'],properties:{index:{type:'integer',minimum:0,maximum:9},name:{type:'string',maxLength:191},mime:{type:'string'},size:{type:['integer','null'],minimum:0}}};
+  document.paths[`/api/v1/${module}/submissions`] = {post:{tags:[module],summary:'Submit one or multiple private audio/video files',description:'Participant in the assigned task group, before deadline. 1–10 files, combined maximum 50 MiB. Every file is inspected and must match the task type. Legacy file field remains supported but cannot be combined with files. Atomically replaces the entire rejected attempt; pending/approved submissions reject duplicates. One review and attempt count per batch.',security:[{bearerAuth:[]}],requestBody:{required:true,content:{'multipart/form-data':{schema:{type:'object',required:['taskId'],properties:{taskId:{type:'string'},file:{type:'string',format:'binary'},files:{type:'array',minItems:1,maxItems:10,items:{type:'string',format:'binary'}}},oneOf:[{required:['file']},{required:['files']}]}}}},responses:{200:{description:'Batch submitted for review'},403:error,404:error,409:error,422:error}}};
+  document.paths[`/api/v1/${module}/files/submission/{id}`] = {get:{tags:[module],summary:'Play a private submission attachment',description:'Same owner/assigned teacher/module-admin authorization for every file; index defaults to zero for legacy players. Private no-store; storage paths are not exposed in files metadata.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}},{name:'index',in:'query',schema:{type:'integer',minimum:0,maximum:9,default:0}}],responses:{200:{description:'Authorized media stream'},403:error,404:error,422:error}}};
+  document.components.schemas[`${module}SubmissionMedia`] = {type:'array',maxItems:10,items:media,description:'files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item.'};
+}
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

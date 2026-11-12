@@ -35,11 +35,11 @@ export function Navbar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-white/95 px-4 py-2.5 shadow-md shadow-lazsip-primary-900/5 backdrop-blur-md sm:px-6">
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-2 sm:px-6 sm:pt-4">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-white/95 px-3 py-1.5 shadow-md shadow-lazsip-primary-900/5 backdrop-blur-md sm:px-6 sm:py-2.5">
         <Link href="/lazsip" onClick={handleLogoClick} className="flex items-center gap-2.5">
           <LazsipMark />
-          <span className="text-lg font-extrabold tracking-tight text-lazsip-primary-900">
+          <span className="text-base font-extrabold tracking-tight sm:text-lg text-lazsip-primary-900">
             {lazsipSiteConfig.name}
           </span>
         </Link>

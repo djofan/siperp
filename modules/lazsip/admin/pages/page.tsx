@@ -89,7 +89,7 @@ export default async function LazsipDashboardPage() {
           ) : (
             <div className="flex flex-col gap-4">
               {topCampaigns.map((campaign, i) => {
-                const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
+                const percentage = campaign.targetAmount > 0 ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0;
                 return (
                   <Link
                     key={campaign.id}
@@ -101,10 +101,10 @@ export default async function LazsipDashboardPage() {
                         <span className="text-xs font-bold text-lazsip-primary-400">#{i + 1}</span>
                         {campaign.title}
                       </span>
-                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
+                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
-                      <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
+                      <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}` }} />
                     </div>
                     <p className="mt-1 text-xs text-lazsip-primary-800/45 dark:text-white/35">
                       {formatRupiah(campaign.currentAmount)}

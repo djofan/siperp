@@ -34,11 +34,11 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
         <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
           {description && <p className="line-clamp-1 text-xs text-white/75">{description}</p>}
-          <ProgressBar percent={percent} tone="light" />
+          {targetAmount > 0 && <ProgressBar percent={percent} tone="light" />}
           <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
             <div className="min-w-0">
               <p className="break-words text-sm font-bold">{formatRupiah(currentAmount)}</p>
-              <p className="break-words text-xs text-white/70">Terkumpul dari {formatRupiah(targetAmount)}</p>
+              <p className="break-words text-xs text-white/70">{targetAmount > 0 ? `Terkumpul dari ${formatRupiah(targetAmount)}` : "Terkumpul · Tanpa target nominal"}</p>
             </div>
             {isOpen ? (
               <Link
@@ -59,21 +59,21 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
   }
 
   return (
-    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white transition-colors duration-200 hover:border-lazsip-primary-300 hover:shadow-lg hover:shadow-lazsip-primary-900/5">
+    <div className="group relative flex self-start flex-col overflow-hidden rounded-2xl border border-lazsip-primary-100 bg-white transition-colors duration-200 hover:border-lazsip-primary-300 hover:shadow-lg hover:shadow-lazsip-primary-900/5">
       <Link href={detailHref} aria-label={title} className="absolute inset-0 z-0" />
       <ImagePlaceholder variant="campaign" src={image} alt={title} className="aspect-[4/3] w-full" />
-      <div className="relative flex flex-1 flex-col gap-1.5 p-3.5">
-        <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-bold text-lazsip-primary-900 group-hover:text-lazsip-primary-700">
+      <div className="relative flex flex-col gap-2 p-3 sm:p-3.5">
+        <h3 className="line-clamp-2 text-sm font-bold leading-snug text-lazsip-primary-900 group-hover:text-lazsip-primary-700">
           {title}
         </h3>
-        <p className="line-clamp-2 min-h-[2rem] text-xs text-lazsip-primary-800/60">{description}</p>
-        <div className="mt-auto flex flex-col gap-2">
-          <ProgressBar percent={percent} />
+        {description?.trim() && <p className="line-clamp-2 text-xs leading-relaxed text-lazsip-primary-800/65">{description}</p>}
+        <div className="mt-1 flex flex-col gap-2">
+          {targetAmount > 0 && <ProgressBar percent={percent} />}
           <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs text-lazsip-primary-800/70">
             <span className="break-words font-bold text-lazsip-primary-800">{formatRupiah(currentAmount)}</span>
-            <span className="break-words">dari {formatRupiah(targetAmount)}</span>
+            <span className="break-words">{targetAmount > 0 ? `dari ${formatRupiah(targetAmount)}` : "Tanpa target nominal"}</span>
           </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-lazsip-primary-100 pt-2.5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-lazsip-primary-100 pt-2">
             <span className="flex min-w-0 items-center gap-1.5 text-xs text-lazsip-primary-800/55">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM2 20c0-3 2.7-5.5 7-5.5s7 2.5 7 5.5M14.5 14.8c3.5.3 5.5 2.6 5.5 5.2" />

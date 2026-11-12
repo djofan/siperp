@@ -46,6 +46,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
     Route::get('admin/intake', [$pages, 'intake']);
+    Route::post('admin/participant-imports', [App\Modules\Academy\Http\Controllers\ParticipantImportController::class, 'store']);
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
@@ -81,6 +82,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::put('lessons/{lessonId}/progress', [LearningController::class, 'mark']);
     Route::put('lessons/{lessonId}/note', [LearningController::class, 'note']);
     Route::put('profile/password', [LearningController::class, 'password']);
+    Route::get('profile', [LearningController::class, 'account']);
     Route::post('courses/{courseId}/questions', [LearningController::class, 'ask']);
     Route::put('discussions/{id}/answer', [LearningController::class, 'answer']);
     Route::put('lessons/{id}/audio', [LearningController::class, 'audio']);

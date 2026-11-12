@@ -3,7 +3,7 @@ import type { AcademyCohort } from "@/modules/academy/api/page-contracts";
 import { requireAcademyAdmin } from "../../../api/admin-access";
 import { createCohort, setCohortRegistration, prepareCohortChapters } from "../../../api/cohort-actions";
 import { ActionForm } from "../../../components/ActionForm";
-import { redirect } from "next/navigation";
+import { AdminHeading } from "../../../components/admin/AdminUi";
 import { inputClass } from "../../../components/ui";
 export async function CohortsPanel() {
   await requireAcademyAdmin();
@@ -14,4 +14,7 @@ export async function CohortsPanel() {
   </>;
 }
 
-export default async function CohortsPage() { await requireAcademyAdmin(); redirect("/admin/academy/peserta?tab=angkatan"); }
+export default async function CohortsPage() {
+  await requireAcademyAdmin();
+  return <><AdminHeading title="Angkatan" description="Kelola angkatan dan buka atau tutup pendaftaran peserta Academy." /><CohortsPanel /></>;
+}

@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { ApiError } from "@/lib/api";
-import { getCampaignById, listCampaigns, listCampaignHistory } from "@/modules/lazsip/api/campaigns";
+import { getCampaignById, listCampaigns } from "@/modules/lazsip/api/campaigns";
 import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
 import { formatRupiah } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
@@ -25,10 +24,6 @@ export default async function LazsipDonasiDetailPage({
 
   const percent = campaign.targetAmount ? (campaign.currentAmount / campaign.targetAmount) * 100 : 0;
   const allCampaigns = await listCampaigns();
-  const history = await listCampaignHistory(id).catch((error: unknown) => {
-    if (error instanceof ApiError && (error.status === 401 || error.status === 403)) return null;
-    throw error;
-  });
   const otherCampaigns = allCampaigns.filter((c) => c.id !== id && c.status === "active").slice(0, 3);
 
   return (
@@ -40,21 +35,19 @@ export default async function LazsipDonasiDetailPage({
       </h1>
 
       <CampaignDetailColumns
-        history={history ?? []}
-        historyUnavailable={history === null}
         campaignId={campaign.id}
         uniqueCode={campaign.uniqueCode}
         feeRefs={feeRefs}
         isActive={campaign.status === "active"}
         articleTop={
           <>
-            <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} className="w-full aspect-[21/9] rounded-3xl" />
+            <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} naturalSize className={`w-full rounded-3xl ${campaign.image ? "" : "aspect-[21/9]"}`} />
 
             <div className="mt-8 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
-              <ProgressBar percent={percent} />
+              {campaign.targetAmount > 0 && <ProgressBar percent={percent} />}
               <div className="mt-3 flex items-center justify-between text-sm text-lazsip-primary-800/70">
                 <span className="text-base font-bold text-lazsip-primary-800">{formatRupiah(campaign.currentAmount)}</span>
-                <span>dari {formatRupiah(campaign.targetAmount)}</span>
+                <span>{campaign.targetAmount > 0 ? `dari ${formatRupiah(campaign.targetAmount)}` : "Terkumpul · Tanpa target nominal"}</span>
               </div>
             </div>
 

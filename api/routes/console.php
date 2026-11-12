@@ -49,6 +49,7 @@ Artisan::command('payment:ipaymu-check {--remote : Test authentication with the 
         $config = $service->configuration();
     } catch (Throwable) {
         $this->error('IPAYMU_CONFIGURATION_INVALID: periksa mode, VA/API key, endpoint, dan URL publik HTTPS.');
+
         return 1;
     }
     $this->table(['Pemeriksaan', 'Hasil'], [
@@ -59,6 +60,7 @@ Artisan::command('payment:ipaymu-check {--remote : Test authentication with the 
     ]);
     if (! $this->option('remote')) {
         $this->info('Konfigurasi lokal valid. Gunakan --remote untuk memeriksa penerimaan signature oleh iPaymu tanpa membuat pembayaran.');
+
         return 0;
     }
     try {
@@ -66,15 +68,63 @@ Artisan::command('payment:ipaymu-check {--remote : Test authentication with the 
         $this->line($result['code'].' | HTTP '.$result['httpStatus'].' | status provider '.($result['providerStatus'] ?? 'tidak tersedia'));
         if ($result['ok']) {
             $this->info('Signature dan kredensial diterima untuk cek koneksi. Tidak ada pembayaran dibuat. Persetujuan domain dan verifikasi merchant tetap diperiksa terpisah.');
+
             return 0;
         }
         $this->warn('Cocokkan VA/API key dengan mode dashboard, jalankan config:cache setelah perubahan, dan kirim kode hasil ini ke tim teknis.');
+
         return 1;
     } catch (Throwable) {
         $this->error('IPAYMU_CONNECTION_FAILED: server belum dapat menyelesaikan pemeriksaan. Periksa DNS, HTTPS, waktu server, dan koneksi outbound.');
+
         return 1;
     }
 })->purpose('Check iPaymu configuration and optionally authenticate without creating a payment or displaying credentials');
+
+Artisan::command('payment:ipaymu-unicode-check {--remote : Send three read-only balance probes}', function (): int {
+    $this->line('Membandingkan kontrol, Unicode escaped dan UTF-8 melalui POST /balance. Tidak membuat pembayaran.');
+    $this->warn('Kolom description pada probe Unicode bukan parameter balance yang dijamin didukung. Penolakan dapat membuat hasil belum konklusif.');
+    if (! $this->option('remote')) {
+        $this->info('Belum ada request dikirim. Gunakan --remote untuk menjalankan tiga probe berurutan; setiap probe dapat memerlukan 90 detik sesuai konfigurasi.');
+
+        return 0;
+    }
+    try {
+        $allOk = true;
+        foreach (app(IpaymuService::class)->probeUnicodeSerialization() as $result) {
+            $this->line($result['variant'].' | '.$result['code'].' | HTTP '.($result['httpStatus'] ?? '-')
+                .' | provider '.($result['providerStatus'] ?? '-').' | '.$result['durationMs'].' ms');
+            $allOk = $allOk && $result['ok'];
+        }
+        $this->warn('Hasil balance tidak membuktikan penerimaan checkout. Perbedaan hasil hanya petunjuk; timeout atau penolakan kolom tambahan bukan bukti kesalahan Unicode. Saldo dan kredensial tidak ditampilkan.');
+
+        return $allOk ? 0 : 1;
+    } catch (Throwable) {
+        $this->error('IPAYMU_PROBE_FAILED: periksa konfigurasi dan log diagnosis transport. Tidak ada pembayaran dibuat.');
+
+        return 1;
+    }
+})->purpose('Compare Unicode JSON encodings on balance without creating payments or displaying financial data');
+
+Artisan::command('payment:ipaymu-recover-session {transactionId} {--apply : Restore a validated preserved session}', function (): int {
+    try {
+        $row = PaymentTransaction::findOrFail($this->argument('transactionId'));
+        $result = app(IpaymuService::class)->recoverCheckoutSession($row, (bool) $this->option('apply'));
+        $this->line($result);
+        $this->line('Tidak ada request ke iPaymu atau pembayaran baru dibuat. Token sesi dan URL tidak ditampilkan.');
+        if ($result === 'NO_EVIDENCE') {
+            $this->warn('Respons lama tidak tersedia. Status needs_review tidak diubah; jangan membuat sesi ulang.');
+
+            return 1;
+        }
+
+        return 0;
+    } catch (Throwable) {
+        $this->error('RECOVERY_REJECTED: bukti tidak dapat diverifikasi, konfigurasi berbeda, atau status transaksi tidak memenuhi syarat.');
+
+        return 1;
+    }
+})->purpose('Inspect or recover an encrypted checkout session without contacting iPaymu');
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());

@@ -14,9 +14,12 @@ class DocumentController
         return DB::transaction(function () use ($request, $id, $access, $journal) {
             $doc = DB::table('bantuan_documents')->where('id', $id)->whereNull('deleted_at')->firstOrFail();
             $row = $access->find($request, $doc->application_id, true);
-            abort_if($doc->used_at, 409, 'Bukti yang sudah digunakan tidak dapat dihapus.');
             $kind = $doc->kind;
+            $surveyRevision = in_array($row->status, ['survey_assigned', 'survey_cc_review'], true)
+                && (str_starts_with($kind, 'survey_') || in_array($kind, ['sktm', 'ktp', 'kk', 'supporting'], true));
+            abort_if($doc->used_at && ! $surveyRevision, 409, 'Bukti yang sudah digunakan tidak dapat dihapus.');
             $stage = match (true) {
+                $surveyRevision => true,
                 in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true),
                 str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned',
                 $kind === 'transfer' => $row->status === 'fund_approved',

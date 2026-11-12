@@ -1,7 +1,7 @@
 export interface PhotoLocation { latitude:number; longitude:number; source:"exif"|"device"; accuracy?:number|null }
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", requester: "Petugas Pengajuan", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
-  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Pengurus", survey_approver: "Penyetuju Survei",
+  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Monitoring", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
@@ -9,7 +9,7 @@ export const bantuanActionLabels: Record<string, string> = {
   create: "Pengajuan dibuat", edit_intake: "Data pengajuan diperbarui", submit: "Pengajuan dikirim",
   screen_pass: "Lolos review Call Center", screen_reject: "Ditolak Call Center", request_data: "Diminta melengkapi data",
   review1_approve: "Disetujui untuk survei", review1_reject: "Ditolak pada review tahap 1",
-  assign_survey: "Verifikator ditugaskan", survey_save: "Draft survei disimpan", survey_submit: "Survei dikirim",
+  assign_survey: "Verifikator ditugaskan", survey_save: "Draft survei disimpan", survey_submit: "Survei dikirim", survey_revise: "Perbaikan survei dibuka oleh verifikator",
   survey_review_withdraw: "Hasil survei dikembalikan ke pemeriksaan Call Center", survey_review_save: "Koreksi survei disimpan Call Center", survey_review_submit: "Hasil survei diteruskan ke Approver", survey_return: "Hasil survei dikembalikan", survey_decline: "Penugasan survei ditolak", survey_location: "Titik alamat survei diperbarui",
   approve: "Nominal bantuan ditetapkan", review_reject: "Pengajuan ditolak", survey_again: "Diminta survei ulang",
   assign_distributor: "Penyalur ditetapkan", fund_submit: "Dana ditandai diajukan", fund_approve: "Dana ditandai disetujui",

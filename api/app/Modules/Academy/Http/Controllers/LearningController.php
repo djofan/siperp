@@ -12,6 +12,7 @@ use App\Modules\Academy\Models\ZakatAcademyLesson as Lesson;
 use App\Modules\Academy\Models\ZakatAcademyLessonProgress as Progress;
 use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Services\AcademyContext;
+use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -35,8 +36,9 @@ class LearningController
             $profile = Profile::where('user_id', $request->user()->id)->lockForUpdate()->first();
             abort_if($profile?->deletedAt, 403, 'Akun peserta sudah dihapus.');
             if ($course->cohortId) {
-                abort_unless($profile && app(\App\Modules\Academy\Services\CohortLearning::class)->owns($profile->id, $course->cohortId), 403, 'Daftar ke angkatan ini terlebih dahulu.');
-                app(\App\Modules\Academy\Services\CohortLearning::class)->enrollCourses($profile->id, $course->cohortId);
+                abort_unless($profile && app(CohortLearning::class)->owns($profile->id, $course->cohortId), 403, 'Daftar ke angkatan ini terlebih dahulu.');
+                app(CohortLearning::class)->enrollCourses($profile->id, $course->cohortId);
+
                 return $course->slug;
             }
             if ($profile && Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) {
@@ -62,6 +64,19 @@ class LearningController
         }, 3);
 
         return $this->data(['slug' => $slug]);
+    }
+
+    public function account(Request $request)
+    {
+        $this->context->available($request);
+        // Own profile only. Initial-password users may read it to reach their password form.
+        $profile = Profile::where('user_id', $request->user()->id)->whereNull('deleted_at')->firstOrFail();
+
+        return response()->json(['data' => [
+            'name' => $request->user()->name, 'code' => $request->user()->code,
+            'email' => $request->user()->email, 'nis' => $profile->nis,
+            'phone' => $profile->phone, 'address' => $profile->address, 'gender' => $profile->gender,
+        ]])->header('Cache-Control', 'no-store, private');
     }
 
     public function mark(Request $request, string $lessonId)
