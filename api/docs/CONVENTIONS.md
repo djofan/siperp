@@ -267,3 +267,12 @@ Ekspor lengkap Pengajuan Bantuan `GET /api/v1/bantuan/reports/full` diizinkan un
 Superadmin, admin modul, dan Call Center (termasuk akun multi-role yang memiliki Call Center).
 Role lain tidak memperoleh akses XLSX lengkap. Filter daftar dan scope data tetap diterapkan;
 ekspor dicatat di jurnal, dibatasi 5/menit, dan respons memakai `no-store, private`.
+
+LAZSIP: `DELETE /api/v1/lazsip/admin/transactions/{source}/{id}` menghapus catatan transaksi
+uji setelah admin modul/Superadmin mengonfirmasi `testTransaction=true` serta `confirmationCode`
+yang cocok dengan kode pelacakan (ID untuk legacy). Sumber: `payment`, `legacy-donation`, `zakat`.
+Termasuk transaksi uji Production, tanpa panggilan pembatalan/refund ke provider. Pencocokan bank,
+pembuatan sesi aktif, atau pengiriman receipt aktif ditolak 409. Receipt serta detail zakat yang
+sudah tidak dipakai dibersihkan; donor, campaign, dan tombstone idempotensi tetap disimpan.
+Target nominal campaign opsional: kosong/null/0 berarti tanpa target (disimpan sebagai 0).
+Omission saat update mempertahankan target lama; nilai negatif/noninteger ditolak.

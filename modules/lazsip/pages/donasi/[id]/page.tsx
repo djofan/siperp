@@ -51,10 +51,10 @@ export default async function LazsipDonasiDetailPage({
             <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} naturalSize className={`w-full rounded-3xl ${campaign.image ? "" : "aspect-[21/9]"}`} />
 
             <div className="mt-8 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
-              <ProgressBar percent={percent} />
+              {campaign.targetAmount > 0 && <ProgressBar percent={percent} />}
               <div className="mt-3 flex items-center justify-between text-sm text-lazsip-primary-800/70">
                 <span className="text-base font-bold text-lazsip-primary-800">{formatRupiah(campaign.currentAmount)}</span>
-                <span>dari {formatRupiah(campaign.targetAmount)}</span>
+                <span>{campaign.targetAmount > 0 ? `dari ${formatRupiah(campaign.targetAmount)}` : "Terkumpul · Tanpa target nominal"}</span>
               </div>
             </div>
 

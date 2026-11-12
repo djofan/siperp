@@ -34,11 +34,11 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
         <div className="relative z-10 mt-auto flex flex-col gap-1.5 p-4 text-white">
           <h3 className="line-clamp-2 text-base font-bold leading-snug">{title}</h3>
           {description && <p className="line-clamp-1 text-xs text-white/75">{description}</p>}
-          <ProgressBar percent={percent} tone="light" />
+          {targetAmount > 0 && <ProgressBar percent={percent} tone="light" />}
           <div className="flex flex-wrap items-end justify-between gap-x-3 gap-y-2">
             <div className="min-w-0">
               <p className="break-words text-sm font-bold">{formatRupiah(currentAmount)}</p>
-              <p className="break-words text-xs text-white/70">Terkumpul dari {formatRupiah(targetAmount)}</p>
+              <p className="break-words text-xs text-white/70">{targetAmount > 0 ? `Terkumpul dari ${formatRupiah(targetAmount)}` : "Terkumpul · Tanpa target nominal"}</p>
             </div>
             {isOpen ? (
               <Link
@@ -68,10 +68,10 @@ export function CampaignCard({ id, title, description, image, targetAmount, curr
         </h3>
         <p className="line-clamp-2 min-h-[2rem] text-xs text-lazsip-primary-800/60">{description}</p>
         <div className="mt-auto flex flex-col gap-2">
-          <ProgressBar percent={percent} />
+          {targetAmount > 0 && <ProgressBar percent={percent} />}
           <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 text-xs text-lazsip-primary-800/70">
             <span className="break-words font-bold text-lazsip-primary-800">{formatRupiah(currentAmount)}</span>
-            <span className="break-words">dari {formatRupiah(targetAmount)}</span>
+            <span className="break-words">{targetAmount > 0 ? `dari ${formatRupiah(targetAmount)}` : "Tanpa target nominal"}</span>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-lazsip-primary-100 pt-2.5">
             <span className="flex min-w-0 items-center gap-1.5 text-xs text-lazsip-primary-800/55">
