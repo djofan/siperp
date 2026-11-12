@@ -82,11 +82,16 @@ function checkPlan(plan) {
   }
   return plan;
 }
-function retireAllowed(registry, id, now = Date.now()) {
+function retireAllowed(registry, id, now = Date.now(), automatic = false) {
   const record = get(registry, id);
-  if (id === registry.active || id === registry.previous || record.phase !== 'retained' ||
-    now - Date.parse(record.retainedAt ?? record.createdAt) < 24 * 60 * 60 * 1000) throw new Error('Release is not eligible for retirement.');
+  if (id === registry.active || id === registry.previous ||
+    !(automatic ? ['retained', 'ready'] : ['retained']).includes(record.phase) ||
+    (!automatic && now - Date.parse(record.retainedAt ?? record.createdAt) < 24 * 60 * 60 * 1000)) throw new Error('Release is not eligible for retirement.');
   return record;
+}
+function cleanupCandidates(registry) {
+  return registry.releases.filter(record => record.id !== registry.active && record.id !== registry.previous &&
+    ['retained', 'ready'].includes(record.phase)).map(record => record.id);
 }
 function cli() {
   const [command, ...args] = process.argv.slice(2);
@@ -200,16 +205,18 @@ function cli() {
     registry.routingHash = hash(fs.readFileSync('/etc/nginx/conf.d/siperp-release-routing.conf'));
     save(registry);
   } else if (command === 'retire-check') {
-    retireAllowed(registry, args[0]);
+    retireAllowed(registry, args[0], Date.now(), args[1] === 'automatic');
+  } else if (command === 'cleanup-candidates') {
+    const ids = cleanupCandidates(registry); if (ids.length) console.log(ids.join('\n'));
   } else if (command === 'retired') {
-    retireAllowed(registry, args[0]).phase = 'retired';
+    retireAllowed(registry, args[0], Date.now(), args[1] === 'automatic').phase = 'retired';
     registry.routingHash = hash(fs.readFileSync('/etc/nginx/conf.d/siperp-release-routing.conf'));
     save(registry);
   } else {
     throw new Error('Unknown routine operation.');
   }
 }
-module.exports = { checkRecord, routing, nextPort, transition, planHash, checkPlan, retireAllowed };
+module.exports = { checkRecord, routing, nextPort, transition, planHash, checkPlan, retireAllowed, cleanupCandidates };
 if (require.main === module) {
   try { cli(); } catch (error) {
     // Errors are operator messages generated above; do not leak fs/config dumps.

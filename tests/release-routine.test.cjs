@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { checkRecord, routing, nextPort, transition, planHash, checkPlan, retireAllowed } = require('../ops/releases/routine.cjs');
+const { checkRecord, routing, nextPort, transition, planHash, checkPlan, retireAllowed, cleanupCandidates } = require('../ops/releases/routine.cjs');
 const { handoverConfig } = require('../ops/releases/runtime.cjs');
 const base = '/var/www/siperp-deploy/releases';
 function record(number, phase = 'ready') {
@@ -93,4 +93,33 @@ test('metadata rejects path traversal, process-name injection and mismatched por
   assert.equal(checkRecord(a), a);
   for (const changes of [{ id: '../unsafe' }, { path: '/var/www/siperp' }, { name: 'siperp-web' }, { name: '' },
     { webPort: '3102' }, { apiPort: 8000 }, { phase: 'unexpected' }]) assert.throws(() => checkRecord({ ...a, ...changes }), /Invalid/);
+});
+
+test('automatic cleanup frees a fresh obsolete test release but always protects active and rollback', () => {
+  const r = registry(), [one, two] = r.releases;
+  transition(r, two.id);
+  const old = record(3, 'retained'); old.retainedAt = new Date().toISOString();
+  const unused = record(4, 'ready');
+  const pending = record(5, 'awaiting-migration');
+  r.releases.push(old, unused, pending);
+  assert.deepEqual(cleanupCandidates(r), [old.id, unused.id]);
+  assert.throws(() => retireAllowed(r, old.id), /eligible/);
+  assert.equal(retireAllowed(r, old.id, Date.now(), true), old);
+  assert.equal(retireAllowed(r, unused.id, Date.now(), true), unused);
+  assert.throws(() => retireAllowed(r, one.id, Date.now(), true), /eligible/);
+  assert.throws(() => retireAllowed(r, two.id, Date.now(), true), /eligible/);
+  assert.throws(() => retireAllowed(r, pending.id, Date.now(), true), /eligible/);
+});
+
+test('after activation cleanup keeps exactly the new active and the prior active as rollback', () => {
+  const r = registry(), [one, two] = r.releases;
+  transition(r, two.id);
+  const next = record(3, 'ready'); next.preparedFrom = two.id; r.releases.push(next);
+  transition(r, next.id);
+  assert.deepEqual(cleanupCandidates(r), [one.id]);
+  retireAllowed(r, one.id, Date.now(), true).phase = 'retired';
+  assert.deepEqual(cleanupCandidates(r), []);
+  transition(r, two.id, true);
+  assert.equal(r.active, two.id);
+  assert.equal(r.previous, next.id);
 });

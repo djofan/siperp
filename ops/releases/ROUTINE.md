@@ -5,6 +5,44 @@ Aktif saat instalasi pertama: `20261112115845-f18799e58267`, web 3101/API 8101.
 Legacy 3000/8000 tetap dipertahankan untuk tab sebelum handover. Tidak ada akses
 SSH otomatis dari Codex: operator menjalankan perintah di Termius.
 
+## Pemakaian normal: satu perintah
+
+Setelah tooling dipasang, update cukup:
+
+```bash
+bash /usr/local/lib/siperp-release/release.sh update
+```
+
+Satu lock deployment dipegang sepanjang cleanup, prepare dan activate, sehingga
+dua update tidak berjalan bersamaan. Sebelum build, tool menghentikan proses
+rilis retained/ready yang bukan active atau previous, termasuk rilis uji yang
+masih baru. Setelah aktivasi lolos health check, rilis yang lebih tua dari
+previous dibersihkan lagi. Tidak perlu menyalin ID atau menunggu umur 24 jam
+untuk cleanup otomatis. Jika main sudah sama dengan commit aktif, tidak ada
+build atau pergantian slot rollback; hanya proses usang yang dibersihkan.
+
+Hasil sukses `UPDATE_COMPLETE`. Jika ada migration, hasil `UPDATE_PAUSED` dan
+review token; active/previous tetap dipertahankan dan schema tidak dijalankan
+otomatis. Lanjutkan alur review migration di bawah. Error prepare tidak
+mengaktifkan kandidat; error switch tetap mencoba rollback terkontrol.
+
+Cleanup ini mengurangi RAM dengan menghentikan proses Node dan API localhost
+yang sudah tidak dipertahankan. Folder kode, backup, database, `.env`, storage
+dan upload tidak dihapus. Tab dari versi yang lebih tua dari previous mungkin
+perlu refresh; active dan previous tidak pernah menjadi target cleanup.
+Legacy 3000 yang terpisah tetap ada; jangan menghapus source lama yang juga
+menjadi lokasi env/storage persisten.
+
+Rollback artinya kembali memakai rilis aplikasi sebelumnya bila update
+bermasalah. Gunakan `release.sh rollback`. Database tidak dipulihkan oleh
+rollback, sehingga transaksi baru tidak ditimpa. Ini berbeda dari restore
+backup database. Migration harus tetap kompatibel dengan kode sebelumnya.
+
+Untuk VPS yang sudah di-init, upgrade tooling cukup menimpa `release.sh` dan
+`routine.cjs` terbaru di `/usr/local/lib/siperp-release`. Tidak perlu init ulang.
+Perintah prepare/activate terpisah tetap tersedia untuk pengujian dan operasi
+yang memang memerlukan pemeriksaan kandidat secara manual.
+
 ## Instalasi sekali
 
 Upload `release.sh`, `routine.cjs`, `migration-plan.php` ke
@@ -21,7 +59,7 @@ Init mengadopsi baseline yang sudah aktif. Ia memeriksa routing yang diaudit,
 worker, cron dan health, tidak mengalihkan upstream atau menjalankan migration.
 Jika registry sudah ada, gunakan status; jangan init ulang atau menghapus registry.
 
-## Update biasa tanpa migration
+## Mode manual: update tanpa migration
 
 ```bash
 bash /usr/local/lib/siperp-release/release.sh prepare main
@@ -124,7 +162,9 @@ restart/delete semua PM2 atau restore DB aktif untuk menghilangkan error.
 
 ## Retensi pada VPS 4 GB
 
-Tool membatasi tiga rilis Node yang ready/active/retained, ditambah legacy 3000.
+Mode manual membatasi tiga rilis Node yang ready/active/retained, ditambah legacy
+3000. Mode `update` membersihkan rilis yang tidak dilindungi sebelum build,
+kemudian menyisakan active dan previous setelah aktivasi.
 Prepare memerlukan RAM tersedia 2 GiB dan disk 5 GiB; bila tidak cukup, pindahkan
 build ke CI atau tambah kapasitas. Tidak menjanjikan nol dampak CPU/I/O pada VPS
 bersama. Beberapa rilis yang sangat cepat berturut-turut bisa mencapai batas
@@ -135,7 +175,7 @@ bash /usr/local/lib/siperp-release/release.sh status
 bash /usr/local/lib/siperp-release/release.sh retire <ID-LAMA> --ack-old-tabs-reload
 ```
 
-Retire hanya untuk rilis retained, bukan active atau previous, dan minimal
+Retire manual hanya untuk rilis retained, bukan active atau previous, dan minimal
 24 jam sejak menjadi retained. Operator menyetujui tab lama mungkin perlu reload. Routing versi tersebut
 dilepas, proses Node dan API localhost-nya dihentikan, PM2 disimpan. Folder kode,
 DB, env, upload, backup dan storage tidak dihapus. Port tidak dipakai ulang agar
@@ -166,6 +206,7 @@ bash -n ops/releases/release.sh
 node --check ops/releases/routine.cjs
 php -l ops/releases/migration-plan.php
 node --test tests/release-runtime.test.cjs tests/release-routine.test.cjs
+node --test tests/release-update.test.cjs
 ```
 
 Tes mencakup state transition, rollback, version routing, port reuse, gate
@@ -179,3 +220,8 @@ Pada 12 November 2026 operator melaporkan uji VPS berhasil: prepare commit
 `20261112115845-f18799e58267`. Worker tetap aktif dan pemantauan health tetap
 HTTP 200. Ini memvalidasi jalur sukses dengan kode/schema yang sama; bukan uji
 migration baru, semua skenario kegagalan, atau beban produksi tinggi.
+
+Mode satu perintah diuji lokal dengan orkestrasi Bash asli dan layanan yang
+dimock: cleanup sebelum/sesudah aktivasi, kegagalan prepare/switch, pause
+migration, dan update yang sudah current. Ini bukan laporan eksekusi mode baru
+tersebut di VPS; uji instalasi setelah file tooling diperbarui.

@@ -56,6 +56,11 @@ Migration tidak otomatis dianggap kompatibel, dan rollback kode tidak memulihkan
 database. Jangan memakai deployment di tempat pada VPS yang sudah diinisialisasi
 dengan release manager tersebut.
 
+Pemakaian rutin menggunakan `release.sh update`: prepare dan aktivasi berada
+dalam satu lock, lalu proses rilis usang dibersihkan dengan melindungi active
+dan previous untuk rollback. Folder/data persisten tidak dihapus. Migration
+yang belum direview tetap menghentikan alur otomatis sebelum schema diubah.
+
 ## 7. Pemeriksaan
 
 - Frontend: `npm run typecheck`, `npm run lint`, `npm test`, dan `npm run build`.
