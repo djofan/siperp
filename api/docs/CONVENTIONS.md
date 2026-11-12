@@ -355,8 +355,15 @@ lampiran privat. Tidak memerlukan migration.
 
 GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
 berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
-Respons `{data:{name,code,email,nis,phone,address,gender}}` hanya field yang diizinkan,
-tanpa hash password, token, atau metadata angkatan. Header `no-store, private`.
+Respons `{data:{name,code,email,nis,phone,address,gender,cohortName}}` hanya field yang diizinkan.
+`cohortName` adalah nama angkatan yang ditetapkan pada profil sendiri, tanpa metadata
+angkatan lain, hash password atau token. Header `no-store, private`.
 Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
-Tidak ada update data pribadi melalui endpoint ini; perubahan password tetap memakai
-PUT `/api/v1/academy/profile/password` dengan verifikasi password saat ini.
+PUT `/api/v1/academy/profile` setelah ganti password awal menerima tepat `name`,
+`phone`, `address` (wajib). Nama 2–100 karakter, alamat maksimal 2000 karakter;
+nomor HP Indonesia dengan awalan 08/+628/628 dinormalisasi ke `^628[0-9]{7,12}$`.
+Field lain ditolak 422, termasuk nomor akun/peserta, kelompok, angkatan, email,
+userId/profileId dan password. Nama Core dan kontak profil Academy disimpan atomik
+hanya untuk user login; kode, enrollment dan password tidak berubah. Respons profil
+terbaru tetap `no-store, private`. Tidak memerlukan migration. Perubahan password
+tetap memakai PUT `/api/v1/academy/profile/password` dengan password saat ini.

@@ -198,12 +198,57 @@ it('returns only the authenticated participants profile even when another user i
     $response = $this->getJson('/api/v1/academy/profile?userId='.$other->id.'&profileId='.$otherProfile->id)->assertOk()
         ->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonPath('data.name', $this->student->name)->assertJsonPath('data.nis', 'PAZ-QA')
-        ->assertJsonPath('data.phone', '628123456789')->assertJsonPath('data.address', 'Alamat sendiri');
-    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender'])
+        ->assertJsonPath('data.phone', '628123456789')->assertJsonPath('data.address', 'Alamat sendiri')
+        ->assertJsonPath('data.cohortName', $this->cohort->title);
+    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender', 'cohortName'])
         ->and($response->getContent())->not->toContain('PRIVATE_OTHER', 'PRIVATE_ADDRESS', 'private-other@example.test', 'password_hash');
 });
 
 it('requires authentication to read participant profile data', function () {
     $this->app['auth']->forgetGuards();
     $this->getJson('/api/v1/academy/profile')->assertUnauthorized();
+});
+
+it('updates only the own contact profile and preserves enrollment identifiers and login', function () {
+    $this->student->forceFill(['code' => 'PAZ001'])->save();
+    $this->profile->forceFill(['gender' => 'IKHWAN'])->save();
+    $beforePassword = $this->student->password_hash;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama Baru', 'phone' => '0812-3456-7890', 'address' => 'Alamat baru'])
+        ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('data.name', 'Nama Baru')->assertJsonPath('data.phone', '6281234567890')
+        ->assertJsonPath('data.cohortName', $this->cohort->title);
+    expect($this->student->fresh()->name)->toBe('Nama Baru')
+        ->and($this->student->fresh()->code)->toBe('PAZ001')
+        ->and($this->student->fresh()->password_hash)->toBe($beforePassword)
+        ->and($this->profile->fresh()->nis)->toBe('PAZ-QA')
+        ->and($this->profile->fresh()->gender)->toBe('IKHWAN')
+        ->and($this->profile->fresh()->cohortId)->toBe($this->cohort->id);
+    $this->getJson('/api/v1/academy/profile')->assertOk()->assertJsonPath('data.address', 'Alamat baru');
+});
+
+it('rejects immutable fields and attempts to target other participant accounts atomically', function (string $field) {
+    $before = $this->student->name;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Tidak boleh tersimpan', 'phone' => '6281234567890', 'address' => 'Alamat baru', $field => 'foreign-or-modified'])
+        ->assertUnprocessable();
+    expect($this->student->fresh()->name)->toBe($before);
+})->with(['code', 'nis', 'gender', 'cohortId', 'cohortName', 'userId', 'profileId', 'email', 'password', 'is_superadmin']);
+
+it('rejects invalid contact input without partially updating the name', function (array $invalid) {
+    $before = $this->student->name;
+    $this->putJson('/api/v1/academy/profile', array_replace(['name' => 'Nama valid', 'phone' => '6281234567890', 'address' => 'Alamat valid'], $invalid))
+        ->assertUnprocessable();
+    expect($this->student->fresh()->name)->toBe($before);
+})->with([[['name' => '']], [['phone' => 'abc081234567890']], [['phone' => '123']], [['address' => str_repeat('a', 2001)]]]);
+
+it('blocks profile updates before initial password change and after participant deletion', function () {
+    $input = ['name' => 'Nama baru', 'phone' => '+6281234567890', 'address' => 'Alamat baru'];
+    $this->profile->forceFill(['mustChangePassword' => true])->save();
+    $this->putJson('/api/v1/academy/profile', $input)->assertForbidden();
+    $this->profile->forceFill(['mustChangePassword' => false, 'deletedAt' => now()])->save();
+    $this->putJson('/api/v1/academy/profile', $input)->assertNotFound();
+});
+
+it('requires authentication to update a participant profile', function () {
+    $this->app['auth']->forgetGuards();
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama baru', 'phone' => '6281234567890', 'address' => 'Alamat baru'])->assertUnauthorized();
 });
