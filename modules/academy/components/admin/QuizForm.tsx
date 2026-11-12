@@ -2,7 +2,7 @@
 
 import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
-import { FormField, Input } from "@/modules/academy/components/ui/FieldCompat";
+import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 
@@ -45,10 +45,12 @@ export function QuizForm({ action, initial, creating = false, chapterField, with
       <Button type="button" variant="secondary" disabled={pending || questionRows.length >= 100} onClick={() => { setQuestionRows([...questionRows, { key: nextQuestionKey, initial: undefined }]); setNextQuestionKey(nextQuestionKey + 1); }}>Tambah Pertanyaan</Button>
     </section>}
     <input type="hidden" name="isPublished" value={values.isActive ? "on" : ""} />
-    <label className="flex items-center gap-3 text-sm text-foreground">
-      <input name="isActive" type="checkbox" disabled={creating && !withQuestions} checked={values.isActive} onChange={event => setValues({ ...values, isActive: event.target.checked, isPublished: event.target.checked })} />
-      Aktifkan Ujian
-    </label>
+    <FormField label="Status publikasi" htmlFor={prefix + "-publication"} hint={creating && !withQuestions ? "Simpan draft dan lengkapi soal sebelum memublikasikan ujian." : "Draft menyembunyikan ujian dari peserta. Terpublikasi mengaktifkan ujian sesuai jadwal mulai dan selesai."}>
+      <Select id={prefix + "-publication"} name="isActive" disabled={creating && !withQuestions} value={values.isActive ? "on" : ""} onChange={event => setValues({ ...values, isActive: event.target.value === "on", isPublished: event.target.value === "on" })}>
+        <option value="">Draft</option>
+        <option value="on">Terpublikasi</option>
+      </Select>
+    </FormField>
     <Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : creating && !withQuestions ? "Simpan draft" : "Simpan ujian"}</Button>
   </form>;
 }

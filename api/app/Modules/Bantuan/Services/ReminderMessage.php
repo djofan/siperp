@@ -8,7 +8,7 @@ class ReminderMessage
 {
     public static function greeting(string $name): string
     {
-        return "Assalamu'alaikum, Bapak/Ibu ".$name.",\n\n";
+        return "Assalamu'alaikum, Akh ".$name.",\n\n";
     }
 
     public static function closing(): string

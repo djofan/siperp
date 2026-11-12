@@ -143,13 +143,13 @@ class CurriculumController
         }, 3));
     }
 
-    public function lessonInput(Request $request): array
+    public function lessonInput(Request $request, bool $hasPdfAttachment = false): array
     {
         $data = $this->common($request) + $request->validate(['videoProvider' => 'required|in:AUDIO,YOUTUBE,VIMEO,BUNNY', 'videoUrl' => 'nullable|string|max:2048', 'shortDescription' => 'nullable|string|max:2000', 'contentSummary' => 'nullable|string|max:30000', 'thumbnailUrl' => 'nullable|string|max:2048', 'releaseDay' => 'sometimes|integer|min:1|max:30']);
         $data['videoUrl'] = $data['videoUrl'] ?? '';
         $data['releaseDay'] = $data['releaseDay'] ?? 1;
         $data['thumbnailUrl'] = $this->url($data['thumbnailUrl'] ?? null);
-        abort_if($data['isPublished'] && ! $data['videoUrl'] && empty($data['contentSummary']), 422, 'Isi teks atau audio sebelum publikasi.');
+        abort_if($data['isPublished'] && ! $data['videoUrl'] && empty($data['contentSummary']) && ! $hasPdfAttachment, 422, 'Isi teks, audio, atau PDF sebelum publikasi.');
         if ($data['videoProvider'] === 'AUDIO') {
             $this->url($data['videoUrl']);
         } else {
@@ -236,11 +236,15 @@ class CurriculumController
             $query->where('title', 'like', '%'.mb_substr($request->input('search'), 0, 100).'%');
         }
 
-        if ($request->filled('cohort')) { $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort'))); }
+        if ($request->filled('cohort')) {
+            $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort')));
+        }
         if ($request->boolean('all')) {
             $items = $query->get()->map(fn ($row) => AcademyDto::make($row));
+
             return $this->data(['items' => $items, 'total' => $items->count(), 'page' => 1, 'pages' => 1]);
         }
+
         return $this->data(AcademyDto::page($query, (int) $request->input('page', 1)));
     }
 

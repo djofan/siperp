@@ -15,8 +15,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const cohort = lesson.chapter.course.cohort;
   const audioUrl = lesson.videoProvider === "AUDIO" ? safeResourceUrl(lesson.videoUrl) : null;
   const file = lesson.attachments.find(item => item.fileUrl === lesson.videoUrl);
+  const pdfs = lesson.attachments.filter(item => item.fileType === "application/pdf");
   return <><AdminHeading title={lesson.title} description={cohort ? "Angkatan: " + cohort.title : "Arsip belum memiliki angkatan. Duplikat ke angkatan tujuan untuk menjaga riwayat."} backHref={"/admin/academy/materi?cohort=" + encodeURIComponent(cohort?.id ?? "unassigned")} /><SavedNotice saved={(await searchParams).tersimpan === "1"} />
     <ContentForm key={lesson.updatedAt.toString()} kind="lesson" flat existingAudio={{ url: audioUrl, title: file?.title }} contextField={!cohort ? <CohortField cohorts={cohorts} /> : undefined} action={saveMaterial.bind(null, id)} initial={{ title: lesson.title, isPublished: lesson.isPublished, order: lesson.order, shortDescription: lesson.shortDescription, releaseDay: lesson.releaseDay }} />
+    {pdfs.length > 0 && <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-5"><h2 className="mb-3 font-semibold">File PDF</h2><ul className="space-y-2">{pdfs.map(pdf => {
+      const url = safeResourceUrl(pdf.fileUrl);
+      return url ? <li key={pdf.id}><a href={url} target="_blank" rel="noopener noreferrer" className="break-words text-sm text-green-700 underline">{pdf.title} ↗</a></li> : null;
+    })}</ul><p className="mt-3 text-xs text-gray-500">PDF baru ditambahkan sebagai lampiran. File sebelumnya tetap tersedia.</p></section>}
     <section className="mt-6 rounded-2xl border border-gray-100 bg-white p-5"><h2 className="mb-3 font-semibold">Duplikat ke angkatan lain</h2><p className="mb-4 text-sm text-gray-500">Judul, urutan, deskripsi, dan audio disalin sebagai draft. Progres dan nilai peserta tidak disalin.</p><ActionForm action={duplicateMaterial.bind(null, id)} label="Duplikat materi"><CohortField cohorts={cohorts} exclude={cohort?.id} id="duplicate-cohort" /></ActionForm></section>
     <DeleteForm title={lesson.title} action={deleteMaterial.bind(null, id)} />
   </>;

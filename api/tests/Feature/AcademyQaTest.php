@@ -137,3 +137,22 @@ it('requires the current password and revokes all sessions after a password chan
     expect(Hash::check('new-qa-password', $this->student->fresh()->password_hash))->toBeTrue();
     expect($this->student->tokens()->count())->toBe(0);
 });
+
+it('returns only the authenticated participants profile even when another user is requested', function () {
+    $this->profile->forceFill(['phone' => '628123456789', 'address' => 'Alamat sendiri', 'gender' => 'IKHWAN', 'mustChangePassword' => true])->save();
+    $other = new User;
+    $other->forceFill(['name' => 'PRIVATE_OTHER', 'email' => 'private-other@example.test', 'password_hash' => bcrypt('other-password'), 'is_active' => true])->save();
+    $otherProfile = new ZakatAcademyProfile;
+    $otherProfile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-OTHER', 'phone' => '628998887776', 'address' => 'PRIVATE_ADDRESS'])->save();
+    $response = $this->getJson('/api/v1/academy/profile?userId='.$other->id.'&profileId='.$otherProfile->id)->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('data.name', $this->student->name)->assertJsonPath('data.nis', 'PAZ-QA')
+        ->assertJsonPath('data.phone', '628123456789')->assertJsonPath('data.address', 'Alamat sendiri');
+    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender'])
+        ->and($response->getContent())->not->toContain('PRIVATE_OTHER', 'PRIVATE_ADDRESS', 'private-other@example.test', 'password_hash');
+});
+
+it('requires authentication to read participant profile data', function () {
+    $this->app['auth']->forgetGuards();
+    $this->getJson('/api/v1/academy/profile')->assertUnauthorized();
+});

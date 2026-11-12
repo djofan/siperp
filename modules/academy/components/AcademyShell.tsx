@@ -7,16 +7,13 @@ import { publicNavigation } from "./public-navigation";
 import { DashboardChrome } from "./DashboardChrome";
 const links = [
   { path: "belajar", label: "Dashboard", icon: "Dashboard" },
-  { path: "angkatan", label: "Angkatan Saya", icon: "Users" },
   { path: "materi", label: "Materi", icon: "BookOpen" },
   { path: "progres", label: "Kemajuan Saya", icon: "Progress" },
   { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
   { path: "pengingat", label: "Pengingat Ujian", icon: "Quiz" },
-  { path: "peringkat", label: "Peringkat Saya", icon: "Trophy" },
-  { path: "sertifikat", label: "Sertifikat Saya", icon: "GraduationCap" },
+  { path: "peringkat", label: "Peringkat & Sertifikat", icon: "Trophy" },
   { path: "catatan", label: "Catatan Belajar", icon: "BookOpen" },
-  { path: "tanya-jawab", label: "Tanya Jawab Ustadz", icon: "Users" },
-  { path: "akun", label: "Ganti Password", icon: "Settings" },
+  { path: "akun", label: "Profil", icon: "Users" },
 ] as const;
 const teacherLinks = [
   { path: "", label: "Dashboard Pengajar", icon: "Dashboard" },

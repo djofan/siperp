@@ -4,6 +4,29 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Setoran Tanwir dan Ojol mendukung `files[]` (1–10 audio/video, total maksimal 50 MiB)
+pada `POST /api/v1/{module}/submissions`. Field lama `file` tetap didukung, tetapi
+tidak boleh digabung dengan `files`. Semua berkas harus sesuai jenis tugas. Batch
+disimpan atomik sebagai satu percobaan, dan pengiriman ulang mengganti seluruh batch
+yang ditolak. Detail peserta/guru mengembalikan `files` berisi index/nama/MIME/ukuran,
+tanpa path privat. Pemutaran memakai endpoint berizin dengan `?index=0..9`.
+
+Deployment perubahan ini memerlukan migration `2026_11_12_150000_add_learning_submission_media_files`.
+Backup database sebelum migration di VPS; kemudian build/restart frontend dan backend.
+PHP `upload_max_filesize` minimal 50M, `post_max_size` dan Nginx `client_max_body_size`
+minimal 64M untuk menampung multipart. File lama tetap bisa diputar tanpa backfill.
+
+Login Bantuan PWA memakai `pwa: true` pada `POST /api/v1/auth/login` dan memerlukan
+akses Bantuan aktif. Cookie HttpOnly dan token berlaku 30 hari, terpisah dari durasi
+login browser biasa. Tidak ada logout karena idle; logout eksplisit, pencabutan token,
+penggantian password yang mencabut sesi, dan penonaktifan akun tetap berlaku. Sesi PWA
+lama perlu login ulang sekali agar mendapat durasi baru.
+
+`POST /api/v1/bantuan/applications/{id}/actions/survey_revise` memerlukan `version`.
+Hanya verifikator penugasan dapat membuka kembali survei pada `survey_cc_review` atau
+`survey_submitted`, sebelum persetujuan nominal. Data dan dokumen dipertahankan; survei
+kembali ke `survey_assigned` dan dikirim ulang melalui pemeriksaan Call Center.
+
 Reset password akun operasional: `POST /api/v1/core/module-accounts/{id}/password-reset`
 memerlukan akun aktif dan otorisasi admin. Admin modul hanya boleh mereset akun operasional
 yang seluruh akses modulnya berada dalam cakupan pengelolaannya; Superadmin boleh lintas modul.
@@ -293,3 +316,26 @@ Nama tidak dikenal/ambigu membatalkan seluruh impor (422). `volunteerId` tingkat
 tetap diterima untuk klien lama; bila nama per baris dikirim, nama itu yang digunakan.
 Template baru berisi Nama, Program, Nominal Bantuan, Nama Verifikator, dengan dropdown
 nama dari daftar aktif. Data dummy unduhan menggunakan nama dari daftar yang sama.
+
+### PDF materi Academy
+
+POST `/api/v1/academy/admin/materials` dan PUT `/api/v1/academy/admin/materials/{id}`
+menerima multipart `pdfFile` opsional (PDF maksimal 10 MiB) selain `file` audio
+maksimal 50 MiB. Total kedua file maksimal 50 MiB. Nama ekstensi bukan satu-satunya
+validasi: PDF diperiksa MIME dan header. Admin Academy saja; file tetap di storage
+privat dan endpoint download memakai izin peserta serta jadwal rilis yang sama.
+Materi hanya-PDF dapat dipublikasikan. PDF baru menambah lampiran; omission pada
+edit mempertahankan PDF/audio lama. `file` tetap hanya menerima audio pada formulir
+materi. Gagal menyimpan salah satu file membatalkan transaksi database dan membersihkan
+file baru yang sempat tersimpan. Listing menambahkan `_count.pdfs` tanpa membuka URL
+lampiran privat. Tidak memerlukan migration.
+
+### Profil peserta Academy
+
+GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
+berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
+Respons `{data:{name,code,email,nis,phone,address,gender}}` hanya field yang diizinkan,
+tanpa hash password, token, atau metadata angkatan. Header `no-store, private`.
+Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
+Tidak ada update data pribadi melalui endpoint ini; perubahan password tetap memakai
+PUT `/api/v1/academy/profile/password` dengan verifikasi password saat ini.

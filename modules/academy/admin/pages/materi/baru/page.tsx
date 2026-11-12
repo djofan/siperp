@@ -11,5 +11,5 @@ export default async function NewMaterialPage({ searchParams }: { searchParams: 
   const cohorts = await academyPage<AcademyCohort[]>("academy/admin/cohorts");
   const { cohort = "" } = await searchParams;
   const nextOrder = cohort ? (await listMaterials("", 1, true, "", cohort)).nextOrder ?? 1 : 1;
-  return <><AdminHeading title="Tambah materi" description="Pilih angkatan, isi data materi, unggah audio, lalu tentukan publikasinya." backHref={"/admin/academy/materi?cohort=" + encodeURIComponent(cohort)} /><ContentForm kind="lesson" flat uploadAudio initial={{ order: nextOrder }} contextField={<CohortField cohorts={cohorts} value={cohort} />} action={saveMaterial.bind(null, null)} /></>;
+  return <><AdminHeading title="Tambah materi" description="Pilih angkatan, isi data materi, unggah audio atau PDF, lalu tentukan publikasinya." backHref={"/admin/academy/materi?cohort=" + encodeURIComponent(cohort)} /><ContentForm kind="lesson" flat uploadAudio initial={{ order: nextOrder }} contextField={<CohortField cohorts={cohorts} value={cohort} />} action={saveMaterial.bind(null, null)} /></>;
 }
