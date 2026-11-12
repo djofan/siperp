@@ -1990,6 +1990,32 @@ it('imports routine santunan atomically and prevents duplicate imports', functio
 });
 
 
+it('matches imported verifier names to active volunteers and rolls back unknown or ambiguous names', function () {
+    $one = bantuanUser('volunteer');
+    $two = bantuanUser('volunteer');
+    $one->forceFill(['name' => 'Petugas Satu'])->save();
+    $two->forceFill(['name' => 'Petugas Dua'])->save();
+    $input = ['period' => '2026-11', 'rows' => [
+        ['recipientName' => 'Dummy Anak', 'category' => 'orphan', 'amount' => 300000, 'verifierName' => ' petugas  satu '],
+        ['recipientName' => 'Dummy Ibu', 'category' => 'widow', 'amount' => 250000, 'verifierName' => 'Petugas Dua'],
+    ]];
+    $url = '/api/v1/bantuan/santunan/imports';
+    $this->actingAs($this->treasurer, 'sanctum')->postJson($url, $input)->assertOk()->assertJsonPath('data.createdCount', 2);
+    $this->assertDatabaseHas('bantuan_santunan', ['category' => 'orphan', 'volunteer_id' => $one->id]);
+    $this->assertDatabaseHas('bantuan_santunan', ['category' => 'widow', 'volunteer_id' => $two->id]);
+    $input['period'] = '2026-12';
+    $input['rows'][1]['verifierName'] = 'Tidak Terdaftar';
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $input['rows'][1]['verifierName'] = 'Petugas Dua';
+    $two->forceFill(['is_active' => false])->save();
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $two->forceFill(['is_active' => true, 'name' => 'Petugas Satu'])->save();
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+});
+
 it('lets only the assigned verifier reopen a pending survey for corrections without losing evidence', function (string $state) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     $survey = bantuanSurvey();

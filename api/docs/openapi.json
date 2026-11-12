@@ -1531,7 +1531,7 @@
           "Bantuan"
         ],
         "summary": "Impor santunan rutin dari Excel yang telah dibaca klien",
-        "description": "Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.",
+        "description": "Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.",
         "security": [
           {
             "bearerAuth": []
@@ -1545,8 +1545,29 @@
                 "type": "object",
                 "required": [
                   "period",
-                  "volunteerId",
                   "rows"
+                ],
+                "allOf": [
+                  {
+                    "if": {
+                      "not": {
+                        "required": [
+                          "volunteerId"
+                        ]
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "rows": {
+                          "items": {
+                            "required": [
+                              "verifierName"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
                 ],
                 "properties": {
                   "period": {
@@ -1570,6 +1591,11 @@
                         "amount"
                       ],
                       "properties": {
+                        "verifierName": {
+                          "type": "string",
+                          "maxLength": 191,
+                          "description": "Nama persis dari daftar penyalur aktif; abaikan kapital dan spasi berlebih. Nama ambigu/tidak aktif/tidak ada ditolak. Wajib bila volunteerId legacy tidak dikirim."
+                        },
                         "recipientName": {
                           "type": "string",
                           "minLength": 1,
