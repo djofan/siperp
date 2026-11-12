@@ -4,6 +4,18 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Setoran Tanwir dan Ojol mendukung `files[]` (1–10 audio/video, total maksimal 50 MiB)
+pada `POST /api/v1/{module}/submissions`. Field lama `file` tetap didukung, tetapi
+tidak boleh digabung dengan `files`. Semua berkas harus sesuai jenis tugas. Batch
+disimpan atomik sebagai satu percobaan, dan pengiriman ulang mengganti seluruh batch
+yang ditolak. Detail peserta/guru mengembalikan `files` berisi index/nama/MIME/ukuran,
+tanpa path privat. Pemutaran memakai endpoint berizin dengan `?index=0..9`.
+
+Deployment perubahan ini memerlukan migration `2026_11_12_150000_add_learning_submission_media_files`.
+Backup database sebelum migration di VPS; kemudian build/restart frontend dan backend.
+PHP `upload_max_filesize` minimal 50M, `post_max_size` dan Nginx `client_max_body_size`
+minimal 64M untuk menampung multipart. File lama tetap bisa diputar tanpa backfill.
+
 Login Bantuan PWA memakai `pwa: true` pada `POST /api/v1/auth/login` dan memerlukan
 akses Bantuan aktif. Cookie HttpOnly dan token berlaku 30 hari, terpisah dari durasi
 login browser biasa. Tidak ada logout karena idle; logout eksplisit, pencabutan token,
