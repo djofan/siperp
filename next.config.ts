@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
     proxyTimeout: 300_000,
   },
   async headers() {
-    return [{source:"/bantuan-app/:path*",headers:[
+    return [
+      {source:"/academy/sw.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"},{key:"Service-Worker-Allowed",value:"/academy/"}]},
+      {source:"/academy/:path*",headers:[{key:"Cache-Control",value:"no-store, private"}]},
+      {source:"/bantuan-app/:path*",headers:[
       {key:"Cache-Control",value:"no-store, private"},
       {key:"X-Robots-Tag",value:"noindex, nofollow"},
       {key:"Referrer-Policy",value:"same-origin"},
