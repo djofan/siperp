@@ -29,10 +29,10 @@ const adminLinks = [
   { path: "", label: "Dashboard", icon: "Dashboard" },
   { path: "/program", label: "Program & Modul", icon: "BookOpen" },
   { path: "/kuis", label: "Kuis", icon: "Quiz" },
-  { path: "/peserta", label: "Pengguna", icon: "Users" },
+  { path: "/peserta", label: "Peserta", icon: "Users" },
   { path: "/sertifikat", label: "Sertifikat", icon: "GraduationCap" },
   { path: "/pengaturan", label: "Pengaturan", icon: "Settings" },
-  { path: "/pendaftaran", label: "Pendaftaran & Grup", icon: "Users" },
+  { path: "/pendaftaran", label: "Pendaftaran", icon: "Users" },
   { path: "/angkatan", label: "Angkatan", icon: "Users" },
 ] as const;
 export function AcademyShell({ user, children, admin = false, csPhone = "628111186626", unreadReminders = 0 }: { user: { name: string; nis: string | null; isTeacher?: boolean; isSuperadmin?: boolean } | null; children: ReactNode; admin?: boolean; csPhone?: string; unreadReminders?: number }) {

@@ -26,8 +26,9 @@
 
 ## Impor pendaftaran peserta dari Excel
 
-1. Buka **Peserta & Progres → Pendaftaran** (menu **Pendaftaran & Grup** juga
-   menuju tab yang sama), lalu pilih **Unduh template Excel**.
+1. Buka panel **Pendaftaran** di `/admin/academy/pendaftaran`, lalu pilih
+   **Unduh template Excel**. Panel **Peserta** hanya menampilkan daftar peserta;
+   pengelolaan angkatan berada di panel **Angkatan**.
 2. Isi satu lembar dengan judul kolom **Nama**, **No HP**, **Alamat** pada baris
    pertama. Data dimulai baris kedua. Semua kolom wajib diisi; maksimal 200 peserta
    dan ukuran file 5 MB dalam format `.xlsx`. Simpan file `.xls` lama sebagai `.xlsx`.
