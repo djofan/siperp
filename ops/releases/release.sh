@@ -167,12 +167,11 @@ build_release() {
   meta phase "$ID" ready
   MODE=none
   echo "RELEASE_READY: $ID"
-  echo "Activate: bash $HERE/release.sh activate $ID"
+  if [[ $ACTION != update ]]; then echo "Activate: bash $HERE/release.sh activate $ID"; fi
 }
 
-case "$ACTION" in
-prepare)
-  REF=${2:-main}
+prepare_release() {
+  REF=${1:-main}
   [[ $REF == main || $REF =~ ^[a-f0-9]{7,40}$ ]] || { echo 'Use main or a merged commit SHA.' >&2; exit 1; }
   [[ -z $(as_app git -C "$SOURCE" status --porcelain) ]] || { echo 'Source checkout has local changes; stop.' >&2; exit 1; }
   as_app git -C "$SOURCE" fetch --prune origin main
@@ -182,6 +181,11 @@ prepare)
   OLD=$(meta active)
   record "$OLD"
   OLD_DIR=$DIR; OLD_COMMIT=$COMMIT
+  if [[ $ACTION == update && $SHA == $OLD_COMMIT ]]; then
+    UPDATE_NOOP=1
+    echo "ALREADY_UP_TO_DATE: $OLD"
+    return 0
+  fi
   as_app git -C "$SOURCE" merge-base --is-ancestor "$OLD_COMMIT" "$SHA"
   echo '=== Changes since active release ==='
   as_app git -C "$SOURCE" log --oneline "$OLD_COMMIT..$SHA"
@@ -217,6 +221,119 @@ prepare)
   meta phase "$ID" installed
   PHASE=installed
   build_release
+}
+
+switch_release() {
+  local kind=${1:?} target=${2:-}
+  OLD=$(meta active)
+  if [[ $kind == rollback ]]; then ID=$(meta previous); else ID=${target:?Release ID required.}; fi
+  meta check-switch "$ID" "$kind"
+  record "$OLD"
+  OLD_DIR=$DIR
+  record "$ID"
+  if [[ $kind == activate ]]; then meta inputs "$ID"; fi
+  plan_now
+  [[ $(node -p 'JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")).length' "$BASE/plans/$ID.json") == 0 ]] || { echo 'Pending migrations. Stop.' >&2; exit 1; }
+  health "$WEB_PORT"
+  assert_deployment "http://127.0.0.1:$WEB_PORT/" "$ID"
+  SETTINGS=$(as_app /usr/bin/php8.4 "$HERE/queue-settings.php" "$DIR")
+  read -r WORKER_TIMEOUT STOP_TIMEOUT <<< "$SETTINGS"
+  [[ $WORKER_TIMEOUT =~ ^[0-9]+$ && $STOP_TIMEOUT =~ ^[0-9]+$ ]] || exit 1
+  backup
+  meta routing "$ID" > "$TX/routing.next.conf"
+  cat > "$TX/worker.next.conf" <<EOF
+[Service]
+WorkingDirectory=$DIR/api
+ExecStart=
+ExecStart=/usr/bin/php8.4 $DIR/api/artisan queue:work payment --queue=callbacks,receipts --sleep=3 --tries=3 --timeout=$WORKER_TIMEOUT
+TimeoutStopSec=$STOP_TIMEOUT
+KillMode=mixed
+SendSIGKILL=no
+EOF
+  exec 8>>"$BASE/shared/scheduler.lock"
+  echo '=== Waiting for the current scheduler invocation to finish ==='
+  flock -w 360 8
+  MODE=switch
+  stop_worker
+  atomic_file "$TX/worker.next.conf" "$WORKER"
+  systemctl daemon-reload
+  point_current "$DIR"
+  systemctl start siperp-worker
+  systemctl is-active --quiet siperp-worker
+  atomic_file "$TX/routing.next.conf" "$MAP"
+  nginx -t
+  systemctl reload nginx
+  public_health
+  assert_deployment https://erp.lazsip.or.id/ "$ID"
+  meta switched "$ID" "$kind"
+  MODE=none
+  flock -u 8
+  echo "RELEASE_ACTIVE: $ID"
+  echo "Rollback: bash $HERE/release.sh rollback"
+}
+
+retire_release() {
+  local policy=${2:-manual}
+  ID=${1:?Release ID required.}
+  meta retire-check "$ID" "$policy"
+  record "$ID"
+  backup
+  meta routing "$(meta active)" "$ID" > "$TX/routing.next.conf"
+  atomic_file "$TX/routing.next.conf" "$MAP"
+  if ! nginx -t; then atomic_file "$TX/routing.original.conf" "$MAP"; exit 1; fi
+  MODE=retire
+  systemctl reload nginx
+  if as_app pm2 describe "$NAME" >/dev/null 2>&1; then as_app pm2 delete "$NAME"; fi
+  [[ -f $API_FILE ]] && unlink "$API_FILE"
+  nginx -t
+  systemctl reload nginx
+  meta retired "$ID" "$policy"
+  as_app pm2 save
+  public_health
+  MODE=none
+  echo "RETIRED: $ID. Files/backups retained; no directory or storage was deleted."
+}
+
+cleanup_obsolete() {
+  local obsolete old_id
+  obsolete=$(meta cleanup-candidates)
+  while IFS= read -r old_id; do
+    [[ -n $old_id ]] || continue
+    echo "=== Releasing obsolete process $old_id; active and previous are protected ==="
+    retire_release "$old_id" automatic
+  done <<< "$obsolete"
+}
+
+update_release() {
+  local requested=${1:-main}
+  [[ $requested == main || $requested =~ ^[a-f0-9]{7,40}$ ]] || { echo 'Use main or a merged commit SHA.' >&2; return 1; }
+  UPDATE_NOOP=0
+  public_health
+  cleanup_obsolete
+  prepare_release "$requested"
+  if (( UPDATE_NOOP )); then
+    echo "UPDATE_COMPLETE: $(meta active) (already up to date)."
+    return 0
+  fi
+  local prepared=$ID
+  record "$prepared"
+  if [[ $PHASE == awaiting-migration ]]; then
+    echo "UPDATE_PAUSED: $prepared needs migration review. Active release is unchanged."
+    return 0
+  fi
+  [[ $PHASE == ready ]] || { echo "Release is not ready; update stopped." >&2; return 1; }
+  switch_release activate "$prepared"
+  cleanup_obsolete
+  echo "UPDATE_COMPLETE: $(meta active)"
+  meta status
+}
+
+case "$ACTION" in
+update)
+  update_release "${2:-main}"
+  ;;
+prepare)
+  prepare_release "${2:-main}"
   ;;
 build)
   ID=${2:?Release ID required.}
@@ -258,72 +375,11 @@ migrate)
   echo "MIGRATION_READY: $ID. Continue with: bash $HERE/release.sh build $ID"
   ;;
 activate|rollback)
-  OLD=$(meta active)
-  if [[ $ACTION == rollback ]]; then ID=$(meta previous); else ID=${2:?Release ID required.}; fi
-  meta check-switch "$ID" "$ACTION"
-  record "$OLD"
-  OLD_DIR=$DIR
-  record "$ID"
-  if [[ $ACTION == activate ]]; then meta inputs "$ID"; fi
-  plan_now
-  [[ $(node -p 'JSON.parse(require("node:fs").readFileSync(process.argv[1],"utf8")).length' "$BASE/plans/$ID.json") == 0 ]] || { echo 'Pending migrations. Stop.' >&2; exit 1; }
-  health "$WEB_PORT"
-  assert_deployment "http://127.0.0.1:$WEB_PORT/" "$ID"
-  SETTINGS=$(as_app /usr/bin/php8.4 "$HERE/queue-settings.php" "$DIR")
-  read -r WORKER_TIMEOUT STOP_TIMEOUT <<< "$SETTINGS"
-  [[ $WORKER_TIMEOUT =~ ^[0-9]+$ && $STOP_TIMEOUT =~ ^[0-9]+$ ]] || exit 1
-  backup
-  meta routing "$ID" > "$TX/routing.next.conf"
-  cat > "$TX/worker.next.conf" <<EOF
-[Service]
-WorkingDirectory=$DIR/api
-ExecStart=
-ExecStart=/usr/bin/php8.4 $DIR/api/artisan queue:work payment --queue=callbacks,receipts --sleep=3 --tries=3 --timeout=$WORKER_TIMEOUT
-TimeoutStopSec=$STOP_TIMEOUT
-KillMode=mixed
-SendSIGKILL=no
-EOF
-  exec 8>>"$BASE/shared/scheduler.lock"
-  echo '=== Waiting for the current scheduler invocation to finish ==='
-  flock -w 360 8
-  MODE=switch
-  stop_worker
-  atomic_file "$TX/worker.next.conf" "$WORKER"
-  systemctl daemon-reload
-  point_current "$DIR"
-  systemctl start siperp-worker
-  systemctl is-active --quiet siperp-worker
-  atomic_file "$TX/routing.next.conf" "$MAP"
-  nginx -t
-  systemctl reload nginx
-  public_health
-  assert_deployment https://erp.lazsip.or.id/ "$ID"
-  meta switched "$ID" "$ACTION"
-  MODE=none
-  flock -u 8
-  echo "RELEASE_ACTIVE: $ID"
-  echo "Rollback: bash $HERE/release.sh rollback"
+  switch_release "$ACTION" "${2:-}"
   ;;
 retire)
-  ID=${2:?Release ID required.}
   [[ ${3:-} == --ack-old-tabs-reload ]] || { echo 'Retirement may require old tabs to reload; use --ack-old-tabs-reload after review.' >&2; exit 1; }
-  meta retire-check "$ID"
-  record "$ID"
-  backup
-  meta routing "$(meta active)" "$ID" > "$TX/routing.next.conf"
-  atomic_file "$TX/routing.next.conf" "$MAP"
-  if ! nginx -t; then atomic_file "$TX/routing.original.conf" "$MAP"; exit 1; fi
-  MODE=retire
-  systemctl reload nginx
-  as_app pm2 delete "$NAME"
-  [[ -f $API_FILE ]] && unlink "$API_FILE"
-  nginx -t
-  systemctl reload nginx
-  meta retired "$ID"
-  as_app pm2 save
-  public_health
-  MODE=none
-  echo "RETIRED: $ID. Files/backups retained; no directory or storage was deleted."
+  retire_release "${2:?Release ID required.}" manual
   ;;
-*) echo 'Commands: init | status | prepare [main|SHA] | inspect ID | migrate ID TOKEN --reviewed-compatible | build ID | activate ID | rollback | retire ID --ack-old-tabs-reload' >&2; exit 1 ;;
+*) echo 'Commands: update [main|SHA] | init | status | prepare [main|SHA] | inspect ID | migrate ID TOKEN --reviewed-compatible | build ID | activate ID | rollback | retire ID --ack-old-tabs-reload' >&2; exit 1 ;;
 esac
