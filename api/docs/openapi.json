@@ -670,7 +670,7 @@
                 },
                 "password": {
                   "type": "string",
-                  "description": "Random initial password, disclosed only in the successful import response. Must be changed on first login; never persisted as plaintext."
+                  "description": "Default initial password 12345678 for newly imported participants. Must be changed on first login; persisted only as a password hash. Existing accounts are never reset by re-importing."
                 }
               }
             }

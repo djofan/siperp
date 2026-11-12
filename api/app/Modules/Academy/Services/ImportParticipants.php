@@ -7,7 +7,6 @@ use App\Modules\Academy\Models\ZakatAcademyProfile;
 use App\Modules\Core\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ImportParticipants
@@ -51,7 +50,7 @@ class ImportParticipants
                 do {
                     $code = 'PAZ'.str_pad((string) ++$number, 3, '0', STR_PAD_LEFT);
                 } while (DB::table('user_login_codes')->where('code', $code)->exists() || User::where('code', $code)->exists());
-                $password = 'Ia!'.Str::random(16);
+                $password = '12345678';
                 $user = new User;
                 $user->forceFill(['code' => $code, 'name' => $row['name'], 'email' => strtolower($code).'@peserta.sip.invalid', 'password_hash' => Hash::make($password), 'is_active' => true])->save();
                 app(AcademyParticipants::class)->createProfile($user->id, [

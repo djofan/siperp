@@ -62,7 +62,7 @@ document.components.schemas.AcademyParticipantImportResult = {
     skippedCount: { type: 'integer', minimum: 0, maximum: 200 },
     credentials: { type: 'array', maxItems: 200, items: {
       type: 'object', additionalProperties: false, required: ['name', 'phone', 'code', 'password'],
-      properties: { name: { type: 'string' }, phone: { type: 'string' }, code: { type: 'string' }, password: { type: 'string', description: 'Random initial password, disclosed only in the successful import response. Must be changed on first login; never persisted as plaintext.' } },
+      properties: { name: { type: 'string' }, phone: { type: 'string' }, code: { type: 'string' }, password: { type: 'string', description: 'Default initial password 12345678 for newly imported participants. Must be changed on first login; persisted only as a password hash. Existing accounts are never reset by re-importing.' } },
     } },
   },
 };
