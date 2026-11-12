@@ -31,6 +31,7 @@ import { nextStep } from "../policy";
 
 type Action = { key: string; label: string; states: string[]; roles: string[]; danger?: boolean };
 const actions: Action[] = [
+  {key:"survey_revise",label:"Perbaiki hasil survei",states:["survey_cc_review","survey_submitted"],roles:["verifier"]},
   {key:"submit",label:"Ajukan sekarang",states:["draft","needs_data"],roles:["call_center","verifier","requester"]},
   {key:"screen_pass",label:"Teruskan ke Approver",states:["screening"],roles:["call_center"]},
   {key:"screen_reject",label:"Tolak pengajuan",states:["screening"],roles:["call_center"],danger:true},
@@ -92,6 +93,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
     .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
     .filter(a=>viewer.role!=="requester"||row.createdBy===viewer.id&&row.source!=="bypass"&&["draft","needs_data",...(a.key==="cancel"?["screening"]:[])].includes(row.status))
     .filter(a=>viewer.role==="admin"||!(row.intakeRole==="requester"&&row.createdBy===viewer.id&&["screen_pass","screen_reject"].includes(a.key)))
+    .filter(a=>a.key!=="survey_revise"||row.verifierId===viewer.id)
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
@@ -135,6 +137,7 @@ const actionHelp:Record<string,string>={
   review1_reject:"Tulis alasan penolakan. Keputusan dan alasannya akan tercatat pada riwayat pengajuan.",
   assign_survey:"Pilih petugas yang akan mengunjungi pemohon dan mengisi hasil survei.",
   survey_submit:"Lengkapi hasil kunjungan dan foto wajib. Hasil dikirim untuk diperiksa Call Center. Jika Anda juga Call Center, Anda dapat memeriksanya sendiri lalu mengirim ke Approver.",
+  survey_revise:"Buka kembali hasil survei untuk diperbaiki. Data dan foto tetap tersimpan. Setelah selesai, kirim kembali kepada Call Center untuk diperiksa sebelum diteruskan ke Approver.",
   survey_decline:"Tulis alasan tidak dapat menjalankan survei. Call Center akan menerima pemberitahuan dan menugaskan petugas lain.",
   survey_review_submit:"Periksa dan koreksi hasil survei serta data pemohon. Kirim setelah lengkap agar Approver dapat meninjau keputusan nominal.",
   survey_review_withdraw:"Kembalikan hasil survei ke pemeriksaan Call Center? Data dan foto tetap tersimpan. Call Center dapat memeriksa ulang lalu mengirimkannya kembali. Hanya tersedia sebelum keputusan Approver.",

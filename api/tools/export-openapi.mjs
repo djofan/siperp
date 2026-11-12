@@ -194,7 +194,7 @@ document['x-bantuan-application-visibility'] = {
 // Compact location metadata for the authorized Bantuan listing; never full street/NIK/phone.
 document.components.schemas.BantuanApplicationSummary = {
   type: 'object', additionalProperties: true,
-  properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes, falling back to region. Empty when unavailable.' } },
+  properties: { shortLocation: { type: 'string', maxLength: 100, description: 'District and city without administrative prefixes. Falls back to locality segments from applicant.street, then region. House numbers and the street line are excluded. Empty when unavailable.' } },
 };
 
 document['x-bantuan-application-notes'] = { field: 'applicant.applicationNotes', type: 'string', nullable: true, maxLength: 10000, required: false, description: 'Optional per-application message from the applicant, supported for every intake source and drafts. Included in authorized application details; separate from survey notes and internal comments.' };
@@ -285,6 +285,10 @@ document.paths['/api/v1/academy/profile'] = {get:{
   description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.',
   security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
 }};
+document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};
+const login = document.paths['/api/v1/auth/login'].post;
+login.requestBody.content['application/json'].schema.properties.pwa = {type:'boolean',description:'Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply.'};
+document['x-bantuan-verifier-intake-edit'] = 'Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked.';
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

@@ -128,7 +128,7 @@ class Intake
         $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
         abort_unless(in_array($data['program'], [...$settings['programs'], 'Lainnya'], true), 422, 'Program tidak terdaftar.');
         abort_if(! $id && $data['source'] === 'bypass' && (! $access->bypass($request) || strlen(trim($data['bypassReason'] ?? '')) < 5), 422, 'Jalur langsung memerlukan izin dan alasan minimal 5 karakter.');
-        $access->allow($request, $data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']);
+        $access->allow($request, $id ? ['call_center', 'verifier', 'requester'] : ($data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']));
 
         return DB::transaction(function () use ($request, $id, $data, $applicant, $access, $draft) {
             $row = $id ? $access->find($request, $id, true) : new Application;
@@ -139,9 +139,11 @@ class Intake
                     || ! in_array($row->source, ['online', 'walk_in'], true)
                     || ! in_array($data['source'], ['online', 'walk_in'], true)), 422,
                     'Sumber WhatsApp / datang langsung hanya dapat diubah selama draft atau perlu dilengkapi. Jalur khusus tidak dapat diubah.');
-                abort_unless($access->has($request, ['call_center']) || $access->role($request) === 'admin' || in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Perubahan pada tahap ini hanya dapat dilakukan Call Center.');
+                $ownVerifier = $row->created_by === $request->user()->id && $access->has($request, ['verifier']) && in_array($row->status, ['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'bypass_review'], true);
+                abort_if($row->created_by !== $request->user()->id && !$access->has($request, ['call_center']) && $access->role($request) !== 'admin', 403, 'Anda hanya dapat memperbaiki pengajuan yang Anda buat sendiri.');
+                abort_unless($ownVerifier || $access->has($request, ['call_center']) || $access->role($request) === 'admin' || in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Perubahan pada tahap ini hanya dapat dilakukan Call Center.');
                 $own = $row->created_by === $request->user()->id;
-                $access->allow($request, ['call_center', ...($own && $row->source === 'bypass' ? ['verifier'] : []),
+                $access->allow($request, ['call_center', ...($ownVerifier ? ['verifier'] : []),
                     ...($own && $row->source !== 'bypass' && in_array($row->status, ['draft', 'needs_data'], true) ? ['requester'] : [])]);
                 abort_unless((int) $request->input('version') === $row->version, 409, 'Data sudah berubah. Muat ulang.');
             }

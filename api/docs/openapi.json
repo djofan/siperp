@@ -733,7 +733,7 @@
           "shortLocation": {
             "type": "string",
             "maxLength": 100,
-            "description": "District and city without administrative prefixes, falling back to region. Empty when unavailable."
+            "description": "District and city without administrative prefixes. Falls back to locality segments from applicant.street, then region. House numbers and the street line are excluded. Empty when unavailable."
           }
         }
       },
@@ -941,6 +941,10 @@
                     "type": "string",
                     "minLength": 1,
                     "maxLength": 72
+                  },
+                  "pwa": {
+                    "type": "boolean",
+                    "description": "Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply."
                   }
                 },
                 "required": [
@@ -4455,6 +4459,94 @@
           }
         }
       }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/survey_revise": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Reopen the assigned verifier survey for correction",
+        "description": "Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Survey reopened with preserved evidence"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -4608,5 +4700,6 @@
   "x-academy-material-pdfs": {
     "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
     "access": "Existing private file endpoint and enrollment/release checks remain unchanged."
-  }
+  },
+  "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked."
 }

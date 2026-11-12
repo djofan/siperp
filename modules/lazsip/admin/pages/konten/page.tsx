@@ -6,13 +6,14 @@ import { getLazsipStatistics } from "@/modules/lazsip/api/statistics";
 import { formatNumber, formatRupiah } from "@/modules/lazsip/components/format";
 
 export default async function KontenUmumPage() {
-  const [hero, tentang, legalitas, kontak, zakatFitrah, statistics] = await Promise.all([
+  const [hero, tentang, legalitas, kontak, zakatFitrah, statistics, services] = await Promise.all([
     getSiteContent("hero"),
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
     getSiteContent("kontak"),
     getSiteContent("zakatFitrah"),
     getLazsipStatistics(),
+    getSiteContent("transparansi"),
   ]);
 
   return (
@@ -24,7 +25,7 @@ export default async function KontenUmumPage() {
       <section className="mb-6 rounded-2xl border border-lazsip-primary-100 bg-white p-5 dark:border-white/10 dark:bg-white/5">
         <h2 className="text-base font-bold text-lazsip-primary-900 dark:text-white">Statistik otomatis</h2>
         <p className="mt-1 text-sm text-lazsip-primary-800/70 dark:text-white/60">
-          Angka di beranda mengikuti database dan tidak perlu diisi manual.
+          Statistik mengikuti database. Kartu layanan dekat footer diatur melalui tab Kartu layanan.
         </p>
         <dl className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
@@ -47,6 +48,26 @@ export default async function KontenUmumPage() {
       </section>
       <KontenUmumTabs
         sections={[
+          {
+            sectionKey: "transparansi",
+            title: "Kartu layanan",
+            description: "Atur bagian dekat footer dan ketiga kartunya. Sembunyikan kartu yang tidak diperlukan. Tautan memakai /lazsip/... atau URL HTTPS lengkap.",
+            fields: [
+              { key: "visible", label: "Tampilkan bagian layanan", options: [{value:"true",label:"Tampilkan"},{value:"false",label:"Sembunyikan"}] },
+              { key: "eyebrow", label: "Label bagian" },
+              { key: "title", label: "Judul bagian" },
+              { key: "description", label: "Deskripsi bagian", multiline: true },
+              ...[1,2,3].flatMap(i => [
+                {key:`card${i}Visible`,label:`Kartu ${i} — tampilkan`,options:[{value:"true",label:"Tampilkan"},{value:"false",label:"Sembunyikan"}]},
+                {key:`card${i}Title`,label:`Kartu ${i} — judul`},
+                {key:`card${i}Description`,label:`Kartu ${i} — deskripsi`,multiline:true},
+                {key:`card${i}Action`,label:`Kartu ${i} — teks tombol`},
+                {key:`card${i}Href`,label:`Kartu ${i} — tautan tujuan`},
+                {key:`card${i}Icon`,label:`Kartu ${i} — ikon`,options:[{value:"heart",label:"Kepedulian"},{value:"calculator",label:"Kalkulator"},{value:"image",label:"Dokumentasi"}]},
+              ]),
+            ],
+            initialValue: {...LAZSIP_SITE_CONTENT_DEFAULTS.transparansi, ...(services ?? {})},
+          },
           {
             sectionKey: "hero",
             title: "Hero (Beranda)",
