@@ -276,3 +276,12 @@ pembuatan sesi aktif, atau pengiriman receipt aktif ditolak 409. Receipt serta d
 sudah tidak dipakai dibersihkan; donor, campaign, dan tombstone idempotensi tetap disimpan.
 Target nominal campaign opsional: kosong/null/0 berarti tanpa target (disimpan sebagai 0).
 Omission saat update mempertahankan target lama; nilai negatif/noninteger ditolak.
+
+### Impor santunan Excel
+
+`POST /api/v1/bantuan/santunan/imports`: admin/bendahara, maksimal 200 baris JSON
+`{period, volunteerId, rows:[{recipientName, category, amount}]}` setelah Excel dibaca klien.
+Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib aktif.
+Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
+ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
+no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
