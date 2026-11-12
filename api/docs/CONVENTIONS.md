@@ -16,6 +16,17 @@ Backup database sebelum migration di VPS; kemudian build/restart frontend dan ba
 PHP `upload_max_filesize` minimal 50M, `post_max_size` dan Nginx `client_max_body_size`
 minimal 64M untuk menampung multipart. File lama tetap bisa diputar tanpa backfill.
 
+Login Bantuan PWA memakai `pwa: true` pada `POST /api/v1/auth/login` dan memerlukan
+akses Bantuan aktif. Cookie HttpOnly dan token berlaku 30 hari, terpisah dari durasi
+login browser biasa. Tidak ada logout karena idle; logout eksplisit, pencabutan token,
+penggantian password yang mencabut sesi, dan penonaktifan akun tetap berlaku. Sesi PWA
+lama perlu login ulang sekali agar mendapat durasi baru.
+
+`POST /api/v1/bantuan/applications/{id}/actions/survey_revise` memerlukan `version`.
+Hanya verifikator penugasan dapat membuka kembali survei pada `survey_cc_review` atau
+`survey_submitted`, sebelum persetujuan nominal. Data dan dokumen dipertahankan; survei
+kembali ke `survey_assigned` dan dikirim ulang melalui pemeriksaan Call Center.
+
 Reset password akun operasional: `POST /api/v1/core/module-accounts/{id}/password-reset`
 memerlukan akun aktif dan otorisasi admin. Admin modul hanya boleh mereset akun operasional
 yang seluruh akses modulnya berada dalam cakupan pengelolaannya; Superadmin boleh lintas modul.

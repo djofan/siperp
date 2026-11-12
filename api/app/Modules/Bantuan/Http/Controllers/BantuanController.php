@@ -41,9 +41,7 @@ class BantuanController
     private function summary(Application $row): array
     {
         $applicant = $row->applicant ?? [];
-        $location = collect([$applicant['district'] ?? '', $applicant['city'] ?? ''])
-            ->map(fn ($value) => preg_replace('/^(?:kecamatan|kec\.?|kabupaten|kab\.?|kota)\s+/iu', '', trim((string) $value)))
-            ->filter()->unique()->implode(', ');
+        $location = \App\Modules\Bantuan\Services\AddressSummary::make($applicant, $row->region);
         return ['id' => $row->id, 'number' => $row->number, 'name' => $row->name, 'status' => $row->status,
             'manualVerifierName' => $row->manual_process['verifier']['name'] ?? null,
             'manualDistributorName' => $row->manual_process['distributor']['name'] ?? null,
