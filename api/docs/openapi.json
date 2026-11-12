@@ -832,6 +832,76 @@
             "type": "boolean"
           }
         }
+      },
+      "tanwirSubmissionMedia": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": [
+            "index",
+            "name",
+            "mime",
+            "size"
+          ],
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 191
+            },
+            "mime": {
+              "type": "string"
+            },
+            "size": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "description": "files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item."
+      },
+      "ojolSubmissionMedia": {
+        "type": "array",
+        "maxItems": 10,
+        "items": {
+          "type": "object",
+          "required": [
+            "index",
+            "name",
+            "mime",
+            "size"
+          ],
+          "properties": {
+            "index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 191
+            },
+            "mime": {
+              "type": "string"
+            },
+            "size": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "description": "files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item."
       }
     }
   },
@@ -4108,6 +4178,348 @@
             }
           },
           "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/submissions": {
+      "post": {
+        "tags": [
+          "tanwir"
+        ],
+        "summary": "Submit one or multiple private audio/video files",
+        "description": "Participant in the assigned task group, before deadline. 1–10 files, combined maximum 50 MiB. Every file is inspected and must match the task type. Legacy file field remains supported but cannot be combined with files. Atomically replaces the entire rejected attempt; pending/approved submissions reject duplicates. One review and attempt count per batch.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "taskId"
+                ],
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "file"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch submitted for review"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/files/submission/{id}": {
+      "get": {
+        "tags": [
+          "tanwir"
+        ],
+        "summary": "Play a private submission attachment",
+        "description": "Same owner/assigned teacher/module-admin authorization for every file; index defaults to zero for legacy players. Private no-store; storage paths are not exposed in files metadata.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized media stream"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ojol/submissions": {
+      "post": {
+        "tags": [
+          "ojol"
+        ],
+        "summary": "Submit one or multiple private audio/video files",
+        "description": "Participant in the assigned task group, before deadline. 1–10 files, combined maximum 50 MiB. Every file is inspected and must match the task type. Legacy file field remains supported but cannot be combined with files. Atomically replaces the entire rejected attempt; pending/approved submissions reject duplicates. One review and attempt count per batch.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "taskId"
+                ],
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                },
+                "oneOf": [
+                  {
+                    "required": [
+                      "file"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "files"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Batch submitted for review"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ojol/files/submission/{id}": {
+      "get": {
+        "tags": [
+          "ojol"
+        ],
+        "summary": "Play a private submission attachment",
+        "description": "Same owner/assigned teacher/module-admin authorization for every file; index defaults to zero for legacy players. Private no-store; storage paths are not exposed in files metadata.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9,
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized media stream"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Request rejected",
             "content": {
               "application/json": {
