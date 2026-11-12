@@ -188,6 +188,9 @@ it('uses one activation switch and never enables global retakes', function () {
     $options = $quiz->questions()->with('options')->first()->options->map(fn ($option) => ['id' => $option->id, 'label' => $option->label, 'isCorrect' => $option->isCorrect])->all();
     $this->postJson('/api/v1/academy/admin/exams/'.$quiz->id, singleExamInput(['isActive' => false, 'isPublished' => true, 'options' => json_encode($options)]))->assertSuccessful();
     expect($quiz->fresh()->isPublished)->toBeFalse()->and($quiz->fresh()->isActive)->toBeFalse();
+    $this->postJson('/api/v1/academy/admin/exams/'.$quiz->id, singleExamInput(['isActive' => 'on', 'isPublished' => 'on', 'options' => json_encode($options)]))->assertSuccessful();
+    expect($quiz->fresh()->isPublished)->toBeTrue()->and($quiz->fresh()->isActive)->toBeTrue()
+        ->and($quiz->fresh()->questions()->count())->toBe(1)->and($quiz->fresh()->allowRetake)->toBeFalse();
 });
 
 it('lists every exam for grouping by cohort without pagination', function () {

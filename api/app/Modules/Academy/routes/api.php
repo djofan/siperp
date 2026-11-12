@@ -77,6 +77,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::put('lessons/{lessonId}/progress', [LearningController::class, 'mark']);
     Route::put('lessons/{lessonId}/note', [LearningController::class, 'note']);
     Route::put('profile/password', [LearningController::class, 'password']);
+    Route::get('profile', [LearningController::class, 'account']);
     Route::post('courses/{courseId}/questions', [LearningController::class, 'ask']);
     Route::put('discussions/{id}/answer', [LearningController::class, 'answer']);
     Route::put('lessons/{id}/audio', [LearningController::class, 'audio']);
