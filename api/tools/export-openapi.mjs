@@ -5,14 +5,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
 document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
   tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
-  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
+  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
   security: [{ bearerAuth: [] }],
   requestBody: { required: true, content: { 'application/json': { schema: {
-    type: 'object', required: ['period', 'volunteerId', 'rows'], properties: {
+    type: 'object', required: ['period', 'rows'], allOf: [{if:{not:{required:['volunteerId']}},then:{properties:{rows:{items:{required:['verifierName']}}}}}], properties: {
       period: { type: 'string', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$' }, volunteerId: { type: 'string', maxLength: 191 },
       rows: { type: 'array', minItems: 1, maxItems: 200, items: { type: 'object', additionalProperties: false,
         required: ['recipientName', 'category', 'amount'], properties: {
-          recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
+          verifierName: {type:'string',maxLength:191,description:'Nama persis dari daftar penyalur aktif; abaikan kapital dan spasi berlebih. Nama ambigu/tidak aktif/tidak ada ditolak. Wajib bila volunteerId legacy tidak dikirim.'}, recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
           amount: { type: 'integer', minimum: 1, maximum: 9000000000000 },
         } } },
     },

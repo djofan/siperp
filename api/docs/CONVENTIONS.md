@@ -285,3 +285,11 @@ Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib 
 Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
 ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
 no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
+
+Impor santunan menerima `rows[].verifierName`: nama pada daftar penyalur aktif,
+trim/spasi berlebih dan kapital diabaikan. Harus cocok dengan tepat satu akun aktif
+yang memiliki role volunteer. Tidak membuat akun baru atau mencocokkan nama sebagian.
+Nama tidak dikenal/ambigu membatalkan seluruh impor (422). `volunteerId` tingkat atas
+tetap diterima untuk klien lama; bila nama per baris dikirim, nama itu yang digunakan.
+Template baru berisi Nama, Program, Nominal Bantuan, Nama Verifikator, dengan dropdown
+nama dari daftar aktif. Data dummy unduhan menggunakan nama dari daftar yang sama.
