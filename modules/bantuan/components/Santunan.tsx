@@ -22,6 +22,8 @@ import { SantunanCard } from "./SantunanCard";
 import ft from "./ListTools.module.css";
 import { selectedPendingSantunan, transferSantunanSelection } from "../santunan-transfer";
 
+import { SantunanExcelImport } from "./SantunanExcelImport";
+
 const categoryLabels=santunanCategoryLabels;
 const today=()=>new Date().toLocaleDateString("en-CA");
 
@@ -35,6 +37,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
   const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string;location?:PhotoLocation|null}|null>(null);
   const [card,setCard]=useState<SantunanRecord|null>(null);
   const [showPeriod,setShowPeriod]=useState(false);
+  const [showImport,setShowImport]=useState(false);
   const [selected,setSelected]=useState<string[]>([]);
   const [bulkConfirm,setBulkConfirm]=useState<SantunanRecord[]|null>(null);
   const routinePeriods=Array.from(new Set(rows.filter(row=>row.frequency==="routine").map(row=>row.period))).sort().reverse();
@@ -70,7 +73,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
   const completed=visible.filter(row=>row.distributionStatus==="completed").length;
   const reset=()=>{setFrequency("");setDistribution("");setSearch("");setFilters({category:"",transfer:"",volunteer:"",periodFrom:"",periodTo:"",amountMin:"",amountMax:"",sort:"period"});};
   return <div className={d.root}>
-    <div className={s.heading}><div><div className={s.eyebrow}>SANTUNAN LAZSIP</div><h1>Santunan rutin & tidak rutin</h1><p>Catat bantuan, pantau transfer, dan lengkapi laporan penyaluran dalam satu tempat.</p></div><div className={s.actions}><Button variant="secondary" disabled={loading||!!busy} onClick={()=>void load()} aria-label="Muat ulang santunan"><RefreshCw size={15}/></Button>{canManage&&routinePeriods.length>0&&<Button variant="secondary" disabled={!!busy||loading} onClick={()=>{setError("");setShowPeriod(true);}}>Buat periode bulan berikutnya</Button>}{canManage&&<Button onClick={()=>setShowCreate(value=>!value)}><Plus size={16}/>{showCreate?"Tutup form":"Tambah santunan"}</Button>}</div></div>
+    <div className={s.heading}><div><div className={s.eyebrow}>SANTUNAN LAZSIP</div><h1>Santunan rutin & tidak rutin</h1><p>Catat bantuan, pantau transfer, dan lengkapi laporan penyaluran dalam satu tempat.</p></div><div className={s.actions}><Button variant="secondary" disabled={loading||!!busy} onClick={()=>void load()} aria-label="Muat ulang santunan"><RefreshCw size={15}/></Button>{canManage&&routinePeriods.length>0&&<Button variant="secondary" disabled={!!busy||loading} onClick={()=>{setError("");setShowPeriod(true);}}>Buat periode bulan berikutnya</Button>}{canManage&&<Button variant="secondary" onClick={()=>setShowImport(value=>!value)}>{showImport?"Tutup impor":"Impor Excel"}</Button>}{canManage&&<Button onClick={()=>setShowCreate(value=>!value)}><Plus size={16}/>{showCreate?"Tutup form":"Tambah santunan"}</Button>}</div></div>
     <div className={d.stats}>{[
       {label:"Total santunan",value:visible.length,hint:"Sesuai filter & akses Anda",icon:HandHeart},
       {label:"Menunggu transfer",value:pending,hint:"Dana belum ditandai dikirim",icon:Wallet},
@@ -87,6 +90,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
       <label className={s.field}>Penyalur<select className={s.input} name="volunteerId" required><option value="">Pilih penyalur</option>{volunteers.map(person=><option value={person.id} key={person.id}>{person.name}</option>)}</select></label>
       <label className={s.field}>Nominal (Rp)<input className={s.input} name="amount" type="number" min={1} placeholder="Contoh: 300000" required/></label>
     </div>{!volunteers.length&&<p className={s.notice}>Tambahkan akun Penyalur pada menu Tim & akses terlebih dahulu.</p>}<div className={d.formActions}><Button type="button" variant="secondary" disabled={!!busy} onClick={()=>setShowCreate(false)}>Batal</Button><Button disabled={!!busy||!volunteers.length}>{busy==="create"?"Menyimpan…":"Simpan santunan"}</Button></div></form></section>}
+    {canManage&&showImport&&<SantunanExcelImport volunteers={volunteers} onImported={async count=>{await load();setSuccess(`${count} santunan berhasil diimpor.`);}}/>}
     <section className={d.listSection} aria-label="Daftar santunan">
       <div className={d.listHeading}><div><h2>Daftar santunan</h2><p>{loading?"Menyiapkan daftar santunan…":`${visible.length} catatan sesuai akses akun`}</p></div><span className={s.pill}>Transfer → Penyaluran → Selesai</span></div>
       <div className={d.filters}><label className={d.search}><Search size={16}/><input aria-label="Cari santunan" placeholder="Cari penerima, nomor, atau penyalur…" value={search} onChange={e=>setSearch(e.target.value)}/></label><select className={s.input} aria-label="Filter jenis santunan" value={frequency} onChange={e=>setFrequency(e.target.value)}><option value="">Semua jenis</option><option value="routine">Rutin</option><option value="non_routine">Tidak rutin</option></select><select className={s.input} aria-label="Filter status penyaluran" value={distribution} onChange={e=>setDistribution(e.target.value)}><option value="">Semua status penyaluran</option><option value="process">Proses</option><option value="completed">Sudah</option></select></div>

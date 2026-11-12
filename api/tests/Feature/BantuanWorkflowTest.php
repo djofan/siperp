@@ -1962,3 +1962,28 @@ it('locks survey evidence again after it is forwarded to approval', function () 
     $this->actingAs($this->verifier, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertStatus(409);
     expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->toBeNull();
 });
+
+it('imports routine santunan atomically and prevents duplicate imports', function () {
+    $volunteer = bantuanUser('volunteer');
+    $input = ['period' => '2026-11', 'volunteerId' => $volunteer->id, 'rows' => [
+        ['recipientName' => 'Anak Impor', 'category' => 'orphan', 'amount' => 300000],
+        ['recipientName' => 'Ibu Impor', 'category' => 'widow', 'amount' => 250000],
+    ]];
+    $url = '/api/v1/bantuan/santunan/imports';
+    $this->actingAs($this->verifier, 'sanctum')->postJson($url, $input)->assertForbidden();
+    $this->actingAs($this->treasurer, 'sanctum')->postJson($url, $input)->assertOk()->assertJsonPath('data.createdCount', 2);
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $this->assertDatabaseHas('bantuan_santunan', ['category' => 'widow', 'frequency' => 'routine', 'transfer_status' => 'pending', 'distribution_status' => 'process']);
+    $input['rows'] = [
+        ['recipientName' => 'Penerima baru', 'category' => 'orphan', 'amount' => 100000],
+        ['recipientName' => ' anak impor ', 'category' => 'orphan', 'amount' => 300000],
+    ];
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $this->assertDatabaseCount('bantuan_santunan_events', 2);
+    $input['rows'][1]['amount'] = -1;
+    $this->postJson($url, $input)->assertUnprocessable();
+    $this->assertDatabaseCount('bantuan_santunan', 2);
+    $input['volunteerId'] = $this->verifier->id;
+    $this->postJson($url, $input)->assertUnprocessable();
+});
