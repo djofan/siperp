@@ -22,6 +22,10 @@ document.components.schemas.SarsipProfile = {
 document.components.schemas.SarsipProfileUpdate = {
   type: 'object', required: ['headline', 'description'], properties: fields,
 };
+document['x-lazsip-campaign-target'] = { field: 'targetAmount', required: false, nullable: true, minimum: 0, maximum: 2147483647, description: 'Campaign target is optional. Missing on create, null and zero mean no target (stored and returned as zero). Missing on update preserves existing target. Donations remain available without a target.' };
+
+document.paths['/api/v1/lazsip/admin/transactions/{source}/{id}'] = { delete: { summary: 'Delete a test donation or zakat ledger record (LAZSIP admin or Superadmin)', description: 'Requires confirmationCode matching tracking code (legacy: ID), and accepted testTransaction acknowledgement, including Production tests. Does not call iPaymu or refund. Blocks active session creation/email delivery and Core-reconciled payments. Removes receipts and orphan zakat details, preserves donor/campaign and idempotency tombstones, and logs administrator deletion without donor PII. Limited to 10/minute.', parameters: [{name:'source',in:'path',required:true,schema:{type:'string',enum:['payment','legacy-donation','zakat']}},{name:'id',in:'path',required:true,schema:{type:'string'}}], requestBody:{required:true,content:{'application/json':{schema:{type:'object',required:['confirmationCode','testTransaction'],properties:{confirmationCode:{type:'string',maxLength:191},testTransaction:{type:'boolean',const:true}}}}}},responses:{200:{description:'Test transaction deleted; no-store, private'},401:{description:'Authentication required'},403:{description:'LAZSIP admin or Superadmin required'},404:{description:'Unknown source or LAZSIP transaction'},409:{description:'Reconciled or busy transaction'},422:{description:'Missing acknowledgement or mismatching confirmation code'}} } };
+
 const json = schema => ({ 'application/json': { schema } });
 
 document.paths['/api/v1/bantuan/reports/full'] = {

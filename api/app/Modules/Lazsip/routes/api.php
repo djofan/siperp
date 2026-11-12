@@ -36,6 +36,7 @@ Route::middleware(['auth:sanctum', 'user.active', 'module.access:lazsip'])->grou
     Route::get('donors/{id}', [HistoryController::class, 'donor']);
     Route::get('donors/{id}/history', [HistoryController::class, 'donorHistory']);
     Route::get('dashboard', [FinanceController::class, 'dashboard']);
+    Route::delete('admin/transactions/{source}/{id}', \App\Modules\Lazsip\Http\Controllers\DeleteTestTransactionController::class)->middleware('throttle:10,1');
     foreach (['donations', 'zakat'] as $source) {
         Route::get('admin/'.$source.'/legacy', [FinanceController::class, 'legacyPayments'])->defaults('source', $source);
         Route::get('admin/'.$source.'/payments', [FinanceController::class, 'paymentRows'])->defaults('source', $source);
