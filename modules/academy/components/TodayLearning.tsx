@@ -14,12 +14,10 @@ export async function TodayLearning({ profileId }: { profileId?: string }) {
   ).slice(0, 3);
   return <section aria-label="Kegiatan hari ini" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
     <h2 className="font-semibold text-slate-900">Kegiatan hari ini</h2>
-    <p className="mt-1 text-sm text-slate-600">Mulai dari materi terbaru, lalu periksa ujian dan tenggat Anda.</p>
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
       <div className="rounded-xl bg-white p-4"><h3 className="text-sm font-semibold">Materi terbaru</h3>
-        {materials.items.length ? <ul className="mt-3 divide-y divide-gray-100">{materials.items.slice(0, 3).map(item => <li key={item.id} className="py-3">
+        {materials.items.length ? <ul className="mt-3 divide-y divide-gray-100">{materials.items.slice(0, 2).map(item => <li key={item.id} className="py-3">
           <Link href={`/academy/materi/${item.id}`} className="break-words text-sm font-medium text-green-700 hover:underline">{item.title}</Link>
-          <p className="mt-1 text-xs text-gray-500">{item.chapter.course.cohort?.title ?? "Angkatan saya"}</p>
         </li>)}</ul> : <p className="mt-3 text-sm text-gray-600">Belum ada materi dari pengajar untuk angkatan Anda. Periksa kembali setelah materi dipublikasikan.</p>}
         <Link href="/academy/materi" className="mt-3 inline-block text-sm text-green-700 underline">Semua materi</Link>
       </div>
