@@ -50,7 +50,7 @@ test("fund queue keeps submitted applications visible for manual approval",()=>{
 });
 
 test("every workflow status has a specific menu with a matching queue filter",()=>{
-  const statuses=["draft","screening","needs_data","review1","bypass_review","survey_assignment","survey_assigned","survey_submitted","review2","approved","fund_ready","fund_submitted","fund_approved","disbursed","delivery_failed","completed","returned","cancelled","rejected_screening","rejected_t1","rejected_t2","rejected_bypass"];
+  const statuses=["draft","screening","needs_data","review1","bypass_review","survey_assignment","survey_assigned","survey_submitted","review2","approved","fund_ready","fund_submitted","fund_approved","disbursed","delivery_failed","completed","cancelled","rejected_screening","rejected_t1","rejected_t2","rejected_bypass"];
   const covered=new Set(processMenus.flatMap(menu=>Array.from(menu.states)));
   for(const status of statuses)assert.equal(covered.has(status),true,status);
   for(const menu of processMenus){
@@ -66,7 +66,7 @@ test("operational accounts see each of their process queues without management a
     approver:["review-tahap-1","review-tahap-2","review-ulang","review-langsung"],
     verifier:["survei","penyaluran","gagal-salur","selesai"],
     fund_requester:["dana-siap","dana-diajukan","pencairan"],
-    treasurer:["pencairan","penyaluran","gagal-salur","dana-kembali"],
+    treasurer:["pencairan","penyaluran","gagal-salur","siap-disalurkan"],
   };
   for(const [role,keys] of Object.entries(expected)){
     const viewer={role,canBypass:false},menus=navigation(viewer);
@@ -77,6 +77,15 @@ test("operational accounts see each of their process queues without management a
   assert.equal(processInfo("penyaluran").task,"distribution");
   assert.equal(canViewRoute({role:"verifier",canBypass:false},["pengajuan","langsung"]),false);
   assert.equal(canViewRoute({role:"verifier",canBypass:true},["pengajuan","langsung"]),true);
+});
+
+test("archive ready-to-distribute card points to funds already held by the distributor",()=>{
+  const card=processInfo("siap-disalurkan");
+  assert.equal(card.label,"Siap disalurkan");
+  assert.equal(card.group,"06 · Arsip");
+  assert.deepEqual(Array.from(card.states),["disbursed"]);
+  assert.equal(card.task,undefined);
+  assert.equal(processMenus.some(menu=>menu.key==="dana-kembali"),false);
 });
 
 test("sidebar stays compact while the process launcher retains every authorized queue",()=>{

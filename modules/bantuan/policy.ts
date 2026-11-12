@@ -44,7 +44,7 @@ export const processMenus:ProcessEntry[]=[
   process("selesai","Bantuan selesai","06 · Arsip",["completed"],["call_center","approver","chair","verifier","fund_requester","treasurer"],"Bantuan sudah diserahkan dan bukti lengkap. Buka detail untuk melihat hasilnya.","check"),
   process("ditolak","Pengajuan ditolak","06 · Arsip",["rejected_screening","rejected_t1","rejected_t2","rejected_bypass"],["call_center","approver","chair","verifier"],"Lihat alasan penolakan dan riwayat keputusan.","history"),
   process("dibatalkan","Pengajuan dibatalkan","06 · Arsip",["cancelled"],["call_center","approver","chair","verifier"],"Lihat pengajuan yang dibatalkan beserta alasan dan jejak prosesnya.","history"),
-  process("dana-kembali","Dana dikembalikan","06 · Arsip",["returned"],["treasurer","fund_requester","approver","chair","verifier"],"Dana telah dikembalikan. Bukti dan pencatatan dapat dilihat di detail.","wallet"),
+  process("siap-disalurkan","Siap disalurkan","06 · Arsip",["disbursed"],["call_center","treasurer","fund_requester","approver","chair","verifier"],"Dana sudah diterima penyalur. Serahkan bantuan kepada penerima, lalu lengkapi laporan penyerahan.","hand"),
 ];
 function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntry[]{
   if(!Object.prototype.hasOwnProperty.call(homeByRole,viewer.role))return [];
