@@ -158,7 +158,7 @@ class MemberController extends BaseController
         $this->context($request, true);
         $model = $this->model($request, 'Member');
         $member = $model::with('submissions')->findOrFail($id);
-        $paths = [$member->photo, ...$member->submissions->pluck('file_path')->all()];
+        $paths = [$member->photo, ...$member->submissions->flatMap(fn ($row) => array_column($row->submissionFiles(), 'path'))->all()];
         DB::transaction(function () use ($member): void {
             $user = $member->user;
             $otherProfile = DB::table('tanwir_members')->where('user_id', $user->id)->where('id', '!=', $member->id)->exists()

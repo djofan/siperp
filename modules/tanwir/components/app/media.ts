@@ -6,6 +6,6 @@ export function photoUrl(member: { id: string; photo: string | null }): string |
   return `/api/tanwir/files/photo/${member.id}?v=${version}`;
 }
 
-export function submissionFileUrl(submissionId: string): string {
-  return `/api/tanwir/files/submission/${submissionId}`;
+export function submissionFileUrl(submissionId: string, index=0): string {
+  return `/api/tanwir/files/submission/${submissionId}?index=${index}`;
 }
