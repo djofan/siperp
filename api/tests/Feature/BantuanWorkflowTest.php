@@ -1375,10 +1375,16 @@ it('automatically assigns the survey verifier as distributor after amount approv
     expect(DB::table('bantuan_notifications')->where('application_id',$id)->where('user_id',$this->fund->id)->exists())->toBeTrue();
 });
 
-it('limits full report to admin and includes validated filter and private applicant fields',function(){
+it('allows admin and call center full reports while enforcing filters and other roles',function(){
     $input=bantuanInput();$input['applicant']['reporterName']='Pelapor uji';
     $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated();
-    $this->getJson('/api/v1/bantuan/reports/full')->assertForbidden();
+    $this->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data')->assertJsonPath('data.0.reporterName','Pelapor uji')->assertHeader('Cache-Control','no-store, private');
+    $this->getJson('/api/v1/bantuan/reports/full?status=completed')->assertOk()->assertJsonCount(0,'data');
+    foreach (['verifier','volunteer','requester','observer','approver','treasurer','fund_requester','chair'] as $role) {
+        $this->actingAs(bantuanUser($role),'sanctum')->getJson('/api/v1/bantuan/reports/full')->assertForbidden();
+    }
+    bantuanRoles($this->cc,['call_center','verifier']);
+    $this->actingAs($this->cc,'sanctum')->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data');
     $this->actingAs(bantuanUser('admin'),'sanctum')->getJson('/api/v1/bantuan/reports/full?status=draft')->assertOk()->assertJsonCount(1,'data')->assertJsonPath('data.0.reporterName','Pelapor uji');
     $this->getJson('/api/v1/bantuan/reports/full?status=completed')->assertOk()->assertJsonCount(0,'data');
 });

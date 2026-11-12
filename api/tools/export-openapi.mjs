@@ -23,6 +23,21 @@ document.components.schemas.SarsipProfileUpdate = {
   type: 'object', required: ['headline', 'description'], properties: fields,
 };
 const json = schema => ({ 'application/json': { schema } });
+
+document.paths['/api/v1/bantuan/reports/full'] = {
+  get: {
+    summary: 'Export complete Bantuan report for module admin, Superadmin and Call Center',
+    description: 'Uses application listing filters and access scope. Other operational roles are forbidden, including Monitoring. Records an export audit event and returns Cache-Control: no-store, private. Limited to 5 requests per minute.',
+    responses: {
+      200: { description: 'Private report rows for XLSX generation, without pagination.' },
+      401: { description: 'Authentication required' },
+      403: { description: 'Requires module admin, Superadmin or Call Center role' },
+      422: { description: 'Invalid application filters' },
+      429: { description: 'Export rate limit exceeded' },
+    },
+  },
+};
+
 const error = { description: 'Request rejected', content: json({ $ref: '#/components/schemas/Error' }) };
 document.components.schemas.AcademyParticipantImport = {
   type: 'object', required: ['cohortId', 'gender', 'rows'],

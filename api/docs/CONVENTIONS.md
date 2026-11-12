@@ -262,3 +262,8 @@ Resource news, program-bantuan, dan penyaluran-bantuan mendukung documentationPh
 ### Penggantian foto survei
 
 DELETE dokumen Bantuan mengizinkan penggantian KTP, KK, SKTM, foto pendukung dan survey_* pada survey_assigned atau survey_cc_review, termasuk bukti survei yang pernah dikirim. Otorisasi tetap memeriksa penugasan serta pengunggah/Admin. Penghapusan menandai deleted_at dan mempertahankan file privat untuk audit. Setelah diteruskan ke persetujuan, bukti terkunci kembali. Kirim hasil pemeriksaan memvalidasi ulang kelengkapan foto aktif dan menandai bukti pengganti sebagai digunakan.
+
+Ekspor lengkap Pengajuan Bantuan `GET /api/v1/bantuan/reports/full` diizinkan untuk
+Superadmin, admin modul, dan Call Center (termasuk akun multi-role yang memiliki Call Center).
+Role lain tidak memperoleh akses XLSX lengkap. Filter daftar dan scope data tetap diterapkan;
+ekspor dicatat di jurnal, dibatasi 5/menit, dan respons memakai `no-store, private`.
