@@ -8,8 +8,9 @@ it('assigns predicates at every boundary including decimal scores', function (fl
 })->with([
     [0, 'Maqbul'], [50, 'Maqbul'], [50.01, 'Jayyid'], [51, 'Jayyid'],
     [70, 'Jayyid'], [70.01, 'Jayyid Jiddan'], [71, 'Jayyid Jiddan'],
-    [90, 'Jayyid Jiddan'], [90.01, 'Mumtaz'], [91, 'Mumtaz'],
-    [99, 'Mumtaz'], [99.99, 'Mumtaz'], [100, 'Mumtaz Murtafi'],
+    [85, 'Jayyid Jiddan'], [85.01, 'Mumtaz'], [86, 'Mumtaz'],
+    [90, 'Mumtaz'], [95, 'Mumtaz'], [95.01, 'Mumtaz Murtafi'], [96, 'Mumtaz Murtafi'],
+    [99, 'Mumtaz Murtafi'], [99.99, 'Mumtaz Murtafi'], [100, 'Mumtaz Murtafi'],
 ]);
 
 it('derives the predicate from the weighted recap rather than the quiz average', function () {

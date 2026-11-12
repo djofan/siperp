@@ -126,3 +126,7 @@ Teacher Q&A: GET teacher/questions?view=table&page=1 returns 10 discussions/page
 Participant Q&A now has a 10-row paginated table, separate create/detail pages, and return-to-table confirmation on successful submission. GET learning/discussions?view=table uses the existing participant/enrollment scope; GET learning/discussions/{id} returns only owned discussions in published enrolled courses (foreign IDs 404). Session schedules remain accessible below the table.
 
 Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select cohort curriculum, title, future WIB datetime and meeting URL. Existing POST courses/{courseId}/sessions creates the schedule; new GET teacher/sessions returns manager-only options and a 10-row paginated session list. Enrolled participants see the meeting under Q&A session schedules; other cohorts cannot see it.
+
+### Predikat nilai dan sertifikat
+
+Predikat mengikuti nilai akhir: 0–50 Maqbul, di atas 50–70 Jayyid, di atas 70–85 Jayyid Jiddan, di atas 85–95 Mumtaz, dan di atas 95–100 Mumtaz Murtafi. Nilai desimal mengikuti batas atas ini tanpa pembulatan tambahan. Sertifikat tidak memiliki batas nilai minimum: seluruh materi dan seluruh evaluasi harian, mingguan, serta akhir harus selesai dan sudah dinilai. Status lulus ujian lama tetap tersimpan untuk kompatibilitas, tetapi tidak menghalangi sertifikat.

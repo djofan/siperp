@@ -8,12 +8,10 @@ import { DashboardChrome } from "./DashboardChrome";
 const links = [
   { path: "belajar", label: "Dashboard", icon: "Dashboard" },
   { path: "materi", label: "Materi", icon: "BookOpen" },
-  { path: "progres", label: "Kemajuan Saya", icon: "Progress" },
-  { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
-  { path: "pengingat", label: "Pengingat Ujian", icon: "Quiz" },
-  { path: "peringkat", label: "Peringkat & Sertifikat", icon: "Trophy" },
   { path: "catatan", label: "Catatan Belajar", icon: "BookOpen" },
-  { path: "pasang", label: "Pasang Aplikasi", icon: "Settings" },
+  { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
+  { path: "progres", label: "Progres Saya", icon: "Progress" },
+  { path: "peringkat", label: "Peringkat & Sertifikat", icon: "Trophy" },
   { path: "akun", label: "Profil", icon: "Users" },
 ] as const;
 const teacherLinks = [

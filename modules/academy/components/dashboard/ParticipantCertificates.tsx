@@ -12,7 +12,7 @@ export async function ParticipantCertificates({ profileId }: { profileId: string
   ]);
   return <section id="sertifikat" aria-labelledby="academy-certificates-heading" className="mt-8 scroll-mt-6">
     <h2 id="academy-certificates-heading" className="text-lg font-semibold">Sertifikat saya</h2>
-    <p className="mb-5 mt-2 text-sm leading-6 text-gray-500">Selesaikan seluruh materi, lulus semua evaluasi harian, mingguan, dan akhir, serta capai nilai berbobot minimal 70.</p>
+    <p className="mb-5 mt-2 text-sm leading-6 text-gray-500">Selesaikan seluruh materi dan evaluasi harian, mingguan, serta akhir. Sertifikat tidak mensyaratkan nilai minimum.</p>
     {!courses.length ? <EmptyState>Anda belum mengikuti program belajar.</EmptyState> : <div className="space-y-4">{courses.map(course => {
       const url = safeResourceUrl(records.find(record => record.courseId === course.id)?.certificateUrl);
       return <article key={course.id} className="rounded-2xl border border-gray-100 bg-white p-5 sm:p-6">

@@ -252,3 +252,27 @@ it('requires authentication to update a participant profile', function () {
     $this->app['auth']->forgetGuards();
     $this->putJson('/api/v1/academy/profile', ['name' => 'Nama baru', 'phone' => '6281234567890', 'address' => 'Alamat baru'])->assertUnauthorized();
 });
+
+
+it('allows certificates below seventy after all learning and evaluations are completed', function () {
+    $chapter = $this->quiz->chapter;
+    $lesson = new ZakatAcademyLesson;
+    $lesson->forceFill(['chapterId' => $chapter->id, 'title' => 'Certificate lesson', 'slug' => 'certificate-lesson', 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'order' => 1, 'isPublished' => true])->save();
+    $progress = new \App\Modules\Academy\Models\ZakatAcademyLessonProgress;
+    $progress->forceFill(['profileId' => $this->profile->id, 'lessonId' => $lesson->id, 'completed' => true, 'completedAt' => now()])->save();
+    foreach (['DAILY', 'WEEKLY', 'FINAL'] as $kind) {
+        $quiz = $kind === 'FINAL' ? $this->quiz : new ZakatAcademyQuiz;
+        if ($kind !== 'FINAL') {
+            $quiz->forceFill(['chapterId' => $chapter->id, 'title' => $kind, 'kind' => $kind, 'isPublished' => true, 'isActive' => true, 'passingScore' => 70, 'timeLimitMinutes' => 5])->save();
+        }
+        $attempt = new ZakatAcademyQuizAttempt;
+        $attempt->forceFill(['profileId' => $this->profile->id, 'quizId' => $quiz->id, 'attemptNumber' => 1, 'score' => 0, 'passed' => false, 'isCompleted' => true, 'submittedAt' => now(), 'answers' => []])->save();
+    }
+    $enrollment = \App\Modules\Academy\Models\ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->where('course_id', $chapter->courseId)->firstOrFail();
+    $service = app(\App\Modules\Academy\Services\ProgressService::class);
+    expect($service->forEnrollment($enrollment)['isEligible'])->toBeTrue();
+    ZakatAcademyQuizAttempt::where('profile_id', $this->profile->id)->where('quiz_id', $this->quiz->id)->update(['score' => null]);
+    expect($service->forEnrollment($enrollment)['isEligible'])->toBeFalse();
+    ZakatAcademyQuizAttempt::where('profile_id', $this->profile->id)->where('quiz_id', $this->quiz->id)->update(['score' => 0, 'is_completed' => false]);
+    expect($service->forEnrollment($enrollment)['isEligible'])->toBeFalse();
+});
