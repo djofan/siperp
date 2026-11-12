@@ -410,14 +410,20 @@ for (const [path, method] of [['/api/v1/academy/admin/materials','post'],['/api/
 }
 document['x-academy-material-pdfs'] = {listing:'Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.',access:'Existing private file endpoint and enrollment/release checks remain unchanged.'};
 const academyOwnProfile = {
-  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender'],
-  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]}},
+  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender','cohortName'],
+  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]},cohortName:{type:['string','null'],description:'Assigned cohort title only; read-only.'}},
 };
 document.paths['/api/v1/academy/profile'] = {get:{
   tags:['Academy'], summary:'Read the signed-in participant profile',
-  description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input is accepted to select another account. Available before the initial password change. Returns Cache-Control: no-store, private. No cohort metadata, password hash, token, or other users are returned.',
+  description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input selects another account. Available before the initial password change. Returns own assigned cohort title only and Cache-Control: no-store, private. No password hash, token, other cohort metadata or other users are returned.',
   security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
 }};
+document.paths['/api/v1/academy/profile'].put = {
+  tags:['Academy'],summary:'Update own participant name, phone and address',
+  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, phone, address, including selectors, cohort, gender and account/participant codes. Own Core user name and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
+  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address'],properties:{name:{type:'string',minLength:2,maxLength:100},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000}}})},
+  responses:{200:{description:'Updated own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error,422:error},
+};
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};
 const login = document.paths['/api/v1/auth/login'].post;
 login.requestBody.content['application/json'].schema.properties.pwa = {type:'boolean',description:'Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply.'};

@@ -59,6 +59,13 @@ export async function beginQuiz(quizId: string): Promise<ActionState> {
     redirect(`/academy/kuis/${quizId}/percobaan/${attemptId}`);
 }
 export async function saveStudyNote(lessonId: string, _: ActionState, form: FormData): Promise<ActionState> { const result = await mutate(`academy/lessons/${encodeURIComponent(lessonId)}/note`, form, "PUT"); return result.error ? result : { ...result, message: "Catatan pribadi tersimpan." }; }
+export async function updateAcademyProfile(_: ActionState, form: FormData): Promise<ActionState> {
+    await requireAcademyProfile();
+    const result = await mutate("academy/profile", {
+        name: String(form.get("name") ?? ""), phone: String(form.get("phone") ?? ""), address: String(form.get("address") ?? ""),
+    }, "PUT");
+    return result.error ? result : { ...result, message: "Profil berhasil diperbarui." };
+}
 export async function changeAcademyPassword(_: ActionState, form: FormData): Promise<ActionState> { const result = await mutate("academy/profile/password", form, "PUT"); if (result.error)
     return result; (await cookies()).delete(SESSION_COOKIE_NAME); redirect("/academy/masuk?password=1"); }
 export async function askTeacher(courseId: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/courses/${encodeURIComponent(courseId)}/questions`, form); }

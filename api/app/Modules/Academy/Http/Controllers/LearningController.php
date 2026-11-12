@@ -76,7 +76,45 @@ class LearningController
             'name' => $request->user()->name, 'code' => $request->user()->code,
             'email' => $request->user()->email, 'nis' => $profile->nis,
             'phone' => $profile->phone, 'address' => $profile->address, 'gender' => $profile->gender,
+            'cohortName' => $profile->cohort?->title,
         ]])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function updateAccount(Request $request)
+    {
+        $this->context->profile($request);
+        if (array_diff(array_keys($request->all()), ['name', 'phone', 'address'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'profile' => 'Hanya nama, nomor HP, dan alamat yang dapat diubah.',
+            ]);
+        }
+        if (is_string($request->input('phone'))) {
+            $phone = preg_replace('/[ -]/', '', trim($request->input('phone')));
+            $phone = preg_replace('/^\+62/', '62', $phone);
+            $phone = preg_replace('/^08/', '628', $phone);
+            $request->merge(['phone' => $phone]);
+        }
+        $data = $request->validate([
+            'name' => 'required|string|min:2|max:100',
+            'phone' => ['required', 'string', 'regex:/^628\d{7,12}$/'],
+            'address' => 'required|string|max:2000',
+        ], [
+            'phone.regex' => 'Gunakan nomor HP Indonesia yang valid, diawali 08, 628, atau +628.',
+        ]);
+        DB::transaction(function () use ($request, $data) {
+            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+            abort_unless($user->is_active, 403);
+            $profile = Profile::where('user_id', $user->id)->whereNull('deleted_at')->lockForUpdate()->firstOrFail();
+            abort_if($profile->mustChangePassword, 403, 'Ganti password awal sebelum melanjutkan.');
+            $user->name = $data['name'];
+            $user->save();
+            $profile->phone = $data['phone'];
+            $profile->address = $data['address'];
+            $profile->save();
+        }, 3);
+        $request->user()->refresh();
+
+        return $this->account($request);
     }
 
     public function mark(Request $request, string $lessonId)
