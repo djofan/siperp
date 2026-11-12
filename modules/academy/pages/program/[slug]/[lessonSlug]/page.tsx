@@ -5,7 +5,6 @@ import type { AcademyPage8 } from "@/modules/academy/api/page-contracts";
 import { requireAcademyProfile } from "../../../../api/access";
 import { getPublicCourse, getEnrollment } from "../../../../api/courses";
 import { saveStudyNote } from "../../../../api/actions";
-import { getMaterial } from "../../../../api/materials";
 import { lessonReleased, safeResourceUrl } from "../../../../api/policy";
 import { AudioPlayer } from "../../../../components/AudioPlayer";
 import { VideoPlayer } from "../../../../components/VideoPlayer";
@@ -29,8 +28,7 @@ export default async function LessonPage({ params }: {
         notFound();
     if (!lessonReleased(course.startsAt, lesson.releaseDay))
         return <div className="p-6"><h1 className="text-2xl font-bold">Materi belum dibuka</h1><p className="mt-3 text-gray-500">{course.startsAt ? `Materi tersedia pada hari ke-${lesson.releaseDay} program.` : "Tanggal mulai akan diumumkan setelah persiapan selesai."}</p><Link href="/academy/materi" className="mt-5 inline-block text-green-700">Kembali ke daftar materi</Link></div>;
-    const material = await getMaterial(lesson.id);
-    const pdfs = (material.attachments ?? []).filter(file => file.fileType === "application/pdf").flatMap(file => {
+    const pdfs = lesson.attachments.filter(file => file.fileType === "application/pdf").flatMap(file => {
         const url = safeResourceUrl(file.fileUrl);
         return url ? [{ ...file, url }] : [];
     });

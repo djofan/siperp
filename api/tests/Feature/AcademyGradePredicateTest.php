@@ -27,3 +27,22 @@ it('derives the predicate from the weighted recap rather than the quiz average',
     $grade = $context->weighted($quizzes, array_slice($attempts, 0, 1));
     expect($grade['score'])->toEqual(20)->and($grade['predicate'])->toBe('Maqbul')->and($grade['complete'])->toBeFalse();
 });
+
+
+it('marks final results only after the final exams have scored attempts including zero', function () {
+    $context = new class extends AcademyContext {
+        public function settings(): array
+        {
+            return ['weights' => ['DAILY' => 35, 'WEEKLY' => 30, 'FINAL' => 35]];
+        }
+    };
+    $quizzes = [['id' => 'daily', 'kind' => 'DAILY'], ['id' => 'final', 'kind' => 'FINAL']];
+    expect($context->weighted($quizzes, [])['finalCompleted'])->toBeFalse();
+    expect($context->weighted($quizzes, [['quizId' => 'daily', 'score' => 100]])['finalCompleted'])->toBeFalse();
+    expect($context->weighted($quizzes, [['quizId' => 'final', 'score' => null]])['finalCompleted'])->toBeFalse();
+    $grade = $context->weighted($quizzes, [['quizId' => 'final', 'score' => 0]]);
+    expect($grade['finalCompleted'])->toBeTrue()->and($grade['complete'])->toBeFalse();
+    expect($context->weighted([['id' => 'daily', 'kind' => 'DAILY']], [['quizId' => 'daily', 'score' => 100]])['finalCompleted'])->toBeFalse();
+    $quizzes[] = ['id' => 'final2', 'kind' => 'FINAL'];
+    expect($context->weighted($quizzes, [['quizId' => 'final', 'score' => 100]])['finalCompleted'])->toBeFalse();
+});

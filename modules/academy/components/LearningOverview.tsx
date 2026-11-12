@@ -1,22 +1,20 @@
 import Link from "next/link";
-import type { ListParticipantQuizzesResult } from "../api/courses";
+import type { GetOwnRankingsResult, ListParticipantQuizzesResult } from "../api/courses";
 import { AcademyIcon } from "./icons";
 import { EmptyState } from "./ui";
 
-export function LearningOverview({ quizzes }: { quizzes: ListParticipantQuizzesResult }) {
+export function LearningOverview({ quizzes, rankings }: { quizzes: ListParticipantQuizzesResult; rankings: GetOwnRankingsResult }) {
   const attempts = quizzes.flatMap(quiz => quiz.attempts.filter(attempt => attempt.isCompleted).map(attempt => ({ ...attempt, quiz })));
   const completed = quizzes.filter(quiz => quiz.attempts.some(attempt => attempt.isCompleted)).length;
-  const passed = quizzes.filter(quiz => quiz.attempts.some(attempt => attempt.isCompleted && attempt.passed)).length;
   const scored = attempts.filter(attempt => attempt.score !== null && Number.isFinite(Number(attempt.score)));
   const average = scored.length ? (scored.reduce((sum, attempt) => sum + Number(attempt.score), 0) / scored.length).toFixed(1) : "—";
   const stats = [
-    { icon: "Quiz", value: quizzes.length, label: "Total ujian" },
-    { icon: "Progress", value: completed, label: "Ujian selesai" },
-    { icon: "Trophy", value: passed, label: "Ujian lulus" },
+    { icon: "Progress", value: `${completed}/${quizzes.length}`, label: "Ujian selesai" },
     { icon: "Quiz", value: average, label: "Rata-rata nilai ujian" },
+    { icon: "Trophy", value: rankings.length ? <>{rankings.map(item => <span key={item.courseId} className="block">{rankings.length > 1 && <span className="block text-xs font-normal">{item.title} · {item.finalCompleted ? "Hasil akhir" : "Sementara"}</span>}{item.score.toFixed(2)}</span>)}</> : "—", label: rankings.length > 0 && rankings.every(item => item.finalCompleted) ? "Hasil akhir" : "Nilai total sementara" },
   ] as const;
   return <>
-    <div className="academy-stats">{stats.map((stat, index) => <article className="academy-card academy-stat" key={stat.label}>
+    <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">{stats.map((stat, index) => <article className="academy-card academy-stat" key={stat.label}>
       <span className={`academy-icon-tile ${index % 2 ? "academy-icon-warm" : ""}`}><AcademyIcon name={stat.icon} className="h-4 w-4" /></span>
       <strong>{stat.value}</strong><span className="academy-muted">{stat.label}</span>
     </article>)}</div>

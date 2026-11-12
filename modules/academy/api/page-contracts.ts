@@ -282,6 +282,7 @@ export type AcademyPage8 = {
             id: string;
             title: string;
             fileUrl: string;
+            fileType: string | null;
         }[];
     } | {
         id: string;
@@ -299,6 +300,7 @@ export type AcademyPage8 = {
             id: string;
             title: string;
             fileUrl: string;
+            fileType: string | null;
         }[];
     } | null;
     note: {

@@ -137,10 +137,9 @@ class QuizController
         $attempt = ZakatAcademyQuizAttempt::where('id', $id)->where('quiz_id', $quizId)->where('profile_id', $profile->id)->firstOrFail();
         $data = $attempt->toArray();
         $data['quiz'] = ['title' => $quiz->title, 'closesAt' => $quiz->closesAt?->toISOString()];
-        // Review answers only after the exam closes, including a completed early submission.
+        // Only the owner of a completed attempt can review the snapshotted answer keys.
         $snapshot = $data['answers'];
-        $originalClose = empty($snapshot['closesAt']) ? null : CarbonImmutable::parse($snapshot['closesAt']);
-        $review = $attempt->isCompleted && $quiz->closesAt && ! $quiz->closesAt->isFuture() && (! $originalClose || ! $originalClose->isFuture());
+        $review = $attempt->isCompleted;
         if (! $review) {
             foreach ($snapshot['questions'] as &$question) {
                 unset($question['explanation']);
