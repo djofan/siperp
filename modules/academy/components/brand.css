@@ -140,6 +140,7 @@
 :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) nav a:not([aria-current]):hover { background: #0d654e; color: white; }
 :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-brand-icon, :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-user-avatar { background: var(--academy-lime); color: var(--academy-green); }
 :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-note { background: #0d654e; border-color: #27795d; }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-note p { color: var(--academy-mist); }
 :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-note :is(a, svg) { color: var(--academy-lime); }
 :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) :is(a, button):focus-visible { outline-color: var(--academy-lime); }
 .academy-theme .academy-metric-icon { background: var(--academy-lime); color: var(--academy-green); }

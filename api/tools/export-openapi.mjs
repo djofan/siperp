@@ -59,6 +59,139 @@ document.paths['/api/v1/bantuan/reports/full'] = {
 };
 
 const error = { description: 'Request rejected', content: json({ $ref: '#/components/schemas/Error' }) };
+for (const path of ['/api/v1/academy/teacher/materials', '/api/v1/academy/teacher/materials/{id}']) {
+  document.paths[path] = { post: {
+    summary: 'Save teacher material with optional audio upload',
+    description: 'Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings.',
+    ...(path.endsWith('{id}') ? { parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] } : {}),
+    requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', required: ['chapterId', 'title'], properties: {
+      chapterId: { type: 'string' }, title: { type: 'string', maxLength: 191 }, order: { type: 'integer', minimum: 0 },
+      releaseDay: { type: 'integer', minimum: 1, maximum: 30 }, contentSummary: { type: 'string', maxLength: 30000 },
+      isPublished: { type: 'boolean' }, file: { type: 'string', format: 'binary' }
+    } } } } },
+    responses: { 200: { description: 'Material saved' }, 401: error, 403: error, 404: error, 422: error }
+  } };
+}
+document.paths['/api/v1/academy/teacher/materials'].get = {
+  summary: 'List teacher materials with cohort filter and server pagination',
+  description: 'Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page.',
+  parameters: [
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'cohort', in: 'query', schema: { type: 'string', maxLength: 191 } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Material list', content: json({ type: 'object', properties: { data: {
+    type: 'object', properties: {
+      items: { type: 'array', items: { type: 'object', properties: {
+        id: { type: 'string' }, title: { type: 'string' }, chapterId: { type: 'string' }, chapterTitle: { type: 'string' },
+        cohortTitle: { type: 'string' }, contentSummary: { type: ['string', 'null'] }, videoUrl: { type: 'string' }, isPublished: { type: 'boolean' }
+      } } }, chapters: { type: 'array', items: { type: 'object' } }, cohorts: { type: 'array', items: { type: 'object' } },
+      page: { type: 'integer' }, lastPage: { type: 'integer' }, total: { type: 'integer' }, perPage: { const: 10 }
+    }
+  } } }) }, 401: error, 403: error, 422: error }
+};
+document.paths['/api/v1/academy/teacher/quizzes'] = { get: {
+  summary: 'List teacher exams with cohort filtering and pagination',
+  description: 'Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table.',
+  parameters: [
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'cohort', in: 'query', schema: { type: 'string', maxLength: 191 } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Paginated exam list' }, 401: error, 403: error, 422: error }
+} };
+document.paths['/api/v1/academy/teacher/quizzes/{id}'] = { get: {
+  summary: 'Read teacher exam editor and paginated questions',
+  description: 'Teacher/admin only: question options and keys are private. view=table limits quiz.questions to 10/page and adds cohortTitle and pagination (page,lastPage,total,perPage). Other quiz fields and scope are unchanged. Legacy request returns all questions.',
+  parameters: [
+    { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Exam editor with question options and teacher-only keys' }, 401: error, 403: error, 404: error, 422: error }
+} };
+document.paths['/api/v1/academy/questions/{id}/media'] = { get: {
+  summary: 'Stream private image or audio attached to an Academy question',
+  description: 'Academy authentication is required. Teacher/admin roles may read question media; participants must be enrolled and authorized for the related quiz. Files are stored outside the public web root and responses disable caching and MIME sniffing.',
+  parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+  responses: {
+    200: { description: 'Question media', headers: { 'Cache-Control': { schema: { type: 'string', pattern: '(^|,\\s*)no-store(,|$)' } }, 'X-Content-Type-Options': { schema: { const: 'nosniff' } } }, content: {
+      'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+      'image/png': { schema: { type: 'string', format: 'binary' } },
+      'image/webp': { schema: { type: 'string', format: 'binary' } },
+      'audio/mpeg': { schema: { type: 'string', format: 'binary' } },
+      'audio/wav': { schema: { type: 'string', format: 'binary' } },
+      'audio/ogg': { schema: { type: 'string', format: 'binary' } },
+      'audio/mp4': { schema: { type: 'string', format: 'binary' } },
+      'audio/webm': { schema: { type: 'string', format: 'binary' } },
+    } },
+    401: error, 403: error, 404: error,
+  },
+} };
+for (const path of ['/api/v1/academy/teacher/quizzes', '/api/v1/academy/teacher/quizzes/{id}']) {
+  document.paths[path].post = {
+    summary: 'Save teacher exam with daily chapter or weekly/final cohort curriculum',
+    description: 'Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply.',
+    ...(path.endsWith('{id}') ? { parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] } : {}),
+    requestBody: { required: true, content: json({ type: 'object', required: ['title', 'timeLimitMinutes'], properties: {
+      kind: { type: 'string', enum: ['DAILY', 'WEEKLY', 'FINAL'] }, courseId: { type: 'string' }, chapterId: { type: 'string' },
+      title: { type: 'string' }, timeLimitMinutes: { type: 'integer', minimum: 1, maximum: 1440 }
+    } }) },
+    responses: { 200: { description: 'Exam saved' }, 401: error, 403: error, 404: error, 422: error }
+  };
+}
+document.paths['/api/v1/academy/materials'] = { get: {
+  summary: 'List published materials within the viewer cohort access',
+  description: 'sort=latest orders by creation time descending then ID; default keeps curriculum ordering. Existing publication, membership and module checks remain. Returns items, total, page, pages.',
+  parameters: [{ name: 'sort', in: 'query', schema: { type: 'string', enum: ['latest'] } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+    { name: 'cohort', in: 'query', schema: { type: 'string' } }],
+  responses: { 200: { description: 'Accessible material metadata' }, 401: error, 403: error }
+} };
+for (const path of ['/api/v1/academy/teacher/questions', '/api/v1/academy/teacher/questions/{id}']) {
+ document.paths[path] = { get: {
+  summary: path.endsWith('{id}') ? 'Read private teacher discussion detail' : 'List teacher discussions with pagination',
+  description: 'Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table.',
+  parameters: path.endsWith('{id}') ? [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] : [
+   { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+   { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Private discussion data' }, 401: error, 403: error, 404: error, 422: error }
+ } };
+}
+for (const path of ['/api/v1/academy/learning/discussions', '/api/v1/academy/learning/discussions/{id}']) {
+ document.paths[path] = { get: {
+  summary: path.endsWith('{id}') ? 'Read own participant discussion' : 'List own participant discussions',
+  description: 'Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise.',
+  parameters: path.endsWith('{id}') ? [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] : [
+   { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+   { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Own discussion data' }, 401: error, 403: error, 404: error, 422: error }
+ } };
+}
+document.paths['/api/v1/academy/teacher/sessions'] = { get: {
+ summary: 'List live Q&A sessions and cohort curriculum choices for teachers',
+ description: 'Teacher/admin only. Returns courses selector metadata and sessions (items,page,pages,total), 10/page, latest start first. Meeting links remain private to managers and enrolled participants through the existing participant discussions endpoint.',
+ parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }],
+ responses: { 200: { description: 'Session management data' }, 401: error, 403: error, 422: error }
+} };
+document.paths['/api/v1/academy/courses/{courseId}/sessions'] = { post: {
+ summary: 'Create a live Q&A meeting schedule',
+ description: 'Teacher/admin only. startsAt is explicit WIB (UTC+7), stored in UTC, and must be in the future. Meeting URL is supplied by the teacher; no room is created by this endpoint.',
+ parameters: [{ name: 'courseId', in: 'path', required: true, schema: { type: 'string' } }],
+ requestBody: { required: true, content: json({ type: 'object', required: ['title', 'startsAt', 'joinUrl'], properties: {
+ title: { type: 'string', maxLength: 191 }, startsAt: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$' }, joinUrl: { type: 'string', maxLength: 2048 }
+ } }) },
+ responses: { 200: { description: 'Session saved' }, 401: error, 403: error, 404: error, 422: error }
+} };
+document.paths['/api/v1/academy/admin/cohorts/{id}/chapters'] = {
+  post: { summary: 'Prepare at least 12 chapters and a 30-day cohort curriculum',
+    description: 'Academy admin only. Idempotent; preserves existing chapters, lessons and progress. New cohorts are prepared automatically.',
+    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+    responses: { 200: { description: 'Chapters prepared', content: json({ type: 'object', properties: { data: { type: 'object', properties: { courseId: { type: 'string' }, error: { type: 'string' }, message: { type: 'string' } } } } }) }, 401: error, 403: error, 404: error }
+  }
+};
 document.components.schemas.AcademyParticipantImport = {
   type: 'object', required: ['cohortId', 'gender', 'rows'],
   properties: {

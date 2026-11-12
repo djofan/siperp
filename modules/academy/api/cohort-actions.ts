@@ -1,5 +1,7 @@
 "use server";
 import { apiRequest, ApiError } from "@/lib/api";
+import type { AcademyPreparedChapters } from "@/contracts/modules/academy";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { ActionState } from "./actions";
 export async function createCohort(_: ActionState, form: FormData): Promise<ActionState> { let result: ActionState & {
@@ -24,4 +26,14 @@ export async function joinCohort(id: string): Promise<ActionState> {
   catch (error) { return { error: error instanceof ApiError ? error.message : "Pendaftaran angkatan gagal." }; }
   revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout");
   return { error: "", message: "Berhasil mendaftar angkatan. Progres dimulai dari awal." };
+}
+
+
+export async function prepareCohortChapters(id: string): Promise<ActionState> {
+  let result: AcademyPreparedChapters;
+  try { result = await apiRequest<AcademyPreparedChapters>(`academy/admin/cohorts/${encodeURIComponent(id)}/chapters`, { method: "POST" }); }
+  catch (error) { return { error: error instanceof ApiError ? error.message : "Bab gagal disiapkan." }; }
+  revalidatePath("/academy", "layout");
+  revalidatePath("/admin/academy", "layout");
+  redirect(`/admin/academy/program/${encodeURIComponent(result.courseId)}`);
 }

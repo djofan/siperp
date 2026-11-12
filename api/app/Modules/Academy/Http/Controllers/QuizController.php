@@ -44,6 +44,17 @@ class QuizController
         $attempt->submittedAt = $submittedAt;
     }
 
+    private function storeAnswer(array &$snapshot, string $questionId, mixed $optionId): void
+    {
+        $question = collect($snapshot['questions'])->firstWhere('id', $questionId);
+        $selected = is_array($optionId) ? $optionId : [$optionId];
+        abort_if(! $question || array_filter($selected, fn ($value) => ! is_string($value))
+            || count(array_unique($selected)) !== count($selected)
+            || array_diff($selected, array_column($question['options'], 'id'))
+            || ($question['type'] !== 'MULTIPLE' && count($selected) !== 1), 422, 'Pilihan jawaban tidak valid.');
+        $snapshot['responses'][$questionId] = $optionId;
+    }
+
     public function start(Request $request, string $quizId)
     {
         $profile = $this->context->profile($request);
@@ -81,7 +92,9 @@ class QuizController
     public function update(Request $request, string $id)
     {
         $profile = $this->context->profile($request);
-        $data = $request->validate(['submit' => 'sometimes|boolean', 'answer' => 'nullable|array', 'answer.questionId' => 'required_with:answer|string', 'answer.optionId' => 'required_with:answer']);
+        $data = $request->validate(['submit' => 'sometimes|boolean', 'answer' => 'nullable|array',
+            'answer.questionId' => 'required_with:answer|string', 'answer.optionId' => 'required_with:answer',
+            'answers' => 'nullable|array|max:100']);
         $result = DB::transaction(function () use ($profile, $id, $data) {
             $attempt = ZakatAcademyQuizAttempt::where('id', $id)->where('profile_id', $profile->id)->lockForUpdate()->firstOrFail();
             $quiz = $this->context->quiz($attempt->quizId, $profile->id);
@@ -94,10 +107,13 @@ class QuizController
             abort_if(! $expired && ! $quiz->isActive, 403, 'Ujian sedang dinonaktifkan.');
             if (! $expired && ! empty($data['answer'])) {
                 $answer = $data['answer'];
-                $question = collect($snapshot['questions'])->firstWhere('id', $answer['questionId']);
-                $selected = is_array($answer['optionId']) ? $answer['optionId'] : [$answer['optionId']];
-                abort_if(! $question || array_filter($selected, fn ($v) => ! is_string($v)) || count(array_unique($selected)) !== count($selected) || array_diff($selected, array_column($question['options'], 'id')) || ($question['type'] !== 'MULTIPLE' && count($selected) !== 1), 422, 'Pilihan jawaban tidak valid.');
-                $snapshot['responses'][$answer['questionId']] = $answer['optionId'];
+                $this->storeAnswer($snapshot, $answer['questionId'], $answer['optionId']);
+            }
+            if (! $expired && ! empty($data['answers'])) {
+                foreach ($data['answers'] as $questionId => $optionId) {
+                    abort_unless(is_string($questionId), 422, 'Pilihan jawaban tidak valid.');
+                    $this->storeAnswer($snapshot, $questionId, $optionId);
+                }
             }
             $completed = ($data['submit'] ?? false) || $expired;
             $attempt->answers = $snapshot;

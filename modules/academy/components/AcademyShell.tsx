@@ -24,7 +24,7 @@ const teacherLinks = [
 ] as const;
 const adminLinks = [
   { path: "", label: "Dashboard", icon: "Dashboard" },
-  { path: "/program", label: "Program & Modul", icon: "BookOpen" },
+  { path: "/materi", label: "Program & Materi", icon: "BookOpen" },
   { path: "/kuis", label: "Kuis", icon: "Quiz" },
   { path: "/peserta", label: "Peserta", icon: "Users" },
   { path: "/sertifikat", label: "Sertifikat", icon: "GraduationCap" },

@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +9,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  return <div><Link href="/akun/password" className="inline-flex rounded-xl px-4 py-2 text-sm">Ubah password</Link><Button variant="outline" size={compact ? "sm" : "default"} disabled={pending} onClick={async () => {
+  return <div><Button variant="outline" size={compact ? "sm" : "default"} disabled={pending} onClick={async () => {
     setPending(true); setError("");
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });

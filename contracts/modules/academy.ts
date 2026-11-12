@@ -211,3 +211,54 @@ export interface ZakatAcademySetting {
   value: string;
   updatedAt: Date;
 }
+
+/** POST /api/v1/academy/admin/cohorts/{id}/chapters; Academy admin only. */
+export interface AcademyPreparedChapters { courseId: string; error: string; message: string; }
+export interface AcademyTeacherMaterial {
+  id: string;
+  title: string;
+  chapterId: string;
+  chapterTitle: string;
+  cohortTitle: string;
+  contentSummary: string | null;
+  videoUrl: string;
+  isPublished: boolean;
+}
+
+export interface AcademyTeacherMaterialList {
+  items: AcademyTeacherMaterial[];
+  chapters: { id: string; title: string; course: { id: string; title: string } }[];
+  cohorts: { id: string; title: string }[];
+  page: number;
+  lastPage: number;
+  total: number;
+  perPage: number;
+}
+
+export interface AcademyTeacherExamList extends Omit<AcademyTeacherMaterialList, "items"> {
+  items: {
+    id: string; title: string; chapterTitle: string; cohortTitle: string;
+    kind: AcademyQuizKind; isPublished: boolean; isActive: boolean;
+    quizDate: string | null; closesAt: string | null;
+    timeLimitMinutes: number | null; questionCount: number;
+  }[];
+}
+
+/** Teacher exam scope: daily requires chapterId; weekly/final creation accepts courseId. */
+export type AcademyTeacherExamScope = { kind: "DAILY"; chapterId: string; courseId?: string } | { kind: "WEEKLY" | "FINAL"; courseId: string; chapterId?: string };
+
+export interface AcademyTeacherDiscussion {
+  id: string; question: string; answer: string | null;
+  createdAt: string; answeredAt: string | null;
+  profile: { user: { name: string } };
+  course: { title: string; cohort: { id: string; title: string } | null };
+}
+export type ParticipantDiscussion = Omit<AcademyTeacherDiscussion, "profile">;
+export interface AcademyTeacherSessionList {
+  courses: { id: string; title: string; cohort: { id: string; title: string } | null }[];
+  sessions: {
+    items: { id: string; title: string; startsAt: string; joinUrl: string;
+      course: { title: string; cohort: { id: string; title: string } | null } }[];
+    page: number; pages: number; total: number;
+  };
+}

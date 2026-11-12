@@ -59,6 +59,9 @@ class MaterialController
             $query->addSelect('video_url')->with('attachments:id,lesson_id,title,file_url,file_type');
         }
 
+        if (! $admin && $request->query('sort') === 'latest') {
+            $query->reorder()->orderByDesc('created_at')->orderByDesc('id');
+        }
         if ($admin && $request->boolean('all')) {
             $items = $query->get()->map(fn ($row) => AcademyDto::make($row));
 

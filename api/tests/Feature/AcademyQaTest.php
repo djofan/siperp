@@ -9,7 +9,9 @@ use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\Module;
 use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -78,6 +80,55 @@ it('rejects foreign options and ignores answers received after the deadline', fu
     $this->travel(6)->minutes();
     $this->putJson('/api/v1/academy/attempts/'.$id, ['answer' => ['questionId' => $question->id, 'optionId' => $question->options->firstWhere('isCorrect', true)->id], 'submit' => true])->assertSuccessful();
     expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe(0.0);
+});
+
+it('stores all local answers in one request when the participant submits', function () {
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->json('data');
+    $question = $this->quiz->questions->first();
+    $option = $question->options->firstWhere('isCorrect', true)->id;
+
+    $this->putJson('/api/v1/academy/attempts/'.$id, [
+        'answers' => [$question->id => $option], 'submit' => true,
+    ])->assertSuccessful()->assertJsonPath('data.completed', true);
+
+    $attempt = ZakatAcademyQuizAttempt::findOrFail($id);
+    expect($attempt->score)->toBe(100.0)
+        ->and($attempt->answers['responses'][$question->id])->toBe($option);
+});
+
+it('rejects an invalid option in a batch submission', function () {
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->json('data');
+    $question = $this->quiz->questions->first();
+
+    $this->putJson('/api/v1/academy/attempts/'.$id, [
+        'answers' => [$question->id => 'foreign-option'], 'submit' => true,
+    ])->assertUnprocessable();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->isCompleted)->toBeFalse();
+});
+
+it('stores private question images and exposes them only through authenticated academy access', function () {
+    Storage::fake('local');
+    $question = $this->quiz->questions->first();
+    $options = $question->options->map(fn ($option) => [
+        'id' => $option->id, 'label' => $option->label, 'isCorrect' => $option->isCorrect,
+    ])->all();
+    Sanctum::actingAs($this->admin);
+    $this->post('/api/v1/academy/teacher/quizzes/'.$this->quiz->id.'/questions/'.$question->id, [
+        'question' => $question->question, 'order' => $question->order, 'type' => $question->type,
+        'weight' => $question->weight, 'explanation' => 'Penjelasan gambar', 'mediaAlt' => 'Diagram bantuan',
+        'options' => json_encode($options), 'media' => UploadedFile::fake()->image('diagram.jpg', 640, 480),
+    ])->assertSuccessful();
+
+    $question->refresh();
+    expect($question->mediaMime)->toBe('image/jpeg')->and($question->mediaAlt)->toBe('Diagram bantuan');
+    Storage::disk('local')->assertExists($question->mediaPath);
+
+    Sanctum::actingAs($this->student);
+    $this->get('/api/v1/academy/questions/'.$question->id.'/media')->assertSuccessful()->assertHeader('Content-Type', 'image/jpeg');
+    $attemptId = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $snapshot = ZakatAcademyQuizAttempt::findOrFail($attemptId)->answers;
+    expect($snapshot['questions'][0]['mediaMime'])->toBe('image/jpeg')
+        ->and($snapshot['questions'][0])->not->toHaveKey('mediaPath');
 });
 
 it('hides attempts belonging to another participant', function () {
