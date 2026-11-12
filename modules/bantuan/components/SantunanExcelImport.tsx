@@ -24,9 +24,16 @@ export function SantunanExcelImport({ volunteers, onImported }: { volunteers: Ba
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy || reading || !rows.length) return;
-    const form = new FormData(event.currentTarget); setBusy(true); setError("");
+    const form = new FormData(event.currentTarget);
+    const period = String(form.get("period") ?? "");
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
+      setError("Pilih periode bulan santunan sebelum mengimpor.");
+      event.currentTarget.querySelector<HTMLInputElement>('[name="period"]')?.focus();
+      return;
+    }
+    setBusy(true); setError("");
     try {
-      const result = await request<{ createdCount: number }>("santunan/imports", { method: "POST", body: JSON.stringify({ period: form.get("period"), rows: matchSantunanVerifiers(rows, volunteers) }) });
+      const result = await request<{ createdCount: number }>("santunan/imports", { method: "POST", body: JSON.stringify({ period, rows: matchSantunanVerifiers(rows, volunteers) }) });
       setRows([]); if (fileInput.current) fileInput.current.value = "";
       await onImported(result.createdCount);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Impor gagal."); }
@@ -36,7 +43,7 @@ export function SantunanExcelImport({ volunteers, onImported }: { volunteers: Ba
     <div className={d.importTools}><Button variant="secondary" disabled={busy} onClick={() => void downloadSantunanTemplate(volunteers.map(person => person.name)).catch(() => setError("Template gagal diunduh."))}>Unduh template Excel</Button>
     <Button variant="secondary" disabled={busy || !volunteers.length} onClick={() => void downloadSantunanTemplate(volunteers.map(person => person.name), true).catch(cause => setError(cause instanceof Error ? cause.message : "Unduhan gagal."))}>Unduh data dummy</Button></div>
     <details className={d.importList}><summary>Daftar nama verifikator / penyalur aktif ({volunteers.length})</summary><ul>{volunteers.map(person => <li key={person.id}>{person.name}</li>)}</ul></details>
-    <form onSubmit={submit}><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: "16px 0" }}><div className={s.formGrid}>
+    <form onSubmit={submit} noValidate><fieldset disabled={busy} style={{ border: 0, padding: 0, margin: "16px 0" }}><div className={s.formGrid}>
       <label className={s.field}>Periode<input className={s.input} name="period" type="month" defaultValue={new Date().toLocaleDateString("en-CA").slice(0, 7)} required /></label>
       <label className={s.field}>File Excel (.xlsx)<input ref={fileInput} className={s.input} type="file" accept=".xlsx" onChange={event => void read(event.target.files?.[0])} /></label>
     </div></fieldset>
