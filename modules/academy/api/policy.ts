@@ -1,4 +1,5 @@
 export interface QuizSnapshot {
+  kind?: "DAILY" | "WEEKLY" | "FINAL";
   passingScore: number;
   timeLimitMinutes: number;
   closesAt?: string | null;
@@ -24,6 +25,7 @@ export function gradeQuiz(snapshot: QuizSnapshot) {
     const correct = question.options.filter(option => option.isCorrect).map(option => option.id);
     const selected = selectedOptions(snapshot.responses[question.id]);
     if (correct.length && selected.length === correct.length && new Set(selected).size === selected.length && selected.every(id => correct.includes(id))) earned += weight;
+    else if ((snapshot.kind === "DAILY" || snapshot.kind === "WEEKLY") && selected.length > 0 && new Set(selected).size === selected.length && selected.every(id => question.options.some(option => option.id === id))) earned += weight / 2;
   }
   const score = possible ? Math.round(earned / possible * 10000) / 100 : 0;
   return { score, passed: snapshot.questions.length > 0 && score >= snapshot.passingScore };

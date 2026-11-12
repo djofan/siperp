@@ -115,7 +115,7 @@ class CourseController
                 }
             }
             $self = $grades[$profile->id] ?? null;
-            $rows[] = ['courseId' => $enrollment->courseId, 'title' => $enrollment->course->title, 'rank' => $self ? 1 + count(array_filter($grades, fn ($g) => $g['score'] > $self['score'])) : null, 'total' => count($grades), 'score' => $self['score'] ?? 0, 'predicate' => $self['predicate'] ?? null, 'complete' => $self['complete'] ?? false];
+            $rows[] = ['courseId' => $enrollment->courseId, 'title' => $enrollment->course->title, 'rank' => $self ? 1 + count(array_filter($grades, fn ($g) => $g['score'] > $self['score'])) : null, 'total' => $people->unique()->count(), 'score' => $self['score'] ?? 0, 'predicate' => $self['predicate'] ?? null, 'complete' => $self['complete'] ?? false];
         }
 
         return $this->data($rows);

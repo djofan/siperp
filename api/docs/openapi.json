@@ -1525,6 +1525,196 @@
         }
       }
     },
+    "/api/v1/academy/learning/rankings": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Own ranking among enrolled participants",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "total counts distinct active enrolled participants, including those without completed exams. rank is null until the participant has a completed exam; equal scores share rank. Uncompleted published exams count as zero in the weighted score.",
+        "responses": {
+          "200": {
+            "description": "Own rankings with courseId, title, rank, total, score, predicate and complete"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Access denied"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/learning/overview": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Own learning and certificate progress",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Enrollment overview includes totalQuizzes, completedQuizzes (distinct completed exams with non-null scores), legacy passedQuizzes, lesson counters and grading. Certificate eligibility requires a published course and all published DAILY/WEEKLY/FINAL exams completed and graded, without a minimum score or lesson completion requirement. completedAt uses exam completion dates.",
+        "responses": {
+          "200": {
+            "description": "Own enrollment overview; completedQuizzes is a nonnegative integer"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Access denied"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/quizzes/{quizId}/attempts": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Start or resume own exam",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden until review is permitted.",
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Attempt started or answers saved; grading is server-controlled"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Not permitted or unavailable"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Retake not allowed"
+          },
+          "422": {
+            "description": "Invalid answers"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/attempts/{id}": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Save own answers or submit exam",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden until review is permitted.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attempt started or answers saved; grading is server-controlled"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Not permitted or unavailable"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Retake not allowed"
+          },
+          "422": {
+            "description": "Invalid answers"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/quizzes/{quizId}/attempts/{id}": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Read own exam attempt",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden until review is permitted.",
+        "parameters": [
+          {
+            "name": "quizId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted before review."
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Not permitted or unavailable"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Retake not allowed"
+          },
+          "422": {
+            "description": "Invalid answers"
+          }
+        }
+      }
+    },
     "/api/v1/bantuan/santunan/imports": {
       "post": {
         "tags": [

@@ -3,6 +3,29 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/academy/learning/rankings'] = {get: {
+  tags:['Academy'],summary:'Own ranking among enrolled participants',security:[{bearerAuth:[]}],
+  description:'total counts distinct active enrolled participants, including those without completed exams. rank is null until the participant has a completed exam; equal scores share rank. Uncompleted published exams count as zero in the weighted score.',
+  responses:{200:{description:'Own rankings with courseId, title, rank, total, score, predicate and complete'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
+}};
+document.paths['/api/v1/academy/learning/overview'] = {get: {
+  tags:['Academy'],summary:'Own learning and certificate progress',security:[{bearerAuth:[]}],
+  description:'Enrollment overview includes totalQuizzes, completedQuizzes (distinct completed exams with non-null scores), legacy passedQuizzes, lesson counters and grading. Certificate eligibility requires a published course and all published DAILY/WEEKLY/FINAL exams completed and graded, without a minimum score or lesson completion requirement. completedAt uses exam completion dates.',
+  responses:{200:{description:'Own enrollment overview; completedQuizzes is a nonnegative integer'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
+}};
+// Participant scoring is performed by Laravel; browser submissions cannot set the kind or score.
+for (const [path, method, summary] of [
+  ['/api/v1/academy/quizzes/{quizId}/attempts', 'post', 'Start or resume own exam'],
+  ['/api/v1/academy/attempts/{id}', 'put', 'Save own answers or submit exam'],
+  ['/api/v1/academy/quizzes/{quizId}/attempts/{id}', 'get', 'Read own exam attempt'],
+]) {
+  document.paths[path] = { [method]: {
+    tags: ['Academy'], summary, security: [{ bearerAuth: [] }],
+    description: 'Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden until review is permitted.',
+    parameters: [...path.matchAll(/\{(\w+)\}/g)].map(match => ({name:match[1],in:'path',required:true,schema:{type:'string'}})),
+    responses: { [method === 'post' ? 201 : 200]: {description:method === 'get' ? 'Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted before review.' : 'Attempt started or answers saved; grading is server-controlled'},401:{description:'Unauthenticated'},403:{description:'Not permitted or unavailable'},404:{description:'Not found'},409:{description:'Retake not allowed'},422:{description:'Invalid answers'}},
+  } };
+}
 document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
   tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
   description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.',

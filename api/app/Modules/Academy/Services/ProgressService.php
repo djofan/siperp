@@ -22,7 +22,7 @@ class ProgressService
         $attempts = Attempt::where('profile_id', $profileId)->where('is_completed', true)->whereIn('quiz_id', $quizzes->pluck('id'))->select('quiz_id', 'score', 'passed', 'submitted_at')->get();
         $passed = $attempts->where('passed', true)->groupBy('quizId');
         $finished = $attempts->filter(fn ($attempt) => $attempt->score !== null)->groupBy('quizId');
-        $dates = $progress->pluck('completedAt')->filter()->all();
+        $dates = [];
         foreach ($finished as $values) {
             $date = $values->pluck('submittedAt')->filter()->sort()->first();
             if ($date) {
@@ -30,8 +30,8 @@ class ProgressService
             }
         }
         $grading = $this->context->weighted($quizzes->toArray(), $attempts->toArray());
-        $complete = $lessons->count() > 0 && $lessons->count() === $progress->count() && $quizzes->count() === $finished->count();
+        $complete = $quizzes->count() > 0 && $quizzes->count() === $finished->count();
 
-        return ['totalLessons' => $lessons->count(), 'completedLessons' => $progress->count(), 'totalQuizzes' => $quizzes->count(), 'passedQuizzes' => $passed->count(), 'percent' => $lessons->count() ? (int) round($progress->count() / $lessons->count() * 100) : 0, 'isEligible' => $enrollment->course->isPublished && $complete && $grading['complete'], 'grading' => $grading, 'completedAt' => count($dates) ? max($dates)->toISOString() : null];
+        return ['totalLessons' => $lessons->count(), 'completedLessons' => $progress->count(), 'totalQuizzes' => $quizzes->count(), 'passedQuizzes' => $passed->count(), 'completedQuizzes' => $finished->count(), 'percent' => $lessons->count() ? (int) round($progress->count() / $lessons->count() * 100) : 0, 'isEligible' => $enrollment->course->isPublished && $complete && $grading['complete'], 'grading' => $grading, 'completedAt' => count($dates) ? max($dates)->toISOString() : null];
     }
 }
