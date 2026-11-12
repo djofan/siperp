@@ -47,6 +47,15 @@ URL publik pembayaran memakai domain HTTPS yang dapat diakses penyedia pembayara
 
 Merge GitHub tidak otomatis memperbarui VPS tanpa pipeline deployment. Setelah mengambil kode terbaru, perbarui dependensi yang berubah, jalankan migration yang telah direview jika diperlukan, build frontend, serta restart frontend dan worker. Muat ulang konfigurasi Laravel bila environment berubah. Jangan membuat ulang APP_KEY pada update rutin.
 
+VPS yang telah memakai pengalihan rilis terpisah menggunakan tooling di
+`ops/releases/` (panduan `ROUTINE.md`). Source checkout lama hanya di-fetch;
+build/dependency dijalankan di folder rilis baru. Kandidat diperiksa sebelum
+routing Nginx dan background dialihkan. Env serta storage persisten tetap
+digunakan bersama; rilis lama dipertahankan untuk routing versi dan rollback.
+Migration tidak otomatis dianggap kompatibel, dan rollback kode tidak memulihkan
+database. Jangan memakai deployment di tempat pada VPS yang sudah diinisialisasi
+dengan release manager tersebut.
+
 ## 7. Pemeriksaan
 
 - Frontend: `npm run typecheck`, `npm run lint`, `npm test`, dan `npm run build`.
