@@ -10,7 +10,7 @@ export function PwaLogin() {
     event.preventDefault();if(busy)return;setBusy(true);setError("");
     const form=new FormData(event.currentTarget);
     try {
-      const response=await fetch("/api/auth/login",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({code:String(form.get("code")).trim().toUpperCase(),password:form.get("password")})});
+      const response=await fetch("/api/auth/login",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({code:String(form.get("code")).trim().toUpperCase(),password:form.get("password"),pwa:true})});
       const data=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(data?.error?.message??"Kode akun atau password salah.");
       const access=await fetch("/api/bantuan/viewer",{cache:"no-store",credentials:"same-origin",headers:{Accept:"application/json"}});

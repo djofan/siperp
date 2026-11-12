@@ -22,7 +22,7 @@ import s from "./Workspace.module.css";
 import controls from "./IntakeActions.module.css";
 import { canRestoreIntake, submitIntake } from "../intake-lifecycle";
 import { isValidPhone } from "../phone";
-import { hasAnyRole } from "../permissions";
+import { canEditIntake } from "../permissions";
 import { surveyFields } from "../survey-fields";
 import { AddressRegions } from "./AddressRegions";
 import { MessageImport } from "./MessageImport";
@@ -124,7 +124,7 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
   const origin=useSearchParams().get("from");
   const originQuery=origin!==null&&/^[a-z0-9-]*$/.test(origin)?`?from=${encodeURIComponent(origin)}`:"";
   const restoreViewer=useRef(viewer);
-  const editingProcessed=!!initial&&!(["draft","needs_data"].includes(initial.status))&&hasAnyRole(viewer,["admin","call_center"]);
+  const editingProcessed=!!initial&&!(["draft","needs_data"].includes(initial.status))&&canEditIntake(viewer,initial);
   const formId=useId();
   const [form,setForm]=useState<IntakeState>(()=>({applicant:initial?.applicant??{incomePeriod:"bulan"},source:initial?.source??(direct||viewer.role==="verifier"?"bypass":"online"),program:initial?.program??viewer.settings.programs[0],region:initial?.region??"",bypassReason:initial?.bypassReason??"",step:0,formVersion:2,draftKey:initial?.id??crypto.randomUUID()}));
   const [reporterEnabled,setReporterEnabled]=useState(false);
@@ -196,7 +196,7 @@ export function IntakeForm({viewer,initial,direct=false}:{viewer:BantuanViewer;i
           if(stored.saved){
             savedRef.current=stored.saved;setSaved(stored.saved);
             const row=await request<AidDetail>(`applications/${stored.saved.id}`);
-            if(!canRestoreIntake(row.status,!!initial)&&!(initial&&hasAnyRole(viewer,["admin","call_center"]))){
+            if(!canRestoreIntake(row.status,!!initial)&&!(initial&&canEditIntake(viewer,row))){
               await removeDraft(viewer.id,vaultKey);
               if(!live)return;
               if(initial){stopping.current=true;router.replace(`/admin/bantuan/pengajuan/${row.id}${originQuery}`);return;}
