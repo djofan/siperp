@@ -168,14 +168,7 @@ export function Footer({
                 Solidaritas Insan Peduli.
               </li>
             )}
-            <li>
-              <Link
-                href="/lazsip/transparansi"
-                className="font-semibold text-white transition-colors hover:text-lazsip-secondary-200"
-              >
-                Lihat Transparansi Dana →
-              </Link>
-            </li>
+
           </ul>
         </div>
       </div>
