@@ -569,6 +569,114 @@
           }
         }
       },
+      "AcademyParticipantImport": {
+        "type": "object",
+        "required": [
+          "cohortId",
+          "gender",
+          "rows"
+        ],
+        "properties": {
+          "cohortId": {
+            "type": "string",
+            "description": "Existing Academy cohort ID; no program or open registration required."
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "IKHWAN",
+              "AKHWAT"
+            ],
+            "description": "One group for every participant in the workbook."
+          },
+          "rows": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "rowNumber",
+                "name",
+                "phone",
+                "address"
+              ],
+              "properties": {
+                "rowNumber": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "maximum": 10001
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 100
+                },
+                "phone": {
+                  "type": "string",
+                  "description": "Indonesian mobile number; 08, 8, 628 and +628 prefixes accepted. Spaces, parentheses, dots and hyphens removed; stored as 628 followed by 7–12 digits. Duplicate normalized numbers within one batch rejected."
+                },
+                "address": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              }
+            }
+          }
+        }
+      },
+      "AcademyParticipantImportResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "createdCount",
+          "skippedCount",
+          "credentials"
+        ],
+        "properties": {
+          "createdCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "skippedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          },
+          "credentials": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "phone",
+                "code",
+                "password"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "password": {
+                  "type": "string",
+                  "description": "Random initial password, disclosed only in the successful import response. Must be changed on first login; never persisted as plaintext."
+                }
+              }
+            }
+          }
+        }
+      },
       "BantuanMobileLogin": {
         "type": "object",
         "required": [
@@ -1284,6 +1392,98 @@
             }
           },
           "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/participant-imports": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Import participant registrations from parsed Excel rows",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Explicit bulk-registration action returning 200. Active Academy admin/superadmin only. The browser reads one .xlsx worksheet (up to 5 MiB) with Nama, No HP, Alamat headers; only parsed rows are sent to Laravel. Atomic transaction: any invalid/conflicting row rolls back the batch. Exact existing active participants (same normalized phone, case-insensitive name, trimmed address, cohort membership and group) are skipped; passwords and memberships remain unchanged. Other matches are rejected with row-specific 422 details; old accounts are never moved to another cohort. New accounts receive PAZ login codes, mandatory password change and cohort/program enrollment. Response has Cache-Control: no-store, private; no stored import file or plaintext-password history. Re-imports never return old passwords.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcademyParticipantImport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Atomic import result; download credentials before leaving the page.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store, private"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AcademyParticipantImportResult"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Request rejected",
             "content": {
               "application/json": {

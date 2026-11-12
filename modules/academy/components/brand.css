@@ -1,0 +1,147 @@
+/* Academy-only palette, shared by public pages and every learning/admin workspace. */
+.academy-theme:is(.academy-public, .academy-workspace, .academy-dashboard) {
+  color-scheme: light;
+  --academy-green: #005840;
+  --academy-lime: #d1f843;
+  --academy-mist: #ecf0ef;
+  --academy-background: var(--academy-mist);
+  --academy-card: #ffffff;
+  --academy-foreground: #153c31;
+  --academy-primary: var(--academy-green);
+  --academy-muted: #52675f;
+  --academy-border: #d3dfda;
+  --background: var(--academy-mist);
+  --foreground: var(--academy-foreground);
+  --color-surface: #ffffff;
+  --color-surface-muted: var(--academy-mist);
+  --color-border: var(--academy-border);
+  --color-accent: var(--academy-green);
+  --color-accent-hover: #004331;
+  --color-accent-soft: #edf8ce;
+  --color-success: var(--academy-green);
+  --color-success-soft: #edf8ce;
+  --color-lazsip-cream: var(--academy-mist);
+  --color-lazsip-ink: var(--academy-foreground);
+  --color-lazsip-primary-50: #f3f8f0;
+  --color-lazsip-primary-100: #edf8ce;
+  --color-lazsip-primary-200: #ceded4;
+  --color-lazsip-primary-300: #9dbcb0;
+  --color-lazsip-primary-400: #629780;
+  --color-lazsip-primary-500: #27795d;
+  --color-lazsip-primary-600: var(--academy-green);
+  --color-lazsip-primary-700: var(--academy-green);
+  --color-lazsip-primary-800: var(--academy-green);
+  --color-lazsip-primary-900: #004331;
+  --color-green-50: #f3f8f0;
+  --color-green-100: #edf8ce;
+  --color-green-200: #d8edb1;
+  --color-green-300: #a6c5ae;
+  --color-green-400: #629780;
+  --color-green-500: #27795d;
+  --color-green-600: var(--academy-green);
+  --color-green-700: var(--academy-green);
+  --color-green-800: #004331;
+  --color-green-900: #003528;
+  --color-emerald-50: #f3f8f0;
+  --color-emerald-100: #edf8ce;
+  --color-emerald-200: #d8edb1;
+  --color-emerald-300: #a6c5ae;
+  --color-emerald-400: #629780;
+  --color-emerald-500: #27795d;
+  --color-emerald-600: var(--academy-green);
+  --color-emerald-700: var(--academy-green);
+  --color-emerald-800: #004331;
+  --color-emerald-900: #003528;
+  --color-orange-50: #f4fadf;
+  --color-orange-100: #edf8ce;
+  --color-orange-200: var(--academy-lime);
+  --color-orange-500: var(--academy-green);
+  --color-orange-600: var(--academy-green);
+  --color-orange-700: var(--academy-green);
+  --color-slate-50: #f6f8f7;
+  --color-slate-100: var(--academy-mist);
+  --color-slate-200: var(--academy-border);
+  --color-slate-300: #b7cbc1;
+  --color-slate-400: #637e72;
+  --color-slate-500: var(--academy-muted);
+  --color-slate-600: #3e5c4f;
+  --color-slate-700: #284e3e;
+  --color-slate-800: #153c31;
+  --color-slate-900: var(--academy-green);
+  --color-gray-50: #f6f8f7;
+  --color-gray-100: var(--academy-mist);
+  --color-gray-200: var(--academy-border);
+  --color-gray-300: #b7cbc1;
+  --color-gray-400: #637e72;
+  --color-gray-500: var(--academy-muted);
+  --color-gray-600: #3e5c4f;
+  --color-gray-700: #284e3e;
+  --color-gray-800: #153c31;
+  --color-gray-900: var(--academy-green);
+}
+
+/* These component utilities have literal values in Tailwind's inline theme. */
+.academy-theme .bg-academy-background { background-color: var(--academy-mist); }
+.academy-theme .bg-academy-secondary, .academy-theme .bg-academy-accent { background-color: var(--academy-lime); }
+.academy-theme :is(.text-academy-secondary-foreground, .text-academy-accent-foreground) { color: var(--academy-green); }
+.academy-theme :is(.border-academy-input, .border-academy-border) { border-color: var(--academy-border); }
+.academy-theme .text-academy-muted-foreground { color: var(--academy-muted); }
+.academy-theme .bg-academy-muted { background-color: var(--academy-mist); }
+.academy-theme :is(.hover\:bg-academy-accent:hover, .hover\:bg-academy-secondary\/80:hover) { background-color: var(--academy-lime); color: var(--academy-green); }
+.academy-theme .hover\:text-academy-accent-foreground:hover { color: var(--academy-green); }
+.academy-theme :is(input, textarea, select, button, a, summary):focus-visible {
+  outline: 2px solid var(--academy-green);
+  outline-offset: 3px;
+  --tw-ring-color: var(--academy-green);
+}
+.academy-theme ::selection { background: var(--academy-lime); color: var(--academy-green); }
+
+.academy-theme .academy-lime-button {
+  background: var(--academy-lime);
+  color: var(--academy-green);
+  box-shadow: 0 6px 20px rgb(0 40 29 / .12);
+}
+.academy-theme .academy-lime-button:hover { background: #c2ec2e; }
+.academy-theme .academy-public-navbar { background: var(--academy-green); color: var(--academy-mist); border-color: #27795d; }
+.academy-theme .academy-public-navbar :is(.text-gray-900, .text-gray-700, .text-gray-600) { color: var(--academy-mist); }
+.academy-theme .academy-public-navbar nav a:hover { color: var(--academy-lime); }
+.academy-theme .academy-public-navbar :is(.border-gray-200, .border-gray-100) { border-color: #629780; }
+.academy-theme .academy-public-navbar .academy-mobile-menu { background: var(--academy-green); }
+.academy-theme .academy-public-navbar .academy-nav-login:hover { color: var(--academy-green); }
+.academy-theme .academy-public-navbar button:hover,
+.academy-theme .academy-mobile-menu a:not(.academy-lime-button):hover { background: #0d654e; color: var(--academy-lime); }
+
+.academy-theme .academy-hero { background: var(--academy-green); color: var(--academy-mist); }
+.academy-theme .academy-hero h1 { color: var(--academy-mist); }
+.academy-theme .academy-hero .academy-hero-accent { color: var(--academy-lime); }
+.academy-theme .academy-hero .academy-hero-copy { color: #d3dfda; }
+.academy-theme .academy-hero .academy-hero-pill { background: #0d654e; border-color: #629780; color: var(--academy-lime); }
+.academy-theme .academy-hero .academy-hero-secondary { background: transparent; border-color: #629780; color: var(--academy-mist); }
+.academy-theme .academy-hero .academy-hero-secondary:hover { background: #0d654e; }
+.academy-theme .academy-hero .academy-hero-glow { background: var(--academy-lime); opacity: .09; }
+.academy-theme .academy-public-footer { background: var(--academy-green); border-color: #27795d; color: var(--academy-mist); }
+.academy-theme .academy-public-footer :is(.text-gray-900, .text-gray-700, .text-gray-500, .text-gray-400) { color: var(--academy-mist); }
+.academy-theme .academy-public-footer a:hover { color: var(--academy-lime); }
+.academy-theme .academy-public-footer .border-gray-100 { border-color: #27795d; }
+.academy-theme.academy-auth { background: var(--academy-mist); }
+.academy-theme.academy-auth > main { max-width: 30rem; padding: 2rem; border: 1px solid var(--academy-border); border-top: 5px solid var(--academy-lime); border-radius: 1.5rem; background: white; }
+
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) {
+  background: var(--academy-green);
+  color: var(--academy-mist);
+  --color-slate-100: #27795d;
+  --color-slate-300: #9dbcb0;
+  --color-slate-400: #b7cbc1;
+  --color-slate-500: #d3dfda;
+  --color-slate-800: var(--academy-mist);
+  --color-slate-900: var(--academy-mist);
+}
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) a[aria-current="page"] { background: var(--academy-lime); color: var(--academy-green); }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) nav a:not([aria-current]):hover { background: #0d654e; color: white; }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-brand-icon, :is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-user-avatar { background: var(--academy-lime); color: var(--academy-green); }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-note { background: #0d654e; border-color: #27795d; }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-note :is(a, svg) { color: var(--academy-lime); }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) :is(a, button):focus-visible { outline-color: var(--academy-lime); }
+.academy-theme .academy-metric-icon { background: var(--academy-lime); color: var(--academy-green); }
+
+@media (max-width: 480px) { .academy-theme.academy-auth > main { padding: 1.5rem; } }

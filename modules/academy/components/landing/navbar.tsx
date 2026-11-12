@@ -26,7 +26,7 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
 
   return (
     <header className={[
-      "fixed top-0 z-50 w-full bg-white/95 backdrop-blur-sm transition-all duration-200",
+      "academy-public-navbar fixed top-0 z-50 w-full bg-white/95 backdrop-blur-sm transition-all duration-200",
       scrolled ? "shadow-sm border-b border-gray-100" : ""].join(" ")}>
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         {/* Logo */}
@@ -41,15 +41,15 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
         {/* Desktop nav */}
         <div className="hidden items-center gap-2 lg:flex">
           {isLoggedIn ? (
-            <a href={dashboardHref} className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
+            <a href={dashboardHref} className="academy-lime-button inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
               Dashboard
             </a>
           ) : (
             <>
-              <a href="/academy/masuk" className="inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+              <a href="/academy/masuk" className="academy-nav-login inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Masuk
               </a>
-              <Link href="/academy/daftar" className="inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
+              <Link href="/academy/daftar" className="academy-lime-button inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
                 Daftar
               </Link>
             </>
@@ -67,11 +67,11 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="border-t border-gray-100 bg-white px-4 py-3 lg:hidden">
+        <div className="academy-mobile-menu border-t border-gray-100 bg-white px-4 py-3 lg:hidden">
           <div className="flex flex-col gap-2">
             {publicNavigation.map(item => <Link key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700" onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
             {isLoggedIn ? (
-              <a href={dashboardHref} className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
+              <a href={dashboardHref} className="academy-lime-button rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                 Dashboard
               </a>
             ) : (
@@ -79,7 +79,7 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
                 <a href="/academy/masuk" className="rounded-lg border border-gray-200 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50">
                   Masuk
                 </a>
-                <Link href="/academy/daftar" className="rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
+                <Link href="/academy/daftar" className="academy-lime-button rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                   Daftar
                 </Link>
               </>

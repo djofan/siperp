@@ -9,6 +9,48 @@ const require = createRequire(import.meta.url);
 const ts = require('typescript');
 const participant = { isSuperadmin: false, isTeacher: false, moduleAccess: [], academyProfile: { mustChangePassword: false } };
 
+test('material list and editors highlight Program & Materi instead of Dashboard', async () => {
+  function compile(file, overrides) {
+    const exports = {};
+    const source = ts.transpileModule(readFileSync(file, 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+    }).outputText;
+    vm.runInNewContext(source, { exports, require: id => Object.hasOwn(overrides, id) ? overrides[id] : require(id) });
+    return exports;
+  }
+  const Layout = compile('modules/academy/admin/pages/layout.tsx', {
+    '@/modules/academy/api/admin-access': { requireAcademyAdmin: async () => ({ name: 'QA Admin' }) },
+    '@/modules/academy/components/admin/AcademyAdminShellChrome': { AcademyAdminShellChrome: 'div' },
+    '@/modules/academy/components/dashboard.css': {},
+  }).default;
+  const layout = await Layout({ children: 'Materi' });
+  let pathname;
+  const { DashboardChrome } = compile('modules/academy/components/DashboardChrome.tsx', {
+    react: { useState: () => [false, () => {}] },
+    'next/link': { default: 'a' },
+    'next/navigation': { usePathname: () => pathname },
+    './ui/button': { Button: 'button' },
+    './ui/badge': { Badge: 'span' },
+    './ui/sheet': { Sheet: 'div', SheetContent: 'div', SheetTitle: 'h2', SheetDescription: 'p', SheetTrigger: 'div' },
+    './ui/utils': { cn: (...values) => values.filter(Boolean).join(' ') },
+    './LogoutButton': { LogoutButton: 'button' },
+  });
+  for (const suffix of ['', '/baru', '/qa-lesson']) {
+    pathname = `/admin/academy/materi${suffix}`;
+    const tree = DashboardChrome({ ...layout.props, role: 'Admin' });
+    const links = nodes(tree).filter(node => node.type === 'a' && node.props['aria-current'] === 'page');
+    assert.ok(links.length > 0, pathname);
+    for (const link of links) assert.equal(link.props.href, '/admin/academy/materi', pathname);
+    const header = nodes(tree).find(node => node.type === 'header');
+    assert.ok(nodes(header).some(node => node.type === 'span' && node.props.children === 'Program & Materi'), pathname);
+  }
+  pathname = '/admin/academy';
+  const dashboard = DashboardChrome({ ...layout.props, role: 'Admin' });
+  for (const link of nodes(dashboard).filter(node => node.type === 'a' && node.props['aria-current'] === 'page')) {
+    assert.equal(link.props.href, '/admin/academy');
+  }
+});
+
 test('Academy admin and superadmin reach management even during maintenance', () => {
   for (const available of [true, false]) {
     assert.equal(academyLoginDestination({ ...participant, moduleAccess: [{ role: 'admin' }] }, available), '/admin/academy');
