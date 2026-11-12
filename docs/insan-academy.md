@@ -26,8 +26,9 @@
 
 ## Impor pendaftaran peserta dari Excel
 
-1. Buka **Peserta & Progres → Pendaftaran** (menu **Pendaftaran & Grup** juga
-   menuju tab yang sama), lalu pilih **Unduh template Excel**.
+1. Buka panel **Pendaftaran** di `/admin/academy/pendaftaran`, lalu pilih
+   **Unduh template Excel**. Panel **Peserta** hanya menampilkan daftar peserta;
+   pengelolaan angkatan berada di panel **Angkatan**.
 2. Isi satu lembar dengan judul kolom **Nama**, **No HP**, **Alamat** pada baris
    pertama. Data dimulai baris kedua. Semua kolom wajib diisi; maksimal 200 peserta
    dan ukuran file 5 MB dalam format `.xlsx`. Simpan file `.xls` lama sebagai `.xlsx`.
@@ -39,8 +40,10 @@
    Gunakan format teks pada kolom No HP agar angka awal tetap terlihat.
 5. Setelah berhasil, segera pilih **Unduh akun peserta** sebelum meninggalkan
    halaman atau memilih file lain. Bagikan NIP dan password awal kepada peserta
-   terkait; peserta wajib mengganti password sebelum belajar. Password awal
-   disimpan sebagai hash dan tidak dapat diunduh kembali melalui impor ulang.
+   terkait. Password awal peserta baru dari impor adalah `12345678`; peserta
+   wajib menggantinya sebelum belajar dengan password baru minimal 10 karakter.
+   Password disimpan sebagai hash. Impor ulang tidak mereset akun lama; perubahan
+   ini juga tidak mengubah password akun yang sudah dibuat sebelumnya.
 
 Validasi backend menyebut nomor baris yang bermasalah. Satu baris salah membatalkan
 seluruh batch, termasuk akun yang sempat dibuat dalam transaksi tersebut. Perbaiki

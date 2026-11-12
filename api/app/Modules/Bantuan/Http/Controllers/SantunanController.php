@@ -71,6 +71,54 @@ class SantunanController
         return response()->json(['data' => $this->payload($row)], 201);
     }
 
+    public function import(Request $request, Access $access)
+    {
+        $access->allow($request, ['treasurer']);
+        $data = $request->validate([
+            'period' => 'required|date_format:Y-m',
+            'volunteerId' => 'required|string|max:191',
+            'rows' => 'required|array|list|min:1|max:200',
+            'rows.*' => 'required|array:recipientName,category,amount',
+            'rows.*.recipientName' => 'required|string|max:191',
+            'rows.*.category' => 'required|in:orphan,widow',
+            'rows.*.amount' => 'required|integer|min:1|max:9000000000000',
+        ]);
+        abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
+
+        return DB::transaction(function () use ($request, $access, $data) {
+            DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
+            $seen = [];
+            $existing = Santunan::where('frequency', 'routine')->whereDate('period', $data['period'].'-01')
+                ->whereIn('category', ['orphan', 'widow'])->get();
+            foreach ($existing as $row) {
+                $seen[$row->category.':'.mb_strtolower(trim($row->recipient['name']))] = true;
+            }
+            foreach ($data['rows'] as $index => $item) {
+                $name = trim($item['recipientName']);
+                $key = $item['category'].':'.mb_strtolower($name);
+                if ($name === '' || isset($seen[$key])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'rows.'.$index.'.recipientName' => 'Baris data '.($index + 1).': nama kosong atau penerima sudah ada pada program dan periode ini.',
+                    ]);
+                }
+                $seen[$key] = true;
+                $row = new Santunan;
+                $row->forceFill([
+                    'id' => (string) Str::uuid(), 'number' => $this->nextNumber(),
+                    'frequency' => 'routine', 'category' => $item['category'],
+                    'period' => $data['period'].'-01', 'recipient' => ['name' => $name],
+                    'volunteer_id' => $data['volunteerId'], 'amount' => $item['amount'],
+                    'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
+                ])->save();
+                $this->event($request, $access, $row, 'created', ['source' => 'excel_import']);
+            }
+
+            return (new \Illuminate\Http\Resources\Json\JsonResource([
+                'createdCount' => count($data['rows']),
+            ]))->response()->header('Cache-Control', 'no-store, private');
+        });
+    }
+
     public function nextPeriod(Request $request, Access $access)
     {
         $access->allow($request, ['treasurer']);

@@ -3,6 +3,22 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
+  tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
+  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
+  security: [{ bearerAuth: [] }],
+  requestBody: { required: true, content: { 'application/json': { schema: {
+    type: 'object', required: ['period', 'volunteerId', 'rows'], properties: {
+      period: { type: 'string', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$' }, volunteerId: { type: 'string', maxLength: 191 },
+      rows: { type: 'array', minItems: 1, maxItems: 200, items: { type: 'object', additionalProperties: false,
+        required: ['recipientName', 'category', 'amount'], properties: {
+          recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
+          amount: { type: 'integer', minimum: 1, maximum: 9000000000000 },
+        } } },
+    },
+  } } } },
+  responses: { 200: { description: 'Impor berhasil', content: { 'application/json': { schema: { type: 'object', required: ['data'], properties: { data: { type: 'object', required: ['createdCount'], properties: { createdCount: { type: 'integer', minimum: 1, maximum: 200 } } } } } } } }, 403: { description: 'Peran tidak diizinkan' }, 422: { description: 'Data invalid, penerima ganda, atau penyalur tidak aktif; tidak ada baris disimpan' }, 429: { description: 'Batas impor tercapai' } },
+} };
 const image = {
   type: ['string', 'null'], maxLength: 191,
   pattern: '^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$',
@@ -66,7 +82,7 @@ document.components.schemas.AcademyParticipantImportResult = {
     skippedCount: { type: 'integer', minimum: 0, maximum: 200 },
     credentials: { type: 'array', maxItems: 200, items: {
       type: 'object', additionalProperties: false, required: ['name', 'phone', 'code', 'password'],
-      properties: { name: { type: 'string' }, phone: { type: 'string' }, code: { type: 'string' }, password: { type: 'string', description: 'Random initial password, disclosed only in the successful import response. Must be changed on first login; never persisted as plaintext.' } },
+      properties: { name: { type: 'string' }, phone: { type: 'string' }, code: { type: 'string' }, password: { type: 'string', description: 'Default initial password 12345678 for newly imported participants. Must be changed on first login; persisted only as a password hash. Existing accounts are never reset by re-importing.' } },
     } },
   },
 };
