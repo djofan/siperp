@@ -85,7 +85,7 @@ test('encrypted upload queue keeps photo coordinates through compression and sen
   class Xhr {
     upload={};status=201;
     open(){} setRequestHeader(){}
-    send(body){sent.push(body);if(fail){this.status=503;this.responseText='{}';fail=false;}queueMicrotask(()=>this.onload());}
+    send(body){sent.push(body);this.status=201;this.responseText=JSON.stringify({data:{id:body.get('clientId')}});if(fail){this.status=503;this.responseText='{}';fail=false;}queueMicrotask(()=>this.onload());}
   }
   class RequestError extends Error {constructor(message,status){super(message);this.status=status;}}
   const queue={exports:{},File,FileReader:Reader,FormData,XMLHttpRequest:Xhr,navigator,atob,crypto,Date,Error,
@@ -93,6 +93,7 @@ test('encrypted upload queue keeps photo coordinates through compression and sen
       './vault':{draftsWithPrefix:async()=>[...saved.values()],putDraft:async(_owner,key,value)=>saved.set(key,structuredClone(value)),removeDraft:async()=>{}},
       './photos':{preparePhotoUpload:async(file,point)=>({file:new File(['compressed'],'small.jpg',{type:'image/jpeg'}),location:point})},
       './client':{RequestError},'../photo-location':context.exports,
+      '../attachments':{validateAttachment:()=>{}},'@/lib/api-problem':{describeApiProblem:(_body,status)=>`HTTP ${status}`},
     })[id]};
   vm.runInNewContext(ts.transpileModule(readFileSync('modules/bantuan/api/photo-queue.ts','utf8'),{
     compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},

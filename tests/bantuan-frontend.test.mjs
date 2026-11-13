@@ -20,7 +20,7 @@ test("returning applicants can be searched and reused without copying old workfl
 test("transfer proof is optional and uploaded within the disbursement form",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
-  assert.match(actions,/kind:"transfer",minimum:0/);
+  assert.match(actions,/kind:"transfer",minimum:row.intakeType==="other"\?1:0/);
   assert.match(actions,/key==="disburse"&&!transferPhotosReady/);
   assert.doesNotMatch(actions,/Unggah bukti transfer terlebih dahulu pada bagian dokumen/);
   assert.match(workspace,/Bukti transfer \(opsional\)/);
@@ -57,7 +57,7 @@ test("santunan uses compact cards without changing its transfer and two evidence
   assert.match(page,/santunan\/\$\{row.id\}\/complete/);
   assert.match(page,/version:row.version/);
   assert.match(page,/hasRole\(viewer,"volunteer"\)&&viewer.id===row.volunteerId/);
-  assert.match(policy,/if\(viewer.role==="volunteer"\)return route.length===1&&route\[0\]==="santunan"/);
+  assert.match(policy,/if\(viewer.role==="volunteer"\)return route.length===1&&\["santunan","proses","penyaluran"\]/);
 });
 
 test("survey evidence uploads inside survey entry and remains visible in the document gallery",()=>{
@@ -87,7 +87,7 @@ test("survey entry is a compact two column form with no resize corner or field b
 test("detail follows applicant documents action history order with survey entry only for its assigned verifier",()=>{
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
-  assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:getActionSectionLabel\(row,viewer\)\},\{id:"riwayat",label:"Riwayat"\}\]/);
+  assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:row.intakeType==="other"\?"Data pelapor":"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:getActionSectionLabel\(row,viewer\)\},\{id:"riwayat",label:"Riwayat"\}\]/);
   assert.match(workspace,/hasRole\(viewer,"verifier"\)&&row.verifierId===viewer.id&&row.status==="survey_assigned"/);
   assert.match(workspace,/row.survey&&!isSurveyEntry/);
   assert.match(actions,/\["survey_submit","survey_decline"\].includes\(a.key\)&&row.verifierId!==viewer.id/);
@@ -144,7 +144,7 @@ test("intake photos follow source and preserve individual captions in the upload
   const slots=readFileSync("modules/bantuan/components/PhotoSlots.tsx","utf8");
   const form=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
   const queue=readFileSync("modules/bantuan/api/photo-queue.ts","utf8");
-  assert.match(form,/requirements=\{intakePhotos\(form.source\)\}/);
+  assert.match(form,/requirements=\{other\?\[\{kind:"supporting",minimum:0,[^}]*\}\]:intakePhotos\(form.source\)\}/);
   assert.match(slots,/minimum:source==="walk_in"\?1:0/);
   assert.match(slots,/kind:"kk",minimum:0/);
   assert.match(slots,/kind:"supporting",minimum:0/);
@@ -260,7 +260,7 @@ test("intake does not ask for or require an assignment region",()=>{
 test("intake keeps four steps and makes reporter data optional",()=>{
   const intake=readFileSync("modules/bantuan/components/IntakeForm.tsx","utf8");
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
-  assert.match(intake,/const labels=\["Data pemohon","Kondisi & kebutuhan","Foto & dokumen","Periksa & kirim"\]/);
+  assert.match(intake,/const defaultLabels=\["Data pemohon","Kondisi & kebutuhan","Foto & dokumen","Periksa & kirim"\]/);
   assert.match(intake,/Data pelapor/);
   assert.match(intake,/reporterName[^\n]*optional:true/);
   assert.doesNotMatch(workspace,/case-panel-pelapor/);

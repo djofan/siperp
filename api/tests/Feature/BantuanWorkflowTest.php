@@ -2052,3 +2052,87 @@ it('lets a verifier correct their own submitted intake without changing its stag
     $row->refresh()->forceFill(['status' => 'approved'])->save();
     $this->actingAs($this->verifier, 'sanctum')->putJson($url, [...$input, 'version' => 2])->assertConflict();
 });
+
+
+function bantuanOtherInput(): array
+{
+    return ['source' => 'online', 'program' => 'Lainnya', 'applicant' => [
+        'intakeType' => 'other', 'name' => 'Ahmad Ketua RT', 'nik' => '3201011234567890',
+        'street' => 'Jalan Melati RT 03, Cileungsi, Bogor', 'phone' => '081234567890',
+        'reporterRelationship' => 'Ketua RT mewakili warga', 'otherCategory' => 'Sedekah air bersih',
+        'customTitle' => 'Pemasangan tandon untuk 20 keluarga', 'problem' => 'Sumur warga mengering saat kemarau.',
+        'customBudget' => 'Tandon 2000 liter dan pipa distribusi Rp5000000.',
+    ]];
+}
+
+it('routes custom requests through assigned distributor and completes only after handover', function (bool $manual) {
+    $requester = bantuanUser('requester');
+    $distributor = bantuanUser('volunteer');
+    $row = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanOtherInput())->assertCreated()->json('data');
+    $url = '/api/v1/bantuan/applications/'.$row['id'].'/actions/';
+    $this->postJson($url.'submit', ['version'=>1])->assertOk()->assertJsonPath('data.status','screening');
+    $this->actingAs($this->cc,'sanctum')->postJson($url.'screen_pass',['version'=>2])->assertOk()->assertJsonPath('data.status','review2');
+    $this->actingAs($this->approver,'sanctum')->postJson($url.'approve',['version'=>3,'amount'=>5000000])->assertOk()->assertJsonPath('data.status','approved');
+    $this->actingAs($this->fund,'sanctum')->postJson($url.'fund_submit',['version'=>4])->assertConflict();
+    $this->actingAs($this->cc,'sanctum')->postJson($url.'assign_distributor',['version'=>4,'distributionType'=>'verifier','distributorId'=>$distributor->id])->assertOk()->assertJsonPath('data.status','fund_ready');
+    $this->actingAs($this->fund,'sanctum')->postJson($url.'fund_submit',['version'=>5])->assertOk();
+    $this->postJson($url.'fund_approve',['version'=>6])->assertOk();
+    $transfer=['version'=>7,'transferDate'=>now()->toDateString(),'transferAmount'=>5000000,'account'=>'1234567890','bank'=>'Bank Syariah Indonesia','recipientName'=>$distributor->name,'recipientRelationship'=>'Penyalur bantuan'];
+    $this->actingAs($this->treasurer,'sanctum')->postJson($url.'disburse',$transfer)->assertUnprocessable();
+    bantuanDoc($row['id'],'transfer');
+    if ($manual) {
+        $this->postJson('/api/v1/bantuan/batch', [...$transfer, 'action'=>'disburse', 'totalAmount'=>5000000,
+            'items'=>[['id'=>$row['id'],'version'=>7,'transferAmount'=>5000000]]])->assertOk()->assertJsonPath('data.0.status','disbursed');
+    } else $this->postJson($url.'disburse',$transfer)->assertOk()->assertJsonPath('data.status','disbursed');
+    expect(Application::findOrFail($row['id'])->completed_at)->toBeNull();
+    $handover=['version'=>8,'handover'=>['method'=>'tunai','date'=>now()->toDateString(),'amount'=>5000000,'notes'=>'Bantuan air bersih telah diterima warga.']];
+    $this->actingAs(bantuanUser('volunteer'),'sanctum')->postJson($url.'handover',$handover)->assertNotFound();
+    $this->actingAs($distributor,'sanctum')->getJson('/api/v1/bantuan/applications?task=distribution')->assertOk()->assertJsonPath('total',1);
+    $this->postJson($url.'handover',$handover)->assertUnprocessable();
+    bantuanDoc($row['id'],'handover'); bantuanDoc($row['id'],'certificate');
+    if ($manual) {
+        $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications/'.$row['id'].'/manual-processes',[
+            ...$handover,'action'=>'handover','manual'=>['actorId'=>$distributor->id,'channel'=>'whatsapp','date'=>now()->toDateString(),'note'=>'Laporan dan bukti diterima dari penyalur.'],
+        ])->assertOk()->assertJsonPath('data.status','completed');
+        expect(Application::findOrFail($row['id'])->manual_process['last']['actorId'])->toBe($distributor->id);
+        expect(Application::findOrFail($row['id'])->manual_process['last']['recordedBy'])->toBe($this->cc->id);
+    } else $this->postJson($url.'handover',$handover)->assertOk()->assertJsonPath('data.status','completed');
+    expect(Application::findOrFail($row['id'])->distributor_id)->toBe($distributor->id);
+})->with([false,true]);
+
+it('validates other application fields and prevents changing its route after submission', function () {
+    $input = bantuanOtherInput();
+    unset($input['applicant']['customBudget']);
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertUnprocessable();
+    $row = $this->postJson('/api/v1/bantuan/applications', bantuanOtherInput())->assertCreated()->json('data');
+    $this->postJson('/api/v1/bantuan/applications/'.$row['id'].'/actions/submit', ['version' => 1])->assertOk();
+    $this->putJson('/api/v1/bantuan/applications/'.$row['id'], [...bantuanInput(), 'version' => 2])->assertConflict();
+    $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$row['id'].'/actions/screen_pass', ['version' => 2])->assertNotFound();
+});
+
+
+it('accepts private PDF Word and text attachments over the former 2 MB limit', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $docx = base64_decode('UEsDBBQAAAAIAHNIbV3mdcR+0gAAAIsBAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbH2QvVLDMAzHX8XnlasVGBh6SToAKzD0BXSOkvjw11luad++Sls6cIVR+n/8ZLebQ/BqT4Vdip1+NI3e9O32mImVKJE7Pdea1wBsZwrIJmWKooypBKwylgky2i+cCJ6a5hlsipViXdWlQ/ftK42481W9HWR9oRTyrNXLxbiwOo05e2exig77OPyirK4EI8mzh2eX+UEMGu4SFuVvwDX3Ic8ubiD1iaW+YxAXfKcywJDsLkjS/F9z5840js7SLb+05ZIsMbs4BW9uSkAXf+6H83f3J1BLAwQUAAAACABzSG1dXzOVUpUAAAAHAQAACwAAAF9yZWxzLy5yZWxzjc87DsIwDAbgq0Q+QJ0yMKCmXVi6Ii4QJW5T0TzkhNftycBAEQOjf//6LHfDw6/iRpyXGBS0jYSh70606lKD7JaURW2ErMCVkg6I2TjyOjcxUaibKbLXpY48Y9LmomfCnZR75E8DtqYYrQIebQvi/Ez0jx2naTF0jObqKZQfJ74aVdY8U1Fwj2zRvuOmsoB9h5sX+xdQSwMEFAAAAAgAc0htXb1LXcuPAAAAwwAAABEAAAB3b3JkL2RvY3VtZW50LnhtbEWOUQ6DMAxDr1L1AITtYx8I2BV2hQAdVKJJlZSx3X6EfeznWZYty+39nVb3CqKRqfOXqvb3vt2bicctBSruiEmbvfNLKbkB0HEJCbXiHOjIniwJy2Flhp1lysJjUI00pxWudX2DhJG8TQ48fUyzQQylfwhnVlzdgFQ2JIdR3GBvlqoFaxjlZD75W4H/w/4LUEsBAhQAFAAAAAgAc0htXeZ1xH7SAAAAiwEAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAAUAAAACABzSG1dXzOVUpUAAAAHAQAACwAAAAAAAAAAAAAAgAEDAQAAX3JlbHMvLnJlbHNQSwECFAAUAAAACABzSG1dvUtdy48AAADDAAAAEQAAAAAAAAAAAAAAgAHBAQAAd29yZC9kb2N1bWVudC54bWxQSwUGAAAAAAMAAwC5AAAAfwIAAAAA');
+    foreach ([['proposal.pdf', "%PDF-1.4\n".str_repeat(' ', 3 * 1024 * 1024)."\n%%EOF", 'application/pdf'],
+        ['proposal.docx', $docx, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        ['rincian.txt', 'Kebutuhan tandon dan pipa distribusi.', 'text/plain']] as [$name, $bytes, $mime]) {
+        $source = UploadedFile::fake()->createWithContent($name, $bytes);
+        $actual = new UploadedFile($source->getRealPath(), $name, null, null, true);
+        $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+            'kind' => 'supporting', 'file' => $actual, 'caption' => 'Dokumen pendukung',
+        ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+        $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertHeader('Content-Type', $mime === 'text/plain' ? 'text/plain; charset=utf-8' : $mime)
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        $this->actingAs(bantuanUser('verifier'), 'sanctum')->get('/api/v1/bantuan/documents/'.$doc)->assertNotFound();
+        $this->actingAs($this->cc, 'sanctum');
+    }
+    $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting',
+        'file' => UploadedFile::fake()->createWithContent('terlalu-besar.pdf', "%PDF-1.4\n".str_repeat(' ', 10 * 1024 * 1024))], ['Accept' => 'application/json'])->assertUnprocessable();
+    foreach (['script.php', 'script.html', 'script.pdf'] as $name) {
+        $source = UploadedFile::fake()->createWithContent($name, '<html><script>alert(1)</script></html>');
+        $actual = new UploadedFile($source->getRealPath(), $name, null, null, true);
+        $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting',
+            'file' => $actual], ['Accept' => 'application/json'])->assertUnprocessable();
+    }
+});

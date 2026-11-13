@@ -367,3 +367,51 @@ userId/profileId dan password. Nama Core dan kontak profil Academy disimpan atom
 hanya untuk user login; kode, enrollment dan password tidak berubah. Respons profil
 terbaru tetap `no-store, private`. Tidak memerlukan migration. Perubahan password
 tetap memakai PUT `/api/v1/academy/profile/password` dengan password saat ini.
+
+### Pengajuan lainnya (Bantuan)
+
+`applicant.intakeType=other` memakai identitas pelapor (`name`, `nik` 16 digit,
+`street`, `phone`, `reporterRelationship`), `otherCategory` (Proposal, Sedekah air bersih,
+Renovasi rumah, Lainnya), `customTitle`, `problem`, `customBudget`, dan `applicationNotes`
+opsional. Server menetapkan `source=online`, `program=Lainnya`; field demografi/survei
+perorangan tidak diwajibkan. Draft tetap memerlukan nama dan NIK. Foto pendukung awal
+opsional, beberapa file dengan caption. Berkas tetap privat dengan aturan upload gambar.
+
+Alur: submit -> screening Call Center -> screen_pass -> review2 (penetapan nominal
+Approver/Ketua) -> approved -> Call Center menentukan penyalur (verifier/volunteer) ->
+fund_ready -> pengajuan dana -> fund_approved -> disburse -> disbursed -> handover -> completed.
+Survei tidak berlaku. Transfer belum menyelesaikan pengajuan. Laporan dan bukti penyerahan
+diisi penyalur yang ditugaskan, atau dicatat Call Center melalui manual-processes dengan
+identitas pelaksana asli dan identitas pencatat terpisah. Jenis ini tidak dapat diganti setelah diproses.
+Disburse memerlukan tanggal, nominal sesuai persetujuan, account, bank, recipientName,
+recipientRelationship, serta bukti transfer baru. Data penerima disimpan terenkripsi dalam
+manual_process.transferRecipient; dicatat oleh akun autentikasi pada audit. Tidak memerlukan
+migration. Aksi `other_report` setelah completed menerima version dan handover.date/notes;
+Call Center/Bendahara/admin dapat melengkapi laporan serta foto supporting kemudian tanpa
+mengubah nominal, tanggal selesai, atau status. Hak akses lama tetap berlaku.
+
+
+### Lampiran Bantuan
+
+Seluruh slot dokumen pengajuan dan santunan menerima JPG/PNG/WEBP, PDF, DOC/DOCX,
+XLS/XLSX, PPT/PPTX, ODT/ODS, TXT/CSV/RTF hingga **10 MiB per berkas**. HEIC/HEIF
+foto dikonversi di browser; gambar dikompresi, dokumen tidak diubah. Validasi server
+memeriksa ekstensi serta jenis isi berkas. Skrip/HTML dan ekstensi macro tidak diterima.
+Hak akses, caption, antrean privat terenkripsi, audit, dan syarat jenis bukti tetap berlaku.
+Unduh memakai MIME dan ekstensi yang sesuai: gambar/PDF inline, dokumen lainnya attachment.
+Tidak ada viewer Office pihak ketiga; dokumen tidak dikirim ke layanan eksternal.
+
+Deployment: pastikan migration `2026_11_09_000001_add_bantuan_photo_locations` telah
+dijalankan; kolom photo_location yang belum ada menyebabkan DB_SCHEMA_MISMATCH saat
+upload/detail. Backup sebelum migrate di VPS. Pastikan upload_max_filesize minimal 10M,
+post_max_size dan client_max_body_size minimal 16M (jangan turunkan batas lebih besar yang
+sudah dipakai Tanwir/Ojol). Reload PHP-FPM/Nginx bila konfigurasi berubah. HTTP 413 berarti
+batas server/proxy masih terlalu kecil. Frontend kini menampilkan alasan/kode gagal per berkas.
+
+
+Office attachments also require migration `2026_11_13_100000_expand_bantuan_attachment_mime`.
+It widens mime from 40 to 255 characters in both Bantuan document tables. Word/Excel
+OOXML MIME strings exceed 40 characters; MySQL otherwise rejects the insert with
+SQLSTATE 22001 / driver 1406 (DATA_CONSTRAINT), even though SQLite tests allow it.
+This additive widening preserves all existing files/data. Rollback deliberately does not
+shrink the column, to avoid truncating already stored MIME values. Backup before VPS migration.

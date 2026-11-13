@@ -7,7 +7,7 @@ export const manualStages:Record<string,{action:string;label:string;roles:string
  survey_assigned:[{action:"survey_submit",label:"Catat hasil survei dari WA / Telegram",roles:["verifier"]},{action:"assign_survey",label:"Ganti pelaksana survei",roles:["verifier"]}],
  survey_cc_review:[{action:"survey_review_submit",label:"Periksa & kirim hasil ke Approver",roles:["call_center"]},{action:"survey_return",label:"Minta perbaikan kepada Verifikator",roles:["call_center"]}],
  survey_submitted:[{action:"approve",label:"Catat keputusan nominal bantuan",roles:["approver","chair"]},{action:"review_reject",label:"Catat penolakan bantuan",roles:["approver","chair"]},{action:"survey_again",label:"Catat permintaan survei ulang",roles:["approver","chair"]}],
- approved:[{action:"assign_distributor",label:"Catat penyalur bantuan",roles:["verifier"]}],
+ approved:[{action:"assign_distributor",label:"Catat penyalur bantuan",roles:["verifier","volunteer"]}],
  fund_ready:[{action:"fund_submit",label:"Catat dana telah diajukan",roles:["fund_requester"]}],
  fund_submitted:[{action:"fund_approve",label:"Catat persetujuan dana",roles:["fund_requester"]},{action:"fund_reject",label:"Catat penolakan dana",roles:["fund_requester"]}],
  fund_approved:[{action:"disburse",label:"Catat transfer ke penyalur",roles:["treasurer"]}],

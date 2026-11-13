@@ -7,6 +7,7 @@ const require=createRequire(import.meta.url),ts=require('typescript');
 test('photo rotation controls cannot submit the surrounding survey form on the first click',()=>{
  const state=[];let cursor=0;const body={},jsx=(type,props)=>({type,props});
  const context={exports:{},document:{body},require:id=>{
+  if(id==='../attachments')return {isPhoto:mime=>mime.startsWith('image/')};
   if(id==='react')return {useState:initial=>{const i=cursor++;if(!(i in state))state[i]=initial;return [state[i],v=>state[i]=typeof v==='function'?v(state[i]):v];}};
   if(id==='react-dom')return {createPortal:(child,target)=>({child,target})};
   if(id==='react/jsx-runtime')return {jsx,jsxs:jsx};

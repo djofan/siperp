@@ -1,4 +1,5 @@
 "use client";
+import { attachmentAccept, attachmentHint } from "../attachments";
 import { ManualProcessPanel } from "./ManualProcessPanel";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
@@ -31,6 +32,7 @@ import { nextStep } from "../policy";
 
 type Action = { key: string; label: string; states: string[]; roles: string[]; danger?: boolean };
 const actions: Action[] = [
+  {key:"other_report",label:"Tambahkan laporan penyaluran",states:["completed"],roles:["call_center","treasurer"]},
   {key:"survey_revise",label:"Perbaiki hasil survei",states:["survey_cc_review","survey_submitted"],roles:["verifier"]},
   {key:"submit",label:"Ajukan sekarang",states:["draft","needs_data"],roles:["call_center","verifier","requester"]},
   {key:"screen_pass",label:"Teruskan ke Approver",states:["screening"],roles:["call_center"]},
@@ -52,8 +54,8 @@ const actions: Action[] = [
   {key:"fund_approve",label:"Tandai dana disetujui",states:["fund_submitted"],roles:["fund_requester"]},
   {key:"fund_reject",label:"Tandai dana ditolak",states:["fund_submitted"],roles:["fund_requester"],danger:true},
   {key:"disburse",label:"Catat pencairan dana",states:["fund_approved"],roles:["treasurer"]},
-  {key:"handover",label:"Laporkan penyerahan",states:["disbursed"],roles:["verifier","treasurer"]},
-  {key:"delivery_fail",label:"Gagal disalurkan",states:["disbursed"],roles:["verifier","treasurer"],danger:true},
+  {key:"handover",label:"Laporkan penyerahan",states:["disbursed"],roles:["verifier","volunteer","treasurer"]},
+  {key:"delivery_fail",label:"Gagal disalurkan",states:["disbursed"],roles:["verifier","volunteer","treasurer"],danger:true},
   {key:"return_funds",label:"Catat pengembalian dana",states:["delivery_failed"],roles:["treasurer"]},
   {key:"reopen",label:"Buka kembali pengajuan",states:["rejected_screening","rejected_t1","rejected_t2","rejected_bypass","cancelled","returned"],roles:["approver","chair"]},
   {key:"cancel",label:"Batalkan pengajuan",states:["draft","needs_data","screening","review1","survey_assignment","survey_assigned","survey_submitted","bypass_review","approved","fund_ready"],roles:["call_center","requester"],danger:true},
@@ -68,26 +70,29 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
   const kinds=Object.keys(documentLabels).filter(k=>rolesOf(viewer).some(role=>{
     if(["survey_assigned","survey_cc_review"].includes(row.status)&&(k.startsWith("survey_")||["sktm","ktp","kk","supporting"].includes(k)))return role==="admin"||role==="call_center"||role==="verifier"&&row.verifierId===viewer.id;
     if(k.startsWith("survey_")||k==="sktm"||k==="transfer"||["handover","certificate","receipt","education_other"].includes(k))return false;
+    if(row.intakeType==="other"&&row.status==="completed"&&["supporting","receipt"].includes(k))return ["admin","call_center","treasurer"].includes(role);
     if(["completed","returned","cancelled"].includes(row.status))return false;
     if(role==="admin")return true;
     if(["face","ktp","kk","supporting"].includes(k))return (role==="call_center"||role==="verifier"&&row.createdBy===viewer.id)&&["draft","needs_data","screening"].includes(row.status)||role==="requester"&&row.createdBy===viewer.id&&["draft","needs_data"].includes(row.status);
     if(["transfer","return"].includes(k))return role==="treasurer"&&["fund_approved","disbursed","delivery_failed"].includes(row.status);
-    return row.status==="disbursed"&&(role==="verifier"&&row.distributorId===viewer.id||role==="treasurer"&&row.distributionType==="direct");
+    return row.status==="disbursed"&&(["verifier","volunteer"].includes(role)&&row.distributorId===viewer.id||role==="treasurer"&&row.distributionType==="direct");
   }));
   async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const {file:prepared,location}=await preparePhotoUpload(file,deviceLocation);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});}setDeviceLocation(null);reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
-  return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · JPG, PNG, WEBP · maks. 2 MB</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
+  return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · {attachmentHint}</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
     {["survey_assigned","survey_cc_review"].includes(row.status)&&kinds.some(k=>k.startsWith("survey_"))?<><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={kinds.map(kind=>({kind,minimum:0}))} allowSurveyRevision onUploaded={reload}/>{row.documents.some(doc=>!kinds.includes(doc.kind))&&<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents.filter(doc=>!kinds.includes(doc.kind))} allDocuments/>}</>:row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
     {kinds.length>0&&<form onSubmit={upload} style={{display:"grid",gap:12,marginTop:20}}>
       <label className={s.field}>Jenis dokumen<select className={s.input} value={kind||kinds[0]} onChange={e=>setKind(e.target.value)}>{kinds.map(k=><option key={k} value={k}>{documentLabels[k]}</option>)}</select></label>
       <PhotoLocationPicker value={deviceLocation} onChange={setDeviceLocation} disabled={busy}/>
-      <label className={s.upload}>Pilih foto<input name="files" type="file" accept="image/jpeg,image/png,image/webp" multiple required/></label>
+      <label className={s.upload}>Pilih berkas<input name="files" type="file" accept={attachmentAccept} multiple required/></label>
       {error&&<p role="alert" className={s.tiny} style={{color:"#ad4b35"}}>{error}</p>}<button className={`${s.button} ${s.secondary}`} disabled={busy}>{busy?"Mengunggah…":"Unggah dokumen"}</button>
     </form>}
   </div></section>;
 }
 
 function actionsForRole(row:AidDetail,viewer:BantuanViewer){
-  return actions.filter(a=>a.states.includes(row.status)&&(viewer.role==="admin"||a.roles.includes(viewer.role)))
+  return actions.filter(a=>a.key!=="other_report"||row.intakeType==="other")
+    .filter(a=>row.intakeType!=="other"||!["survey_again"].includes(a.key))
+    .filter(a=>a.states.includes(row.status)&&(viewer.role==="admin"||a.roles.includes(viewer.role)))
     .filter(a=>!row.fundingRequest||!["fund_approve","fund_reject","assign_distributor"].includes(a.key))
     .filter(a=>viewer.role!=="verifier"||!["submit","cancel"].includes(a.key)||row.createdBy===viewer.id&&row.source==="bypass"&&["draft","needs_data"].includes(row.status))
     .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
@@ -95,7 +100,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
     .filter(a=>viewer.role==="admin"||!(row.intakeRole==="requester"&&row.createdBy===viewer.id&&["screen_pass","screen_reject"].includes(a.key)))
     .filter(a=>a.key!=="survey_revise"||row.verifierId===viewer.id)
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
-    .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(viewer.role==="verifier"&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
+    .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(["verifier","volunteer"].includes(viewer.role)&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
     .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
 }
 
@@ -249,6 +254,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     const form=new FormData(submittedForm),values:Record<string,unknown>=Object.fromEntries(form);
     for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);
     if(["survey_submit","survey_save","survey_review_submit","survey_review_save"].includes(key)){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}
+    if(key==="other_report")values.handover={date:form.get("date"),notes:form.get("notes")};
     if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),notes:form.get("notes")};
     try{
       const updated = await request<typeof row>(`applications/${row.id}/actions/${key}`,{method:"POST",body:JSON.stringify({...values,version:row.version})});
@@ -278,7 +284,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     {row.status==="fund_ready"&&rolesOf(viewer).some(role=>["admin","fund_requester"].includes(role))&&<div className={s.notice}><strong>Ajukan bersama bantuan lainnya</strong><p>Buka Pengajuan dana, buat kartu, lalu centang bantuan yang ingin diajukan. Total nominal dihitung otomatis.</p><Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buat kartu pengajuan dana →</Link></div>}
     {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}
     <div className={ux.actionChoices} aria-label="Pilihan tindakan">
-      {primary?<div className={ux.mainAction}><div><h3>{primary.label}</h3><p>{nextStep(row.status,row.source,row.intakeRole).description}</p></div><button type="button" className={s.button} aria-expanded={active===primary.key} aria-controls={regionId} disabled={busy} onClick={event=>openAction(primary.key,event.currentTarget)}>{primary.label} →</button></div>:<div className={ux.waiting}><h3>Belum ada tindakan untuk Anda pada tahap ini</h3><p>{nextStep(row.status,row.source,row.intakeRole).description} Penanggung jawab: {nextStep(row.status,row.source,row.intakeRole).owner}.</p></div>}
+      {primary?<div className={ux.mainAction}><div><h3>{primary.label}</h3><p>{nextStep(row.status,row.source,row.intakeRole,row.intakeType).description}</p></div><button type="button" className={s.button} aria-expanded={active===primary.key} aria-controls={regionId} disabled={busy} onClick={event=>openAction(primary.key,event.currentTarget)}>{primary.label} →</button></div>:<div className={ux.waiting}><h3>Belum ada tindakan untuk Anda pada tahap ini</h3><p>{nextStep(row.status,row.source,row.intakeRole,row.intakeType).description} Penanggung jawab: {nextStep(row.status,row.source,row.intakeRole,row.intakeType).owner}.</p></div>}
       {alternative.length>0&&<section className={ux.alternate} aria-label="Tindakan lainnya"><h3>Tindakan lainnya</h3><p>Pilih sesuai hasil pemeriksaan. Perubahan baru disimpan setelah dikonfirmasi.</p><div>{alternative.map(action=><button type="button" key={action.key} aria-controls={regionId} aria-expanded={active===action.key} data-tone={action.danger?"danger":"normal"} disabled={busy} className={s.button} onClick={event=>openAction(action.key,event.currentTarget)}>{action.label}</button>)}</div></section>}
     </div>
     {active&&activeAction&&<section key={active} id={regionId} ref={actionRegion} tabIndex={-1} className={d.panel} data-action={active} aria-labelledby={regionId+"-title"}>
@@ -301,15 +307,16 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
         {reasons.includes(active)&&<label className={`${s.field} ${s.wide}`}>Alasan / catatan *<textarea className={s.input} name="reason" required minLength={5} maxLength={5000}/></label>}
         {active==="approve"&&<ApprovalAmount row={row}/>}
         {["assign_survey","assign_distributor"].includes(active)&&<>
-          {active==="assign_distributor"&&<label className={s.field}>Jenis penyalur<select className={s.input} name="distributionType" value={distributionType} onChange={e=>setDistributionType(e.target.value)}><option value="verifier">Verifikator</option>{row.source==="bypass"&&<option value="direct">Bendahara langsung ke penerima</option>}</select></label>}
-          {(active==="assign_survey"||distributionType==="verifier")&&<VerifierPicker key={active} staff={staff} name={active==="assign_survey"?"verifierId":"distributorId"} initialId={active==="assign_survey"?row.verifierId??"":row.distributorId??""}/>}
+          {active==="assign_distributor"&&<label className={s.field}>Jenis penyalur<select className={s.input} name="distributionType" value={distributionType} onChange={e=>setDistributionType(e.target.value)}><option value="verifier">Petugas penyalur</option>{row.source==="bypass"&&<option value="direct">Bendahara langsung ke penerima</option>}</select></label>}
+          {(active==="assign_survey"||distributionType==="verifier")&&<VerifierPicker key={active} roleFilter={active==="assign_survey"?"verifier":null} staff={active==="assign_survey"?staff:staff.filter(person=>(person.roles??[person.role]).some(role=>["verifier","volunteer"].includes(role)))} name={active==="assign_survey"?"verifierId":"distributorId"} label={active==="assign_survey"?"Verifikator":"Penyalur bantuan"} initialId={active==="assign_survey"?row.verifierId??"":row.distributorId??""}/>}
           {active==="assign_survey"&&<SurveyAssignmentAddress row={row}/>}
           {active==="assign_survey"&&row.verifierId&&<label className={`${s.field} ${s.wide}`}>Alasan mengganti Verifikator<textarea className={s.input} name="reason" minLength={5} maxLength={5000} placeholder="Jelaskan alasan perubahan tugas…"/><small>Riwayat penugasan sebelumnya tetap tersimpan.</small></label>}
           {row.status==="disbursed"&&<label className={`${s.field} ${s.wide}`}>Alasan penggantian *<textarea className={s.input} name="reason" required minLength={5}/><small>Unggah bukti pengembalian dari penyalur lama. Setelah diganti, pencairan ulang wajib dicatat Bendahara.</small></label>}
         </>}
         {active==="fund_submit"&&<label className={s.field}>Referensi web dana (opsional)<input className={s.input} name="reference" maxLength={191}/></label>}
         {active==="fund_approve"&&<div className={`${s.notice} ${s.wide}`}>Pastikan persetujuan sudah diberikan di web pengajuan dana. Penanda ini akan menerbitkan rincian pencairan.</div>}
-        {active==="disburse"&&<><div className={`${s.notice} ${s.wide}`}><strong>Transfer kepada {staff.find(person=>person.id===row.distributorId)?.name??"penerima yang ditetapkan"}</strong><p>Dana disetujui: Rp {Number(row.amount??0).toLocaleString("id-ID")}. Periksa rekening tujuan, isi tanggal, lalu unggah bukti jika tersedia.</p></div><label className={s.field}>Tanggal transfer *<input className={s.input} name="transferDate" type="date" defaultValue={today()} required max={today()}/></label><label className={s.field}>Nominal transfer (Rp) *<input className={s.input} name="transferAmount" type="number" min={1} defaultValue={row.amount??undefined} readOnly required/></label><label className={`${s.field} ${s.wide}`}>Rekening tujuan *<input className={s.input} name="account" required maxLength={191}/></label><div className={s.wide}><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={[{kind:"transfer",minimum:0,hint:"Opsional. Pencairan tetap dapat dicatat tanpa bukti transfer."}]} onReady={onTransferPhotosReady} onUploaded={reload}/></div></>}
+        {active==="other_report"&&<><label className={s.field}>Tanggal laporan *<input className={s.input} type="date" name="date" defaultValue={today()} max={today()} required/></label><label className={`${s.field} ${s.wide}`}>Laporan penyaluran *<textarea className={s.input} name="notes" required maxLength={5000}/></label><div className={s.wide}><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={[{kind:"receipt",minimum:0,hint:"Lampiran laporan opsional."}]} onUploaded={reload}/></div></>}
+        {active==="disburse"&&<><div className={`${s.notice} ${s.wide}`}><strong>Transfer kepada {staff.find(person=>person.id===row.distributorId)?.name??"penerima yang ditetapkan"}</strong><p>Dana disetujui: Rp {Number(row.amount??0).toLocaleString("id-ID")}. Periksa rekening tujuan, isi tanggal, lalu unggah bukti jika tersedia.</p></div><label className={s.field}>Tanggal transfer *<input className={s.input} name="transferDate" type="date" defaultValue={today()} required max={today()}/></label><label className={s.field}>Nominal transfer (Rp) *<input className={s.input} name="transferAmount" type="number" min={1} defaultValue={row.amount??undefined} readOnly required/></label>{row.intakeType==="other"&&<>{[["bank","Bank tujuan"],["recipientName","Nama penerima transfer"],["recipientRelationship","Hubungan penerima dengan pengajuan"]].map(([name,label])=><label key={name} className={s.field}>{label} *<input name={name} className={s.input} defaultValue={name==="recipientName"?staff.find(person=>person.id===row.distributorId)?.name:name==="recipientRelationship"?"Penyalur bantuan":undefined} required maxLength={191}/></label>)}<p className={`${s.notice} ${s.wide}`}>Setelah transfer disimpan, dana berada di penyalur. Pengajuan selesai setelah laporan penyerahan disimpan.</p></>}<label className={`${s.field} ${s.wide}`}>Rekening tujuan *<input className={s.input} name="account" required maxLength={191}/></label><div className={s.wide}><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={[{kind:"transfer",minimum:row.intakeType==="other"?1:0,hint:row.intakeType==="other"?"Wajib. Unggah bukti transfer kepada penerima.":"Opsional. Pencairan tetap dapat dicatat tanpa bukti transfer."}]} onReady={onTransferPhotosReady} onUploaded={reload}/></div></>}
         {active==="handover"&&<><HandoverFields row={row} today={today()}/><CertificateBuilder defaultOpen={initialAction==="certificate"} row={row} verifier={staff.find(person=>person.id===row.verifierId)?.name??(viewer.id===row.verifierId?viewer.name:"")}/><section className={`${s.surveyEvidence} ${s.wide}`} aria-label="Foto penyaluran"><h3 className={s.sectionTitle}>Foto & bukti penyaluran</h3><p>Foto penyerahan dan sertifikat wajib dilengkapi. Kuitansi opsional. Semua foto tersimpan juga di Dokumen pendukung.</p><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={handoverPhotosFor(row.program)} onReady={onHandoverPhotosReady} onUploaded={reload}/></section></>}
       </div>}
       {(active==="return_funds"||active==="assign_distributor"&&row.status==="disbursed")&&<section className={s.surveyEvidence} aria-label="Bukti pengembalian dana"><h3 className={s.sectionTitle}>Bukti pengembalian dana</h3><p>Unggah bukti dari penyalur sebelumnya di sini.</p><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={[{kind:"return",minimum:1,hint:"Wajib sebelum mencatat pengembalian atau mengganti penyalur setelah pencairan."}]} onReady={onReturnPhotosReady} onUploaded={reload}/></section>}

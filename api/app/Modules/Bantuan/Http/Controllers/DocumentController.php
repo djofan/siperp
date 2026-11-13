@@ -19,6 +19,7 @@ class DocumentController
                 && (str_starts_with($kind, 'survey_') || in_array($kind, ['sktm', 'ktp', 'kk', 'supporting'], true));
             abort_if($doc->used_at && ! $surveyRevision, 409, 'Bukti yang sudah digunakan tidak dapat dihapus.');
             $stage = match (true) {
+                ($row->applicant['intakeType'] ?? null) === 'other' && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true) => true,
                 $surveyRevision => true,
                 in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true),
                 str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned',

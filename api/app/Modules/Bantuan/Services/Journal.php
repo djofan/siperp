@@ -39,6 +39,11 @@ class Journal
             'return_funds' => 'Dana dikembalikan ke Bendahara', 'reopen' => 'Pengajuan dibuka kembali',
             'cancel' => 'Pengajuan dibatalkan', 'request_data' => 'Data perlu dilengkapi',
         ][$action] ?? $action;
+        if (($row->applicant['intakeType'] ?? null) === 'other') {
+            if ($eventAction === 'screen_pass') $action = 'Pengajuan lainnya menunggu penetapan nominal';
+            if ($eventAction === 'disburse') $action = 'Dana diterima penyalur, silakan lengkapi laporan penyerahan';
+            if ($eventAction === 'other_report') $action = 'Laporan penyaluran tambahan disimpan';
+        }
         if ($reason && in_array($eventAction, ['survey_decline', 'survey_return', 'assign_survey'], true)) $action .= ' · '.$reason;
         $ids = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
             ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'module_access.user_id')

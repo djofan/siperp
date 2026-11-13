@@ -39,8 +39,8 @@ export const processMenus:ProcessEntry[]=[
   process("dana-siap","Perlu diajukan dananya","04 · Dana bantuan",["fund_ready"],["fund_requester"],"Ajukan di web dana terpisah, lalu tandai Dana diajukan di detail pengajuan.","wallet"),
   process("dana-diajukan","Menunggu keputusan dana","04 · Dana bantuan",["fund_submitted"],["fund_requester"],"Setelah ada keputusan di web dana, tandai Dana disetujui atau Dana ditolak di sini.","clock"),
   process("pencairan","Siap dicairkan","05 · Pencairan & penyerahan",["fund_approved"],["treasurer","fund_requester"],"Bendahara melakukan transfer manual lalu catat pencairan. Bukti transfer dapat dilampirkan di form dan bersifat opsional.","wallet"),
-  process("penyaluran","Siap diserahkan","05 · Pencairan & penyerahan",["disbursed"],["verifier","treasurer","call_center"],"Penyalur menyerahkan bantuan, unggah foto dan sertifikat, lalu laporkan penyerahan.","hand","distribution"),
-  process("gagal-salur","Gagal disalurkan","05 · Pencairan & penyerahan",["delivery_failed"],["verifier","treasurer","call_center"],"Periksa alasan gagal salur dan koordinasikan pengembalian dana ke Bendahara.","history","distribution"),
+  process("penyaluran","Siap diserahkan","05 · Pencairan & penyerahan",["disbursed"],["verifier","volunteer","treasurer","call_center"],"Penyalur menyerahkan bantuan, unggah foto dan sertifikat, lalu laporkan penyerahan.","hand","distribution"),
+  process("gagal-salur","Gagal disalurkan","05 · Pencairan & penyerahan",["delivery_failed"],["verifier","volunteer","treasurer","call_center"],"Periksa alasan gagal salur dan koordinasikan pengembalian dana ke Bendahara.","history","distribution"),
   process("selesai","Bantuan selesai","06 · Arsip",["completed"],["call_center","approver","chair","verifier","fund_requester","treasurer"],"Bantuan sudah diserahkan dan bukti lengkap. Buka detail untuk melihat hasilnya.","check"),
   process("ditolak","Pengajuan ditolak","06 · Arsip",["rejected_screening","rejected_t1","rejected_t2","rejected_bypass"],["call_center","approver","chair","verifier"],"Lihat alasan penolakan dan riwayat keputusan.","history"),
   process("dibatalkan","Pengajuan dibatalkan","06 · Arsip",["cancelled"],["call_center","approver","chair","verifier"],"Lihat pengajuan yang dibatalkan beserta alasan dan jejak prosesnya.","history"),
@@ -56,7 +56,7 @@ function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntr
     {key:"pengajuan-dana",label:"Pengajuan dana",icon:"wallet",group:"Umum",description:"Pantau kelompok pengajuan dana dan hasilnya."},
     ...processMenus.filter(item=>item.key!=="survei").map(item=>({...item,task:undefined,description:`Pantau ${item.label.toLowerCase()}. Akses baca saja.`})),
   ];
-  if(viewer.role==="volunteer")return [{key:"santunan",label:"Santunan saya",icon:"hand",group:"Umum"}];
+  if(viewer.role==="volunteer")return [{key:"proses",label:"Pekerjaan saya",icon:"inbox",group:"Umum"},{key:"penyaluran",label:"Siap diserahkan",icon:"hand",group:"Umum"},{key:"santunan",label:"Santunan saya",icon:"hand",group:"Umum"}];
   const items:NavEntry[]=[
     {key:"",label:"Dashboard",icon:"layout",group:"Umum"},
     {key:"pengajuan",label:viewer.role==="requester"?"Pengajuan saya":"Semua pengajuan",icon:"files",group:"Umum"},
@@ -90,7 +90,7 @@ export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypas
     call_center:["","pengajuan","berjalan","proses","mustahiq","laporan"],
     requester:["","pengajuan","proses"],
     verifier:["","pengajuan","proses"],
-    volunteer:["santunan"],
+    volunteer:["santunan","proses","penyaluran"],
     approver:["","pengajuan","berjalan","proses","mustahiq"],
     chair:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","audit"],
     fund_requester:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana"],
@@ -117,7 +117,7 @@ export function defaultListStates(_viewer:Pick<BantuanViewer,"role">,view:string
   return processInfo(view)?.states??[];
 }
 function canViewSingleRoute(viewer:Pick<BantuanViewer,"role"|"canBypass">,route:string[]):boolean{
-  if(viewer.role==="volunteer")return route.length===1&&route[0]==="santunan";
+  if(viewer.role==="volunteer")return route.length===1&&["santunan","proses","penyaluran"].includes(route[0])||route.length===2&&route[0]==="pengajuan"&&!["baru","langsung"].includes(route[1]);
   if(!route.length)return true;
   if(route[0]==="pengajuan"&&route[1]){
     if(route[1]==="baru")return route.length===2&&["admin","call_center","requester"].includes(viewer.role);
@@ -149,7 +149,16 @@ export function intakeStage(source:string, intakeRole?:string|null):string {
   if(["admin","call_center"].includes(intakeRole??""))return "review1";
   return source==="online"?"review1":"screening";
 }
-export function nextStep(status:string, source="online", intakeRole?:string|null): { title:string; description:string; owner:string } {
+export function nextStep(status:string, source="online", intakeRole?:string|null, intakeType?:string): { title:string; description:string; owner:string } {
+  if(intakeType==="other"){
+    const custom:Record<string,[string,string,string]>={
+      draft:["Lengkapi pengajuan lainnya","Isi data pelapor, masalah, dan detail kebutuhan. Lampiran awal opsional.","Pembuat pengajuan"],
+      review2:["Periksa kebutuhan dan tetapkan nominal","Data sudah diperiksa Call Center. Tentukan nominal tanpa tahap survei.","Approver / Ketua Yayasan"],
+      fund_approved:["Catat transfer kepada penyalur","Isi bank, rekening, nama penerima, hubungan, nominal, tanggal, dan bukti transfer.","Bendahara LAZSIP"],
+      completed:["Laporan penyerahan tersimpan","Bantuan telah diserahkan dan laporan tercatat.","Selesai"],
+    };
+    if(custom[status]){const [title,description,owner]=custom[status];return {title,description,owner};}
+  }
   const values:Record<string,[string,string,string]>={
     draft:["Lengkapi lalu kirim pengajuan",intakeRole==="requester"?"Lengkapi data lalu kirim ke Call Center untuk diperiksa sebelum diteruskan ke Approver.":source==="online"?"Draft belum masuk proses. Lengkapi data; foto WhatsApp opsional, lalu kirim ke penyetuju.":"Draft belum masuk proses. Lengkapi data, foto wajah dan KTP, lalu kirim pengajuan.","Pembuat pengajuan"],
     needs_data:["Lengkapi data yang diminta","Baca alasan pengembalian, perbarui data, lalu kirim kembali.",intakeRole==="requester"?"Petugas Pengajuan / Call Center":"Call Center"],

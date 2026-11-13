@@ -4113,7 +4113,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "JPEG, PNG or WEBP; maximum 2048 KiB"
+                    "description": "JPEG, PNG, WEBP, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, ODT/ODS, TXT, CSV or RTF; maximum 10240 KiB per file"
                   },
                   "location": {
                     "type": "object",
@@ -5481,7 +5481,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "JPEG, PNG or WEBP; maximum 2048 KiB"
+                    "description": "JPEG, PNG, WEBP, PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, ODT/ODS, TXT, CSV or RTF; maximum 10240 KiB per file"
                   },
                   "clientId": {
                     "type": "string",
@@ -6723,6 +6723,112 @@
           }
         }
       }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/other_report": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Add an optional report after direct custom-request transfer",
+        "description": "Only completed other intake. Call Center, treasurer or module admin. Preserves completion status/date and amount; updates report with audit trail. Supporting photos can be appended privately at completed stage by these roles.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "handover"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "handover": {
+                    "type": "object",
+                    "required": [
+                      "date",
+                      "notes"
+                    ],
+                    "properties": {
+                      "date": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "notes": {
+                        "type": "string",
+                        "maxLength": 5000
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Completed application with optional report"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -6877,5 +6983,11 @@
     "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
     "access": "Existing private file endpoint and enrollment/release checks remain unchanged."
   },
-  "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked."
+  "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked.",
+  "x-bantuan-other-intake": {
+    "discriminator": "applicant.intakeType=other",
+    "description": "Custom requests always use source online and program Lainnya. Applicant identity fields name/nik/street/phone represent the reporter, not a fictitious individual beneficiary. Required reporterRelationship, otherCategory (Proposal, Sedekah air bersih, Renovasi rumah, Lainnya), customTitle, problem, customBudget. applicationNotes and multiple captioned supporting photos are optional. Drafts require name and 16-digit nik; other fields may be incomplete. Legacy new/returning intake remains unchanged.",
+    "workflow": "submit -> screening (Call Center) -> screen_pass -> review2 (Approver/chair amount approval) -> approved -> assign_distributor (Call Center selects verifier/volunteer) -> fund_ready -> fund_submitted -> fund_approved -> disburse -> disbursed -> handover -> completed. No survey. Call Center may record handover via manual-processes on behalf of the assigned distributor. Existing role, independent approval, funding group and optimistic version guards apply.",
+    "transfer": "For other intake, disburse additionally requires bank, recipientName, recipientRelationship and a new unused transfer evidence photo, alongside transferDate, transferAmount equal to approved amount, and account. Atomic recording stores encrypted recipient details and transfer date; completion requires the assigned distributor handover report and normal evidence. Missing fields/evidence rolls back all changes. Bulk verifier disbursement cannot bypass these checks."
+  }
 }
