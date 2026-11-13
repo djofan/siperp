@@ -17,7 +17,7 @@ class DocumentController
             $kind = $doc->kind;
             $surveyRevision = in_array($row->status, ['survey_assigned', 'survey_cc_review'], true)
                 && (str_starts_with($kind, 'survey_') || in_array($kind, ['sktm', 'ktp', 'kk', 'supporting'], true));
-            abort_if($doc->used_at && ! $surveyRevision, 409, 'Bukti yang sudah digunakan tidak dapat dihapus.');
+            abort_if($doc->used_at && ! $surveyRevision && !$access->has($request, ['admin']), 409, 'Bukti yang sudah digunakan tidak dapat dihapus.');
             $stage = match (true) {
                 ($row->applicant['intakeType'] ?? null) === 'other' && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true) => true,
                 $surveyRevision => true,
@@ -27,7 +27,7 @@ class DocumentController
                 $kind === 'return' => in_array($row->status, ['disbursed', 'delivery_failed'], true),
                 default => $row->status === 'disbursed',
             };
-            abort_unless($stage, 409, 'Foto sudah terkunci pada tahap ini.');
+            abort_unless($stage || $access->has($request, ['admin']), 409, 'Foto sudah terkunci pada tahap ini.');
             abort_unless($access->has($request, ['admin']) || $doc->uploaded_by === $request->user()->id, 403, 'Hanya pengunggah atau Admin dapat menghapus foto.');
             $access->documentRole($request, $row, $kind);
             // Retain encrypted bytes for audit/recovery; never erase evidence in a UI action.

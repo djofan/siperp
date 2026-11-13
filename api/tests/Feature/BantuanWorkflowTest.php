@@ -17,7 +17,7 @@ uses(RefreshDatabase::class);
 
 function bantuanSurvey(): array
 {
-    return ['date' => now()->toDateString(), 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus',
+    return ['date' => now()->toDateString(), 'sunnahKnowledge' => 'Sudah mulai', 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus',
         'background' => 'Latar belakang', 'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan',
         'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana', 'stayDuration' => 5, 'stayUnit' => 'tahun',
         'socialRecord' => 'Baik', 'recommendation' => 'layak'];
@@ -235,7 +235,10 @@ function bantuanInput(): array
         'applicant' => ['bypassKnowledge' => 'Kondisi telah diperiksa langsung', 'bypassCondition' => 'Kondisi telah diperiksa langsung', 'bypassHome' => 'Kondisi telah diperiksa langsung', 'bypassExpenses' => 'Kondisi telah diperiksa langsung', 'bypassEfforts' => 'Kondisi telah diperiksa langsung', 'bypassNeeds' => 'Kondisi telah diperiksa langsung', 'bypassRecommendation' => 'Kondisi telah diperiksa langsung', 'name' => 'Pemohon Uji', 'nik' => '3271051234567890', 'birthPlace' => 'Bandung', 'birthDate' => '1980-01-01',
             'gender' => 'laki_laki', 'maritalStatus' => 'Menikah', 'street' => 'Alamat uji', 'rtRw' => '01/02', 'village' => 'Desa',
             'district' => 'Kecamatan', 'city' => 'Bandung', 'housing' => 'Menumpang', 'job' => 'Buruh', 'income' => 1000000,
-            'incomePeriod' => 'bulan', 'dependentCount' => 2, 'phone' => '08123456789', 'prayer' => 'Ya', 'smoking' => 'Tidak',
+            'incomePeriod' => 'bulan', 'dependentCount' => 2, 'dependents' => [
+                ['name'=>'Siti','relationship'=>'Istri','gender'=>'perempuan','age'=>40,'status'=>'Tidak bekerja'],
+                ['name'=>'Ahmad','relationship'=>'Anak','gender'=>'laki_laki','age'=>12,'status'=>'Sekolah'],
+            ], 'phone' => '08123456789', 'prayer' => 'Ya', 'smoking' => 'Tidak',
             'previousAid' => false, 'publicationConsent' => false, 'hasSktm' => false, 'willingSktm' => true, 'informationSource' => 'Tetangga', 'problem' => 'Memerlukan biaya pengobatan'],
         'reporter' => ['name' => 'Pelapor Uji', 'date' => now()->toDateString(), 'maritalStatus' => 'Menikah', 'type' => 'Perorangan', 'phone' => '08123456700', 'address' => 'Alamat pelapor']];
 }
@@ -439,7 +442,7 @@ it('shows same NIK application history without blocking new applications or leak
 it('allows a completed survey without a SKTM photo even when the applicant already has SKTM', function () {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     Application::findOrFail($id)->forceFill(['status' => 'survey_assigned', 'verifier_id' => $this->verifier->id])->save();
-    $survey = ['date' => now()->toDateString(), 'hasSktm' => true, 'background' => 'Latar belakang',
+    $survey = ['date' => now()->toDateString(), 'sunnahKnowledge' => 'Ya', 'hasSktm' => true, 'background' => 'Latar belakang',
         'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan', 'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana',
         'stayDuration' => 5, 'stayUnit' => 'tahun', 'socialRecord' => 'Baik', 'recommendation' => 'layak'];
     $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => 1, 'survey' => $survey])->assertUnprocessable();
@@ -607,7 +610,7 @@ it('completes the normal workflow only after the approved funding and mandatory 
     $action($this->cc, 'submit')->assertJsonPath('data.status', 'review1');
     $action($this->approver, 'review1_approve');
     $action($this->cc, 'assign_survey', ['surveyAddress' => 'Jalan Lokasi Survei 10, Bogor', 'verifierId' => $this->verifier->id]);
-    $survey = ['date' => now()->toDateString(), 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus', 'background' => 'Latar belakang',
+    $survey = ['date' => now()->toDateString(), 'sunnahKnowledge' => 'Sudah mulai', 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus', 'background' => 'Latar belakang',
         'currentCondition' => 'Kondisi uji', 'needs' => 'Biaya pengobatan', 'efforts' => 'Bekerja', 'homeObservation' => 'Rumah sederhana',
         'stayDuration' => 5, 'stayUnit' => 'tahun', 'socialRecord' => 'Baik', 'recommendation' => 'layak'];
     $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit', ['version' => $version, 'survey' => $survey])->assertUnprocessable();
@@ -2135,4 +2138,119 @@ it('accepts private PDF Word and text attachments over the former 2 MB limit', f
         $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting',
             'file' => $actual], ['Accept' => 'application/json'])->assertUnprocessable();
     }
+});
+
+
+it('validates survey family details rent and sunnah before forwarding', function (string $case, string $field) {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    $applicant=Application::findOrFail($id)->applicant;
+    $survey=bantuanSurvey();
+    if($case==='missing-sunnah')unset($survey['sunnahKnowledge']);
+    if($case==='invalid-sunnah')$survey['sunnahKnowledge']='Mungkin';
+    if($case==='missing-dependents')unset($applicant['dependents']);
+    if($case==='text-dependents')$applicant['dependents']='2 orang';
+    if($case==='count-mismatch')$applicant['dependentCount']=3;
+    if($case==='incomplete-dependent')unset($applicant['dependents'][0]['relationship']);
+    if(str_starts_with($case,'rent-')){$applicant['housing']='Kontrak / sewa';$applicant['rent']=500000;$applicant['rentPeriod']='bulan';}
+    if($case==='rent-missing')unset($applicant['rent']);
+    if($case==='rent-zero')$applicant['rent']=0;
+    if($case==='rent-period')unset($applicant['rentPeriod']);
+    Application::findOrFail($id)->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id,'applicant'=>$applicant])->save();
+    foreach(['ktp','kk','survey_recipient','survey_front','survey_inside','survey_inside','survey_environment'] as $kind)bantuanDoc($id,$kind);
+    $this->actingAs($this->verifier,'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit',['version'=>1,'survey'=>$survey])
+        ->assertUnprocessable()->assertJsonValidationErrors($field,'error.details');
+    expect(Application::findOrFail($id)->status)->toBe('survey_assigned');
+    expect(Application::findOrFail($id)->version)->toBe(1);
+})->with([
+    ['missing-sunnah','survey.sunnahKnowledge'],['invalid-sunnah','survey.sunnahKnowledge'],
+    ['missing-dependents','applicant.dependents'],['text-dependents','applicant.dependents'],['count-mismatch','applicant.dependents'],
+    ['incomplete-dependent','applicant.dependents.0.relationship'],['rent-missing','applicant.rent'],['rent-zero','applicant.rent'],['rent-period','applicant.rentPeriod'],
+]);
+
+it('preserves rent from intake and shows sunnah and family data to approver',function(string $knowledge){
+    $input=bantuanInput();$input['applicant']['housing']='Sewa';$input['applicant']['rent']=750000;$input['applicant']['rentPeriod']='bulan';
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',$input)->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>'survey_assigned','verifier_id'=>$this->verifier->id])->save();
+    foreach(['ktp','kk','survey_recipient','survey_front','survey_inside','survey_inside','survey_environment'] as $kind)bantuanDoc($id,$kind);
+    $survey=[...bantuanSurvey(),'sunnahKnowledge'=>$knowledge];
+    $this->actingAs($this->verifier,'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_submit',['version'=>1,'survey'=>$survey])->assertOk();
+    $this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/survey_review_submit',['version'=>2])->assertOk();
+    $this->actingAs($this->approver,'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()
+        ->assertJsonPath('data.survey.sunnahKnowledge',$knowledge)->assertJsonPath('data.applicant.rent',750000)
+        ->assertJsonPath('data.applicant.rentPeriod','bulan')->assertJsonCount(2,'data.applicant.dependents');
+})->with(['Ya','Tidak','Sudah mulai']);
+
+
+it('lets an independent approver correct the amount before funding submission with audit and version locking', function (string $status) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>$status,'amount'=>1000000,'verifier_id'=>$this->verifier->id,'distributor_id'=>$this->verifier->id,'distribution_type'=>'verifier'])->save();
+    $url='/api/v1/bantuan/applications/'.$id.'/actions/revise_amount';
+    $body=['version'=>1,'amount'=>1500000,'reason'=>'Koreksi berdasarkan hasil pemeriksaan kebutuhan'];
+    $this->actingAs($this->cc,'sanctum')->postJson($url,$body)->assertForbidden();
+    $this->actingAs($this->approver,'sanctum')->postJson($url,array_diff_key($body,['reason'=>true]))->assertUnprocessable();
+    $this->postJson($url,$body)->assertOk()->assertJsonPath('data.amount',1500000)->assertJsonPath('data.status',$status);
+    $this->postJson($url,$body)->assertConflict();
+    $event=DB::table('bantuan_events')->where('application_id',$id)->where('action','revise_amount')->first();
+    $details=json_decode(Crypt::decryptString($event->details),true);
+    expect($details['previousAmount'])->toBe(1000000)->and($details['amount'])->toBe(1500000);
+    $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->assertJsonFragment(['previousAmount'=>1000000,'amount'=>1500000]);
+})->with(['approved','fund_ready']);
+
+it('locks approver amount correction once funding has been submitted', function (string $status) {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status'=>$status,'amount'=>1000000])->save();
+    $this->actingAs($this->approver,'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/revise_amount',['version'=>1,'amount'=>2000000,'reason'=>'Koreksi kebutuhan pemohon'])->assertConflict();
+    expect(Application::findOrFail($id)->amount)->toBe(1000000);
+})->with(['fund_submitted','fund_approved','disbursed','completed']);
+
+it('only permits module admins to correct completed records and preserves evidence with an audit trail', function () {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    $row=Application::findOrFail($id);
+    $row->forceFill(['status'=>'completed','amount'=>1000000,'verifier_id'=>$this->verifier->id,'distributor_id'=>$this->verifier->id,'distribution_type'=>'verifier','disbursed_at'=>now()->subDay(),'completed_at'=>now()])->save();
+    $document=bantuanDoc($id,'handover');
+    $body=['version'=>1,'confirmation'=>$row->number,'status'=>'completed','amount'=>1250000,'reason'=>'Koreksi nominal sesuai bukti penyerahan asli','verifierId'=>$this->verifier->id,'distributorId'=>$this->verifier->id,'disbursedAt'=>now()->subDay()->toDateString(),'completedAt'=>now()->toDateString(),'survey'=>['sunnahKnowledge'=>'Ya','needs'=>'Kebutuhan dikoreksi']];
+    $url='/api/v1/bantuan/applications/'.$id.'/admin-correction';
+    $this->putJson($url,$body)->assertForbidden();
+    $admin=bantuanUser('admin');
+    $this->actingAs($admin,'sanctum')->putJson($url,[...$body,'confirmation'=>'wrong'])->assertUnprocessable();
+    $this->putJson($url,$body)->assertOk();
+    expect(Application::findOrFail($id)->amount)->toBe(1250000);
+    expect(DB::table('bantuan_documents')->where('id',$document)->value('deleted_at'))->toBeNull();
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','admin_correct')->exists())->toBeTrue();
+    $this->putJson($url,$body)->assertConflict();
+});
+
+
+it('requires explicit group cancellation for admin correction and preserves all funding snapshots', function () {
+    $ids=[];
+    foreach (range(1,2) as $i) {
+        $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status'=>'fund_ready','amount'=>1000000,'distributor_id'=>$this->verifier->id,'distribution_type'=>'verifier'])->save();$ids[]=$id;
+    }
+    $group=$this->actingAs($this->fund,'sanctum')->postJson('/api/v1/bantuan/funding-requests',['title'=>'Grup koreksi','items'=>array_map(fn($id)=>['id'=>$id,'version'=>1],$ids)])->assertCreated()->json('data');
+    $row=Application::findOrFail($ids[0]);
+    $input=['version'=>2,'status'=>'fund_ready','amount'=>1500000,'distributorId'=>$this->verifier->id,'reason'=>'Koreksi nominal berdasarkan dokumen asli','confirmation'=>$row->number];
+    $url='/api/v1/bantuan/applications/'.$row->id.'/admin-correction';
+    $admin=bantuanUser('admin');
+    $this->actingAs($admin,'sanctum')->putJson($url,$input)->assertConflict();
+    $this->putJson($url,[...$input,'releaseFundingGroup'=>true])->assertOk();
+    expect(Application::findOrFail($ids[0])->amount)->toBe(1500000)->and(Application::findOrFail($ids[1])->status)->toBe('fund_ready');
+    expect(DB::table('bantuan_funding_requests')->where('id',$group['id'])->value('total_amount'))->toBe(2000000);
+    expect(DB::table('bantuan_funding_requests')->where('id',$group['id'])->value('status'))->toBe('rejected');
+    expect(DB::table('bantuan_funding_request_items')->where('funding_request_id',$group['id'])->whereNotNull('active_application_id')->count())->toBe(0);
+    $this->actingAs($this->fund,'sanctum')->postJson('/api/v1/bantuan/funding-requests/'.$group['id'].'/decision',['version'=>1,'decision'=>'approved','items'=>array_map(fn($id)=>['id'=>$id,'version'=>2],$ids)])->assertConflict();
+});
+
+it('lets superadmin correct status with required financial dates and keeps closed evidence editable', function () {
+    $id=$this->actingAs($this->cc,'sanctum')->postJson('/api/v1/bantuan/applications',bantuanInput())->assertCreated()->json('data.id');
+    $row=Application::findOrFail($id);$doc=bantuanDoc($id,'ktp');
+    DB::table('bantuan_documents')->where('id',$doc)->update(['used_at'=>now()]);
+    $admin=bantuanUser('admin');$admin->forceFill(['is_superadmin'=>true])->save();
+    $input=['version'=>1,'confirmation'=>$row->number,'status'=>'completed','amount'=>1500000,'distributorId'=>$this->verifier->id,'reason'=>'Koreksi proses sesuai dokumen penyaluran'];
+    $url='/api/v1/bantuan/applications/'.$id.'/admin-correction';
+    $this->actingAs($admin,'sanctum')->putJson($url,$input)->assertUnprocessable();
+    $this->putJson($url,[...$input,'disbursedAt'=>now()->subDay()->toDateString(),'completedAt'=>now()->toDateString()])->assertOk();
+    $this->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertOk();
+    expect(DB::table('bantuan_documents')->where('id',$doc)->value('deleted_at'))->not->toBeNull();
+    expect(Application::findOrFail($id)->status)->toBe('completed');
 });

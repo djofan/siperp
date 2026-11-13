@@ -5,7 +5,7 @@ import { Wallet, ClipboardList } from "lucide-react";
 import type { AidDetail } from "@/contracts/modules/bantuan";
 import s from "./ApprovalAmount.module.css";
 
-export function ApprovalAmount({ row }: { row: AidDetail }) {
+export function ApprovalAmount({ row, required = true }: { row: AidDetail; required?:boolean }) {
   const id = useId();
   const [amount, setAmount] = useState(row.amount ? String(row.amount) : "");
   const needs = String(row.survey?.needs || row.applicant.problem || "").trim();
@@ -15,7 +15,7 @@ export function ApprovalAmount({ row }: { row: AidDetail }) {
       <div className={s.heading}><span className={s.icon}><Wallet size={22} strokeWidth={1.7}/></span><div><h3>Tetapkan bantuan</h3><p>Sesuaikan dengan hasil survei dan kebutuhan pemohon.</p></div></div>
       <label className={s.label} htmlFor={id}>Nominal bantuan <span>*</span></label>
       <div className={s.amount}><span aria-hidden="true">Rp</span><input
-        id={id} data-validation-key="amount" type="text" inputMode="numeric" autoComplete="off" placeholder="0" required
+        id={id} data-validation-key="amount" type="text" inputMode="numeric" autoComplete="off" placeholder="0" required={required}
         aria-describedby={`${id}-hint`} value={amount ? Number(amount).toLocaleString("id-ID") : ""}
         onChange={event => {
           const digits = event.target.value.replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "").slice(0, 13);

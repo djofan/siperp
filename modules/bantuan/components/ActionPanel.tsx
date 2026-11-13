@@ -4,7 +4,8 @@ import { ManualProcessPanel } from "./ManualProcessPanel";
 import { SurveyReminder } from "./SurveyReminder";
 import { VerifierPicker } from "./VerifierPicker";
 import Link from "./WorkspaceNavigation";
-import { rolesOf } from "../permissions";
+import { surveyApplicantErrors, surveyApplicantKeys } from "../survey-applicant";
+import { rolesOf, hasRole } from "../permissions";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { AidDetail, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
@@ -15,7 +16,7 @@ import { preparePhotoUpload } from "../api/photos";
 import { PhotoLocationPicker } from "./PhotoLocationPicker";
 import type { PhotoLocation } from "@/contracts/modules/bantuan";
 import { appendPhotoLocation } from "../photo-location";
-import { applicantFields, Fields, validateFields, type Values } from "./IntakeForm";
+import { applicantFields, surveyApplicantFields, Fields, validateFields, type Values } from "./IntakeForm";
 import { PhotoReview } from "./PhotoReview";
 import { ProcessSuccess } from "./ProcessSuccess";
 import { ApprovalAmount } from "./ApprovalAmount";
@@ -46,6 +47,7 @@ const actions: Action[] = [
   {key:"survey_review_withdraw",label:"Kembalikan ke pemeriksaan Call Center",states:["survey_submitted","review2"],roles:["call_center"]},
   {key:"survey_return",label:"Kembalikan ke Verifikator",states:["survey_cc_review"],roles:["call_center"]},
   {key:"survey_submit",label:"Isi / lanjutkan survei",states:["survey_assigned"],roles:["verifier"]},
+  {key:"revise_amount",label:"Ubah nominal bantuan",states:["approved","fund_ready"],roles:["approver","chair"]},
   {key:"approve",label:"Setujui & tetapkan nominal",states:["survey_submitted","review2","bypass_review"],roles:["approver","chair"]},
   {key:"review_reject",label:"Tolak pengajuan",states:["survey_submitted","review2","bypass_review"],roles:["approver","chair"],danger:true},
   {key:"survey_again",label:"Minta survei ulang",states:["survey_submitted","review2"],roles:["approver","chair"]},
@@ -60,7 +62,7 @@ const actions: Action[] = [
   {key:"reopen",label:"Buka kembali pengajuan",states:["rejected_screening","rejected_t1","rejected_t2","rejected_bypass","cancelled","returned"],roles:["approver","chair"]},
   {key:"cancel",label:"Batalkan pengajuan",states:["draft","needs_data","screening","review1","survey_assignment","survey_assigned","survey_submitted","bypass_review","approved","fund_ready"],roles:["call_center","requester"],danger:true},
 ];
-const reasons=["survey_decline","survey_return","screen_reject","request_data","review1_reject","review_reject","survey_again","fund_reject","delivery_fail","cancel","reopen","comment"];
+const reasons=["survey_decline","survey_return","screen_reject","request_data","review1_reject","review_reject","survey_again","fund_reject","delivery_fail","cancel","reopen","comment","revise_amount"];
 const today=()=>new Date().toLocaleDateString("en-CA");
 
 
@@ -68,6 +70,7 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
   const [deviceLocation,setDeviceLocation]=useState<PhotoLocation|null>(null);
   const [kind,setKind]=useState(""),[busy,setBusy]=useState(false),[error,setError]=useState("");
   const kinds=Object.keys(documentLabels).filter(k=>rolesOf(viewer).some(role=>{
+    if(role==="admin")return true;
     if(["survey_assigned","survey_cc_review"].includes(row.status)&&(k.startsWith("survey_")||["sktm","ktp","kk","supporting"].includes(k)))return role==="admin"||role==="call_center"||role==="verifier"&&row.verifierId===viewer.id;
     if(k.startsWith("survey_")||k==="sktm"||k==="transfer"||["handover","certificate","receipt","education_other"].includes(k))return false;
     if(row.intakeType==="other"&&row.status==="completed"&&["supporting","receipt"].includes(k))return ["admin","call_center","treasurer"].includes(role);
@@ -79,7 +82,7 @@ export function DocumentUpload({ row, viewer, reload }: { row: AidDetail; viewer
   }));
   async function upload(e:FormEvent<HTMLFormElement>){e.preventDefault();setError("");setBusy(true);const form=new FormData(e.currentTarget);const files=form.getAll("files").filter((f):f is File=>f instanceof File&&f.size>0);try{if(!files.length)throw new Error("Pilih foto terlebih dahulu.");for(const file of files){const {file:prepared,location}=await preparePhotoUpload(file,deviceLocation);const body=new FormData();body.set("kind",kind||kinds[0]);body.set("file",prepared);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});}setDeviceLocation(null);reload();}catch(err){setError(err instanceof Error?err.message:"Unggah gagal.");}finally{setBusy(false);}}
   return <section className={s.card}><div className={s.cardHeader}><div><h2>Dokumen & bukti</h2><p>Privat · {attachmentHint}</p></div><span className={s.pill}>{row.documents.length} foto</span></div><div className={s.cardBody}>
-    {["survey_assigned","survey_cc_review"].includes(row.status)&&kinds.some(k=>k.startsWith("survey_"))?<><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={kinds.map(kind=>({kind,minimum:0}))} allowSurveyRevision onUploaded={reload}/>{row.documents.some(doc=>!kinds.includes(doc.kind))&&<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents.filter(doc=>!kinds.includes(doc.kind))} allDocuments/>}</>:row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
+    {(hasRole(viewer,"admin")||["survey_assigned","survey_cc_review"].includes(row.status))&&kinds.some(k=>k.startsWith("survey_"))?<><PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={kinds.map(kind=>({kind,minimum:0}))} allowSurveyRevision onUploaded={reload}/>{row.documents.some(doc=>!kinds.includes(doc.kind))&&<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents.filter(doc=>!kinds.includes(doc.kind))} allDocuments/>}</>:row.documents.length===0?<p className={s.tiny}>Belum ada dokumen. Unggah bukti sesuai tahap saat ini.</p>:<PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/>}
     {kinds.length>0&&<form onSubmit={upload} style={{display:"grid",gap:12,marginTop:20}}>
       <label className={s.field}>Jenis dokumen<select className={s.input} value={kind||kinds[0]} onChange={e=>setKind(e.target.value)}>{kinds.map(k=><option key={k} value={k}>{documentLabels[k]}</option>)}</select></label>
       <PhotoLocationPicker value={deviceLocation} onChange={setDeviceLocation} disabled={busy}/>
@@ -93,7 +96,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
   return actions.filter(a=>a.key!=="other_report"||row.intakeType==="other")
     .filter(a=>row.intakeType!=="other"||!["survey_again"].includes(a.key))
     .filter(a=>a.states.includes(row.status)&&(viewer.role==="admin"||a.roles.includes(viewer.role)))
-    .filter(a=>!row.fundingRequest||!["fund_approve","fund_reject","assign_distributor"].includes(a.key))
+    .filter(a=>!row.fundingRequest||!["fund_approve","fund_reject","assign_distributor","revise_amount"].includes(a.key))
     .filter(a=>viewer.role!=="verifier"||!["submit","cancel"].includes(a.key)||row.createdBy===viewer.id&&row.source==="bypass"&&["draft","needs_data"].includes(row.status))
     .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
     .filter(a=>viewer.role!=="requester"||row.createdBy===viewer.id&&row.source!=="bypass"&&["draft","needs_data",...(a.key==="cancel"?["screening"]:[])].includes(row.status))
@@ -101,7 +104,7 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
     .filter(a=>a.key!=="survey_revise"||row.verifierId===viewer.id)
     .filter(a=>viewer.role==="admin"||!(["survey_submit","survey_decline"].includes(a.key)&&row.verifierId!==viewer.id))
     .filter(a=>viewer.role==="admin"||!(["handover","delivery_fail"].includes(a.key)&&!(["verifier","volunteer"].includes(viewer.role)&&row.distributionType==="verifier"&&row.distributorId===viewer.id||viewer.role==="treasurer"&&row.distributionType==="direct")))
-    .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
+    .filter(a=>viewer.role==="admin"||!(["review1_approve","review1_reject","approve","revise_amount","review_reject","survey_again"].includes(a.key)&&(row.verifierId===viewer.id||row.createdBy===viewer.id)));
 }
 
 export function getAvailableActions(row:AidDetail,viewer:BantuanViewer){
@@ -147,6 +150,7 @@ const actionHelp:Record<string,string>={
   survey_review_submit:"Periksa dan koreksi hasil survei serta data pemohon. Kirim setelah lengkap agar Approver dapat meninjau keputusan nominal.",
   survey_review_withdraw:"Kembalikan hasil survei ke pemeriksaan Call Center? Data dan foto tetap tersimpan. Call Center dapat memeriksa ulang lalu mengirimkannya kembali. Hanya tersedia sebelum keputusan Approver.",
   survey_return:"Jelaskan bagian survei yang perlu dilengkapi. Hasilnya dikembalikan kepada Verifikator yang ditugaskan.",
+  revise_amount:"Koreksi nominal sebelum dana diajukan. Alasan serta nominal lama dan baru dicatat di riwayat.",
   approve:"Tetapkan nominal bantuan berdasarkan hasil survei dan kebutuhan pemohon.",
   review_reject:"Jelaskan alasan pengajuan tidak dilanjutkan. Periksa kembali sebelum mengonfirmasi.",
   survey_again:"Jelaskan bagian yang perlu disurvei ulang agar Verifikator mengetahui perbaikannya.",
@@ -242,6 +246,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
       if(key==="survey_submit"||key==="survey_review_submit"){
         for(const [name,messages] of Object.entries(validateFields(surveyFields,survey)))invalid["survey."+name]=messages;
         if(survey.hasSktm===false&&!String(survey.sktmExplanation??"").trim())invalid["survey.sktmExplanation"]=["Jelaskan alasan belum memiliki SKTM."];
+        for(const [name,messages] of Object.entries({...validateFields(surveyApplicantFields,corrections),...surveyApplicantErrors(corrections)}))invalid["applicant."+name]=messages;
         if(correct)for(const [name,messages] of Object.entries(validateFields(applicantFields,corrections)))invalid["applicant."+name]=messages;
       }
       if(Object.keys(invalid).length){reportFailure("Lengkapi atau perbaiki kolom yang ditandai sebelum menyimpan.",invalid,submittedForm);return;}
@@ -253,7 +258,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     actionLock.current=true;setBusy(true);setError("");setFieldErrors({});if(key==="comment")setCommentError("");
     const form=new FormData(submittedForm),values:Record<string,unknown>=Object.fromEntries(form);
     for(const name of ["amount","transferAmount"])if(values[name])values[name]=Number(values[name]);
-    if(["survey_submit","survey_save","survey_review_submit","survey_review_save"].includes(key)){values.survey={...survey,contacts,...geo};if(correct)values.applicant=corrections;}
+    if(["survey_submit","survey_save","survey_review_submit","survey_review_save"].includes(key)){values.survey={...survey,contacts,...geo};values.applicant=correct?corrections:Object.fromEntries(surveyApplicantKeys.map(key=>[key,corrections[key]??(key==="dependents"?[]:null)]));}
     if(key==="other_report")values.handover={date:form.get("date"),notes:form.get("notes")};
     if(key==="handover")values.handover={method:form.get("method"),date:form.get("date"),amount:Number(form.get("handoverAmount")),notes:form.get("notes")};
     try{
@@ -298,14 +303,14 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
       {surveyEntry?<><MessageImport applicant={corrections} survey={survey} labels={Object.fromEntries([...applicantFields,...surveyFields].map(f=>[f.key,f.label]))} onApply={data=>{setSurvey(v=>({...v,...data.survey}));if(Object.keys(data.applicant).length){setCorrections(v=>({...v,...data.applicant}));setCorrect(true);}}}/>{active==="survey_review_submit"&&<div className={s.notice}><strong>Periksa hasil survei dari Verifikator</strong><p>Isian di bawah berasal dari hasil kunjungan dan dapat Anda koreksi. Gunakan Simpan koreksi untuk menyimpan sementara, atau Kirim ke Approver setelah pemeriksaan selesai.</p></div>}<Fields fields={surveyFields} prefix="survey-" errors={surveyErrors} values={survey} set={(k,v)=>setSurvey(p=>({...p,[k]:v}))}/>
         <h3 className={s.sectionTitle} style={{margin:"22px 0 14px"}}>Kerabat / tetangga yang dapat dihubungi</h3>{contacts.map((c,i)=><div className={s.formGrid} key={i} style={{marginBottom:14}}>{(["name","relationship","phone"] as const).map((k,j)=><label key={k} className={s.field}>{["Nama","Hubungan","No. HP"][j]}<input className={s.input} name={`survey.contacts.${i}.${k}`} required value={c[k]} onChange={e=>setContacts(v=>v.map((r,n)=>n===i?{...r,[k]:e.target.value}:r))}/></label>)}<button type="button" className={s.link} onClick={()=>setContacts(v=>v.filter((_,n)=>n!==i))}>Hapus kontak</button></div>)}
         <div className={s.actions}><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>setContacts(v=>[...v,{name:"",relationship:"",phone:""}])}>+ Tambah kontak</button><button type="button" className={`${s.button} ${s.secondary}`} onClick={()=>navigator.geolocation?.getCurrentPosition(p=>setGeo({latitude:p.coords.latitude,longitude:p.coords.longitude}),()=>reportFailure("Lokasi tidak diizinkan. Survei tetap dapat disimpan."))}>{geo?"✓ Lokasi tercatat":"Catat lokasi (opsional)"}</button></div>
-        <label className={s.field} style={{margin:"25px 0 15px",flexDirection:"row"}}><input className={s.check} type="checkbox" checked={correct} onChange={e=>setCorrect(e.target.checked)}/> Koreksi data pemohon sesuai hasil kunjungan</label>{correct&&<Fields fields={applicantFields} prefix="correction-" errors={correctionErrors} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/>}
+        <section className={`${s.wide} ${s.surveyEvidence}`}><h3 className={s.sectionTitle}>Tempat tinggal & tanggungan</h3><p>Rinci setiap tanggungan. Untuk kontrak/sewa, isi biaya dan periode agar Approver dapat menilai kebutuhan.</p><Fields fields={surveyApplicantFields} prefix="correction-" errors={correctionErrors} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/></section><label className={s.field} style={{margin:"25px 0 15px",flexDirection:"row"}}><input className={s.check} type="checkbox" checked={correct} onChange={e=>setCorrect(e.target.checked)}/> Koreksi data pemohon sesuai hasil kunjungan</label>{correct&&<Fields fields={applicantFields.filter(field=>!surveyApplicantKeys.includes(field.key))} prefix="correction-" errors={correctionErrors} values={corrections} set={(k,v)=>setCorrections(p=>({...p,[k]:v}))}/>}
         {active==="survey_submit"?<section className={s.surveyEvidence} aria-label="Foto hasil survei"><h3 className={s.sectionTitle}>Dokumen & foto hasil survei</h3><p>Foto yang sudah dikirim tetap tersedia dan dihitung. Saat revisi, cukup tambahkan foto yang kurang sesuai catatan pemeriksa. Foto tambahan juga tampil di Dokumen pendukung.</p>
           <PhotoSlots owner={viewer.id} applicationId={row.id} documents={row.documents} requirements={surveyPhotosFor(row.source)} allowSurveyRevision minimumTotal={viewer.settings.minimumSurveyPhotos} onReady={onSurveyPhotosReady} onUploaded={reload}/>
           {!surveyPhotosReady&&<small className={s.tiny}>Sebelum konfirmasi: {missingSurveyPhotos.join(", ")||"memeriksa kelengkapan foto…"}. Draft tetap bisa disimpan.</small>}
         </section>:<section className={s.surveyEvidence}><h3 className={s.sectionTitle}>Foto hasil survei Verifikator</h3><p>Periksa bukti kunjungan sebelum meneruskan hasilnya. Foto asli tetap tersimpan.</p><PhotoReview owner={viewer.id} applicationId={row.id} documents={row.documents} allDocuments/></section>}
       </>:<div className={s.formGrid}>
         {reasons.includes(active)&&<label className={`${s.field} ${s.wide}`}>Alasan / catatan *<textarea className={s.input} name="reason" required minLength={5} maxLength={5000}/></label>}
-        {active==="approve"&&<ApprovalAmount row={row}/>}
+        {["approve","revise_amount"].includes(active)&&<ApprovalAmount row={row}/>}
         {["assign_survey","assign_distributor"].includes(active)&&<>
           {active==="assign_distributor"&&<label className={s.field}>Jenis penyalur<select className={s.input} name="distributionType" value={distributionType} onChange={e=>setDistributionType(e.target.value)}><option value="verifier">Petugas penyalur</option>{row.source==="bypass"&&<option value="direct">Bendahara langsung ke penerima</option>}</select></label>}
           {(active==="assign_survey"||distributionType==="verifier")&&<VerifierPicker key={active} roleFilter={active==="assign_survey"?"verifier":null} staff={active==="assign_survey"?staff:staff.filter(person=>(person.roles??[person.role]).some(role=>["verifier","volunteer"].includes(role)))} name={active==="assign_survey"?"verifierId":"distributorId"} label={active==="assign_survey"?"Verifikator":"Penyalur bantuan"} initialId={active==="assign_survey"?row.verifierId??"":row.distributorId??""}/>}

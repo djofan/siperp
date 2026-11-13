@@ -27,6 +27,7 @@ import { surveyFields } from "../survey-fields";
 import { AddressRegions } from "./AddressRegions";
 import { MessageImport } from "./MessageImport";
 import { DependentsEditor } from "./Dependents";
+import { isRentedHousing, surveyApplicantKeys } from "../survey-applicant";
 import { dependentErrors } from "../dependents";
 
 export type Values = AidValues;
@@ -90,13 +91,16 @@ export const bypassFields: Field[] = [
   {key:"bypassNeeds",label:"Rincian kebutuhan bantuan",type:"textarea",hint:"Rinci barang atau biaya yang dibutuhkan beserta perkiraan nominalnya."},
   {key:"bypassRecommendation",label:"Rekomendasi & urgensi bantuan",type:"textarea",hint:"Jelaskan bantuan yang disarankan, alasannya, serta kapan dibutuhkan."},
 ];
+export const surveyApplicantFields = applicantFields.filter(field=>surveyApplicantKeys.includes(field.key)).map(field=>["rent","rentPeriod"].includes(field.key)?{...field,optional:false}:field);
+
 export function validateFields(fields:Field[],values:Values):Record<string,string[]>{
   const errors:Record<string,string[]>={};
   for(const f of fields){
-    if(["rent","rentPeriod"].includes(f.key)&&values.housing!=="Kontrak-sewa")continue;
+    if(["rent","rentPeriod"].includes(f.key)&&!isRentedHousing(values.housing))continue;
     if(f.key==="willingSktm"&&values.hasSktm!==false)continue;
     const value=values[f.key];
-    if(!f.optional&&(value===undefined||value===null||value===""))errors[f.key]=["Kolom ini wajib diisi."];
+    if((!f.optional||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&(value===undefined||value===null||value===""))errors[f.key]=["Kolom ini wajib diisi."];
+    else if(f.key==="rent"&&isRentedHousing(values.housing)&&Number(value)<=0)errors[f.key]=["Isi biaya kontrak/sewa lebih dari Rp 0."];
     else if(f.type==="nik"&&!/^[0-9]{16}$/.test(String(value??"")))errors[f.key]=["NIK harus terdiri dari 16 digit angka."];
     else if(f.type==="tel"&&value!==undefined&&value!==null&&value!==""&&!isValidPhone(value))errors[f.key]=["Nomor telepon harus berisi 8–15 angka. Gunakan 08…, 021…, atau +62…. Format spasi, tanda hubung, dan kurung kode area diperbolehkan."];
     else if(f.type==="date"&&value&&new Date(String(value))>new Date())errors[f.key]=["Tanggal tidak boleh melewati hari ini."];
@@ -110,7 +114,7 @@ export function Fields({fields,values,set,prefix="",required=true,errors={},orig
   const [today]=useState(()=>new Date());
   const localErrors=required?validateFields(fields,values):{};
   const blur=(key:string)=>{setTouched(v=>({...v,[key]:true}));onBlur?.(key);};
-  return <div className={s.formGrid}>{fields.filter(f=>(!["rent","rentPeriod"].includes(f.key)||values.housing==="Kontrak-sewa")&&(f.key!=="willingSktm"||values.hasSktm===false)).map(f=>{
+  return <div className={s.formGrid}>{fields.filter(f=>(!["rent","rentPeriod"].includes(f.key)||isRentedHousing(values.housing))&&(f.key!=="willingSktm"||values.hasSktm===false)).map(f=>{
     const id=prefix+f.key,error=errors[id]?.[0]??errors[f.key]?.[0]??(touched[f.key]?localErrors[f.key]?.[0]:undefined);
     const changed=original&&String(original[f.key]??"")!==String(values[f.key]??"");
     const segmented=f.type==="boolean"||["prayer","smoking"].includes(f.key);
@@ -119,7 +123,7 @@ export function Fields({fields,values,set,prefix="",required=true,errors={},orig
     const birth=String(values.birthDate??""),date=new Date(birth);
     const age=birth?today.getFullYear()-date.getFullYear()-(today.getMonth()<date.getMonth()||today.getMonth()===date.getMonth()&&today.getDate()<date.getDate()?1:0):null;
     return <div className={`${s.field} ${f.wide||f.key==="dependents"?s.wide:""} ${changed?s.changedField:""}`} key={id}>
-      <label htmlFor={segmented?id+"-0":id}>{f.label}{!f.optional&&required&&<em> *</em>}{changed&&<span className={s.changedLabel}>Diubah</span>}</label>
+      <label htmlFor={segmented?id+"-0":id}>{f.label}{required&&(!f.optional||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&<em> *</em>}{changed&&<span className={s.changedLabel}>Diubah</span>}</label>
       {f.key==="dependents"?<DependentsEditor value={values.dependents} errors={errors} onChange={rows=>{set("dependents",rows);set("dependentCount",rows.length);}}/>:segmented?<div className={s.segmented} role="radiogroup" aria-label={f.label}>{options.map((o,i)=><button key={o} id={id+"-"+i} type="button" role="radio" aria-checked={String(values[f.key])===o} onClick={()=>{set(f.key,f.type==="boolean"?o==="true":o);if(f.key==="hasSktm")set("willingSktm","");blur(f.key);}}>{o==="true"?"Ya":o==="false"?f.key==="hasSktm"?"Belum":"Tidak":o}</button>)}</div>:
       f.options?<select id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,e.target.value)}><option value="">Pilih…</option>{options.map(o=><option key={o} value={o}>{o.replaceAll("_"," ")}</option>)}</select>:
       f.type==="textarea"?<textarea id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} maxLength={10000} onChange={e=>set(f.key,e.target.value)}/>:

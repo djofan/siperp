@@ -6829,6 +6829,454 @@
           }
         }
       }
+    },
+    "/api/v1/teknisi/profile": {
+      "put": {
+        "tags": [
+          "Teknisi"
+        ],
+        "summary": "Update own operational technician profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active technician only. Updates own User.name, technician display name and participant phone/address atomically. Rejects userId/id/nip/role/outletId/isActive. Does not change assignment or login code. 10/minute; no-store private.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "phone",
+                  "address"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 191
+                  },
+                  "phone": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "description": "8-15 digits, optional plus/spaces/parentheses/hyphens, normalized on save"
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Own name, phone, address and nip"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/revise_amount": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Correct approved amount before funding submission",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Independent Approver/chair, or module admin. Only approved/fund_ready, no active funding group. Preserves status/assignment; increments version and audits old/new amount and reason. Funding group creation and correction serialize on application lock.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "amount",
+                  "reason"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "amount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9000000000000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 5000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Corrected application"
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications/{id}/admin-correction": {
+      "put": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Audited administrative correction at any application stage",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Superadmin/Bantuan admin only. Requires optimistic version, reason >=10 characters and confirmation matching application number. Updates status, amount, assigned verifier/distributor, transfer/completion dates, survey and handover. Financial stages require amount, accountable distributor and dates. Does not transfer money. Original documents and historical funding snapshots remain. Active funding group requires explicit releaseFundingGroup=true: marks entire group rejected, releases all members to fund_ready, audits each, then applies correction. Group/application locks serialize decisions and stale versions reject. Identity/demographics remain editable via existing PUT applications/{id}. No migration.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "reason",
+                  "confirmation",
+                  "status"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 5000
+                  },
+                  "confirmation": {
+                    "type": "string"
+                  },
+                  "releaseFundingGroup": {
+                    "type": "boolean"
+                  },
+                  "status": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "maximum": 9000000000000
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "online",
+                      "walk_in",
+                      "bypass"
+                    ]
+                  },
+                  "program": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "region": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "fundReference": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "manualVerifierName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "manualVerifierPhone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "manualDistributorName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "manualDistributorPhone": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "transfer": {
+                    "type": "object",
+                    "properties": {
+                      "bank": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "account": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "recipientName": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "recipientRelationship": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  },
+                  "verifierId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "distributorId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "disbursedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "completedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "survey": {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "handover": {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Corrected application id and new version; private no-store"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -6989,5 +7437,22 @@
     "description": "Custom requests always use source online and program Lainnya. Applicant identity fields name/nik/street/phone represent the reporter, not a fictitious individual beneficiary. Required reporterRelationship, otherCategory (Proposal, Sedekah air bersih, Renovasi rumah, Lainnya), customTitle, problem, customBudget. applicationNotes and multiple captioned supporting photos are optional. Drafts require name and 16-digit nik; other fields may be incomplete. Legacy new/returning intake remains unchanged.",
     "workflow": "submit -> screening (Call Center) -> screen_pass -> review2 (Approver/chair amount approval) -> approved -> assign_distributor (Call Center selects verifier/volunteer) -> fund_ready -> fund_submitted -> fund_approved -> disburse -> disbursed -> handover -> completed. No survey. Call Center may record handover via manual-processes on behalf of the assigned distributor. Existing role, independent approval, funding group and optimistic version guards apply.",
     "transfer": "For other intake, disburse additionally requires bank, recipientName, recipientRelationship and a new unused transfer evidence photo, alongside transferDate, transferAmount equal to approved amount, and account. Atomic recording stores encrypted recipient details and transfer date; completion requires the assigned distributor handover report and normal evidence. Missing fields/evidence rolls back all changes. Bulk verifier disbursement cannot bypass these checks."
+  },
+  "x-bantuan-survey-household": {
+    "survey": {
+      "sunnahKnowledge": {
+        "type": "string",
+        "enum": [
+          "Ya",
+          "Tidak",
+          "Sudah mulai"
+        ],
+        "requiredFor": [
+          "survey_submit",
+          "survey_review_submit"
+        ]
+      }
+    },
+    "description": "Final survey submission/review (including manual-processes) validates merged saved applicant data. dependents must be a structured array matching dependentCount, with name, relationship, gender, age and status per person. Zero dependents uses an empty array. When housing contains kontrak/sewa/rent, rent must be a positive integer and rentPeriod bulan/tahun, also on final intake. Partial drafts remain allowed. Existing saved rent is retained when omitted by survey. Approver detail includes applicant rent/period/dependents and survey sunnahKnowledge. No migration; old completed records are not changed."
   }
 }
