@@ -360,10 +360,10 @@ Respons `{data:{name,code,email,nis,phone,address,gender,cohortName}}` hanya fie
 angkatan lain, hash password atau token. Header `no-store, private`.
 Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
 PUT `/api/v1/academy/profile` setelah ganti password awal menerima tepat `name`,
-`phone`, `address` (wajib). Nama 2–100 karakter, alamat maksimal 2000 karakter;
+`phone`, `address` (wajib), serta `email` (opsional untuk klien lama; bila dikirim wajib terisi dan valid RFC, maksimal 191 karakter, di-trim dan dinormalisasi lowercase, unik tanpa membedakan kapital kecuali milik akun sendiri). Nama 2–100 karakter, alamat maksimal 2000 karakter;
 nomor HP Indonesia dengan awalan 08/+628/628 dinormalisasi ke `^628[0-9]{7,12}$`.
-Field lain ditolak 422, termasuk nomor akun/peserta, kelompok, angkatan, email,
-userId/profileId dan password. Nama Core dan kontak profil Academy disimpan atomik
+Field lain ditolak 422, termasuk nomor akun/peserta, kelompok, angkatan,
+userId/profileId dan password. Nama/email Core dan kontak profil Academy disimpan atomik
 hanya untuk user login; kode, enrollment dan password tidak berubah. Respons profil
 terbaru tetap `no-store, private`. Tidak memerlukan migration. Perubahan password
 tetap memakai PUT `/api/v1/academy/profile/password` dengan password saat ini.

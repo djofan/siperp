@@ -3,6 +3,11 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/academy/admin/curriculum/stats'] = {get: {
+  tags:['Academy'],summary:'Admin Academy dashboard counters',security:[{bearerAuth:[]}],
+  description:'Admin only. cohorts counts all cohorts; participants counts nondeleted profiles linked to active Core accounts; lessons and exams count all materials and exams, including drafts. Legacy courses, published and chapters counters remain for compatibility.',
+  responses:{200:{description:'data contains integer cohorts, participants, lessons, exams and legacy courses, published, chapters'},401:{description:'Unauthenticated'},403:{description:'Not an Academy administrator'}},
+}};
 document.paths['/api/v1/academy/learning/lessons/{courseSlug}/{lessonSlug}'] = {get: {
   tags:['Academy'],summary:'Own published lesson details and attachments',security:[{bearerAuth:[]}],
   description:'Requires enrollment and a published course, chapter and lesson. Unreleased content has no attachments. Released lesson attachments expose only id, lessonId, title, fileUrl and fileType (nullable MIME), never storage paths. PDFs added after enrollment remain visible. File URLs enforce participant permissions separately.',
@@ -448,9 +453,9 @@ document.paths['/api/v1/academy/profile'] = {get:{
   security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
 }};
 document.paths['/api/v1/academy/profile'].put = {
-  tags:['Academy'],summary:'Update own participant name, phone and address',
-  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, phone, address, including selectors, cohort, gender and account/participant codes. Own Core user name and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
-  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address'],properties:{name:{type:'string',minLength:2,maxLength:100},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000}}})},
+  tags:['Academy'],summary:'Update own participant name, email, phone and address',
+  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Own Core user name/email and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
+  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address'],properties:{name:{type:'string',minLength:2,maxLength:100},email:{type:'string',format:'email',maxLength:191},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000}}})},
   responses:{200:{description:'Updated own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error,422:error},
 };
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};

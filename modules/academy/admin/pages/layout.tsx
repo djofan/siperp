@@ -4,6 +4,6 @@ import "@/modules/academy/components/dashboard.css";
 export const metadata = { title: "Admin Academy", robots: { index: false, follow: false } };
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const user = await requireAcademyAdmin();
-  const items = [{ href: "/admin/academy", label: "Dashboard" }, { href: "/admin/academy/pendaftaran", label: "Pendaftaran" }, { href: "/admin/academy/peserta", label: "Peserta" }, { href: "/admin/academy/materi", label: "Materi" }, { href: "/admin/academy/kuis", label: "Kuis" }, { href: "/admin/academy/sertifikat", label: "Sertifikat" }, { href: "/admin/academy/angkatan", label: "Angkatan" }, { href: "/admin/academy/pengaturan", label: "Pengaturan" }];
+  const items = [{ href: "/admin/academy", label: "Dashboard" }, { href: "/admin/academy/pendaftaran", label: "Pendaftaran" }, { href: "/admin/academy/peserta", label: "Peserta" }, { href: "/admin/academy/materi", label: "Materi" }, { href: "/admin/academy/kuis", label: "Ujian" }, { href: "/admin/academy/sertifikat", label: "Sertifikat" }, { href: "/admin/academy/angkatan", label: "Angkatan" }, { href: "/admin/academy/pengaturan", label: "Pengaturan" }];
   return <AcademyAdminShellChrome userName={user.name} groups={[{ items: [{ href: "/admin", label: "Dashboard SIP" }] }, { heading: "Academy", items }]}><div className="academy-admin-panel">{children}</div></AcademyAdminShellChrome>;
 }
