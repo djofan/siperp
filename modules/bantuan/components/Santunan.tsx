@@ -1,6 +1,7 @@
 "use client";
+import { AttachmentPreview } from "./AttachmentPreview";
+import { attachmentAccept, attachmentHint } from "../attachments";
 import { hasRole, hasAnyRole } from "../permissions";
-/* eslint-disable @next/next/no-img-element -- evidence uses authenticated private URLs */
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { santunanCategoryLabels } from "@/contracts/modules/bantuan";
@@ -34,7 +35,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
   const [frequency,setFrequency]=useState(""),[distribution,setDistribution]=useState("");
   const [filters,setFilters]=useState({category:"",transfer:"",volunteer:"",period:"",amountMin:"",amountMax:"",sort:"period"});
   const [showCreate,setShowCreate]=useState(false),[expanded,setExpanded]=useState(""),[search,setSearch]=useState(""),[success,setSuccess]=useState("");
-  const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string;location?:PhotoLocation|null}|null>(null);
+  const [confirm,setConfirm]=useState<SantunanRecord|null>(null),[preview,setPreview]=useState<{src:string;title:string;location?:PhotoLocation|null;mime?:string}|null>(null);
   const [card,setCard]=useState<SantunanRecord|null>(null);
   const [showPeriod,setShowPeriod]=useState(false);
   const [showImport,setShowImport]=useState(false);
@@ -118,12 +119,12 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
             <label className={s.field}>Lokasi penyaluran<input className={s.input} name="location" placeholder="Lokasi penyerahan bantuan" maxLength={500} required/></label>
             <label className={s.field}>Nama penerima<input className={s.input} name="recipient" defaultValue={row.recipientName} maxLength={191} required/></label>
             <label className={s.field}>Deskripsi penyaluran<textarea className={s.input} name="description" placeholder="Ceritakan pelaksanaan penyaluran…" minLength={5} maxLength={5000} required/></label>
-            {!row.documents.some(doc=>doc.kind==="aid_paper")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto kertas bantuan</strong><small>Wajib · JPG, PNG, atau WEBP</small><input name="aid_paper" type="file" accept="image/jpeg,image/png,image/webp" required/></label>}
-            {!row.documents.some(doc=>doc.kind==="recipient_photo")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto bersama penerima</strong><small>Wajib · JPG, PNG, atau WEBP</small><input name="recipient_photo" type="file" accept="image/jpeg,image/png,image/webp" required/></label>}
-            {!row.documents.some(doc=>doc.kind==="transfer_receipt")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto bukti transfer</strong><small>Opsional · JPG, PNG, atau WEBP</small><input name="transfer_receipt" type="file" accept="image/jpeg,image/png,image/webp"/></label>}
+            {!row.documents.some(doc=>doc.kind==="aid_paper")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto kertas bantuan</strong><small>Wajib · {attachmentHint}</small><input name="aid_paper" type="file" accept={attachmentAccept} required/></label>}
+            {!row.documents.some(doc=>doc.kind==="recipient_photo")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto bersama penerima</strong><small>Wajib · {attachmentHint}</small><input name="recipient_photo" type="file" accept={attachmentAccept} required/></label>}
+            {!row.documents.some(doc=>doc.kind==="transfer_receipt")&&<label className={d.photoUpload}><ImagePlus size={22}/><strong>Foto bukti transfer</strong><small>Opsional · {attachmentHint}</small><input name="transfer_receipt" type="file" accept={attachmentAccept}/></label>}
           </div><div className={d.formActions}><Button disabled={!!busy}>{busy===row.id?"Menyimpan…":"Simpan laporan & selesaikan"}</Button></div></form>}
           {row.report&&<dl className={d.report}><div><dt>Tanggal penyaluran</dt><dd>{day(row.report.distributionDate)}</dd></div><div><dt>Penerima</dt><dd>{row.report.recipient}</dd></div><div><dt>Lokasi</dt><dd>{row.report.location}</dd></div><div><dt>Deskripsi</dt><dd>{row.report.description}</dd></div></dl>}
-          {row.documents.length>0&&<div className={d.evidence}>{row.documents.map(doc=><div key={doc.id}><PhotoLocationLink location={doc.location}/><button type="button" key={doc.id} onClick={()=>setPreview({src:"/api/bantuan/santunan-documents/"+doc.id,title:doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima",location:doc.location})}><img src={"/api/bantuan/santunan-documents/"+doc.id} alt={doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}/><span>{doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}</span></button></div>)}</div>}
+          {row.documents.length>0&&<div className={d.evidence}>{row.documents.map(doc=><div key={doc.id}><PhotoLocationLink location={doc.location}/><button type="button" key={doc.id} onClick={()=>setPreview({src:"/api/bantuan/santunan-documents/"+doc.id,title:doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima",location:doc.location,mime:doc.mime})}><AttachmentPreview src={"/api/bantuan/santunan-documents/"+doc.id} mime={doc.mime??"image/jpeg"} title={doc.kind==="aid_paper"?"Kertas bantuan":doc.kind==="transfer_receipt"?"Bukti transfer":"Bukti bersama penerima"}/><span>{doc.kind==="aid_paper"?"Foto kertas bantuan":doc.kind==="transfer_receipt"?"Foto bukti transfer":"Foto bersama penerima"}</span></button></div>)}</div>}
         </div>
       </article>)}</div>:<div className={d.empty}><HandHeart size={34} strokeWidth={1.3}/><h3>{rows.length?"Tidak ada hasil yang cocok":"Belum ada santunan"}</h3><p>{rows.length?"Coba kata pencarian atau filter yang lain.":canManage?"Tambahkan catatan santunan untuk memulai proses penyaluran.":"Catatan santunan yang ditugaskan kepada Anda akan tampil di sini."}</p>{canManage&&!rows.length&&<Button onClick={()=>setShowCreate(true)}><Plus size={15}/>Tambah santunan</Button>}</div>}
     </section>
@@ -131,7 +132,7 @@ export function Santunan({viewer,staff}:{viewer:BantuanViewer;staff:BantuanStaff
     {bulkConfirm&&<Dialog title="Catat transfer santunan terpilih?" description={`${bulkConfirm.length} santunan dengan total ${money(bulkConfirm.reduce((sum,row)=>sum+row.amount,0))} akan ditandai sudah ditransfer. Pastikan seluruh transfer tersebut benar-benar sudah dilakukan. Tombol ini hanya mencatat status, bukan mengirim uang.`} onClose={()=>!busy&&setBulkConfirm(null)}><p>Jika ada catatan yang gagal, proses berhenti. Catatan yang sudah berhasil tetap tersimpan.</p><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setBulkConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markSelectedTransferred()}>{busy?"Mencatat transfer…":"Ya, semua sudah ditransfer"}</Button></div></Dialog>}
     {confirm&&<Dialog title="Tandai dana sudah ditransfer?" description={"Pastikan transfer "+money(confirm.amount)+" untuk "+confirm.recipientName+" sudah dilakukan. Tindakan ini hanya mencatat status, bukan mengirim uang."} onClose={()=>!busy&&setConfirm(null)}><div className={d.formActions}><Button variant="secondary" disabled={!!busy} onClick={()=>setConfirm(null)}>Batal</Button><Button disabled={!!busy} onClick={()=>void markTransferred(confirm)}>{busy?"Menyimpan…":"Ya, sudah ditransfer"}</Button></div>{error&&<p role="alert" className={s.fieldError}>{error}</p>}</Dialog>}
     {card&&<SantunanCard row={card} verifier={staff.find(person=>person.id===card.volunteerId)?.name??(card.volunteerId===viewer.id?viewer.name:"")} onClose={()=>setCard(null)}/>}
-    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} location={preview.location} onClose={()=>setPreview(null)}/>}
+    {preview&&<PhotoViewer key={preview.src} src={preview.src} title={preview.title} location={preview.location} mime={preview.mime} onClose={()=>setPreview(null)}/>}
     {success&&<Toast message={success} onClose={()=>setSuccess("")}/>}
   </div>;
 }

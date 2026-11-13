@@ -73,7 +73,7 @@ class ApplicationQuery
             if ($task === 'distribution') {
                 $query->where(function ($assigned) use ($request, $access) {
                     $assigned->whereRaw('1 = 0');
-                    if ($access->has($request, ['verifier'])) $assigned->orWhere('distributor_id', $request->user()->id);
+                    if ($access->has($request, ['verifier', 'volunteer'])) $assigned->orWhere('distributor_id', $request->user()->id);
                     if ($access->has($request, ['treasurer'])) $assigned->orWhere('distribution_type', 'direct');
                 });
             } elseif ($access->has($request, ['verifier'])) {

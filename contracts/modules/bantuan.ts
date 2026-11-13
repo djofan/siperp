@@ -4,6 +4,7 @@ export const bantuanRoles: Record<string, string> = {
   volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Monitoring", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
+  other_report:"Laporan penyaluran tambahan",
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
   update_mustahiq: "Profil mustahiq diperbarui", sync_mustahiq: "Profil diselaraskan dari review survei",
   create: "Pengajuan dibuat", edit_intake: "Data pengajuan diperbarui", submit: "Pengajuan dikirim",
@@ -40,6 +41,7 @@ export interface BantuanViewer { id: string; name: string; code?: string; role: 
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface ManualActor { actorId?:string|null; name:string; phone?:string|null; channel:string; date:string; note:string; recordedBy?:string; recordedByName?:string; recordedAt?:string }
 export interface AidApplication {
+  intakeType?: "new" | "returning" | "other";
   manualVerifierName?:string|null; manualDistributorName?:string|null;
   shortLocation?: string;
   rejectionReason?: string | null;
@@ -51,7 +53,7 @@ export interface AidDependent { name:string; relationship:string; gender:string;
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
 export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
 export interface AidDetail extends AidApplication {
-  manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string}}|null;
+  manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string};transferRecipient?:{bank:string;recipientName:string;recipientRelationship:string;account:string;transferDate:string;transferAmount:number}}|null;
   surveyDeadline?:{assignedAt:string;dueAt:string;days:number;overdue:boolean}|null;
   surveyLocation?: { address?: string; latitude?: number; longitude?: number } | null;
   fundingRequest?: { id:string; number:string } | null;
@@ -79,5 +81,5 @@ export interface SantunanRecord {
   transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
   transferredAt: string|null; completedAt: string|null; version: number;
   report: { distributionDate:string; location:string; recipient:string; description:string }|null;
-  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; created_at:string; location?:PhotoLocation|null }[];
+  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; mime?:string; created_at:string; location?:PhotoLocation|null }[];
 }

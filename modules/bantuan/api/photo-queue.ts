@@ -1,3 +1,5 @@
+import { validateAttachment } from "../attachments";
+import { describeApiProblem } from "@/lib/api-problem";
 import type { PhotoLocation } from "@/contracts/modules/bantuan";
 import { appendPhotoLocation } from "../photo-location";
 import { draftsWithPrefix, putDraft, removeDraft } from "./vault";
@@ -34,7 +36,17 @@ async function upload(photo:QueuedPhoto,onProgress:(n:number)=>void):Promise<voi
     xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(Math.round(e.loaded/e.total*100));};
     xhr.onerror=()=>reject(new Error("Koneksi terputus. Foto menunggu dicoba ulang."));
     xhr.ontimeout=()=>reject(new Error("Unggahan terlalu lama. Coba lagi ketika sinyal membaik."));
-    xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300){resolve();return;}let message="Unggahan belum berhasil.";try{const body=JSON.parse(xhr.responseText);message=body.error?.message??message;}catch{}reject(new RequestError(message,xhr.status));};
+    xhr.onload=()=>{
+      if(xhr.status>=200&&xhr.status<300){
+        try{const result=JSON.parse(xhr.responseText);if(typeof result?.data?.id!=="string")throw new Error();resolve();}
+        catch{reject(new RequestError("Respons unggahan tidak valid. Periksa penyimpanan sebelum mencoba ulang. (Kode: INVALID_API_RESPONSE)",502));}return;
+      }
+      let body:Parameters<typeof describeApiProblem>[0]=null;try{body=JSON.parse(xhr.responseText);}catch{}
+      if(xhr.status===401&&window.location.pathname.startsWith("/bantuan-app/"))window.dispatchEvent(new Event("bantuan-session-expired"));
+      const message=xhr.status===413?"Berkas ditolak karena batas ukuran server. Maksimal aplikasi 10 MB; minta admin memeriksa batas unggahan PHP/Nginx. (HTTP 413)":describeApiProblem(body,xhr.status,"Unggahan ditolak server. Coba lagi atau hubungi admin dengan kode berikut.");
+      reject(new RequestError(message,xhr.status));
+    };
+
     xhr.send(body);
   });
 }
@@ -61,8 +73,8 @@ export async function startPhotos(owner:string,app:string){
   void pumpPhotos(owner,app);
 }
 export async function addPhotos(owner:string,app:string,kind:string,files:File[],captions:string[]=[],location?:PhotoLocation|null){
+  files.forEach(validateAttachment);
   for(const file of files){
-    if(file.size>30*1024*1024)throw new Error("Foto asli maksimal 30 MB.");
     const photo:QueuedPhoto={id:crypto.randomUUID(),applicationId:app,kind,location,caption:captions[files.indexOf(file)]??"",name:file.name,mime:file.type,data:await dataUrl(file),status:"queued",progress:0,attempts:0,nextTry:0};
     await putDraft(owner,storageKey(photo),photo);
     const b=bucket(owner,app);b.items=[...b.items,photo];emit(b);
@@ -98,7 +110,7 @@ export async function pumpPhotos(owner:string,app:string){
         const id=item.id;await upload(item,progress=>update(owner,app,id,{progress}));
         item=update(owner,app,id,{status:"done",progress:100,error:undefined});
       }catch(error){
-        item=update(owner,app,item.id,{status:"error",progress:0,error:error instanceof Error?error.message:"Foto gagal diproses.",nextTry:Date.now()+30000});
+        item=update(owner,app,item.id,{status:"error",progress:0,error:error instanceof Error?error.message:"Berkas gagal diproses.",attempts:error instanceof RequestError&&error.status>=400&&error.status<500&&error.status!==429?3:item.attempts,nextTry:Date.now()+30000});
       }
       await putDraft(owner,storageKey(item),item);
     }

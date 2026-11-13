@@ -142,7 +142,9 @@ class FundingRequests
         $survey = $row->survey ?? [];
         return [
             'problem' => (string) ($applicant['problem'] ?? ''),
-            'needs' => (string) ($survey['needs'] ?? $applicant['bypassNeeds'] ?? ''),
+            'needs' => (string) (($applicant['intakeType'] ?? null) === 'other'
+                ? trim(($applicant['customTitle'] ?? '')."\n".($applicant['customBudget'] ?? ''))
+                : ($survey['needs'] ?? $applicant['bypassNeeds'] ?? '')),
         ];
     }
 

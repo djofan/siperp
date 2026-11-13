@@ -121,7 +121,7 @@ class Whatsapp
         if ($row->status === 'disbursed') {
             if ($row->distribution_type === 'direct') {
                 if (! in_array('treasurer', $roles, true)) return null;
-            } elseif ($row->distribution_type !== 'verifier' || $row->distributor_id !== $userId || ! in_array('verifier', $roles, true)) return null;
+            } elseif ($row->distribution_type !== 'verifier' || $row->distributor_id !== $userId || ! array_intersect(['verifier', 'volunteer'], $roles)) return null;
         }
         return self::phone($member->phone);
     }

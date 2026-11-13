@@ -17,6 +17,26 @@ class Intake
 
     public function validateApplicant(Request $request, bool $draft = false): array
     {
+        if ($request->input('applicant.intakeType') === 'other') {
+            $data = $request->validate([
+                'applicant' => 'required|array',
+                'applicant.intakeType' => 'required|in:other',
+                'applicant.name' => 'required|string|max:191',
+                'applicant.nik' => 'required|digits:16',
+                'applicant.street' => ($draft ? 'nullable' : 'required').'|string|max:500',
+                'applicant.phone' => [$draft ? 'nullable' : 'required', 'string', 'max:30', new PhoneNumber],
+                'applicant.reporterRelationship' => ($draft ? 'nullable' : 'required').'|string|max:191',
+                'applicant.otherCategory' => ($draft ? 'nullable' : 'required').'|in:Proposal,Sedekah air bersih,Renovasi rumah,Lainnya',
+                'applicant.customTitle' => ($draft ? 'nullable' : 'required').'|string|max:191',
+                'applicant.problem' => ($draft ? 'nullable' : 'required').'|string|max:10000',
+                'applicant.customBudget' => ($draft ? 'nullable' : 'required').'|string|max:10000',
+                'applicant.applicationNotes' => 'nullable|string|max:10000',
+            ]);
+            return array_intersect_key($data['applicant'], array_flip([
+                'intakeType', 'name', 'nik', 'street', 'phone', 'reporterRelationship',
+                'otherCategory', 'customTitle', 'problem', 'customBudget', 'applicationNotes',
+            ]));
+        }
         $rules = [
             'applicant.requestCategory' => 'nullable|in:perorangan,renovasi rumah,air bersih,santunan rutin,bantuan janda,lainnya',
             'applicant.customTitle' => 'nullable|string|max:10000',
@@ -117,6 +137,9 @@ class Intake
             }
         }
         $applicant = $this->validateApplicant($request, $draft);
+        if (($applicant['intakeType'] ?? null) === 'other') {
+            $request->merge(['source' => 'online', 'program' => 'Lainnya']);
+        }
         $rules = ['source' => 'required|in:online,walk_in,bypass', 'program' => 'required|string|max:191',
             'region' => 'nullable|string|max:191', 'bypassReason' => 'nullable|string|max:5000',
         ];
@@ -133,6 +156,9 @@ class Intake
         return DB::transaction(function () use ($request, $id, $data, $applicant, $access, $draft) {
             $row = $id ? $access->find($request, $id, true) : new Application;
             if ($id) {
+                abort_if(($row->applicant['intakeType'] ?? null) !== ($applicant['intakeType'] ?? null)
+                    && in_array('other', [$row->applicant['intakeType'] ?? null, $applicant['intakeType'] ?? null], true)
+                    && !in_array($row->status, ['draft', 'needs_data'], true), 409, 'Jenis pengajuan tidak dapat diubah setelah diproses.');
                 abort_if($draft && ! in_array($row->status, ['draft', 'needs_data'], true), 409, 'Draft hanya tersedia sebelum pengajuan diproses.');
                 $sourceChanged = $data['source'] !== $row->source;
                 abort_if($sourceChanged && (! in_array($row->status, ['draft', 'needs_data'], true)

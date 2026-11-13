@@ -192,7 +192,7 @@ class SantunanController
     {
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
-        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => \App\Modules\Bantuan\Services\Attachment::RULES]);
         $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
         $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
 
@@ -241,8 +241,7 @@ class SantunanController
         $this->find($request, $access, $document->santunan_id);
         $bytes = Crypt::decryptString(Storage::disk('local')->get($document->path));
 
-        return response($bytes, 200, ['Content-Type' => $document->mime, 'Cache-Control' => 'no-store, private',
-            'Content-Disposition' => 'inline; filename="'.$document->kind.'.jpg"', 'X-Content-Type-Options' => 'nosniff']);
+        return response($bytes, 200, \App\Modules\Bantuan\Services\Attachment::headers($document->mime, $document->id));
     }
 
     private function find(Request $request, Access $access, string $id, bool $lock = false): Santunan
@@ -259,7 +258,7 @@ class SantunanController
 
     private function payload(Santunan $row): array
     {
-        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'created_at', 'photo_location'])->map(function ($doc) {
+        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'mime', 'created_at', 'photo_location'])->map(function ($doc) {
             $doc->location = \App\Modules\Bantuan\Services\PhotoLocation::present($doc->photo_location);
             unset($doc->photo_location);
             return $doc;

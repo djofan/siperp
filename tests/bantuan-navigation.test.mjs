@@ -136,7 +136,7 @@ test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
     for(const key of ["berjalan","mustahiq","pengajuan-dana","laporan","santunan","tim","audit","pengaturan"])assert.equal(keys.includes(key),false,role+": "+key);
     assert.equal(sidebarNavigation(viewer).find(item=>item.key==="pengajuan").label,"Pengajuan saya");
   }
-  assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["santunan"]);
+  assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["proses","penyaluran","santunan"]);
   const multi={role:"requester",roles:["requester","verifier","volunteer","treasurer"],canBypass:false};
   const keys=sidebarNavigation(multi).map(item=>item.key);
   for(const key of ["proses","berjalan","pengajuan-dana","laporan","santunan","pencairan","survei"])assert.ok(keys.includes(key),key);
@@ -152,4 +152,13 @@ test("Monitoring has monitoring routes and no creation, edit or management route
   assert.equal(sidebarNavigation(viewer).some(item=>item.key==="proses"),false);
   const mixed={...viewer,roles:["observer","call_center"]};
   assert.equal(canViewRoute(mixed,["pengajuan","baru"]),true);
+});
+
+
+test("other intake describes amount approval and completion without a survey assignment",()=>{
+  const {nextStep}=sandbox.exports;
+  assert.match(nextStep("review2","online","requester","other").title,/nominal/);
+  assert.match(nextStep("completed","online","requester","other").title,/Laporan penyerahan/);
+  assert.match(nextStep("completed","online","requester","other").description,/laporan tercatat/);
+  assert.match(nextStep("survey_assigned","online","requester").owner,/Verifikator/);
 });

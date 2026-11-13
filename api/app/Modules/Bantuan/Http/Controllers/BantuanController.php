@@ -43,6 +43,7 @@ class BantuanController
         $applicant = $row->applicant ?? [];
         $location = \App\Modules\Bantuan\Services\AddressSummary::make($applicant, $row->region);
         return ['id' => $row->id, 'number' => $row->number, 'name' => $row->name, 'status' => $row->status,
+            'intakeType' => $applicant['intakeType'] ?? 'new',
             'manualVerifierName' => $row->manual_process['verifier']['name'] ?? null,
             'manualDistributorName' => $row->manual_process['distributor']['name'] ?? null,
             'shortLocation' => mb_substr($location ?: trim((string) $row->region), 0, 100),
@@ -104,7 +105,7 @@ class BantuanController
         if (! $sensitive) {
             $private = $applicant;
             $applicant = ['name' => $applicant['name'], 'nik' => substr($applicant['nik'], 0, 6).'xxxxxxxxxx',
-                'city' => ($applicant['city'] ?? null), 'district' => ($applicant['district'] ?? null), 'publicationConsent' => $applicant['publicationConsent']];
+                'city' => ($applicant['city'] ?? null), 'district' => ($applicant['district'] ?? null), 'publicationConsent' => $applicant['publicationConsent'] ?? false];
             if ($access->has($request, ['treasurer']) && $row->distribution_type === 'direct') {
                 foreach (['street', 'rtRw', 'village', 'phone'] as $field) $applicant[$field] = $private[$field] ?? null;
             }
@@ -132,7 +133,8 @@ class BantuanController
             ->where('active_application_id', $row->id)->first(['bantuan_funding_requests.id', 'bantuan_funding_requests.number']);
         return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'fundingRequest' => $funding,
             'surveyDeadline' => app(\App\Modules\Bantuan\Services\Reminders::class)->surveyDeadline($row),
-              'manualProcess' => $sensitive ? $row->manual_process : null,
+              'manualProcess' => $sensitive ? $row->manual_process : (($row->applicant['intakeType'] ?? null) === 'other' && $access->has($request, ['treasurer'])
+                  ? ['transferRecipient' => $row->manual_process['transferRecipient'] ?? null] : null),
               'surveyLocation' => $sensitive ? $row->survey_location : null,
             'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,
             'fundReference' => $row->fund_reference, 'duplicateCount' => $duplicates,
@@ -243,11 +245,13 @@ class BantuanController
         return DB::transaction(function () use ($request, $id, $access, $journal) {
             $row = $access->find($request, $id, true);
             $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,education_other,return',
-                'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048', 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
+                'file' => \App\Modules\Bantuan\Services\Attachment::RULES, 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
             $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
             $kind = $data['kind'];
             $access->documentRole($request, $row, $kind);
-            abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true), 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
+            $additionalReport = ($row->applicant['intakeType'] ?? null) === 'other'
+                && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true);
+            abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true) && !$additionalReport, 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
             $docId = $data['clientId'] ?? (string) Str::uuid();
             $existing = DB::table('bantuan_documents')->where('id', $docId)->first();
             if ($existing) {
@@ -275,8 +279,7 @@ class BantuanController
         $journal->record($request, $row, 'read_document', $row->status, ['documentId' => $id]);
         $bytes = Crypt::decryptString(Storage::disk('local')->get($doc->path));
 
-        return response($bytes, 200, ['Content-Type' => $doc->mime, 'Cache-Control' => 'no-store, private',
-            'Content-Disposition' => 'inline; filename="'.$doc->kind.'.jpg"', 'X-Content-Type-Options' => 'nosniff']);
+        return response($bytes, 200, \App\Modules\Bantuan\Services\Attachment::headers($doc->mime, $doc->id));
     }
 
     public function dashboard(Request $request, Access $access, ApplicationQuery $listing)
