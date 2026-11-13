@@ -442,7 +442,8 @@ it('lists all cohort participants with unique ordered ranks and isolates other c
         ->and(array_column($data['participants'], 'name'))->toBe(['Early', 'Amin', 'Budi', 'QA student', 'Absent'])
         ->and(array_column($data['participants'], 'rank'))->toBe([1, 2, 3, 4, 5]);
     foreach ($data['participants'] as $person) {
-        expect(array_keys($person))->toEqualCanonicalizing(['name', 'score', 'predicate', 'complete', 'finalCompleted', 'durationMs', 'finishedAt', 'isSelf', 'rank']);
+        expect(array_keys($person))->toEqualCanonicalizing(['name', 'nis', 'score', 'predicate', 'complete', 'finalCompleted', 'durationMs', 'finishedAt', 'isSelf', 'rank']);
     }
+    expect($data['participants'][0]['nis'])->toBe('PAZ-Early');
     expect($data['participants'][3]['isSelf'])->toBeTrue()->and($data['participants'][4]['finishedAt'])->toBeNull();
 });

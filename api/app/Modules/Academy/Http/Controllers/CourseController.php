@@ -121,13 +121,13 @@ class CourseController
                 if ($cohortId) {
                     $query->orWhereIn('id', Membership::where('cohort_id', $cohortId)->select('profile_id'));
                 }
-            })->select('id', 'user_id')->with('user:id,name')->get();
+            })->select('id', 'user_id', 'nis')->with('user:id,name')->get();
             $grades = [];
             foreach ($people as $person) {
                 $values = isset($attempts[$person->id]) ? $attempts[$person->id]->toArray() : [];
                 $grade = $this->context->weighted($quizzes, $values, $weights);
                 $timing = RankingTiming::summary($quizzes, $values);
-                $grades[] = ['profileId' => $person->id, 'name' => $person->user->name, 'score' => $grade['score'], 'predicate' => $grade['predicate'], 'complete' => $grade['complete'], 'finalCompleted' => $grade['finalCompleted'], 'durationMs' => $timing['durationMs'], 'finishedAt' => $timing['finishedAt'], 'isSelf' => $person->id === $profile->id];
+                $grades[] = ['profileId' => $person->id, 'name' => $person->user->name, 'nis' => $person->nis, 'score' => $grade['score'], 'predicate' => $grade['predicate'], 'complete' => $grade['complete'], 'finalCompleted' => $grade['finalCompleted'], 'durationMs' => $timing['durationMs'], 'finishedAt' => $timing['finishedAt'], 'isSelf' => $person->id === $profile->id];
             }
             usort($grades, [RankingTiming::class, 'compare']);
             $participants = [];

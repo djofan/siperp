@@ -7,7 +7,7 @@ import { publicNavigation } from "./public-navigation";
 import { DashboardChrome } from "./DashboardChrome";
 const links = [
   { path: "belajar", label: "Dashboard", icon: "Dashboard" },
-  { path: "materi", label: "Materi", icon: "BookOpen" },
+  { path: "materi", label: "Materi Belajar", icon: "BookOpen" },
   { path: "catatan", label: "Catatan Belajar", icon: "BookOpen" },
   { path: "kuis", label: "Ujian Saya", icon: "Quiz" },
   { path: "progres", label: "Progres Saya", icon: "Progress" },

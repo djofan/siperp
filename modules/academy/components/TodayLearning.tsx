@@ -15,12 +15,6 @@ export async function TodayLearning({ profileId }: { profileId?: string }) {
   return <section aria-label="Kegiatan hari ini" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
     <h2 className="font-semibold text-slate-900">Kegiatan hari ini</h2>
     <div className="mt-4 grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl bg-white p-4"><h3 className="text-sm font-semibold">Materi terbaru</h3>
-        {materials.items.length ? <ul className="mt-3 divide-y divide-gray-100">{materials.items.slice(0, 2).map(item => <li key={item.id} className="py-3">
-          <Link href={`/academy/materi/${item.id}`} className="break-words text-sm font-medium text-green-700 hover:underline">{item.title}</Link>
-        </li>)}</ul> : <p className="mt-3 text-sm text-gray-600">Belum ada materi dari pengajar untuk angkatan Anda. Periksa kembali setelah materi dipublikasikan.</p>}
-        <Link href="/academy/materi" className="mt-3 inline-block text-sm text-green-700 underline">Semua materi</Link>
-      </div>
       <div className="rounded-xl bg-white p-4"><h3 className="text-sm font-semibold">Ujian & tenggat terdekat</h3>
         {next.length ? <ul className="mt-3 divide-y divide-gray-100">{next.map(item => <li key={item.key} className="py-3">
           <Link href={`/academy/kuis/${item.quizId}`} className="break-words text-sm font-medium text-green-700 hover:underline">{item.title}</Link>
@@ -28,6 +22,12 @@ export async function TodayLearning({ profileId }: { profileId?: string }) {
           {item.state === "due" && <p className="mt-1 text-xs font-medium text-amber-800">Tenggat kurang dari 24 jam</p>}
         </li>)}</ul> : <p className="mt-3 text-sm text-gray-600">Tidak ada ujian yang perlu dikerjakan dalam pengingat terdekat. Anda dapat melanjutkan materi belajar.</p>}
         <Link href="/academy/kuis" className="mt-3 inline-block text-sm text-green-700 underline">Semua ujian & hasil</Link>
+      </div>
+      <div className="rounded-xl bg-white p-4"><h3 className="text-sm font-semibold">Materi terbaru</h3>
+        {materials.items.length ? <ul className="mt-3 divide-y divide-gray-100">{materials.items.slice(0, 2).map(item => <li key={item.id} className="py-3">
+          <Link href={`/academy/materi/${item.id}`} className="break-words text-sm font-medium text-green-700 hover:underline">{item.title}</Link>
+        </li>)}</ul> : <p className="mt-3 text-sm text-gray-600">Belum ada materi dari pengajar untuk angkatan Anda. Periksa kembali setelah materi dipublikasikan.</p>}
+        <Link href="/academy/materi" className="mt-3 inline-block text-sm text-green-700 underline">Semua materi</Link>
       </div>
     </div>
   </section>;
