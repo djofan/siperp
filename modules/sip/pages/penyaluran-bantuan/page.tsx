@@ -30,6 +30,7 @@ export default async function PenyaluranBantuanListPage() {
             {penyaluran.map((item) => (
               <PenyaluranBantuanCard
                 key={item.id}
+                id={item.id}
                 documentationPhotos={item.documentationPhotos}
                 title={item.title}
                 description={item.description}
