@@ -377,6 +377,7 @@ export type GetLeaderboardResult = {
 }[];
 export async function getLeaderboard(): Promise<GetLeaderboardResult> { return await apiRequest<GetLeaderboardResult>("academy/leaderboard"); }
 export type AcademyRankingParticipant = {
+    nis: string | null;
     rank: number;
     name: string;
     score: number;
