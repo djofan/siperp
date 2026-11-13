@@ -1,4 +1,5 @@
 "use server";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import { apiRequest, ApiError } from "@/lib/api";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -8,13 +9,13 @@ export async function saveTeacherMaterial(id: string | null, _: ActionState, for
 }
 catch (error) {
     return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
-} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); redirect(`/academy/pengajar/materi?saved=${id ? "updated" : "created"}&visibility=${["1", "on", "true"].includes(String(form.get("isPublished"))) ? "published" : "draft"}`); }
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); redirect(await academyServerHref(`/academy/pengajar/materi?saved=${id ? "updated" : "created"}&visibility=${["1", "on", "true"].includes(String(form.get("isPublished"))) ? "published" : "draft"}`)); }
 export async function saveTeacherQuiz(id: string | null, _: ActionState, form: FormData): Promise<ActionState> { try {
     await apiRequest<ActionState & { id?: string }>(id ? `academy/teacher/quizzes/${encodeURIComponent(id)}` : "academy/teacher/quizzes", { method: "POST", body: form });
 }
 catch (error) {
     return { error: error instanceof ApiError ? error.message : "Data gagal disimpan." };
-} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); redirect(`/academy/pengajar/ujian?saved=${id ? "updated" : "created"}&visibility=${["1", "on", "true"].includes(String(form.get("isPublished"))) ? "published" : "draft"}`); }
+} revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout"); redirect(await academyServerHref(`/academy/pengajar/ujian?saved=${id ? "updated" : "created"}&visibility=${["1", "on", "true"].includes(String(form.get("isPublished"))) ? "published" : "draft"}`)); }
 export async function saveTeacherQuestion(quizId: string, questionId: string | null, _: ActionState, form: FormData): Promise<ActionState> { let result: ActionState & {
     id?: string;
 }; try {
@@ -29,7 +30,7 @@ export async function answerTeacherDiscussion(id: string, page: number, _: Actio
   try { await apiRequest(`academy/discussions/${encodeURIComponent(id)}/answer`, { method: "PUT", body: form }); }
   catch (error) { return { error: error instanceof ApiError ? error.message : "Jawaban gagal disimpan." }; }
   revalidatePath("/academy", "layout");
-  redirect(`/academy/pengajar/pertanyaan?saved=1&page=${Math.max(1, Math.min(100000, Math.trunc(page) || 1))}`);
+  redirect(await academyServerHref(`/academy/pengajar/pertanyaan?saved=1&page=${Math.max(1, Math.min(100000, Math.trunc(page) || 1))}`));
 }
 
 
@@ -39,5 +40,5 @@ export async function createTeacherLiveSession(_: ActionState, form: FormData): 
   try { await apiRequest(`academy/courses/${encodeURIComponent(courseId)}/sessions`, { method: "POST", body: form }); }
   catch (error) { return { error: error instanceof ApiError ? error.message : "Jadwal gagal disimpan." }; }
   revalidatePath("/academy", "layout");
-  redirect("/academy/pengajar/pertanyaan?tab=jadwal&saved=session");
+  redirect(await academyServerHref("/academy/pengajar/pertanyaan?tab=jadwal&saved=session"));
 }

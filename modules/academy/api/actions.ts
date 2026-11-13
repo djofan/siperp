@@ -1,4 +1,5 @@
 "use server";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import { apiRequest, ApiError } from "@/lib/api";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME } from "@/lib/session";
@@ -37,7 +38,7 @@ export async function registerParticipant(_: ActionState, form: FormData): Promi
 }
 catch (error) {
     return errorState(error);
-} redirect(`/academy/masuk?terdaftar=1&nip=${encodeURIComponent(result.nip)}`); }
+} redirect(await academyServerHref(`/academy/masuk?terdaftar=1&nip=${encodeURIComponent(result.nip)}`)); }
 export async function enrollInCourse(courseId: string): Promise<ActionState> { let result: {
     slug: string;
 }; try {
@@ -45,7 +46,7 @@ export async function enrollInCourse(courseId: string): Promise<ActionState> { l
 }
 catch (error) {
     return errorState(error);
-} revalidatePath("/academy", "layout"); redirect(`/academy/program/${result.slug}`); }
+} revalidatePath("/academy", "layout"); redirect(await academyServerHref(`/academy/program/${result.slug}`)); }
 export async function markLesson(lessonId: string, completed: boolean): Promise<ActionState> { return mutate(`academy/lessons/${encodeURIComponent(lessonId)}/progress`, { completed }, "PUT"); }
 export async function beginQuiz(quizId: string): Promise<ActionState> {
     const { profileId } = await requireAcademyProfile();
@@ -56,7 +57,7 @@ export async function beginQuiz(quizId: string): Promise<ActionState> {
     catch (error) {
         return errorState(error);
     }
-    redirect(`/academy/kuis/${quizId}/percobaan/${attemptId}`);
+    redirect(await academyServerHref(`/academy/kuis/${quizId}/percobaan/${attemptId}`));
 }
 export async function saveStudyNote(lessonId: string, _: ActionState, form: FormData): Promise<ActionState> { const result = await mutate(`academy/lessons/${encodeURIComponent(lessonId)}/note`, form, "PUT"); return result.error ? result : { ...result, message: "Catatan pribadi tersimpan." }; }
 export async function updateAcademyProfile(_: ActionState, form: FormData): Promise<ActionState> {
@@ -67,7 +68,7 @@ export async function updateAcademyProfile(_: ActionState, form: FormData): Prom
     return result.error ? result : { ...result, message: "Profil berhasil diperbarui." };
 }
 export async function changeAcademyPassword(_: ActionState, form: FormData): Promise<ActionState> { const result = await mutate("academy/profile/password", form, "PUT"); if (result.error)
-    return result; (await cookies()).delete(SESSION_COOKIE_NAME); redirect("/academy/masuk?password=1"); }
+    return result; (await cookies()).delete(SESSION_COOKIE_NAME); redirect(await academyServerHref("/academy/masuk?password=1")); }
 export async function askTeacher(courseId: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/courses/${encodeURIComponent(courseId)}/questions`, form); }
 export async function answerParticipant(id: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/discussions/${encodeURIComponent(id)}/answer`, form, "PUT"); }
 export async function saveTeacherAudio(lessonId: string, _: ActionState, form: FormData): Promise<ActionState> { return mutate(`academy/lessons/${encodeURIComponent(lessonId)}/audio`, form, "PUT"); }
@@ -99,7 +100,7 @@ export async function saveAcademyCourse(id: string | null, _state: ActionState, 
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${saved.id}?tersimpan=1`);
+    redirect(await academyServerHref(`/admin/academy/program/${saved.id}?tersimpan=1`));
 }
 export async function saveAcademyChapter(courseId: string, id: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -113,7 +114,7 @@ export async function saveAcademyChapter(courseId: string, id: string | null, _s
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${courseId}/bab/${saved.id}?tersimpan=1`);
+    redirect(await academyServerHref(`/admin/academy/program/${courseId}/bab/${saved.id}?tersimpan=1`));
 }
 export async function saveAcademyLesson(courseId: string, chapterId: string, id: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -127,7 +128,7 @@ export async function saveAcademyLesson(courseId: string, chapterId: string, id:
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/program/${courseId}/bab/${chapterId}/materi/${saved.id}?tersimpan=1`);
+    redirect(await academyServerHref(`/admin/academy/program/${courseId}/bab/${chapterId}/materi/${saved.id}?tersimpan=1`));
 }
 export async function saveAcademyAttachment(courseId: string, chapterId: string, lessonId: string, id: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -138,7 +139,7 @@ export async function saveAcademyAttachment(courseId: string, chapterId: string,
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`);
+    redirect(await academyServerHref(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`));
 }
 export async function reorderAcademyContent(courseId: string, chapterId: string, lessonId: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -164,7 +165,7 @@ export async function deleteAcademyContent(courseId: string, chapterId: string |
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(lessonId ? `/admin/academy/program/${courseId}/bab/${chapterId}` : chapterId ? `/admin/academy/program/${courseId}` : "/admin/academy/program");
+    redirect(await academyServerHref(lessonId ? `/admin/academy/program/${courseId}/bab/${chapterId}` : chapterId ? `/admin/academy/program/${courseId}` : "/admin/academy/program"));
 }
 export async function deleteAcademyAttachment(courseId: string, chapterId: string, lessonId: string, id: string, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -177,7 +178,7 @@ export async function deleteAcademyAttachment(courseId: string, chapterId: strin
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`);
+    redirect(await academyServerHref(`/admin/academy/materi/${lessonId}?tersimpan=1#lampiran`));
 }
 function adminQuizPath(courseId: string, chapterId: string, quizId: string) {
     return `/admin/academy/program/${courseId}/bab/${chapterId}/kuis/${quizId}`;
@@ -194,7 +195,7 @@ export async function saveAcademyQuiz(courseId: string, chapterId: string, id: s
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(adminQuizPath(courseId, chapterId, saved.id) + "?tersimpan=1");
+    redirect(await academyServerHref(adminQuizPath(courseId, chapterId, saved.id) + "?tersimpan=1"));
 }
 export async function saveAcademyQuestion(courseId: string, chapterId: string, quizId: string, id: string | null, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -205,7 +206,7 @@ export async function saveAcademyQuestion(courseId: string, chapterId: string, q
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(adminQuizPath(courseId, chapterId, quizId) + "?tersimpan=1#pertanyaan");
+    redirect(await academyServerHref(adminQuizPath(courseId, chapterId, quizId) + "?tersimpan=1#pertanyaan"));
 }
 export async function deleteAcademyQuestion(courseId: string, chapterId: string, quizId: string, id: string, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -218,7 +219,7 @@ export async function deleteAcademyQuestion(courseId: string, chapterId: string,
         return adminError(error);
     }
     refreshCurriculum();
-    redirect(adminQuizPath(courseId, chapterId, quizId) + "?tersimpan=1#pertanyaan");
+    redirect(await academyServerHref(adminQuizPath(courseId, chapterId, quizId) + "?tersimpan=1#pertanyaan"));
 }
 export async function deleteAcademyQuiz(courseId: string, chapterId: string, quizId: string, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -231,7 +232,7 @@ export async function deleteAcademyQuiz(courseId: string, chapterId: string, qui
         return adminError(error);
     }
     refreshCurriculum();
-    redirect("/admin/academy/kuis");
+    redirect(await academyServerHref("/admin/academy/kuis"));
 }
 export async function syncAcademyCompletion(enrollmentId: string): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -245,7 +246,7 @@ export async function syncAcademyCompletion(enrollmentId: string): Promise<Actio
         return adminError(error);
     }
     refreshCurriculum();
-    redirect("/admin/academy/sertifikat/" + record.id + "?tersimpan=1");
+    redirect(await academyServerHref("/admin/academy/sertifikat/" + record.id + "?tersimpan=1"));
 }
 export async function saveAcademyCertificate(id: string, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -256,7 +257,7 @@ export async function saveAcademyCertificate(id: string, _state: ActionState, fo
         return adminError(error);
     }
     refreshCurriculum();
-    redirect("/admin/academy/sertifikat/" + id + "?tersimpan=1");
+    redirect(await academyServerHref("/admin/academy/sertifikat/" + id + "?tersimpan=1"));
 }
 export async function deleteAcademyCompletion(id: string, _state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -269,7 +270,7 @@ export async function deleteAcademyCompletion(id: string, _state: ActionState, f
         return adminError(error);
     }
     refreshCurriculum();
-    redirect("/admin/academy/sertifikat");
+    redirect(await academyServerHref("/admin/academy/sertifikat"));
 }
 export async function saveAcademyMaintenance(_state: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyAdmin();
@@ -280,5 +281,5 @@ export async function saveAcademyMaintenance(_state: ActionState, form: FormData
         return adminError(error);
     }
     refreshCurriculum();
-    redirect("/admin/academy/pengaturan?tersimpan=1");
+    redirect(await academyServerHref("/admin/academy/pengaturan?tersimpan=1"));
 }

@@ -1,5 +1,5 @@
 import { examStatus } from "../../../exam-status";
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyTeacherExamList } from "@/contracts/modules/academy";
 import { requireAcademyTeacher } from "../../../api/access";

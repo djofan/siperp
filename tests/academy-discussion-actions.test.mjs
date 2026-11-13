@@ -10,6 +10,7 @@ function load(fail = false, participant = false) {
   class ApiError extends Error {}
   const source = ts.transpileModule(fs.readFileSync(participant ? "modules/academy/api/discussion-actions.ts" : "modules/academy/api/teacher-actions.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   vm.runInNewContext(source, { module, exports: module.exports, Math, String, revalidatePath() {}, require(name) {
+    if (name === "@/modules/academy/pwa/server-navigation") return { academyServerHref: async path => path };
     if (name === "@/lib/api") return { ApiError, apiRequest: async (url, options) => { path = [url, options.method]; if (fail) throw new ApiError("Jawaban gagal"); return true; } };
     if (name === "next/cache") return { revalidatePath() {} };
     if (name === "next/navigation") return { redirect(url) { throw Object.assign(new Error("redirect"), { url }); } };

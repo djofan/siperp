@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { academyServerHref, getAcademyBasePath } from "@/modules/academy/pwa/server-navigation";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { redirect } from "next/navigation";
 import { getAcademyUser, getAcademyAvailability } from "../../api/access";
 import { AcademyLoginForm } from "../../components/LoginForm";
@@ -7,7 +8,7 @@ import { academyLoginDestination } from "../../api/auth-navigation";
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ terdaftar?: string; password?: string; nip?: string }> }) {
   const available = await getAcademyAvailability();
   const user = await getAcademyUser();
-  if (user) redirect(academyLoginDestination(user, available));
+  if (user) redirect(await academyServerHref(academyLoginDestination(user, available, (await getAcademyBasePath()) === "/academy-app")));
   const { terdaftar, password, nip } = await searchParams;
   return <div className="mx-auto w-full max-w-sm"><div className="mb-8 text-center"><h1 className="text-2xl font-semibold tracking-tight">Insan Academy</h1><p className="mt-1 text-sm text-gray-500">Belajar bersama Ustadz Irham · Program 1 bulan</p></div>
     {terdaftar === "1" && <p role="status" className="mb-6 rounded-xl bg-lazsip-primary-100 p-4 text-sm">Pendaftaran berhasil. {nip && <>NIP Anda: <strong>{nip}</strong>. </>}Simpan NIP dan gunakan password yang Anda buat untuk masuk.</p>}

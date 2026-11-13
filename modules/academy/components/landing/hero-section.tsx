@@ -1,4 +1,5 @@
 "use client";
+import { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 
 import { BookOpen, GraduationCap, Users } from "../icons";
 
@@ -34,12 +35,12 @@ export function HeroSection() {
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <a href="/academy/masuk" className="academy-lime-button inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-green-200 transition-all hover:bg-green-700 hover:-translate-y-0.5">
+          <AcademyAnchor href="/academy/masuk" className="academy-lime-button inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-green-200 transition-all hover:bg-green-700 hover:-translate-y-0.5">
             Mulai Belajar
-          </a>
-          <a href="#programs" className="academy-hero-secondary inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5">
+          </AcademyAnchor>
+          <AcademyAnchor href="#programs" className="academy-hero-secondary inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5">
             Lihat Materi
-          </a>
+          </AcademyAnchor>
         </div>
 
         <div className="flex flex-col items-center gap-4 pt-4 sm:flex-row sm:justify-center">

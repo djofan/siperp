@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 
 export function TeacherPagination({ page, lastPage, total, base, cohort, showSummary = true }: {
   page: number; lastPage: number; total: number; base: string; cohort?: string; showSummary?: boolean;

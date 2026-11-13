@@ -23,6 +23,19 @@ export const academyManifest: MetadataRoute.Manifest = {
   ],
 };
 
+export const academyAppManifest: MetadataRoute.Manifest = {
+  ...academyManifest, id: "/academy-app/", scope: "/academy-app/", start_url: "/academy-app/lanjut",
+  shortcuts: [
+    { name: "Materi Belajar", url: "/academy-app/materi" },
+    { name: "Ujian Saya", url: "/academy-app/kuis" },
+    { name: "Progres Saya", url: "/academy-app/progres" },
+  ],
+};
+export function appManifestGET() {
+  return Response.json(academyAppManifest, { headers: {
+    "Content-Type": "application/manifest+json", "Cache-Control": "public, max-age=0, must-revalidate",
+  } });
+}
 export function GET() {
   return Response.json(academyManifest, { headers: {
     "Content-Type": "application/manifest+json",

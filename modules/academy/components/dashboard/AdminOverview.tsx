@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { ArrowRight, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers, Users } from "lucide-react";
 import { requireAcademyAdmin } from "../../api/admin-access";
 import { curriculumStats } from "../../api/admin-curriculum";

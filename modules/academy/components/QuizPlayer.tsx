@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAcademyRouter } from "../pwa/AcademyNavigation";
 import { finishQuiz } from "../api/actions";
 import { linkButton } from "./ui";
 import { selectedOptions } from "../api/policy";
@@ -11,7 +11,7 @@ export function QuizPlayer({ attemptId, remainingSeconds, questions, responses }
   questions: { id: string; question: string; type?: string; weight?: number; mediaMime?: string | null; mediaName?: string | null; mediaAlt?: string | null; options: { id: string; label: string }[] }[];
   responses: Record<string, string | string[]>;
 }) {
-  const router = useRouter();
+  const router = useAcademyRouter();
   const [answers, setAnswers] = useState(responses);
   const [seconds, setSeconds] = useState(remainingSeconds);
   const [submitting, setSubmitting] = useState(false);

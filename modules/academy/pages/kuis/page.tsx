@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { requireAcademyParticipant } from "../../api/access";
 import { listParticipantQuizzes, type ListParticipantQuizzesResult } from "../../api/courses";
 import { learnerCohorts } from "../../api/learner-cohorts";

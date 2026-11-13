@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- Thumbnail berasal dari URL konten admin. */
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { safeResourceUrl } from "../api/policy";
 import { AcademyIcon } from "./icons";
 

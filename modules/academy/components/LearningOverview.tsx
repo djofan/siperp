@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import type { GetOwnRankingsResult, ListParticipantQuizzesResult } from "../api/courses";
 import { AcademyIcon } from "./icons";
 import { EmptyState } from "./ui";

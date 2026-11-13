@@ -158,3 +158,18 @@ Email dapat diperbarui melalui Edit profil. Validasi, normalisasi lowercase/trim
 ### Dashboard admin Academy
 
 Dashboard memakai ringkasan Angkatan, Peserta aktif (profil belum dihapus dan akun Core aktif), Materi, dan Ujian. Tautan pengelolaan menuju halaman Angkatan, Pendaftaran, Peserta, Materi, Ujian, serta Sertifikat. Istilah program/bab tidak ditampilkan pada dashboard. Struktur penyimpanan internal tetap dipertahankan agar riwayat peserta, materi dan ujian tidak berubah.
+
+## Akses PWA Academy
+
+`/academy-app` membuka ruang Academy sesuai akun. Peserta diarahkan ke
+`/academy-app/beranda`, dengan login di `/academy-app/login`. Halaman dan aturan
+akses memakai implementasi Academy yang sama; dashboard web `/academy` tetap tersedia.
+Navigasi internal mempertahankan jalur aplikasi, termasuk setelah login, perubahan
+profil, dan penyelesaian ujian. Admin tetap diarahkan ke panel admin.
+
+Di HP tersedia menu lengkap dan navigasi bawah Beranda, Materi, Ujian, Profil.
+Buka `/academy-app/pasang` untuk memasang aplikasi. Manifest dan service worker
+memiliki scope `/academy-app/`, terpisah dari PWA Bantuan dan Academy sebelumnya.
+Worker hanya menyimpan ikon serta halaman offline umum; materi privat, audio,
+PDF, jawaban, HTML akun, dan API tetap membutuhkan koneksi. Fitur ini tidak
+menambahkan notifikasi push Academy atau pengerjaan ujian offline.

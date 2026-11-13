@@ -1,12 +1,26 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { academySurfaceHeader, canonicalAcademyPath, isAcademyAppPath } from "@/modules/academy/pwa/navigation";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/academy/:path*", "/academy-app/:path*"],
 };
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname === "/academy" || pathname.startsWith("/academy/") || isAcademyAppPath(pathname)) {
+    const forwarded = new Headers(request.headers);
+    const app = isAcademyAppPath(pathname);
+    // Derive the surface from the actual URL, never from client-supplied headers.
+    forwarded.set(academySurfaceHeader, app ? "app" : "web");
+    if (app && !["/academy-app/sw.js", "/academy-app/manifest.webmanifest", "/academy-app/offline.html"].includes(pathname)) {
+      const destination = request.nextUrl.clone();
+      destination.pathname = canonicalAcademyPath(pathname);
+      return NextResponse.rewrite(destination, { request: { headers: forwarded } });
+    }
+    return NextResponse.next({ request: { headers: forwarded } });
+  }
 
   if (pathname.startsWith("/admin/login")) {
     return NextResponse.next();

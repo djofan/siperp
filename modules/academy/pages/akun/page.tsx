@@ -1,3 +1,4 @@
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import { redirect } from "next/navigation";
 import { getAcademyUser } from "../../api/access";
 import { changeAcademyPassword, updateAcademyProfile } from "../../api/actions";
@@ -7,7 +8,7 @@ import { inputClass, PageHeading } from "../../components/ui";
 import { apiRequest } from "@/lib/api";
 export default async function AccountPage() {
   const user = await getAcademyUser();
-  if (!user) redirect("/academy/masuk");
+  if (!user) redirect(await academyServerHref("/academy/masuk"));
   const profile = user.academyProfile ? await apiRequest<{ name: string; code: string | null; email: string | null; nis: string | null; phone: string | null; address: string | null; gender: "IKHWAN" | "AKHWAT" | null; cohortName: string | null }>("academy/profile") : null;
   const details = [["Angkatan", profile?.cohortName], ["Kelompok", profile?.gender === "IKHWAN" ? "Ikhwan" : profile?.gender === "AKHWAT" ? "Akhwat" : null], ["Nomor peserta", profile?.nis], ["Nomor akun", profile?.code]];
   return <div className="mx-auto max-w-3xl p-4 md:p-6"><PageHeading title="Profil">Data peserta dan keamanan akun Anda.</PageHeading>

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import type { getExamNotifications } from "../api/notifications";
 import { markReminderRead } from "../api/notification-actions";
 import { ActionForm } from "./ActionForm";

@@ -1,4 +1,5 @@
 "use server";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import { apiRequest, ApiError } from "@/lib/api";
 import type { AcademyPreparedChapters } from "@/contracts/modules/academy";
 import { redirect } from "next/navigation";
@@ -35,5 +36,5 @@ export async function prepareCohortChapters(id: string): Promise<ActionState> {
   catch (error) { return { error: error instanceof ApiError ? error.message : "Bab gagal disiapkan." }; }
   revalidatePath("/academy", "layout");
   revalidatePath("/admin/academy", "layout");
-  redirect(`/admin/academy/program/${encodeURIComponent(result.courseId)}`);
+  redirect(await academyServerHref(`/admin/academy/program/${encodeURIComponent(result.courseId)}`));
 }

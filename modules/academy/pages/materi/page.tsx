@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { requireAcademyAvailable, getAcademyUser } from "../../api/access";
 import { listMaterials } from "../../api/materials";
 import { PageHeading, EmptyState, inputClass, linkButton } from "../../components/ui";
