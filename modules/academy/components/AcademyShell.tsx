@@ -26,7 +26,7 @@ const teacherLinks = [
 const adminLinks = [
   { path: "", label: "Dashboard", icon: "Dashboard" },
   { path: "/materi", label: "Materi", icon: "BookOpen" },
-  { path: "/kuis", label: "Kuis", icon: "Quiz" },
+  { path: "/kuis", label: "Ujian", icon: "Quiz" },
   { path: "/peserta", label: "Peserta", icon: "Users" },
   { path: "/sertifikat", label: "Sertifikat", icon: "GraduationCap" },
   { path: "/pengaturan", label: "Pengaturan", icon: "Settings" },

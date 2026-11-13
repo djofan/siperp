@@ -231,7 +231,7 @@ it('rejects immutable fields and attempts to target other participant accounts a
     $this->putJson('/api/v1/academy/profile', ['name' => 'Tidak boleh tersimpan', 'phone' => '6281234567890', 'address' => 'Alamat baru', $field => 'foreign-or-modified'])
         ->assertUnprocessable();
     expect($this->student->fresh()->name)->toBe($before);
-})->with(['code', 'nis', 'gender', 'cohortId', 'cohortName', 'userId', 'profileId', 'email', 'password', 'is_superadmin']);
+})->with(['code', 'nis', 'gender', 'cohortId', 'cohortName', 'userId', 'profileId', 'password', 'is_superadmin']);
 
 it('rejects invalid contact input without partially updating the name', function (array $invalid) {
     $before = $this->student->name;
@@ -446,4 +446,41 @@ it('lists all cohort participants with unique ordered ranks and isolates other c
     }
     expect($data['participants'][0]['nis'])->toBe('PAZ-Early');
     expect($data['participants'][3]['isSelf'])->toBeTrue()->and($data['participants'][4]['finishedAt'])->toBeNull();
+});
+
+
+it('updates own email with normalization while preserving account identifiers and password', function () {
+    $code = $this->student->code;
+    $password = $this->student->password_hash;
+    $payload = ['name' => 'Updated name', 'email' => '  New.Academy@Example.test  ', 'phone' => '081234567890', 'address' => 'New address'];
+    $this->putJson('/api/v1/academy/profile', $payload)->assertSuccessful()->assertHeader('Cache-Control', 'no-store, private')->assertJsonPath('data.email', 'new.academy@example.test');
+    expect($this->student->fresh()->email)->toBe('new.academy@example.test')->and($this->student->fresh()->code)->toBe($code)->and($this->student->fresh()->password_hash)->toBe($password);
+    $this->getJson('/api/v1/academy/profile')->assertSuccessful()->assertJsonPath('data.email', 'new.academy@example.test');
+    $this->putJson('/api/v1/academy/profile', $payload)->assertSuccessful();
+});
+
+it('rejects invalid or duplicate email without partial profile updates', function (string $email) {
+    $other = new User;
+    $other->forceFill(['name' => 'Existing email owner', 'email' => 'TAKEN@example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $name = $this->student->name;
+    $original = $this->student->email;
+    $phone = $this->profile->phone;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Must not persist', 'email' => $email, 'phone' => '081234567890', 'address' => 'Must not persist'])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['email']]]);
+    expect($this->student->fresh()->name)->toBe($name)->and($this->student->fresh()->email)->toBe($original)->and($this->profile->fresh()->phone)->toBe($phone)->and($other->fresh()->email)->toBe('TAKEN@example.test');
+})->with(['', 'not-an-email', 'taken@example.test', ' TAKEN@EXAMPLE.TEST ']);
+
+
+it('returns current admin dashboard counters without counting inactive or deleted participants', function () {
+    Sanctum::actingAs($this->admin);
+    $this->getJson('/api/v1/academy/admin/curriculum/stats')->assertSuccessful()
+        ->assertJsonPath('data.cohorts', 1)->assertJsonPath('data.participants', 1)
+        ->assertJsonPath('data.exams', 1)->assertJsonPath('data.lessons', 0);
+    $this->student->is_active = false;
+    $this->student->save();
+    $this->getJson('/api/v1/academy/admin/curriculum/stats')->assertSuccessful()->assertJsonPath('data.participants', 0);
+    $this->student->is_active = true;
+    $this->student->save();
+    $this->profile->deletedAt = now();
+    $this->profile->save();
+    $this->getJson('/api/v1/academy/admin/curriculum/stats')->assertSuccessful()->assertJsonPath('data.participants', 0);
 });

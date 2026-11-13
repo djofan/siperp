@@ -83,10 +83,13 @@ class LearningController
     public function updateAccount(Request $request)
     {
         $this->context->profile($request);
-        if (array_diff(array_keys($request->all()), ['name', 'phone', 'address'])) {
+        if (array_diff(array_keys($request->all()), ['name', 'email', 'phone', 'address'])) {
             throw \Illuminate\Validation\ValidationException::withMessages([
-                'profile' => 'Hanya nama, nomor HP, dan alamat yang dapat diubah.',
+                'profile' => 'Hanya nama, email, nomor HP, dan alamat yang dapat diubah.',
             ]);
+        }
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => mb_strtolower(trim($request->input('email')))]);
         }
         if (is_string($request->input('phone'))) {
             $phone = preg_replace('/[ -]/', '', trim($request->input('phone')));
@@ -96,22 +99,33 @@ class LearningController
         }
         $data = $request->validate([
             'name' => 'required|string|min:2|max:100',
+            'email' => 'sometimes|required|string|email:rfc|max:191',
             'phone' => ['required', 'string', 'regex:/^628\d{7,12}$/'],
             'address' => 'required|string|max:2000',
         ], [
             'phone.regex' => 'Gunakan nomor HP Indonesia yang valid, diawali 08, 628, atau +628.',
         ]);
-        DB::transaction(function () use ($request, $data) {
-            $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
-            abort_unless($user->is_active, 403);
-            $profile = Profile::where('user_id', $user->id)->whereNull('deleted_at')->lockForUpdate()->firstOrFail();
-            abort_if($profile->mustChangePassword, 403, 'Ganti password awal sebelum melanjutkan.');
-            $user->name = $data['name'];
-            $user->save();
-            $profile->phone = $data['phone'];
-            $profile->address = $data['address'];
-            $profile->save();
-        }, 3);
+        try {
+            DB::transaction(function () use ($request, $data) {
+                $user = User::whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+                abort_unless($user->is_active, 403);
+                $profile = Profile::where('user_id', $user->id)->whereNull('deleted_at')->lockForUpdate()->firstOrFail();
+                abort_if($profile->mustChangePassword, 403, 'Ganti password awal sebelum melanjutkan.');
+                if (array_key_exists('email', $data)) {
+                    if (User::whereRaw('LOWER(email) = ?', [$data['email']])->where('id', '!=', $user->id)->exists()) {
+                        throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+                    }
+                    $user->email = $data['email'];
+                }
+                $user->name = $data['name'];
+                $user->save();
+                $profile->phone = $data['phone'];
+                $profile->address = $data['address'];
+                $profile->save();
+            }, 3);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+        }
         $request->user()->refresh();
 
         return $this->account($request);

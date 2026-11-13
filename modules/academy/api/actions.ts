@@ -62,7 +62,7 @@ export async function saveStudyNote(lessonId: string, _: ActionState, form: Form
 export async function updateAcademyProfile(_: ActionState, form: FormData): Promise<ActionState> {
     await requireAcademyProfile();
     const result = await mutate("academy/profile", {
-        name: String(form.get("name") ?? ""), phone: String(form.get("phone") ?? ""), address: String(form.get("address") ?? ""),
+        name: String(form.get("name") ?? ""), email: String(form.get("email") ?? ""), phone: String(form.get("phone") ?? ""), address: String(form.get("address") ?? ""),
     }, "PUT");
     return result.error ? result : { ...result, message: "Profil berhasil diperbarui." };
 }

@@ -3,6 +3,8 @@
 namespace App\Modules\Academy\Http\Controllers;
 
 use App\Modules\Academy\Models\ZakatAcademyChapter as Chapter;
+use App\Modules\Academy\Models\AcademyCohort as Cohort;
+use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyLesson as Lesson;
 use App\Modules\Academy\Models\ZakatAcademyLessonAttachment as Attachment;
@@ -81,7 +83,7 @@ class CurriculumController
     {
         $this->context->admin($request);
 
-        return $this->data(['courses' => Course::count(), 'published' => Course::where('is_published', true)->count(), 'chapters' => Chapter::count(), 'lessons' => Lesson::count()]);
+        return $this->data(['courses' => Course::count(), 'published' => Course::where('is_published', true)->count(), 'chapters' => Chapter::count(), 'lessons' => Lesson::count(), 'cohorts' => Cohort::count(), 'participants' => Profile::whereNull('deleted_at')->whereHas('user', fn ($query) => $query->where('is_active', true))->count(), 'exams' => Quiz::count()]);
     }
 
     public function index(Request $request)

@@ -2,6 +2,9 @@ import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
 import type * as Domain from "@/contracts/modules/academy";
 export type CurriculumStatsResult = {
+    cohorts: number;
+    participants: number;
+    exams: number;
     courses: number;
     published: number;
     chapters: number;
