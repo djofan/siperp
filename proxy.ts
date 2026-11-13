@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { academySurfaceHeader, canonicalAcademyPath, isAcademyAppPath } from "@/modules/academy/pwa/navigation";
+import { academySurfaceHeader, isAcademyAppPath } from "@/modules/academy/pwa/navigation";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
 export const config = {
@@ -14,11 +14,7 @@ export async function proxy(request: NextRequest) {
     const app = isAcademyAppPath(pathname);
     // Derive the surface from the actual URL, never from client-supplied headers.
     forwarded.set(academySurfaceHeader, app ? "app" : "web");
-    if (app && !["/academy-app/sw.js", "/academy-app/manifest.webmanifest", "/academy-app/offline.html"].includes(pathname)) {
-      const destination = request.nextUrl.clone();
-      destination.pathname = canonicalAcademyPath(pathname);
-      return NextResponse.rewrite(destination, { request: { headers: forwarded } });
-    }
+    // Path-only aliases in next.config.ts stay internal behind HTTPS termination.
     return NextResponse.next({ request: { headers: forwarded } });
   }
 

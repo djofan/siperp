@@ -5,7 +5,7 @@ import vm from 'node:vm';
 import ts from 'typescript';
 function moduleAt(path, require = () => { throw Error('unexpected import'); }) {
  const mod = { exports: {} };
- vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:mod,exports:mod.exports,require,Headers,URL,Response});
+ vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,'utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{module:mod,exports:mod.exports,require,Headers,URL,Response,process});
  return mod.exports;
 }
 const nav = moduleAt('modules/academy/pwa/navigation.ts');
@@ -19,13 +19,13 @@ test('app paths preserve nested routes, queries and web boundaries',()=>{
  assert.equal(nav.isAcademyAppPath('/academy-app-other'),false);
  assert.equal(nav.academyHref('/academy/materi','/academy'),'/academy/materi');
 });
-test('proxy rewrites app requests without trusting a forged surface header',async()=>{
+test('proxy marks app requests without an absolute self-proxy or forged surface header',async()=>{
  const response={rewrite:(url,opts)=>({kind:'rewrite',url,opts}),next:opts=>({kind:'next',opts}),redirect:()=>({kind:'redirect'})};
  const {proxy}=moduleAt('proxy.ts',id=>id==='next/server'?{NextResponse:response}:id.includes('pwa/navigation')?nav:{SESSION_COOKIE_NAME:'session',verifySessionToken:async()=>null});
  for(const method of ['GET','POST']){
  const url=new URL('https://example.test/academy-app/kuis/id?x=1');url.clone=()=>new URL(url);
  const result=await proxy({nextUrl:url,headers:new Headers({'x-siperp-academy-surface':'web'}),method});
- assert.equal(result.kind,'rewrite');assert.equal(result.url.pathname,'/academy/kuis/id');assert.equal(result.url.search,'?x=1');assert.equal(result.opts.request.headers.get(nav.academySurfaceHeader),'app');
+ assert.equal(result.kind,'next');assert.equal(url.pathname,'/academy-app/kuis/id');assert.equal(url.search,'?x=1');assert.equal(result.opts.request.headers.get(nav.academySurfaceHeader),'app');
  }
  for(const path of ['/academy/materi','/academy-app/sw.js','/academy-app/manifest.webmanifest','/academy-app/offline.html']){
  const result=await proxy({nextUrl:{pathname:path},headers:new Headers({'x-siperp-academy-surface':'app'})});
@@ -52,4 +52,18 @@ test('app worker isolates caches and never caches private content',async()=>{
  let intercepted=false;w.handlers.fetch({request:{url:'https://example.test'+path,method,mode},respondWith(){intercepted=true;}});assert.equal(intercepted,false,path);
  }
  for(const fail of [false,true]){const x=worker(fail);let result;x.handlers.fetch({request:{url:'https://example.test/academy-app/materi',method:'GET',mode:'navigate'},respondWith:p=>result=p});assert.equal(await(await result).text(),fail?'offline':'live');assert.equal(x.written.length,0);}
+});
+
+test('Academy aliases use path-only rewrites behind TLS and preserve static app assets',async()=>{
+ const config=moduleAt('next.config.ts').default;
+ const routes=await config.rewrites();
+ const aliases=routes.afterFiles.filter(route=>route.source.startsWith('/academy-app'));
+ assert.deepEqual(JSON.parse(JSON.stringify(aliases)),[
+ {source:'/academy-app',destination:'/academy/lanjut'},
+ {source:'/academy-app/login',destination:'/academy/masuk'},
+ {source:'/academy-app/beranda',destination:'/academy/belajar'},
+ {source:'/academy-app/:path*',destination:'/academy/:path*'}]);
+ assert(aliases.every(route=>route.destination.startsWith('/')&&!route.destination.startsWith('//')));
+ assert(!routes.beforeFiles.some(route=>route.source.startsWith('/academy-app')));
+ const headers=await config.headers();assert(headers.some(route=>route.source==='/academy-app/:path*'&&route.headers.some(header=>header.key==='Cache-Control'&&header.value.includes('no-store'))));
 });

@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {source:"/academy-app/:path*",headers:[{key:"Cache-Control",value:"no-store, private"},{key:"X-Robots-Tag",value:"noindex, nofollow"},{key:"Referrer-Policy",value:"same-origin"}]},
       {source:"/academy/sw.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"},{key:"Service-Worker-Allowed",value:"/academy/"}]},
       {source:"/academy/:path*",headers:[{key:"Cache-Control",value:"no-store, private"}]},
       {source:"/bantuan-app/:path*",headers:[
@@ -25,7 +26,14 @@ const nextConfig: NextConfig = {
         { source: "/uploads/lazsip/:filename", destination: `${backend}/lazsip/files/:filename` },
         { source: "/api/:path*", destination: `${backend}/:path*` },
       ],
-      afterFiles: [],
+      // Relative destinations avoid proxying HTTPS to the plain-HTTP Next port.
+      // Existing manifest/public files resolve before these aliases.
+      afterFiles: [
+        { source: "/academy-app", destination: "/academy/lanjut" },
+        { source: "/academy-app/login", destination: "/academy/masuk" },
+        { source: "/academy-app/beranda", destination: "/academy/belajar" },
+        { source: "/academy-app/:path*", destination: "/academy/:path*" },
+      ],
       fallback: [],
     };
   },
