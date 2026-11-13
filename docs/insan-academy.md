@@ -150,3 +150,11 @@ Progres peserta menampilkan tiga card: ujian selesai/total ujian dipublikasikan,
 ### Peringkat dan menu Sertifikat
 
 Menu Peringkat berdiri sendiri. Menu Sertifikat muncul langsung di bawah Peringkat setelah periode semua ujian berakhir, meskipun peserta tidak mengerjakan ujian. Tidak adanya tenggat atau ujian akhir membuat menu tetap tersembunyi. Sertifikat keikutsertaan memakai tanggal tenggat terakhir. Nilai sama dibandingkan dengan total durasi pengerjaan: durasi tercepat dari pengerjaan dengan nilai terbaik per ujian dijumlahkan; ujian kosong/tanpa nilai menggunakan batas waktu penuh. Nilai dan durasi sama dibandingkan dengan waktu selesai seluruh ujian yang lebih awal, lalu nama secara abjad tanpa membedakan kapital. Nomor peringkat selalu berurutan dan unik; ID profil internal menjadi penentu stabil terakhir bila nama pun identik. Daftar semua peserta aktif ditampilkan hanya pada angkatan yang diikuti pengguna; tabel hanya menampilkan peringkat, nomor peserta, nama, nilai dan predikat, tanpa kontak atau jawaban peserta lain. Durasi serta waktu selesai tetap dipakai untuk pengurutan di backend.
+
+### Email profil peserta
+
+Email dapat diperbarui melalui Edit profil. Validasi, normalisasi lowercase/trim, dan keunikan email lintas akun dilakukan Laravel; nama dan email Core disimpan atomik dengan kontak Academy. Nomor akun/peserta, kelompok, angkatan dan password tetap tidak dapat diubah dari form profil ini.
+
+### Dashboard admin Academy
+
+Dashboard memakai ringkasan Angkatan, Peserta aktif (profil belum dihapus dan akun Core aktif), Materi, dan Ujian. Tautan pengelolaan menuju halaman Angkatan, Pendaftaran, Peserta, Materi, Ujian, serta Sertifikat. Istilah program/bab tidak ditampilkan pada dashboard. Struktur penyimpanan internal tetap dipertahankan agar riwayat peserta, materi dan ujian tidak berubah.

@@ -1525,6 +1525,31 @@
         }
       }
     },
+    "/api/v1/academy/admin/curriculum/stats": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Admin Academy dashboard counters",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Admin only. cohorts counts all cohorts; participants counts nondeleted profiles linked to active Core accounts; lessons and exams count all materials and exams, including drafts. Legacy courses, published and chapters counters remain for compatibility.",
+        "responses": {
+          "200": {
+            "description": "data contains integer cohorts, participants, lessons, exams and legacy courses, published, chapters"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Not an Academy administrator"
+          }
+        }
+      }
+    },
     "/api/v1/academy/learning/lessons/{courseSlug}/{lessonSlug}": {
       "get": {
         "tags": [
@@ -6130,8 +6155,8 @@
         "tags": [
           "Academy"
         ],
-        "summary": "Update own participant name, phone and address",
-        "description": "Authenticated active participant after initial password change. Strict allowlist rejects every field except name, phone, address, including selectors, cohort, gender and account/participant codes. Own Core user name and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.",
+        "summary": "Update own participant name, email, phone and address",
+        "description": "Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Own Core user name/email and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.",
         "security": [
           {
             "bearerAuth": []
@@ -6154,6 +6179,11 @@
                     "type": "string",
                     "minLength": 2,
                     "maxLength": 100
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 191
                   },
                   "phone": {
                     "type": "string",
