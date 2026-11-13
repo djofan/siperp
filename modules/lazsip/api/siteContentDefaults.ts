@@ -34,5 +34,12 @@ export const LAZSIP_SITE_CONTENT_DEFAULTS: Record<SiteContentSectionKey, Record<
   zakatFitrah: {
     pricePerJiwa: "45000",
   },
-  transparansi: {},
+  transparansi: {
+    visible: "true", eyebrow: "Bersama LAZSIP",
+    title: "Lebih mudah berbagi, lebih dekat manfaatnya.",
+    description: "Pilih program yang ingin Anda dukung. Kami membantu Anda memulai.",
+    card1Visible: "true", card1Title: "Pilih kebaikan Anda", card1Description: "Temukan program donasi atau tunaikan zakat sesuai kebutuhan.", card1Href: "/lazsip/donasi", card1Action: "Lihat program donasi", card1Icon: "heart",
+    card2Visible: "true", card2Title: "Hitung zakat dengan mudah", card2Description: "Gunakan kalkulator untuk membantu menghitung zakat maal dan fitrah.", card2Href: "/lazsip/zakat", card2Action: "Hitung & bayar zakat", card2Icon: "calculator",
+    card3Visible: "true", card3Title: "Kenali manfaatnya", card3Description: "Lihat dokumentasi bantuan dan kegiatan bersama penerima manfaat.", card3Href: "/lazsip/penyaluran-bantuan", card3Action: "Lihat penyaluran", card3Icon: "image",
+  },
 };

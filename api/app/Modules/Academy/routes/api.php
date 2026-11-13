@@ -1,7 +1,7 @@
 <?php
 
-use App\Modules\Academy\Http\Controllers\CourseController;
 use App\Modules\Academy\Http\Controllers\CohortController;
+use App\Modules\Academy\Http\Controllers\CourseController;
 use App\Modules\Academy\Http\Controllers\CurriculumController;
 use App\Modules\Academy\Http\Controllers\FileController;
 use App\Modules\Academy\Http\Controllers\IntakeController;
@@ -41,6 +41,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('notifications', [$pages, 'notifications']);
     Route::get('learning/notes', [$pages, 'notes']);
     Route::get('learning/discussions', [$pages, 'discussions']);
+    Route::get('learning/discussions/{id}', [$pages, 'discussion']);
     Route::get('learning/certificates', [$pages, 'certificates']);
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
@@ -49,6 +50,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
+    Route::post('admin/cohorts/{id}/chapters', [$intake, 'prepareChapters']);
     Route::put('admin/cohorts/{id}/registration', [$intake, 'cohortRegistration']);
     Route::post('admin/courses/{courseId}/import', [$intake, 'import']);
     Route::put('admin/courses/{courseId}/registration', [$intake, 'registration']);
@@ -60,6 +62,8 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('teacher/quizzes', [$pages, 'teacherQuizzes']);
     Route::get('teacher/quizzes/{id}', [$pages, 'teacherQuiz']);
     Route::get('teacher/questions', [$pages, 'teacherQuestions']);
+    Route::get('teacher/sessions', [$pages, 'teacherSessions']);
+    Route::get('teacher/questions/{id}', [$pages, 'teacherQuestion']);
     Route::get('teacher/grades', [$pages, 'teacherGrades']);
     Route::get('teacher/support', [$pages, 'support']);
     $teacher = TeacherController::class;
@@ -69,6 +73,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::post('upload', [FileController::class, 'upload']);
     Route::post('audio-progress', [FileController::class, 'audioProgress']);
     Route::get('files/{fileId}', [FileController::class, 'show']);
+    Route::get('questions/{id}/media', [FileController::class, 'question']);
     Route::get('enrollments/course/{courseId}', [CourseController::class, 'enrollment']);
     Route::get('learning/overview', [CourseController::class, 'overview']);
     Route::get('learning/quizzes', [CourseController::class, 'quizzes']);
@@ -77,6 +82,8 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::put('lessons/{lessonId}/progress', [LearningController::class, 'mark']);
     Route::put('lessons/{lessonId}/note', [LearningController::class, 'note']);
     Route::put('profile/password', [LearningController::class, 'password']);
+    Route::get('profile', [LearningController::class, 'account']);
+    Route::put('profile', [LearningController::class, 'updateAccount']);
     Route::post('courses/{courseId}/questions', [LearningController::class, 'ask']);
     Route::put('discussions/{id}/answer', [LearningController::class, 'answer']);
     Route::put('lessons/{id}/audio', [LearningController::class, 'audio']);

@@ -5,7 +5,9 @@ namespace App\Modules\Academy\Http\Controllers;
 use App\Modules\Academy\Models\ZakatAcademyLesson as Lesson;
 use App\Modules\Academy\Models\ZakatAcademyLessonAttachment as Attachment;
 use App\Modules\Academy\Models\ZakatAcademyLessonProgress as Progress;
+use App\Modules\Academy\Models\ZakatAcademyQuizQuestion as Question;
 use App\Modules\Academy\Services\AcademyContext;
+use App\Modules\Academy\Services\QuestionMedia;
 use App\Modules\Core\Auth\SessionData;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -15,7 +17,7 @@ use Illuminate\Support\Str;
 
 class FileController
 {
-    public const EXTENSIONS = ['audio/mpeg' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'application/pdf' => 'pdf'];
+    public const EXTENSIONS = ['audio/mpeg' => 'mp3', 'audio/wav' => 'wav', 'audio/ogg' => 'ogg', 'audio/mp4' => 'm4a', 'audio/webm' => 'webm', 'application/pdf' => 'pdf'];
 
     public function __construct(private AcademyContext $context) {}
 
@@ -35,6 +37,9 @@ class FileController
 
     private function detect(string $bytes): ?string
     {
+        if (str_starts_with($bytes, "\x1A\x45\xDF\xA3") && str_contains($bytes, 'webm')) {
+            return 'audio/webm';
+        }
         if (str_starts_with($bytes, '%PDF-')) {
             return 'application/pdf';
         }
@@ -60,6 +65,7 @@ class FileController
         $this->access($request, $data['lessonId'], true);
         $result = $this->storeFile(Lesson::findOrFail($data['lessonId']), $request->file('file'), $request->boolean('audioOnly'));
         unset($result['storagePath']);
+
         return response()->json($result);
     }
 
@@ -121,6 +127,25 @@ class FileController
 
         // BinaryFileResponse implements Range/206/416 and streams without loading the file.
         return response()->file(Storage::disk('local')->path($path), ['Content-Type' => $file->fileType, 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff'])->setContentDisposition($file->fileType === 'application/pdf' ? 'attachment' : 'inline', $file->title, 'material.'.self::EXTENSIONS[$file->fileType]);
+    }
+
+    public function question(Request $request, string $id)
+    {
+        $this->context->available($request);
+        $question = Question::with('quiz')->findOrFail($id);
+        $session = app(SessionData::class)->forUser($request->user());
+        $manager = $request->user()->is_superadmin || in_array($session['moduleRoles']['academy'] ?? null, ['admin', 'teacher'], true);
+        if (! $manager) {
+            $profile = $this->context->profile($request);
+            $this->context->quiz($question->quizId, $profile->id);
+        }
+        abort_unless($question->mediaPath && isset(QuestionMedia::TYPES[$question->mediaMime]), 404);
+        abort_unless(Storage::disk('local')->exists($question->mediaPath), 404);
+
+        return response()->file(Storage::disk('local')->path($question->mediaPath), [
+            'Content-Type' => $question->mediaMime, 'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ])->setContentDisposition('inline', $question->mediaName ?: 'media-soal.'.QuestionMedia::TYPES[$question->mediaMime]);
     }
 
     public function audioProgress(Request $request)

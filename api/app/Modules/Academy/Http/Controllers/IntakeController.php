@@ -2,18 +2,19 @@
 
 namespace App\Modules\Academy\Http\Controllers;
 
+use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment as Enrollment;
 use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademySetting as Setting;
 use App\Modules\Academy\Services\AcademyContext;
-use App\Modules\Core\Models\User;
+use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Auth\AccountCodes;
+use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use Illuminate\Support\Str;
 
 class IntakeController
@@ -118,8 +119,10 @@ class IntakeController
                 if ($newUser) {
                     $profile->mustChangePassword = true;
                 } $profile->save();
-                app(\App\Modules\Academy\Services\CohortLearning::class)->join($profile, $cohort);
-                if (Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) { continue; }
+                app(CohortLearning::class)->join($profile, $cohort);
+                if (Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) {
+                    continue;
+                }
                 $enrollment = new Enrollment;
                 $enrollment->profileId = $profile->id;
                 $enrollment->courseId = $courseId;
@@ -205,9 +208,20 @@ class IntakeController
         $cohort->title = $data['title'];
 
         $cohort->registrationOpen = false;
-        $cohort->save();
+        DB::transaction(function () use ($cohort) {
+            $cohort->save();
+            app(CohortLearning::class)->prepareChapters($cohort->id);
+        });
 
         return $this->data(['id' => $cohort->id]);
+    }
+
+    public function prepareChapters(Request $request, string $id)
+    {
+        $this->context->admin($request);
+        $courseId = DB::transaction(fn () => app(CohortLearning::class)->prepareChapters($id));
+
+        return $this->data(['courseId' => $courseId]);
     }
 
     public function cohortRegistration(Request $request, string $id)

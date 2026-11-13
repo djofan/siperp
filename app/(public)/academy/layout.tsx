@@ -1,1 +1,1 @@
-export { default, metadata } from "@/modules/academy/pages/layout";
+export { default, metadata, viewport } from "@/modules/academy/pages/layout";

@@ -3,16 +3,45 @@ import { readFileSync, writeFileSync } from 'node:fs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/academy/learning/lessons/{courseSlug}/{lessonSlug}'] = {get: {
+  tags:['Academy'],summary:'Own published lesson details and attachments',security:[{bearerAuth:[]}],
+  description:'Requires enrollment and a published course, chapter and lesson. Unreleased content has no attachments. Released lesson attachments expose only id, lessonId, title, fileUrl and fileType (nullable MIME), never storage paths. PDFs added after enrollment remain visible. File URLs enforce participant permissions separately.',
+  parameters:['courseSlug','lessonSlug'].map(name=>({name,in:'path',required:true,schema:{type:'string'}})),
+  responses:{200:{description:'data contains lesson and own note; lesson.attachments includes MIME fileType for distinguishing PDF from audio'},401:{description:'Unauthenticated'},403:{description:'Access denied'},404:{description:'Lesson not accessible'}},
+}};
+document.paths['/api/v1/academy/learning/rankings'] = {get: {
+  tags:['Academy'],summary:'Own ranking among enrolled participants',security:[{bearerAuth:[]}],
+  description:'total counts distinct active enrolled participants, including those without completed exams. Returns one group per enrolled cohort (legacy courses without cohort stay separate). Includes all active nondeleted participants in the same cohort, including unattempted participants. participants contains only rank, nis (nullable participant number), name, score, predicate, complete, finalCompleted, durationMs, finishedAt and isSelf. Sort by score descending, durationMs ascending, finishedAt ascending (null last), case-insensitive name alphabetically, then stable internal profile ID if names also coincide. Sequential ranks are unique. Best scoring attempt per exam is chosen, ties by duration then submission time; finishedAt is the latest such submission when all published exams are finished. Missing/unscored exams use full time limits and zero score. Contacts, answer snapshots and other cohorts are not exposed. finalCompleted is true only when all published FINAL exams in that enrollment have a completed scored attempt; absence of FINAL exams remains temporary. participants without completed exams also receive unique ranks. Uncompleted published exams count as zero in the weighted score.',
+  responses:{200:{description:'Own cohort ranking groups with cohortId, courseId, title, rank, total, score, predicate, complete, finalCompleted, durationMs, finishedAt and ordered participants'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
+}};
+document.paths['/api/v1/academy/learning/overview'] = {get: {
+  tags:['Academy'],summary:'Own learning and certificate progress',security:[{bearerAuth:[]}],
+  description:'Enrollment overview includes totalQuizzes, completedQuizzes (distinct completed exams with non-null scores), legacy passedQuizzes, lesson counters and grading. certificateVisible and isEligible require a published course, at least one published FINAL exam, and all published exams having a closesAt deadline that has elapsed. Eligibility applies to every enrolled participant, including those with no completed exams. Missing deadlines keep certificates hidden. completedAt is the latest exam deadline.',
+  responses:{200:{description:'Own enrollment overview; completedQuizzes is a nonnegative integer'},401:{description:'Unauthenticated'},403:{description:'Access denied'}},
+}};
+// Participant scoring is performed by Laravel; browser submissions cannot set the kind or score.
+for (const [path, method, summary] of [
+  ['/api/v1/academy/quizzes/{quizId}/attempts', 'post', 'Start or resume own exam'],
+  ['/api/v1/academy/attempts/{id}', 'put', 'Save own answers or submit exam'],
+  ['/api/v1/academy/quizzes/{quizId}/attempts/{id}', 'get', 'Read own exam attempt'],
+]) {
+  document.paths[path] = { [method]: {
+    tags: ['Academy'], summary, security: [{ bearerAuth: [] }],
+    description: 'Server grades using snapshotted kind DAILY/WEEKLY/FINAL. Correct answers receive full question weight; incorrect nonempty valid selections receive half weight for DAILY/WEEKLY and zero for FINAL. Blank answers receive zero. MULTIPLE requires the exact set for full credit. Existing completed attempts are not recalculated. Legacy unfinished snapshots without kind use current exam kind. Answer keys remain hidden for unfinished attempts; the owner can review them immediately after completion.',
+    parameters: [...path.matchAll(/\{(\w+)\}/g)].map(match => ({name:match[1],in:'path',required:true,schema:{type:'string'}})),
+    responses: { [method === 'post' ? 201 : 200]: {description:method === 'get' ? 'Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted while the attempt is unfinished.' : 'Attempt started or answers saved; grading is server-controlled'},401:{description:'Unauthenticated'},403:{description:'Not permitted or unavailable'},404:{description:'Not found'},409:{description:'Retake not allowed'},422:{description:'Invalid answers'}},
+  } };
+}
 document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
   tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
-  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Penyalur aktif wajib. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
+  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
   security: [{ bearerAuth: [] }],
   requestBody: { required: true, content: { 'application/json': { schema: {
-    type: 'object', required: ['period', 'volunteerId', 'rows'], properties: {
+    type: 'object', required: ['period', 'rows'], allOf: [{if:{not:{required:['volunteerId']}},then:{properties:{rows:{items:{required:['verifierName']}}}}}], properties: {
       period: { type: 'string', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$' }, volunteerId: { type: 'string', maxLength: 191 },
       rows: { type: 'array', minItems: 1, maxItems: 200, items: { type: 'object', additionalProperties: false,
         required: ['recipientName', 'category', 'amount'], properties: {
-          recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
+          verifierName: {type:'string',maxLength:191,description:'Nama persis dari daftar penyalur aktif; abaikan kapital dan spasi berlebih. Nama ambigu/tidak aktif/tidak ada ditolak. Wajib bila volunteerId legacy tidak dikirim.'}, recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
           amount: { type: 'integer', minimum: 1, maximum: 9000000000000 },
         } } },
     },
@@ -59,6 +88,139 @@ document.paths['/api/v1/bantuan/reports/full'] = {
 };
 
 const error = { description: 'Request rejected', content: json({ $ref: '#/components/schemas/Error' }) };
+for (const path of ['/api/v1/academy/teacher/materials', '/api/v1/academy/teacher/materials/{id}']) {
+  document.paths[path] = { post: {
+    summary: 'Save teacher material with optional audio upload',
+    description: 'Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings.',
+    ...(path.endsWith('{id}') ? { parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] } : {}),
+    requestBody: { required: true, content: { 'multipart/form-data': { schema: { type: 'object', required: ['chapterId', 'title'], properties: {
+      chapterId: { type: 'string' }, title: { type: 'string', maxLength: 191 }, order: { type: 'integer', minimum: 0 },
+      releaseDay: { type: 'integer', minimum: 1, maximum: 30 }, contentSummary: { type: 'string', maxLength: 30000 },
+      isPublished: { type: 'boolean' }, file: { type: 'string', format: 'binary' }
+    } } } } },
+    responses: { 200: { description: 'Material saved' }, 401: error, 403: error, 404: error, 422: error }
+  } };
+}
+document.paths['/api/v1/academy/teacher/materials'].get = {
+  summary: 'List teacher materials with cohort filter and server pagination',
+  description: 'Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page.',
+  parameters: [
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'cohort', in: 'query', schema: { type: 'string', maxLength: 191 } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Material list', content: json({ type: 'object', properties: { data: {
+    type: 'object', properties: {
+      items: { type: 'array', items: { type: 'object', properties: {
+        id: { type: 'string' }, title: { type: 'string' }, chapterId: { type: 'string' }, chapterTitle: { type: 'string' },
+        cohortTitle: { type: 'string' }, contentSummary: { type: ['string', 'null'] }, videoUrl: { type: 'string' }, isPublished: { type: 'boolean' }
+      } } }, chapters: { type: 'array', items: { type: 'object' } }, cohorts: { type: 'array', items: { type: 'object' } },
+      page: { type: 'integer' }, lastPage: { type: 'integer' }, total: { type: 'integer' }, perPage: { const: 10 }
+    }
+  } } }) }, 401: error, 403: error, 422: error }
+};
+document.paths['/api/v1/academy/teacher/quizzes'] = { get: {
+  summary: 'List teacher exams with cohort filtering and pagination',
+  description: 'Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table.',
+  parameters: [
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'cohort', in: 'query', schema: { type: 'string', maxLength: 191 } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Paginated exam list' }, 401: error, 403: error, 422: error }
+} };
+document.paths['/api/v1/academy/teacher/quizzes/{id}'] = { get: {
+  summary: 'Read teacher exam editor and paginated questions',
+  description: 'Teacher/admin only: question options and keys are private. view=table limits quiz.questions to 10/page and adds cohortTitle and pagination (page,lastPage,total,perPage). Other quiz fields and scope are unchanged. Legacy request returns all questions.',
+  parameters: [
+    { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+    { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Exam editor with question options and teacher-only keys' }, 401: error, 403: error, 404: error, 422: error }
+} };
+document.paths['/api/v1/academy/questions/{id}/media'] = { get: {
+  summary: 'Stream private image or audio attached to an Academy question',
+  description: 'Academy authentication is required. Teacher/admin roles may read question media; participants must be enrolled and authorized for the related quiz. Files are stored outside the public web root and responses disable caching and MIME sniffing.',
+  parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+  responses: {
+    200: { description: 'Question media', headers: { 'Cache-Control': { schema: { type: 'string', pattern: '(^|,\\s*)no-store(,|$)' } }, 'X-Content-Type-Options': { schema: { const: 'nosniff' } } }, content: {
+      'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+      'image/png': { schema: { type: 'string', format: 'binary' } },
+      'image/webp': { schema: { type: 'string', format: 'binary' } },
+      'audio/mpeg': { schema: { type: 'string', format: 'binary' } },
+      'audio/wav': { schema: { type: 'string', format: 'binary' } },
+      'audio/ogg': { schema: { type: 'string', format: 'binary' } },
+      'audio/mp4': { schema: { type: 'string', format: 'binary' } },
+      'audio/webm': { schema: { type: 'string', format: 'binary' } },
+    } },
+    401: error, 403: error, 404: error,
+  },
+} };
+for (const path of ['/api/v1/academy/teacher/quizzes', '/api/v1/academy/teacher/quizzes/{id}']) {
+  document.paths[path].post = {
+    summary: 'Save teacher exam with daily chapter or weekly/final cohort curriculum',
+    description: 'Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply.',
+    ...(path.endsWith('{id}') ? { parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] } : {}),
+    requestBody: { required: true, content: json({ type: 'object', required: ['title', 'timeLimitMinutes'], properties: {
+      kind: { type: 'string', enum: ['DAILY', 'WEEKLY', 'FINAL'] }, courseId: { type: 'string' }, chapterId: { type: 'string' },
+      title: { type: 'string' }, timeLimitMinutes: { type: 'integer', minimum: 1, maximum: 1440 }
+    } }) },
+    responses: { 200: { description: 'Exam saved' }, 401: error, 403: error, 404: error, 422: error }
+  };
+}
+document.paths['/api/v1/academy/materials'] = { get: {
+  summary: 'List published materials within the viewer cohort access',
+  description: 'sort=latest orders by creation time descending then ID; default keeps curriculum ordering. Existing publication, membership and module checks remain. Returns items, total, page, pages.',
+  parameters: [{ name: 'sort', in: 'query', schema: { type: 'string', enum: ['latest'] } },
+    { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+    { name: 'cohort', in: 'query', schema: { type: 'string' } }],
+  responses: { 200: { description: 'Accessible material metadata' }, 401: error, 403: error }
+} };
+for (const path of ['/api/v1/academy/teacher/questions', '/api/v1/academy/teacher/questions/{id}']) {
+ document.paths[path] = { get: {
+  summary: path.endsWith('{id}') ? 'Read private teacher discussion detail' : 'List teacher discussions with pagination',
+  description: 'Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table.',
+  parameters: path.endsWith('{id}') ? [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] : [
+   { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+   { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Private discussion data' }, 401: error, 403: error, 404: error, 422: error }
+ } };
+}
+for (const path of ['/api/v1/academy/learning/discussions', '/api/v1/academy/learning/discussions/{id}']) {
+ document.paths[path] = { get: {
+  summary: path.endsWith('{id}') ? 'Read own participant discussion' : 'List own participant discussions',
+  description: 'Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise.',
+  parameters: path.endsWith('{id}') ? [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }] : [
+   { name: 'view', in: 'query', schema: { type: 'string', enum: ['table'] } },
+   { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }
+  ],
+  responses: { 200: { description: 'Own discussion data' }, 401: error, 403: error, 404: error, 422: error }
+ } };
+}
+document.paths['/api/v1/academy/teacher/sessions'] = { get: {
+ summary: 'List live Q&A sessions and cohort curriculum choices for teachers',
+ description: 'Teacher/admin only. Returns courses selector metadata and sessions (items,page,pages,total), 10/page, latest start first. Meeting links remain private to managers and enrolled participants through the existing participant discussions endpoint.',
+ parameters: [{ name: 'page', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100000 } }],
+ responses: { 200: { description: 'Session management data' }, 401: error, 403: error, 422: error }
+} };
+document.paths['/api/v1/academy/courses/{courseId}/sessions'] = { post: {
+ summary: 'Create a live Q&A meeting schedule',
+ description: 'Teacher/admin only. startsAt is explicit WIB (UTC+7), stored in UTC, and must be in the future. Meeting URL is supplied by the teacher; no room is created by this endpoint.',
+ parameters: [{ name: 'courseId', in: 'path', required: true, schema: { type: 'string' } }],
+ requestBody: { required: true, content: json({ type: 'object', required: ['title', 'startsAt', 'joinUrl'], properties: {
+ title: { type: 'string', maxLength: 191 }, startsAt: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$' }, joinUrl: { type: 'string', maxLength: 2048 }
+ } }) },
+ responses: { 200: { description: 'Session saved' }, 401: error, 403: error, 404: error, 422: error }
+} };
+document.paths['/api/v1/academy/admin/cohorts/{id}/chapters'] = {
+  post: { summary: 'Prepare at least 12 chapters and a 30-day cohort curriculum',
+    description: 'Academy admin only. Idempotent; preserves existing chapters, lessons and progress. New cohorts are prepared automatically.',
+    parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
+    responses: { 200: { description: 'Chapters prepared', content: json({ type: 'object', properties: { data: { type: 'object', properties: { courseId: { type: 'string' }, error: { type: 'string' }, message: { type: 'string' } } } } }) }, 401: error, 403: error, 404: error }
+  }
+};
 document.components.schemas.AcademyParticipantImport = {
   type: 'object', required: ['cohortId', 'gender', 'rows'],
   properties: {
@@ -254,6 +416,43 @@ document['x-ipaymu-request-authentication'] = {method:'POST',serialization:'One 
 document.components.schemas.SipDocumentationPhoto = {type:'object',additionalProperties:false,required:['id','image'],properties:{id:{type:'string',format:'uuid'},image:{type:'string',maxLength:191,pattern:'^(?:/uploads/sip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|https?://[^\\s]+)$'},caption:{type:['string','null'],maxLength:500},isDemo:{type:'boolean'}}};
 document['x-sip-content-galleries'] = {resources:['news','program-bantuan','penyaluran-bantuan'],field:'documentationPhotos',schema:{type:'array',maxItems:50,items:{$ref:'#/components/schemas/SipDocumentationPhoto'}},behavior:'Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private.'};
 document['x-bantuan-survey-photo-replacement'] = 'DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.';
+const academyMaterialUpload = {
+  type:'object', properties:{
+    cohortId:{type:'string',description:'Required when creating a material; existing scoped material cannot move cohorts.'},
+    title:{type:'string',maxLength:191}, order:{type:'integer',minimum:1},
+    isPublished:{type:'boolean'}, shortDescription:{type:['string','null'],maxLength:2000},
+    file:{type:'string',format:'binary',description:'Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A.'},
+    pdfFile:{type:'string',format:'binary',description:'Optional PDF attachment, maximum 10 MiB. MIME and file header validated. Appends to existing attachments.'},
+  },
+};
+document.components.schemas.AcademyMaterialUpload = academyMaterialUpload;
+for (const [path, method] of [['/api/v1/academy/admin/materials','post'],['/api/v1/academy/admin/materials/{id}','put']]) {
+  document.paths[path] ??= {};
+  document.paths[path][method] = {
+    tags:['Academy'],summary:method==='post'?'Create audio or PDF material':'Update material and optionally upload audio or PDF',
+    description:'Academy administrators only. Combined audio and PDF maximum 50 MiB. PDF-only material can be published. Omitted files preserve existing content. Database changes and stored files are rolled back on failure. Private attachments retain enrollment and release checks; no public file URL is created.',
+    security:[{bearerAuth:[]}],
+    ...(method==='put'?{parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}]}:{}),
+    requestBody:{required:true,content:{'multipart/form-data':{schema:method==='post'?{allOf:[{$ref:'#/components/schemas/AcademyMaterialUpload'},{type:'object',required:['cohortId','title']}]}:{$ref:'#/components/schemas/AcademyMaterialUpload'}}}},
+    responses:{200:{description:'Saved material ID in data.id'},401:error,403:error,404:error,409:error,422:error},
+  };
+}
+document['x-academy-material-pdfs'] = {listing:'Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.',access:'Existing private file endpoint and enrollment/release checks remain unchanged.'};
+const academyOwnProfile = {
+  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender','cohortName'],
+  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]},cohortName:{type:['string','null'],description:'Assigned cohort title only; read-only.'}},
+};
+document.paths['/api/v1/academy/profile'] = {get:{
+  tags:['Academy'], summary:'Read the signed-in participant profile',
+  description:'Authenticated active account only. Always resolves participant by authenticated user; no userId/profileId input selects another account. Available before the initial password change. Returns own assigned cohort title only and Cache-Control: no-store, private. No password hash, token, other cohort metadata or other users are returned.',
+  security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
+}};
+document.paths['/api/v1/academy/profile'].put = {
+  tags:['Academy'],summary:'Update own participant name, phone and address',
+  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, phone, address, including selectors, cohort, gender and account/participant codes. Own Core user name and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
+  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address'],properties:{name:{type:'string',minLength:2,maxLength:100},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000}}})},
+  responses:{200:{description:'Updated own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error,422:error},
+};
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};
 const login = document.paths['/api/v1/auth/login'].post;
 login.requestBody.content['application/json'].schema.properties.pwa = {type:'boolean',description:'Bantuan PWA login. Requires active module access. Issues a persistent 30-day cookie/token exempt from the shorter Sanctum browser age. Explicit logout, account deactivation and token revocation still apply.'};

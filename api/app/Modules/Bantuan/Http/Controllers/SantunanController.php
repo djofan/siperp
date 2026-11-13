@@ -76,17 +76,24 @@ class SantunanController
         $access->allow($request, ['treasurer']);
         $data = $request->validate([
             'period' => 'required|date_format:Y-m',
-            'volunteerId' => 'required|string|max:191',
+            'volunteerId' => 'sometimes|required|string|max:191',
             'rows' => 'required|array|list|min:1|max:200',
-            'rows.*' => 'required|array:recipientName,category,amount',
+            'rows.*' => 'required|array:recipientName,category,amount,verifierName',
             'rows.*.recipientName' => 'required|string|max:191',
             'rows.*.category' => 'required|in:orphan,widow',
+            'rows.*.verifierName' => 'required_without:volunteerId|string|max:191',
             'rows.*.amount' => 'required|integer|min:1|max:9000000000000',
         ]);
-        abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
+        if (isset($data['volunteerId'])) abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
 
         return DB::transaction(function () use ($request, $access, $data) {
             DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
+            $people = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
+                ->join('users', 'users.id', '=', 'module_access.user_id')
+                ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'users.id')
+                ->where('modules.slug', 'bantuan')->where('users.is_active', true)
+                ->get(['users.id', 'users.name', 'module_access.role', 'bantuan_staff.roles']);
+            $normalize = fn (string $name) => mb_strtolower(preg_replace('/\s+/u', ' ', trim($name)));
             $seen = [];
             $existing = Santunan::where('frequency', 'routine')->whereDate('period', $data['period'].'-01')
                 ->whereIn('category', ['orphan', 'widow'])->get();
@@ -94,6 +101,17 @@ class SantunanController
                 $seen[$row->category.':'.mb_strtolower(trim($row->recipient['name']))] = true;
             }
             foreach ($data['rows'] as $index => $item) {
+                $volunteerId = $data['volunteerId'] ?? null;
+                if (isset($item['verifierName'])) {
+                    $matches = $people->filter(fn ($person) => in_array('volunteer', Access::expandRoles($person->role, $person->roles), true)
+                        && $normalize($person->name) === $normalize($item['verifierName']));
+                    if ($matches->count() !== 1) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'rows.'.$index.'.verifierName' => 'Baris data '.($index + 1).': nama verifikator tidak cocok dengan satu penyalur aktif. Pilih nama unik dari daftar.',
+                        ]);
+                    }
+                    $volunteerId = $matches->first()->id;
+                }
                 $name = trim($item['recipientName']);
                 $key = $item['category'].':'.mb_strtolower($name);
                 if ($name === '' || isset($seen[$key])) {
@@ -107,7 +125,7 @@ class SantunanController
                     'id' => (string) Str::uuid(), 'number' => $this->nextNumber(),
                     'frequency' => 'routine', 'category' => $item['category'],
                     'period' => $data['period'].'-01', 'recipient' => ['name' => $name],
-                    'volunteer_id' => $data['volunteerId'], 'amount' => $item['amount'],
+                    'volunteer_id' => $volunteerId, 'amount' => $item['amount'],
                     'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
                 ])->save();
                 $this->event($request, $access, $row, 'created', ['source' => 'excel_import']);

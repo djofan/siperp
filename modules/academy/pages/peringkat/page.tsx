@@ -1,8 +1,29 @@
 import { requireAcademyProfile } from "../../api/access";
 import { getOwnRankings } from "../../api/courses";
 import { PageHeading, EmptyState } from "../../components/ui";
+
 export default async function RankingPage() {
   const { profileId } = await requireAcademyProfile();
   const rankings = await getOwnRankings(profileId);
-  return <div className="mx-auto max-w-4xl p-4 md:p-8"><PageHeading title="Peringkat">Posisi Anda di program yang diikuti, berdasarkan nilai berbobot. Nilai yang sama mendapat peringkat yang sama.</PageHeading>{!rankings.length ? <EmptyState>Belum ada program yang diikuti.</EmptyState> : <div className="space-y-4">{rankings.map(item => <article key={item.courseId} className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"><h2 className="flex items-center gap-2 border-b border-gray-100 pb-4 font-semibold"><span className="text-orange-500" aria-hidden="true">♜</span>{item.title}</h2>{item.rank === null ? <p className="mt-4 text-sm text-gray-500">Kerjakan ujian untuk melihat peringkat Anda.</p> : <div className="mt-5 grid gap-5 rounded-xl bg-green-50/60 p-4 sm:grid-cols-2"><div><p className="text-sm text-gray-500">Peringkat Anda</p><p className="mt-2 text-3xl font-bold text-green-700">#{item.rank}<span className="ml-2 text-sm font-normal text-gray-500">dari {item.total} peserta yang sudah ujian</span></p></div><div><p className="text-sm text-gray-500">Nilai berbobot</p><p className="mt-2 text-3xl font-bold">{item.score.toFixed(2)}</p><p className="mt-2 text-sm font-semibold text-green-700">{item.predicate}</p><p className="mt-2 text-xs text-gray-500">{item.complete ? "Seluruh ujian sudah dikerjakan." : "Sementara; ujian yang belum dikerjakan dihitung nol."}</p></div></div>}</article>)}</div>}</div>;
+  return <div className="mx-auto max-w-6xl p-4 md:p-8">
+    <PageHeading title="Peringkat">Teruslah belajar dengan tekun. Setiap langkah adalah bagian dari perjalanan menuntut ilmu.</PageHeading>
+    {!rankings.length ? <EmptyState>Peringkat belum tersedia.</EmptyState> : <div className="space-y-6">{rankings.map(item => <section key={item.cohortId ?? item.courseId} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm" aria-label={`Peringkat ${item.title}`}>
+      <h2 className="border-b border-gray-100 p-5 font-semibold sm:px-6">{item.title}</h2>
+      {item.rank !== null && <div className="m-5 grid gap-5 rounded-xl bg-green-50/60 p-4 sm:mx-6 sm:grid-cols-2">
+        <div><p className="text-sm text-gray-500">Peringkat Anda</p><p className="mt-2 text-3xl font-bold text-green-700">{item.rank}<span className="ml-2 text-sm font-normal text-gray-500">dari {item.total} peserta</span></p></div>
+        <div><p className="text-sm text-gray-500">Nilai</p><p className="mt-2 text-3xl font-bold">{item.score.toFixed(2)}</p><p className="mt-2 text-sm font-semibold text-green-700">{item.predicate}</p><p className="mt-2 text-xs text-gray-500">{item.finalCompleted ? "Hasil akhir" : "Sementara"}</p></div>
+      </div>}
+      <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-left text-sm">
+        <caption className="sr-only">Daftar seluruh peserta {item.title} menurut urutan peringkat</caption>
+        <thead className="bg-gray-50 text-gray-600"><tr>{["Peringkat", "No. Peserta", "Nama", "Nilai", "Predikat"].map(label => <th key={label} scope="col" className="px-5 py-3 font-semibold">{label}</th>)}</tr></thead>
+        <tbody className="divide-y divide-gray-100">{item.participants.map(person => <tr key={person.rank} className={person.isSelf ? "bg-green-50" : undefined}>
+          <td className="px-5 py-4 font-semibold">{person.rank}</td>
+          <td className="px-5 py-4 whitespace-nowrap">{person.nis ?? "—"}</td>
+          <th scope="row" className="px-5 py-4 font-medium"><span className="break-words">{person.name}</span>{person.isSelf && <span className="ml-2 rounded-full bg-green-100 px-2 py-1 text-xs text-green-800">Anda</span>}</th>
+          <td className="px-5 py-4 font-semibold">{person.score.toFixed(2)}</td>
+          <td className="px-5 py-4 whitespace-nowrap">{person.predicate}</td>
+        </tr>)}{!item.participants.length && <tr><td colSpan={5} className="px-5 py-8 text-center text-gray-500">Belum ada peserta aktif.</td></tr>}</tbody>
+      </table></div>
+    </section>)}</div>}
+  </div>;
 }

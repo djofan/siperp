@@ -73,7 +73,7 @@ class AcademyContext
         return ['csPhone' => $values['cs_phone'] ?? '628111186626', 'weights' => ['DAILY' => (int) ($values['daily_weight'] ?? 20), 'WEEKLY' => (int) ($values['weekly_weight'] ?? 30), 'FINAL' => (int) ($values['final_weight'] ?? 50)]];
     }
 
-    public function weighted(array $quizzes, array $attempts): array
+    public function weighted(array $quizzes, array $attempts, ?array $weights = null): array
     {
         $best = [];
         foreach ($attempts as $attempt) {
@@ -93,7 +93,7 @@ class AcademyContext
                 $complete = false;
             }
         }
-        $weights = $this->settings()['weights'];
+        $weights ??= $this->settings()['weights'];
         $score = 0;
         foreach ($means as $kind => $mean) {
             $score += $mean * $weights[$kind];
@@ -101,7 +101,10 @@ class AcademyContext
 
         $score = round($score) / 100;
 
-        return ['best' => $best, 'means' => $means, 'score' => $score, 'predicate' => GradePredicate::forScore($score), 'complete' => $complete];
+        $finals = array_filter($quizzes, fn ($quiz) => $quiz['kind'] === 'FINAL');
+        $finalCompleted = count($finals) > 0 && collect($finals)->every(fn ($quiz) => array_key_exists($quiz['id'], $best) && collect($attempts)->contains(fn ($attempt) => $attempt['quizId'] === $quiz['id'] && $attempt['score'] !== null));
+
+        return ['finalCompleted' => $finalCompleted, 'best' => $best, 'means' => $means, 'score' => $score, 'predicate' => GradePredicate::forScore($score), 'complete' => $complete];
     }
 
     public function safeUrl(?string $value): bool

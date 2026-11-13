@@ -6,6 +6,7 @@ import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldC
 import { panelClasses } from "@/components/ui/panel";
 import type { ActionState } from "../../api/actions";
 import { AudioUploadField } from "../AudioUploadField";
+import { PdfUploadField } from "../PdfUploadField";
 
 type Values = {
   title?: string; slug?: string; order?: number; isPublished?: boolean;
@@ -17,7 +18,7 @@ type Values = {
 
 type Field = { name: keyof Values; label: string; required?: boolean; long?: boolean; number?: boolean; hint?: string };
 
-export function ContentForm({ kind, action, initial = {}, flat = false, contextField, uploadAudio = false, existingAudio }: {
+export function ContentForm({ kind, action, initial = {}, flat = false, contextField, uploadAudio = false, existingAudio, existingPdfs = [] }: {
   kind: "course" | "chapter" | "lesson" | "attachment";
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
   initial?: Values;
@@ -25,6 +26,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
   contextField?: ReactNode;
   uploadAudio?: boolean;
   existingAudio?: { url: string | null; title?: string };
+  existingPdfs?: { id: string; title: string; url: string }[];
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [values, setValues] = useState<Values>({ order: kind === "lesson" ? 1 : 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
@@ -62,7 +64,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
     {kind === "lesson" && <FormField label="Jenis materi" htmlFor={`${prefix}-provider`}>
       <Select id={`${prefix}-provider`} name="videoProvider" value={flat ? "AUDIO" : values.videoProvider} onChange={(event) => setValues({ ...values, videoProvider: event.target.value })}>
-        <option value="AUDIO">Audio</option>{!flat && <><option value="YOUTUBE">YouTube (arsip)</option><option value="VIMEO">Vimeo (arsip)</option><option value="BUNNY">Bunny (arsip)</option></>}
+        <option value="AUDIO">{flat ? "Audio / PDF" : "Audio"}</option>{!flat && <><option value="YOUTUBE">YouTube (arsip)</option><option value="VIMEO">Vimeo (arsip)</option><option value="BUNNY">Bunny (arsip)</option></>}
       </Select>
     </FormField>}
     {fields.map((field) => {
@@ -78,14 +80,18 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
             onChange={(event) => setValues({ ...values, [field.name]: event.target.value })} />}
       </FormField>;
     })}
-    {uploadAudio && <AudioUploadField required />}
-    {flat && kind === "lesson" && !uploadAudio && <FormField label="Status" htmlFor={`${prefix}-status`}>
+    {uploadAudio && <AudioUploadField />}
+    {flat && kind === "lesson" && <div className="space-y-3">
+      <PdfUploadField />
+      {existingPdfs.length > 0 && <div className="space-y-2"><h2 className="text-sm font-semibold">File PDF tersimpan</h2><ul className="space-y-2">{existingPdfs.map(pdf => <li key={pdf.id}><a href={pdf.url} target="_blank" rel="noopener noreferrer" className="break-words text-sm text-green-700 underline">{pdf.title} ↗</a></li>)}</ul><p className="text-xs text-gray-500">PDF baru ditambahkan saat materi disimpan. File sebelumnya tetap tersedia.</p></div>}
+    </div>}
+    {flat && kind === "lesson" && <FormField label="Status publikasi" htmlFor={`${prefix}-status`} hint="Draft disimpan untuk pengelola. Terpublikasi ditampilkan kepada peserta sesuai jadwal rilis.">
       <Select id={`${prefix}-status`} name="isPublished" value={values.isPublished ? "1" : "0"} onChange={event => setValues({ ...values, isPublished: event.target.value === "1" })}>
         <option value="0">Draft</option>
         <option value="1">Terpublikasi</option>
       </Select>
     </FormField>}
-    {(!flat || uploadAudio) && kind !== "attachment" && <label className="flex items-center gap-3 text-sm font-medium text-foreground">
+    {!flat && kind !== "attachment" && <label className="flex items-center gap-3 text-sm font-medium text-foreground">
       <input type="checkbox" name="isPublished" checked={values.isPublished ?? false} onChange={(event) => setValues({ ...values, isPublished: event.target.checked })} className="size-4 accent-accent" />
       Publikasikan {kind === "course" ? "program" : kind === "chapter" ? "bab" : "materi"}
     </label>}

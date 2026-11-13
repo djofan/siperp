@@ -18,11 +18,12 @@ class ZakatAcademyQuizQuestion extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['quizId' => 'quiz_id', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['quizId' => 'quiz_id', 'createdAt' => 'created_at', 'mediaPath' => 'media_path',
+        'mediaMime' => 'media_mime', 'mediaName' => 'media_name', 'mediaAlt' => 'media_alt'];
 
     protected $casts = ['order' => 'integer', 'created_at' => 'immutable_datetime', 'weight' => 'integer'];
 
-    protected $hidden = [];
+    protected $hidden = ['media_path'];
 
     /** @return BelongsTo<ZakatAcademyQuiz, $this> */
     public function quiz(): BelongsTo

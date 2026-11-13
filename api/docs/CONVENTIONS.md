@@ -278,6 +278,27 @@ privat menambahkan `location` nullable; foto lama null. Filtering dan izin foto
 berlaku juga untuk koordinat. Source menandakan asal klaim klien, bukan bukti
 terverifikasi. Tidak ada endpoint lokasi publik atau perubahan izin dokumen.
 
+Academy: POST /api/v1/academy/admin/cohorts/{id}/chapters requires Academy admin, prepares at least 12 chapters and duration 30 days transactionally and idempotently; returns data.courseId. Existing content is preserved. New cohorts are prepared automatically.
+
+Academy teacher materials POST accepts optional multipart file (audio <=50 MB), saved atomically with publication. Missing file/videoUrl preserves existing audio on edit. WebM browser audio uses the existing protected file endpoint.
+
+Daily teacher material form: release day and order inputs removed. New lessons append under a chapter lock; edits retain position. Teacher saves set releaseDay=1, respecting course start and publication/access rules. Existing unsaved materials and quiz schedules remain unchanged.
+
+Teacher material table: GET /api/v1/academy/teacher/materials?view=table&cohort={cohortId}&page=1 returns paginated lesson rows (10/page), actual cohort/chapter labels, publication/audio information, selector metadata and totals. Cohort filter is applied in Laravel before pagination; changing filters resets the page in the UI. Legacy requests without view=table keep their chapter response.
+
+Academy questions accept one optional private media upload: JPG/PNG/WebP images up to 5 MB or MP3/WAV/OGG/M4A/WebM audio up to 15 MB. Store only the private disk path; expose metadata in question payloads and stream bytes through authenticated `GET /api/v1/academy/questions/{id}/media`. Participant access must repeat quiz/enrollment authorization. Replacing or deleting a question cleans up its owned media file.
+
+Teacher exam and question tables: GET teacher/quizzes?view=table supports cohort filter and page; GET teacher/quizzes/{id}?view=table supports question page. Both use 10 rows/page in Laravel with stable ordering and clamp excess pages. Legacy response remains without view=table. Question keys/options require teacher/admin authorization. UI exposes exam configuration and question editing separately from table rows.
+
+Teacher exam creation: DAILY selects cohort curriculum and chapter; WEEKLY/FINAL select cohort curriculum only (courseId). Backend retains an internal chapter relationship for compatibility and preserves existing relationships on edit. The UI labels weekly/final scope as all chapters.
+
+Academy UX: teacher/admin dashboards include workflow guides; participant dashboard prioritizes recent cohort materials and exam reminders. GET materials accepts sort=latest (created_at desc,id desc), preserving cohort/publication access. Material forms offer explicit draft/publish actions. Exam activation includes a review of scope, question count, duration and WIB schedule; server publication validation remains authoritative. No automatic activation or messaging is performed by dashboard guides.
+
+Teacher Q&A: GET teacher/questions?view=table&page=1 returns 10 discussions/page (unanswered first); GET teacher/questions/{id} reads private detail. Teacher/admin authorization applies to both and the existing answer PUT. The dedicated answer page redirects back to the table after a successful save, preserving page and showing confirmation; validation errors remain on the answer form.
+
+Participant Q&A now has a 10-row paginated table, separate create/detail pages, and return-to-table confirmation on successful submission. GET learning/discussions?view=table uses the existing participant/enrollment scope; GET learning/discussions/{id} returns only owned discussions in published enrolled courses (foreign IDs 404). Session schedules remain accessible below the table.
+
+Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select cohort curriculum, title, future WIB datetime and meeting URL. Existing POST courses/{courseId}/sessions creates the schedule; new GET teacher/sessions returns manager-only options and a 10-row paginated session list. Enrolled participants see the meeting under Q&A session schedules; other cohorts cannot see it.
 ### Galeri konten SIP
 
 Resource news, program-bantuan, dan penyaluran-bantuan mendukung documentationPhotos opsional (maks. 50 foto berurutan). Setiap foto berisi id UUID unik, image URL HTTP(S) atau /uploads/sip/UUID.jpg|png|webp, caption opsional maks. 500 karakter, serta isDemo opsional. Field yang tidak dikirim saat update dipertahankan; array kosong menghapus galeri dari konten. Akses penulisan mengikuti editor SIP; galeri berita draft tidak dibuka endpoint publik. Terapkan migration 2026_11_11_000001_add_sip_content_galleries setelah backup database sebelum deploy frontend.
@@ -308,3 +329,41 @@ Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib 
 Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
 ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
 no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
+
+Impor santunan menerima `rows[].verifierName`: nama pada daftar penyalur aktif,
+trim/spasi berlebih dan kapital diabaikan. Harus cocok dengan tepat satu akun aktif
+yang memiliki role volunteer. Tidak membuat akun baru atau mencocokkan nama sebagian.
+Nama tidak dikenal/ambigu membatalkan seluruh impor (422). `volunteerId` tingkat atas
+tetap diterima untuk klien lama; bila nama per baris dikirim, nama itu yang digunakan.
+Template baru berisi Nama, Program, Nominal Bantuan, Nama Verifikator, dengan dropdown
+nama dari daftar aktif. Data dummy unduhan menggunakan nama dari daftar yang sama.
+
+### PDF materi Academy
+
+POST `/api/v1/academy/admin/materials` dan PUT `/api/v1/academy/admin/materials/{id}`
+menerima multipart `pdfFile` opsional (PDF maksimal 10 MiB) selain `file` audio
+maksimal 50 MiB. Total kedua file maksimal 50 MiB. Nama ekstensi bukan satu-satunya
+validasi: PDF diperiksa MIME dan header. Admin Academy saja; file tetap di storage
+privat dan endpoint download memakai izin peserta serta jadwal rilis yang sama.
+Materi hanya-PDF dapat dipublikasikan. PDF baru menambah lampiran; omission pada
+edit mempertahankan PDF/audio lama. `file` tetap hanya menerima audio pada formulir
+materi. Gagal menyimpan salah satu file membatalkan transaksi database dan membersihkan
+file baru yang sempat tersimpan. Listing menambahkan `_count.pdfs` tanpa membuka URL
+lampiran privat. Tidak memerlukan migration.
+
+### Profil peserta Academy
+
+GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
+berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
+Respons `{data:{name,code,email,nis,phone,address,gender,cohortName}}` hanya field yang diizinkan.
+`cohortName` adalah nama angkatan yang ditetapkan pada profil sendiri, tanpa metadata
+angkatan lain, hash password atau token. Header `no-store, private`.
+Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
+PUT `/api/v1/academy/profile` setelah ganti password awal menerima tepat `name`,
+`phone`, `address` (wajib). Nama 2–100 karakter, alamat maksimal 2000 karakter;
+nomor HP Indonesia dengan awalan 08/+628/628 dinormalisasi ke `^628[0-9]{7,12}$`.
+Field lain ditolak 422, termasuk nomor akun/peserta, kelompok, angkatan, email,
+userId/profileId dan password. Nama Core dan kontak profil Academy disimpan atomik
+hanya untuk user login; kode, enrollment dan password tidak berubah. Respons profil
+terbaru tetap `no-store, private`. Tidak memerlukan migration. Perubahan password
+tetap memakai PUT `/api/v1/academy/profile/password` dengan password saat ini.

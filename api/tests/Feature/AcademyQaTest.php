@@ -9,7 +9,9 @@ use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\Module;
 use App\Modules\Core\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -68,7 +70,7 @@ it('keeps answers private scores a submission and prevents duplicate attempts', 
     expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe(100.0);
     expect(ZakatAcademyQuizAttempt::count())->toBe(1);
     $this->postJson($url.'/attempts')->assertConflict();
-    $this->getJson($url.'/attempts/'.$id)->assertJsonMissingPath('data.answers.questions.0.options.0.isCorrect');
+    $this->getJson($url.'/attempts/'.$id)->assertSuccessful()->assertJsonStructure(['data' => ['answers' => ['questions' => [['options' => [['isCorrect']]]]]]]);
 });
 
 it('rejects foreign options and ignores answers received after the deadline', function () {
@@ -78,6 +80,55 @@ it('rejects foreign options and ignores answers received after the deadline', fu
     $this->travel(6)->minutes();
     $this->putJson('/api/v1/academy/attempts/'.$id, ['answer' => ['questionId' => $question->id, 'optionId' => $question->options->firstWhere('isCorrect', true)->id], 'submit' => true])->assertSuccessful();
     expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe(0.0);
+});
+
+it('stores all local answers in one request when the participant submits', function () {
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->json('data');
+    $question = $this->quiz->questions->first();
+    $option = $question->options->firstWhere('isCorrect', true)->id;
+
+    $this->putJson('/api/v1/academy/attempts/'.$id, [
+        'answers' => [$question->id => $option], 'submit' => true,
+    ])->assertSuccessful()->assertJsonPath('data.completed', true);
+
+    $attempt = ZakatAcademyQuizAttempt::findOrFail($id);
+    expect($attempt->score)->toBe(100.0)
+        ->and($attempt->answers['responses'][$question->id])->toBe($option);
+});
+
+it('rejects an invalid option in a batch submission', function () {
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->json('data');
+    $question = $this->quiz->questions->first();
+
+    $this->putJson('/api/v1/academy/attempts/'.$id, [
+        'answers' => [$question->id => 'foreign-option'], 'submit' => true,
+    ])->assertUnprocessable();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->isCompleted)->toBeFalse();
+});
+
+it('stores private question images and exposes them only through authenticated academy access', function () {
+    Storage::fake('local');
+    $question = $this->quiz->questions->first();
+    $options = $question->options->map(fn ($option) => [
+        'id' => $option->id, 'label' => $option->label, 'isCorrect' => $option->isCorrect,
+    ])->all();
+    Sanctum::actingAs($this->admin);
+    $this->post('/api/v1/academy/teacher/quizzes/'.$this->quiz->id.'/questions/'.$question->id, [
+        'question' => $question->question, 'order' => $question->order, 'type' => $question->type,
+        'weight' => $question->weight, 'explanation' => 'Penjelasan gambar', 'mediaAlt' => 'Diagram bantuan',
+        'options' => json_encode($options), 'media' => UploadedFile::fake()->image('diagram.jpg', 640, 480),
+    ])->assertSuccessful();
+
+    $question->refresh();
+    expect($question->mediaMime)->toBe('image/jpeg')->and($question->mediaAlt)->toBe('Diagram bantuan');
+    Storage::disk('local')->assertExists($question->mediaPath);
+
+    Sanctum::actingAs($this->student);
+    $this->get('/api/v1/academy/questions/'.$question->id.'/media')->assertSuccessful()->assertHeader('Content-Type', 'image/jpeg');
+    $attemptId = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $snapshot = ZakatAcademyQuizAttempt::findOrFail($attemptId)->answers;
+    expect($snapshot['questions'][0]['mediaMime'])->toBe('image/jpeg')
+        ->and($snapshot['questions'][0])->not->toHaveKey('mediaPath');
 });
 
 it('hides attempts belonging to another participant', function () {
@@ -136,4 +187,263 @@ it('requires the current password and revokes all sessions after a password chan
     $this->putJson('/api/v1/academy/profile/password', ['currentPassword' => 'qa-password', 'password' => 'new-qa-password', 'confirmPassword' => 'new-qa-password'])->assertSuccessful();
     expect(Hash::check('new-qa-password', $this->student->fresh()->password_hash))->toBeTrue();
     expect($this->student->tokens()->count())->toBe(0);
+});
+
+it('returns only the authenticated participants profile even when another user is requested', function () {
+    $this->profile->forceFill(['phone' => '628123456789', 'address' => 'Alamat sendiri', 'gender' => 'IKHWAN', 'mustChangePassword' => true])->save();
+    $other = new User;
+    $other->forceFill(['name' => 'PRIVATE_OTHER', 'email' => 'private-other@example.test', 'password_hash' => bcrypt('other-password'), 'is_active' => true])->save();
+    $otherProfile = new ZakatAcademyProfile;
+    $otherProfile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-OTHER', 'phone' => '628998887776', 'address' => 'PRIVATE_ADDRESS'])->save();
+    $response = $this->getJson('/api/v1/academy/profile?userId='.$other->id.'&profileId='.$otherProfile->id)->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('data.name', $this->student->name)->assertJsonPath('data.nis', 'PAZ-QA')
+        ->assertJsonPath('data.phone', '628123456789')->assertJsonPath('data.address', 'Alamat sendiri')
+        ->assertJsonPath('data.cohortName', $this->cohort->title);
+    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender', 'cohortName'])
+        ->and($response->getContent())->not->toContain('PRIVATE_OTHER', 'PRIVATE_ADDRESS', 'private-other@example.test', 'password_hash');
+});
+
+it('requires authentication to read participant profile data', function () {
+    $this->app['auth']->forgetGuards();
+    $this->getJson('/api/v1/academy/profile')->assertUnauthorized();
+});
+
+it('updates only the own contact profile and preserves enrollment identifiers and login', function () {
+    $this->student->forceFill(['code' => 'PAZ001'])->save();
+    $this->profile->forceFill(['gender' => 'IKHWAN'])->save();
+    $beforePassword = $this->student->password_hash;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama Baru', 'phone' => '0812-3456-7890', 'address' => 'Alamat baru'])
+        ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+        ->assertJsonPath('data.name', 'Nama Baru')->assertJsonPath('data.phone', '6281234567890')
+        ->assertJsonPath('data.cohortName', $this->cohort->title);
+    expect($this->student->fresh()->name)->toBe('Nama Baru')
+        ->and($this->student->fresh()->code)->toBe('PAZ001')
+        ->and($this->student->fresh()->password_hash)->toBe($beforePassword)
+        ->and($this->profile->fresh()->nis)->toBe('PAZ-QA')
+        ->and($this->profile->fresh()->gender)->toBe('IKHWAN')
+        ->and($this->profile->fresh()->cohortId)->toBe($this->cohort->id);
+    $this->getJson('/api/v1/academy/profile')->assertOk()->assertJsonPath('data.address', 'Alamat baru');
+});
+
+it('rejects immutable fields and attempts to target other participant accounts atomically', function (string $field) {
+    $before = $this->student->name;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Tidak boleh tersimpan', 'phone' => '6281234567890', 'address' => 'Alamat baru', $field => 'foreign-or-modified'])
+        ->assertUnprocessable();
+    expect($this->student->fresh()->name)->toBe($before);
+})->with(['code', 'nis', 'gender', 'cohortId', 'cohortName', 'userId', 'profileId', 'email', 'password', 'is_superadmin']);
+
+it('rejects invalid contact input without partially updating the name', function (array $invalid) {
+    $before = $this->student->name;
+    $this->putJson('/api/v1/academy/profile', array_replace(['name' => 'Nama valid', 'phone' => '6281234567890', 'address' => 'Alamat valid'], $invalid))
+        ->assertUnprocessable();
+    expect($this->student->fresh()->name)->toBe($before);
+})->with([[['name' => '']], [['phone' => 'abc081234567890']], [['phone' => '123']], [['address' => str_repeat('a', 2001)]]]);
+
+it('blocks profile updates before initial password change and after participant deletion', function () {
+    $input = ['name' => 'Nama baru', 'phone' => '+6281234567890', 'address' => 'Alamat baru'];
+    $this->profile->forceFill(['mustChangePassword' => true])->save();
+    $this->putJson('/api/v1/academy/profile', $input)->assertForbidden();
+    $this->profile->forceFill(['mustChangePassword' => false, 'deletedAt' => now()])->save();
+    $this->putJson('/api/v1/academy/profile', $input)->assertNotFound();
+});
+
+it('requires authentication to update a participant profile', function () {
+    $this->app['auth']->forgetGuards();
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama baru', 'phone' => '6281234567890', 'address' => 'Alamat baru'])->assertUnauthorized();
+});
+
+
+it('opens certificates for every enrolled participant only after all exam deadlines', function () {
+    $enrollment = \App\Modules\Academy\Models\ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->firstOrFail();
+    $service = app(\App\Modules\Academy\Services\ProgressService::class);
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeFalse();
+    $this->quiz->closesAt = now()->addMinute();
+    $this->quiz->save();
+    expect($service->forEnrollment($enrollment)['isEligible'])->toBeFalse();
+    $this->travel(2)->minutes();
+    $progress = $service->forEnrollment($enrollment);
+    expect($progress['certificateVisible'])->toBeTrue()->and($progress['isEligible'])->toBeTrue()
+        ->and($progress['completedQuizzes'])->toBe(0)->and($progress['completedAt'])->not->toBeNull();
+    $extra = new ZakatAcademyQuiz;
+    $extra->forceFill(['chapterId' => $this->quiz->chapterId, 'title' => 'Late daily', 'kind' => 'DAILY', 'isPublished' => true, 'isActive' => true, 'passingScore' => 70, 'timeLimitMinutes' => 5, 'closesAt' => now()->addHour()])->save();
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeFalse();
+    $this->travel(2)->hours();
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeTrue();
+    $extra->closesAt = null;
+    $extra->save();
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeFalse();
+    $extra->isPublished = false;
+    $extra->save();
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeTrue();
+    $this->quiz->kind = 'DAILY';
+    $this->quiz->save();
+    expect($service->forEnrollment($enrollment)['certificateVisible'])->toBeFalse();
+});
+
+it('scores wrong answers by the snapshotted exam kind and leaves blanks at zero', function (string $kind, string $answer, float $expected) {
+    $this->quiz->kind = $kind;
+    $this->quiz->save();
+    $question = $this->quiz->questions->first();
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    // An administrator changing kind later must not change this attempt's rule.
+    $this->quiz->kind = $kind === 'FINAL' ? 'DAILY' : 'FINAL';
+    $this->quiz->save();
+    $payload = ['submit' => true];
+    if ($answer !== 'blank') {
+        $payload['answers'] = [$question->id => $question->options->firstWhere('isCorrect', $answer === 'correct')->id];
+    }
+    $this->putJson('/api/v1/academy/attempts/'.$id, $payload)->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['submit' => true])->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+})->with([
+    ['DAILY', 'wrong', 50.0], ['WEEKLY', 'wrong', 50.0], ['FINAL', 'wrong', 0.0],
+    ['DAILY', 'blank', 0.0], ['WEEKLY', 'blank', 0.0], ['FINAL', 'blank', 0.0],
+    ['DAILY', 'correct', 100.0], ['WEEKLY', 'correct', 100.0], ['FINAL', 'correct', 100.0],
+]);
+
+it('weights multiple choice answers and leaves empty selections at zero', function (string $choice, float $expected) {
+    $this->quiz->kind = 'WEEKLY';
+    $this->quiz->save();
+    $question = $this->quiz->questions->first();
+    $question->type = 'MULTIPLE';
+    $question->weight = 3;
+    $question->save();
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $snapshot = ZakatAcademyQuizAttempt::findOrFail($id)->answers;
+    // Include a second unanswered question of weight one to verify per-question weighting.
+    $snapshot['questions'][] = array_replace($snapshot['questions'][0], ['id' => 'unanswered', 'weight' => 1]);
+    ZakatAcademyQuizAttempt::findOrFail($id)->forceFill(['answers' => $snapshot])->save();
+    $selected = $choice === 'blank' ? [] : [$question->options->firstWhere('isCorrect', $choice === 'correct')->id];
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['answers' => [$question->id => $selected], 'submit' => true])->assertSuccessful();
+    expect(ZakatAcademyQuizAttempt::findOrFail($id)->score)->toBe($expected);
+})->with([['wrong', 37.5], ['correct', 75.0], ['blank', 0.0]]);
+
+
+it('counts enrolled active participants in rankings including those who have not taken an exam', function () {
+    $other = new User;
+    $other->forceFill(['name' => 'Other participant', 'email' => 'other-ranking@example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $profile = new ZakatAcademyProfile;
+    $profile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-RANK'])->save();
+    app(CohortLearning::class)->join($profile, $this->cohort);
+    $id = $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertCreated()->json('data');
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['submit' => true])->assertSuccessful();
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()
+        ->assertJsonPath('data.0.rank', 1)->assertJsonPath('data.0.total', 2);
+    $other->is_active = false;
+    $other->save();
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.total', 1);
+});
+
+
+it('shows PDFs uploaded after enrollment in participant lesson details without exposing storage paths', function () {
+    Storage::fake('local');
+    $lesson = new ZakatAcademyLesson;
+    $lesson->forceFill(['chapterId' => $this->quiz->chapterId, 'title' => 'Late PDF', 'slug' => 'late-pdf', 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'order' => 1, 'releaseDay' => 1, 'isPublished' => true])->save();
+    $course = $this->quiz->chapter->course;
+    $course->startsAt = now()->subDay();
+    $course->save();
+    $url = '/api/v1/academy/learning/lessons/'.$course->slug.'/'.$lesson->slug;
+    $this->getJson($url)->assertSuccessful()->assertJsonCount(0, 'data.lesson.attachments');
+    $this->putJson('/api/v1/academy/lessons/'.$lesson->id.'/note', ['content' => 'Existing note'])->assertSuccessful();
+    Sanctum::actingAs($this->admin);
+    $fileUrl = $this->post('/api/v1/academy/upload', ['lessonId' => $lesson->id, 'file' => UploadedFile::fake()->createWithContent('late.pdf', "%PDF-1.4\nTest PDF")])->assertSuccessful()->json('fileUrl');
+    Sanctum::actingAs($this->student);
+    $this->getJson($url)->assertSuccessful()->assertJsonCount(1, 'data.lesson.attachments')
+        ->assertJsonPath('data.lesson.attachments.0.fileType', 'application/pdf')
+        ->assertJsonPath('data.lesson.attachments.0.fileUrl', $fileUrl)
+        ->assertJsonPath('data.note.content', 'Existing note')
+        ->assertJsonMissingPath('data.lesson.attachments.0.storagePath');
+    $this->get(str_replace('/api/academy/', '/api/v1/academy/', $fileUrl))->assertSuccessful()->assertHeader('content-type', 'application/pdf');
+    $lesson->isPublished = false;
+    $lesson->save();
+    $this->getJson($url)->assertNotFound();
+    $this->getJson(str_replace('/api/academy/', '/api/v1/academy/', $fileUrl))->assertNotFound();
+});
+
+
+it('reveals own answer review only after completion even before the exam closes', function (bool $hasDeadline) {
+    $this->quiz->closesAt = $hasDeadline ? now()->addDay() : null;
+    $this->quiz->save();
+    $url = '/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts';
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.finalCompleted', false);
+    $id = $this->postJson($url)->assertCreated()->json('data');
+    $this->getJson($url.'/'.$id)->assertSuccessful()
+        ->assertJsonMissingPath('data.answers.questions.0.options.0.isCorrect')
+        ->assertJsonMissingPath('data.answers.questions.0.explanation');
+    $question = $this->quiz->questions->first();
+    $answer = $question->options->firstWhere('isCorrect', false)->id;
+    $this->putJson('/api/v1/academy/attempts/'.$id, ['submit' => true, 'answers' => [$question->id => $answer]])->assertSuccessful();
+    $this->getJson($url.'/'.$id)->assertSuccessful()
+        ->assertJsonPath('data.isCompleted', true)
+        ->assertJsonPath('data.answers.responses.'.$question->id, $answer)
+        ->assertJsonStructure(['data' => ['answers' => ['questions' => [['options' => [['isCorrect']]]]]]]);
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.finalCompleted', true);
+    $other = new User;
+    $other->forceFill(['name' => 'Review outsider', 'email' => 'review-other@example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $profile = new ZakatAcademyProfile;
+    $profile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-REVIEW'])->save();
+    app(CohortLearning::class)->join($profile, $this->cohort);
+    Sanctum::actingAs($other);
+    $this->getJson($url.'/'.$id)->assertNotFound();
+})->with([true, false]);
+
+
+it('breaks equal score ranking ties by total working duration', function () {
+    $this->travelTo(now()->startOfSecond());
+    $question = $this->quiz->questions->first();
+    $courseId = $this->quiz->chapter->courseId;
+    $other = new User;
+    $other->forceFill(['name' => 'Faster participant', 'email' => 'faster@example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $otherProfile = new ZakatAcademyProfile;
+    $otherProfile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-FAST'])->save();
+    app(CohortLearning::class)->join($otherProfile, $this->cohort);
+    foreach ([[$this->profile->id, 120], [$otherProfile->id, 60]] as [$profileId, $seconds]) {
+        $attempt = new ZakatAcademyQuizAttempt;
+        $attempt->forceFill(['profileId' => $profileId, 'quizId' => $this->quiz->id, 'attemptNumber' => 1, 'score' => 100, 'passed' => true, 'isCompleted' => true, 'startedAt' => now()->subSeconds($seconds), 'submittedAt' => now(), 'answers' => []])->save();
+    }
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()
+        ->assertJsonPath('data.0.rank', 2)->assertJsonPath('data.0.total', 2)->assertJsonPath('data.0.durationMs', 120000);
+    Sanctum::actingAs($other);
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.rank', 1);
+    ZakatAcademyQuizAttempt::where('profile_id', $otherProfile->id)->update(['score' => 0]);
+    Sanctum::actingAs($this->student);
+    $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonPath('data.0.rank', 1);
+});
+
+
+it('lists all cohort participants with unique ordered ranks and isolates other cohorts and private fields', function () {
+    $this->travelTo(now()->startOfSecond());
+    $people = [[$this->profile, 'QA student', 0]];
+    foreach (['Budi', 'Amin', 'Early', 'Absent'] as $name) {
+        $user = new User;
+        $user->forceFill(['name' => $name, 'email' => strtolower($name).'@ranking.example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+        $profile = new ZakatAcademyProfile;
+        $profile->forceFill(['userId' => $user->id, 'nis' => 'PAZ-'.$name])->save();
+        app(CohortLearning::class)->join($profile, $this->cohort);
+        $people[] = [$profile, $name, $name === 'Early' ? 60 : 0];
+    }
+    foreach ($people as [$profile, $name, $offset]) {
+        if ($name === 'Absent') continue;
+        $attempt = new ZakatAcademyQuizAttempt;
+        $attempt->forceFill(['profileId' => $profile->id, 'quizId' => $this->quiz->id, 'attemptNumber' => 1, 'score' => 100, 'passed' => true, 'isCompleted' => true, 'startedAt' => now()->subSeconds(60 + $offset), 'submittedAt' => now()->subSeconds($offset), 'answers' => []])->save();
+    }
+    $foreign = new AcademyCohort;
+    $foreign->title = 'Foreign cohort';
+    $foreign->save();
+    $user = new User;
+    $user->forceFill(['name' => 'Foreign secret', 'email' => 'foreign@ranking.example.test', 'password_hash' => bcrypt('qa-password'), 'is_active' => true])->save();
+    $profile = new ZakatAcademyProfile;
+    $profile->forceFill(['userId' => $user->id, 'nis' => 'PAZ-FOREIGN'])->save();
+    app(CohortLearning::class)->join($profile, $foreign);
+    $data = $this->getJson('/api/v1/academy/learning/rankings')->assertSuccessful()->assertJsonCount(1, 'data')->json('data.0');
+    expect($data['cohortId'])->toBe($this->cohort->id)->and($data['rank'])->toBe(4)
+        ->and(array_column($data['participants'], 'name'))->toBe(['Early', 'Amin', 'Budi', 'QA student', 'Absent'])
+        ->and(array_column($data['participants'], 'rank'))->toBe([1, 2, 3, 4, 5]);
+    foreach ($data['participants'] as $person) {
+        expect(array_keys($person))->toEqualCanonicalizing(['name', 'nis', 'score', 'predicate', 'complete', 'finalCompleted', 'durationMs', 'finishedAt', 'isSelf', 'rank']);
+    }
+    expect($data['participants'][0]['nis'])->toBe('PAZ-Early');
+    expect($data['participants'][3]['isSelf'])->toBeTrue()->and($data['participants'][4]['finishedAt'])->toBeNull();
 });
