@@ -98,7 +98,7 @@ class MaterialController
     public function save(Request $request, ?string $id = null)
     {
         $this->context->admin($request);
-        $request->validate(['file' => 'sometimes|file|max:51200', 'pdfFile' => 'sometimes|file|max:10240|mimetypes:application/pdf']);
+        $request->validate(['file' => 'sometimes|file|max:51200', 'pdfFile' => 'sometimes|file|max:10240|mimetypes:application/pdf', 'removePdfIds' => 'sometimes|array|max:100', 'removePdfIds.*' => 'required|string|max:100|distinct']);
         $hasUploads = $request->hasFile('file') || $request->hasFile('pdfFile');
         abort_if(($request->file('file')?->getSize() ?? 0) + ($request->file('pdfFile')?->getSize() ?? 0) > 50 * 1024 * 1024, 422, 'Total audio dan PDF maksimal 50 MB.');
         $storedPaths = [];
@@ -121,6 +121,15 @@ class MaterialController
                 $publishAfterUpload = $hasUploads && in_array($request->input('isPublished'), ['on', '1', 1, true], true);
                 if ($hasUploads) {
                     $request->merge(['isPublished' => false]);
+                }
+                $removeIds = $request->input('removePdfIds', []);
+                if ($removeIds) {
+                    abort_unless($lesson->exists, 422, 'PDF tersimpan hanya bisa dihapus saat mengedit materi.');
+                    $pdfs = $lesson->attachments()->where('file_type', 'application/pdf')->whereIn('id', $removeIds)->lockForUpdate()->get();
+                    abort_unless($pdfs->count() === count($removeIds), 422, 'PDF tidak ditemukan pada materi ini. Muat ulang halaman.');
+                    // Duplicated materials can share private storage; retain bytes for copies.
+                    // Removing the attachment revokes this file ID.
+                    foreach ($pdfs as $pdf) $pdf->delete();
                 }
                 $hasPdf = $lesson->exists && $lesson->attachments()->where('file_type', 'application/pdf')->exists();
                 $data = $this->curriculum->lessonInput($request, $hasPdf);

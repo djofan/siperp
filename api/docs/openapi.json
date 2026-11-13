@@ -863,6 +863,16 @@
             "format": "binary",
             "description": "Optional replacement audio, maximum 50 MiB. MP3, WAV, OGG or M4A."
           },
+          "removePdfIds": {
+            "type": "array",
+            "maxItems": 100,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "description": "Edit only: PDF attachment IDs belonging to this material, removed atomically on save. Audio and foreign IDs rejected. Private bytes retained for copies; removed IDs no longer resolve."
+          },
           "pdfFile": {
             "type": "string",
             "format": "binary",
@@ -1200,92 +1210,14 @@
     },
     "/api/v1/academy/register": {
       "post": {
-        "summary": "Register in the currently open Academy cohort.",
-        "description": "The server selects the open cohort and ignores caller-provided cohortId and courseId. Returns 409 when registration closes; no program is required.",
-        "security": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AcademyPublicRegistration"
-              }
-            }
-          }
-        },
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Self-service account registration is disabled",
+        "description": "Always returns 403. Participants contact CS for the external registration form; administrators create accounts per cohort through the existing admin registration or Excel import.",
         "responses": {
-          "201": {
-            "description": "Participant account and profile created atomically.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "userId",
-                        "nip"
-                      ],
-                      "properties": {
-                        "userId": {
-                          "type": "string"
-                        },
-                        "nip": {
-                          "type": "string"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Request rejected (401)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
           "403": {
-            "description": "Request rejected (403)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Request rejected (404)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Request rejected (409)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Request rejected (422)",
+            "description": "Request rejected",
             "content": {
               "application/json": {
                 "schema": {
@@ -1295,7 +1227,7 @@
             }
           },
           "429": {
-            "description": "Request rejected (429)",
+            "description": "Request rejected",
             "content": {
               "application/json": {
                 "schema": {
@@ -5845,6 +5777,222 @@
         }
       }
     },
+    "/api/v1/academy/settings/learning": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Academy public contacts and grading weights",
+        "responses": {
+          "200": {
+            "description": "data.csPhone is the primary number; data.csContacts lists named public CS/Admin contacts; data.weights contains DAILY, WEEKLY, FINAL.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "csPhone": {
+                          "type": "string"
+                        },
+                        "csContacts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "phone"
+                            ],
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "maxLength": 100
+                              },
+                              "phone": {
+                                "type": "string",
+                                "maxLength": 30,
+                                "description": "Indonesian WhatsApp number; normalized to 62 format and unique in the contact list."
+                              }
+                            }
+                          }
+                        },
+                        "weights": {
+                          "type": "object",
+                          "properties": {
+                            "DAILY": {
+                              "type": "integer"
+                            },
+                            "WEEKLY": {
+                              "type": "integer"
+                            },
+                            "FINAL": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/settings/learning": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Update public CS/Admin contacts or global Academy weights",
+        "description": "Academy admin only. Contacts and weights may be saved independently. If one weight is supplied all three are required and must sum to 100. Weight changes apply to all cohorts. csPhone remains supported for old clients and updates the first contact without removing additional contacts.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "csPhone": {
+                    "type": "string"
+                  },
+                  "csContacts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "phone"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "phone": {
+                          "type": "string",
+                          "maxLength": 30,
+                          "description": "Indonesian WhatsApp number; normalized to 62 format and unique in the contact list."
+                        }
+                      }
+                    }
+                  },
+                  "daily_weight": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "weekly_weight": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  },
+                  "final_weight": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100
+                  }
+                }
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "csContacts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "phone"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "phone": {
+                          "type": "string",
+                          "maxLength": 30,
+                          "description": "Indonesian WhatsApp number; normalized to 62 format and unique in the contact list."
+                        }
+                      }
+                    }
+                  },
+                  "daily_weight": {
+                    "type": "integer"
+                  },
+                  "weekly_weight": {
+                    "type": "integer"
+                  },
+                  "final_weight": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/academy/admin/materials": {
       "post": {
         "tags": [
@@ -7457,6 +7605,7 @@
     "behavior": "Optional ordered public gallery. Omitted on update preserves existing photos; [] clears gallery. IDs must be distinct. Authenticated SIP content editors only can mutate. Draft news galleries remain private."
   },
   "x-bantuan-survey-photo-replacement": "DELETE documents permits assigned survey document corrections during survey_assigned and survey_cc_review, including previously used survey evidence. Uploader/Admin ownership and document-role authorization still apply. Files are retained for audit; deleted photos do not count toward requirements. Evidence is locked after forwarding to approval.",
+  "x-academy-admin-exam-order": "Admin exam lists use creation time ascending, then ID ascending for ties. Grouped row numbers therefore put newly created exams after older exams, without changing participant deadline ordering.",
   "x-academy-material-pdfs": {
     "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
     "access": "Existing private file endpoint and enrollment/release checks remain unchanged."

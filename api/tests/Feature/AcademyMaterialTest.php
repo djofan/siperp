@@ -198,9 +198,11 @@ it('lists every exam for grouping by cohort without pagination', function () {
     $chapter = app(\App\Modules\Academy\Services\CohortLearning::class)->container($cohort->id);
     foreach (range(1, 26) as $index) {
         $quiz = new \App\Modules\Academy\Models\ZakatAcademyQuiz;
-        $quiz->forceFill(['chapterId' => $chapter->id, 'title' => 'Ujian '.$index, 'passingScore' => 70, 'timeLimitMinutes' => 5])->save();
+        $quiz->forceFill(['chapterId' => $chapter->id, 'title' => 'Ujian '.$index, 'passingScore' => 70, 'timeLimitMinutes' => 5, 'createdAt' => now()->subDays(30 - $index)])->save();
     }
-    $this->getJson('/api/v1/academy/admin/quizzes?all=1')->assertSuccessful()->assertJsonCount(26, 'data.items')->assertJsonPath('data.pages', 1)->assertJsonPath('data.items.0.chapter.course.cohort.id', $cohort->id);
+    $response = $this->getJson('/api/v1/academy/admin/quizzes?all=1')->assertSuccessful()->assertJsonCount(26, 'data.items')->assertJsonPath('data.pages', 1)->assertJsonPath('data.items.0.chapter.course.cohort.id', $cohort->id);
+    expect(array_column($response->json('data.items'), 'title'))->toBe(array_map(fn ($index) => 'Ujian '.$index, range(1, 26)));
+    $this->getJson('/api/v1/academy/admin/quizzes?page=1')->assertSuccessful()->assertJsonPath('data.items.0.title', 'Ujian 1');
 });
 
 it('lists all materials in the selected cohort in ascending order starting at one', function () {
@@ -216,4 +218,52 @@ it('lists all materials in the selected cohort in ascending order starting at on
     $this->postJson('/api/v1/academy/admin/materials', ['cohortId' => $other->id, 'title' => 'Materi lain', 'order' => 1])->assertSuccessful();
     $response = $this->getJson('/api/v1/academy/admin/materials?all=1&cohort='.$cohort->id)->assertSuccessful()->assertJsonCount(25, 'data.items')->assertJsonPath('data.nextOrder', 26);
     expect(array_column($response->json('data.items'), 'order'))->toBe(range(1, 25));
+});
+
+it('removes selected PDFs on save while preserving other files and duplicated materials', function () {
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $id = $this->postJson('/api/v1/academy/admin/materials', materialInput())->assertSuccessful()->json('data.id');
+    $pdfs = [];
+    foreach (['first.pdf', 'second.pdf'] as $name) {
+        $url = $this->post('/api/v1/academy/upload', ['lessonId' => $id, 'file' => \Illuminate\Http\UploadedFile::fake()->createWithContent($name, '%PDF-'.str_repeat('a', 64))], ['Accept' => 'application/json'])->assertSuccessful()->json('fileUrl');
+        $pdfs[] = basename($url);
+    }
+    $target = new \App\Modules\Academy\Models\AcademyCohort;
+    $target->title = 'Salinan'; $target->save();
+    $copyId = $this->postJson('/api/v1/academy/admin/materials/'.$id.'/duplicate', ['cohortId' => $target->id])->assertSuccessful()->json('data.id');
+    $copyFile = \App\Modules\Academy\Models\ZakatAcademyLessonAttachment::where('lesson_id', $copyId)->where('title', 'first.pdf')->firstOrFail();
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['removePdfIds' => [$pdfs[0]]])->assertSuccessful();
+    $this->assertDatabaseMissing('zakat_academy_lesson_attachments', ['id' => $pdfs[0]]);
+    $this->assertDatabaseHas('zakat_academy_lesson_attachments', ['id' => $pdfs[1]]);
+    $this->get('/api/v1/academy/files/'.$pdfs[0])->assertNotFound();
+    $this->get('/api/v1/academy/files/'.$copyFile->id)->assertOk();
+});
+
+it('rejects foreign and audio attachment IDs and rolls back a mixed removal', function () {
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $id = $this->postJson('/api/v1/academy/admin/materials', materialInput())->json('data.id');
+    $other = $this->postJson('/api/v1/academy/admin/materials', materialInput(['slug' => 'other']))->json('data.id');
+    $files = [];
+    foreach ([[$id, 'one.pdf', '%PDF-'], [$other, 'foreign.pdf', '%PDF-'], [$id, 'audio.mp3', 'ID3']] as [$lesson, $name, $prefix]) {
+        $files[] = basename($this->post('/api/v1/academy/upload', ['lessonId' => $lesson, 'file' => \Illuminate\Http\UploadedFile::fake()->createWithContent($name, $prefix.str_repeat('a', 64))], ['Accept' => 'application/json'])->assertSuccessful()->json('fileUrl'));
+    }
+    foreach ([$files[1], $files[2], 'missing'] as $invalid) {
+        $this->putJson('/api/v1/academy/admin/materials/'.$id, ['removePdfIds' => [$files[0], $invalid]])->assertUnprocessable();
+        $this->assertDatabaseHas('zakat_academy_lesson_attachments', ['id' => $files[0]]);
+    }
+    $user = (new User)->forceFill(['name' => 'Not editor', 'email' => 'not-editor@test.invalid', 'password_hash' => bcrypt('test-password'), 'is_active' => true]); $user->save();
+    Sanctum::actingAs($user);
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['removePdfIds' => [$files[0]]])->assertForbidden();
+    $this->assertDatabaseHas('zakat_academy_lesson_attachments', ['id' => $files[0]]);
+});
+
+it('preserves the last PDF when removal would leave published material empty', function () {
+    \Illuminate\Support\Facades\Storage::fake('local');
+    $id = $this->postJson('/api/v1/academy/admin/materials', materialInput(['contentSummary' => '']))->json('data.id');
+    $file = basename($this->post('/api/v1/academy/upload', ['lessonId' => $id, 'file' => \Illuminate\Http\UploadedFile::fake()->createWithContent('only.pdf', '%PDF-'.str_repeat('a', 64))], ['Accept' => 'application/json'])->assertSuccessful()->json('fileUrl'));
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['isPublished' => true])->assertSuccessful();
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['removePdfIds' => [$file]])->assertUnprocessable();
+    $this->assertDatabaseHas('zakat_academy_lesson_attachments', ['id' => $file]);
+    $this->putJson('/api/v1/academy/admin/materials/'.$id, ['isPublished' => false, 'removePdfIds' => [$file]])->assertSuccessful();
+    $this->assertDatabaseMissing('zakat_academy_lesson_attachments', ['id' => $file]);
 });

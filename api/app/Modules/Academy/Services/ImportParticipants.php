@@ -50,7 +50,7 @@ class ImportParticipants
                 do {
                     $code = 'PAZ'.str_pad((string) ++$number, 3, '0', STR_PAD_LEFT);
                 } while (DB::table('user_login_codes')->where('code', $code)->exists() || User::where('code', $code)->exists());
-                $password = '12345678';
+                $password = '1234567890';
                 $user = new User;
                 $user->forceFill(['code' => $code, 'name' => $row['name'], 'email' => strtolower($code).'@peserta.sip.invalid', 'password_hash' => Hash::make($password), 'is_active' => true])->save();
                 app(AcademyParticipants::class)->createProfile($user->id, [

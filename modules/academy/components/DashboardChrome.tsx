@@ -13,6 +13,12 @@ import { cn } from "./ui/utils";
 import { LogoutButton } from "./LogoutButton";
 
 export type DashboardNavGroup = { heading?: string; items: { href: string; label: string; icon?: string }[] };
+const participantQuickLinks = [
+        { href: "/academy/belajar", label: "Beranda", icon: LayoutDashboard },
+        { href: "/academy/materi", label: "Materi", icon: BookOpen },
+        { href: "/academy/kuis", label: "Ujian", icon: ClipboardList },
+        { href: "/academy/akun", label: "Profil", icon: Users },
+      ];
 const icons = { Dashboard: LayoutDashboard, BookOpen, Quiz: ClipboardList, Trophy, GraduationCap, Users, Settings, Progress: Layers };
 function navigationIcon(href: string, icon?: string) {
   if (icon && icon in icons) return icons[icon as keyof typeof icons];
@@ -47,7 +53,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
   const items = groups.flatMap(group => group.items);
   const navigationPathname = activeNavigationHref(pathname, role);
   const active = items.filter(item => navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) || (item.href === "/academy/peringkat" && pathname.startsWith("/academy/sertifikat/"))).sort((a, b) => b.href.length - a.href.length)[0];
-  const sidebar = <>
+  const sidebar = (compact = false) => <>
     <Link href="/academy" onClick={() => setOpen(false)} className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
       <span className="academy-brand-icon flex size-10 items-center justify-center rounded-xl bg-emerald-600 text-white"><GraduationCap className="size-6" /></span>
       <span><span className="block text-sm font-semibold tracking-tight text-slate-900">Insan Academy</span><span className="mt-0.5 block text-xs text-slate-500">Ruang {role.toLowerCase()}</span></span>
@@ -55,7 +61,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
     <nav aria-label={`Menu ${role.toLowerCase()}`} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
       {groups.map((group, index) => <div key={group.heading ?? index} className="space-y-1">
         {group.heading && <p className="mb-2 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400">{group.heading}</p>}
-        {group.items.map(item => {
+        {group.items.filter(item => !compact || !participantQuickLinks.some(link => link.href === item.href)).map(item => {
           const Icon = navigationIcon(item.href, item.icon);
           const selected = active?.href === item.href;
           return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} aria-current={selected ? "page" : undefined}
@@ -75,8 +81,8 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
 
   return <Sheet open={open} onOpenChange={setOpen}><div className="academy-theme academy-workspace flex h-dvh overflow-hidden">
     <a href="#academy-content" className="sr-only z-50 focus:not-sr-only focus:absolute focus:rounded-lg focus:bg-white focus:p-3">Lewati ke konten</a>
-    <aside className="academy-sidebar hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex print:hidden">{sidebar}</aside>
-    <SheetContent side="left" className="academy-theme academy-workspace academy-sidebar flex w-72 flex-col gap-0 bg-white p-0 sm:max-w-72 lg:hidden"><SheetTitle className="sr-only">Navigasi Academy</SheetTitle><SheetDescription className="sr-only">Menu ruang {role.toLowerCase()}</SheetDescription>{sidebar}</SheetContent>
+    <aside className="academy-sidebar hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex print:hidden">{sidebar()}</aside>
+    <SheetContent side="left" className="academy-theme academy-workspace academy-sidebar flex w-72 flex-col gap-0 bg-white p-0 sm:max-w-72 lg:hidden"><SheetTitle className="sr-only">Navigasi Academy</SheetTitle><SheetDescription className="sr-only">Menu ruang {role.toLowerCase()}</SheetDescription>{sidebar(mobileApp && role === "Peserta")}</SheetContent>
     <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-8 print:hidden">
         <div className="flex min-w-0 items-center gap-3"><SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Buka menu" className="lg:hidden"><Menu /></Button></SheetTrigger><span className="hidden text-sm text-slate-400 sm:block">Academy</span><ChevronRight className="hidden size-3.5 text-slate-300 sm:block" /><span className="truncate text-sm font-medium text-slate-700">{active?.label ?? "Dashboard"}</span></div>
@@ -86,12 +92,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
         </div>
       </header>
       <main id="academy-content" className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8"><div className="mx-auto w-full max-w-7xl">{children}</div></main>
-      {mobileApp && role === "Peserta" && <nav aria-label="Navigasi cepat Academy" className="grid shrink-0 grid-cols-4 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">{[
-        { href: "/academy/belajar", label: "Beranda", icon: LayoutDashboard },
-        { href: "/academy/materi", label: "Materi", icon: BookOpen },
-        { href: "/academy/kuis", label: "Ujian", icon: ClipboardList },
-        { href: "/academy/akun", label: "Profil", icon: Users },
-      ].map(item => <Link key={item.href} href={item.href} aria-current={navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-xs ${navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "bg-emerald-50 font-semibold text-emerald-800" : "text-slate-600"}`}><item.icon className="size-5" /><span>{item.label}</span></Link>)}</nav>}
+      {mobileApp && role === "Peserta" && <nav aria-label="Navigasi cepat Academy" className="grid shrink-0 grid-cols-4 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">{participantQuickLinks.map(item => <Link key={item.href} href={item.href} aria-current={navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-xs ${navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "bg-emerald-50 font-semibold text-emerald-800" : "text-slate-600"}`}><item.icon className="size-5" /><span>{item.label}</span></Link>)}</nav>}
     </div>
   </div></Sheet>;
 }

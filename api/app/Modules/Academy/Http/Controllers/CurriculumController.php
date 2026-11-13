@@ -234,7 +234,7 @@ class CurriculumController
     public function quizzes(Request $request)
     {
         $this->context->admin($request);
-        $query = Quiz::with('chapter.course:id,title,cohort_id', 'chapter.course.cohort:id,title', 'questions:id,quiz_id,type')->withCount(['questions', 'attempts'])->orderByDesc('created_at')->orderBy('id');
+        $query = Quiz::with('chapter.course:id,title,cohort_id', 'chapter.course.cohort:id,title', 'questions:id,quiz_id,type')->withCount(['questions', 'attempts'])->orderBy('created_at')->orderBy('id');
         if ($request->filled('search')) {
             $query->where('title', 'like', '%'.mb_substr($request->input('search'), 0, 100).'%');
         }
