@@ -173,3 +173,11 @@ memiliki scope `/academy-app/`, terpisah dari PWA Bantuan dan Academy sebelumnya
 Worker hanya menyimpan ikon serta halaman offline umum; materi privat, audio,
 PDF, jawaban, HTML akun, dan API tetap membutuhkan koneksi. Fitur ini tidak
 menambahkan notifikasi push Academy atau pengerjaan ujian offline.
+
+Routing `/academy-app` memakai rewrite path relatif di `next.config.ts`.
+Proxy hanya menetapkan penanda surface dari URL, agar HTTPS yang diterminasi
+Nginx tidak membuat Next mencoba TLS ke port HTTP internalnya sendiri.
+Setelah `npm run build`, jalankan `node tests/academy-app-proxy-smoke.mjs`
+untuk menguji Next yang bind ke `127.0.0.1` dengan header forwarded HTTPS.
+Tes memakai API tiruan lokal pada port 8119 dan frontend 3109; keduanya harus
+kosong. Tidak mengakses akun, database, atau layanan pembayaran sungguhan.
