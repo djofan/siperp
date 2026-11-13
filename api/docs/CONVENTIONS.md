@@ -415,3 +415,34 @@ OOXML MIME strings exceed 40 characters; MySQL otherwise rejects the insert with
 SQLSTATE 22001 / driver 1406 (DATA_CONSTRAINT), even though SQLite tests allow it.
 This additive widening preserves all existing files/data. Rollback deliberately does not
 shrink the column, to avoid truncating already stored MIME values. Backup before VPS migration.
+
+
+### Kelengkapan hasil survei Bantuan
+
+Survei final (`survey_submit`, `survey_review_submit`, termasuk proses manual) wajib
+mengisi `survey.sunnahKnowledge`: Ya, Tidak, atau Sudah mulai. Draft tetap boleh belum lengkap.
+Validasi memakai gabungan data pemohon tersimpan dan koreksi yang dikirim: `dependents`
+berupa daftar terstruktur tepat sejumlah `dependentCount` (0 memakai daftar kosong).
+Setiap orang memerlukan nama, hubungan, jenis kelamin, umur, dan status sekolah/kerja.
+Status tempat tinggal yang mengandung kontrak/sewa/rent memerlukan `rent` > 0 serta
+`rentPeriod` bulan/tahun, termasuk saat pengajuan final. Harga sewa yang sudah ada tidak
+hilang bila survei tidak mengirim koreksi. Data pemohon dan hasil verifikasi untuk Approver
+menampilkan rincian ini. Tidak ada migration atau perubahan otomatis data selesai lama.
+
+
+### Koreksi Bantuan dan profil Teknisi
+
+Approver/Ketua dapat `revise_amount` hanya pada `approved`/`fund_ready`, sebelum pengajuan dana.
+Alasan wajib, versi optimistis, larangan memutuskan pengajuan sendiri, dan audit nominal lama/baru berlaku.
+
+`PUT bantuan/applications/{id}/admin-correction` khusus Superadmin/admin Bantuan, semua tahap.
+Nomor pengajuan harus diketik ulang dan alasan koreksi wajib. Koreksi status/nominal tidak melakukan transfer.
+Tanggal dan penyalur wajib sesuai tahap dana; dokumen tetap disimpan, termasuk saat diganti admin.
+Grup dana aktif memerlukan persetujuan eksplisit pembatalan grup: seluruh anggota kembali `fund_ready`,
+kemudian koreksi target diterapkan. Snapshot grup lama tidak diubah dan keputusan grup lama ditolak.
+Koreksi data pemohon tetap melalui form Edit data. Semua koreksi dicatat beserta aktor dan data sebelum/sesudah.
+
+`PUT teknisi/profile` hanya akun teknisi operasional aktif: nama, nomor HP, alamat sendiri.
+Kode, peran, dan outlet tidak dapat diubah lewat endpoint ini. Password memakai Core `PUT auth/password`
+di form inline Pengaturan akun Teknisi. Admin modul/Superadmin memakai reset Core tanpa password lama;
+seluruh sesi target dicabut. Tidak ada password yang dikembalikan pada API profil.

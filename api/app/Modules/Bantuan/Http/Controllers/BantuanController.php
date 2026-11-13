@@ -121,6 +121,8 @@ class BantuanController
                 $details = json_decode(Crypt::decryptString($event->details), true);
                 $event->manual = $sensitive ? ($details['manual'] ?? null) : null;
                 $event->reason = $details['reason'] ?? null;
+                $event->previousAmount = $details['previousAmount'] ?? null;
+                $event->amount = $details['amount'] ?? null;
                 if ($event->reason && ! $sensitive) {
                     $event->reason = preg_replace('/[0-9]{7,}/', '********', $event->reason);
                 }
@@ -251,7 +253,7 @@ class BantuanController
             $access->documentRole($request, $row, $kind);
             $additionalReport = ($row->applicant['intakeType'] ?? null) === 'other'
                 && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true);
-            abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true) && !$additionalReport, 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
+            abort_if(in_array($row->status, ['completed', 'returned', 'cancelled'], true) && !$additionalReport && !$access->has($request, ['admin']), 409, 'Pengajuan sudah ditutup. Dokumen tidak dapat ditambahkan.');
             $docId = $data['clientId'] ?? (string) Str::uuid();
             $existing = DB::table('bantuan_documents')->where('id', $docId)->first();
             if ($existing) {

@@ -89,3 +89,12 @@ test('normalizes yes/no alternatives and negative statements without assuming un
   for (const answer of ['belum tahu', 'mungkin', 'ya atau tidak', 'iya tapi belum pasti']) assert.equal(parse(`SKTM: ${answer}`).applicant.hasSktm,undefined,answer);
   assert.equal(parse('Merokok: sudah tidak merokok').applicant.smoking,'Tidak');
 });
+
+
+test('imports sunnah knowledge separately from surrounding survey fields',()=>{
+  for(const [value,expected] of [['Ya','Ya'],['Tidak','Tidak'],['Sudah mulai belajar','Sudah mulai']]){
+    const r=parse(`Apakah sudah mengenal sunnah : ${value}\nLatar Belakang : Kondisi keluarga`);
+    assert.equal(r.survey.sunnahKnowledge,expected);
+    assert.equal(r.survey.background,'Kondisi keluarga');
+  }
+});

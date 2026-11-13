@@ -16,12 +16,12 @@ class FundingRequests
 
     public static function guardIndividualAction(Request $request, Application $row, string $action): void
     {
-        if (! in_array($action, ['fund_approve', 'fund_reject', 'assign_distributor'], true)) {
+        if (! in_array($action, ['fund_approve', 'fund_reject', 'assign_distributor', 'revise_amount'], true)) {
             return;
         }
         $batchId = FundingRequestItem::where('active_application_id', $row->id)->value('funding_request_id');
         // Symfony attributes are server-side state, never JSON, query parameters or HTTP headers.
-        $internal = $action !== 'assign_distributor'
+        $internal = !in_array($action, ['assign_distributor', 'revise_amount'], true)
             && $request->attributes->get('bantuan_funding_request_id') === $batchId;
         abort_if($batchId && ! $internal, 409, 'Pengajuan berada dalam kartu dana aktif. Catat keputusan melalui menu Pengajuan dana.');
     }

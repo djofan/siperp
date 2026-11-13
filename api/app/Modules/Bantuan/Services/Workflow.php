@@ -27,6 +27,7 @@ class Workflow
         'survey_return' => [['survey_cc_review'], ['call_center'], 'survey_assigned'],
         'survey_address' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center'], null],
         'survey_location' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center', 'verifier'], null],
+        'revise_amount' => [['approved', 'fund_ready'], ['approver', 'chair'], null],
         'approve' => [['survey_submitted', 'review2', 'bypass_review'], ['approver', 'chair'], 'approved'],
         'review_reject' => [['survey_submitted', 'review2', 'bypass_review'], ['approver', 'chair'], 'rejected_t2'],
         'survey_again' => [['survey_submitted', 'review2'], ['approver', 'chair'], 'survey_assigned'],
@@ -88,14 +89,14 @@ class Workflow
                 abort_if($row->created_by === $request->user()->id, 403, 'Review Call Center harus dilakukan petugas lain.');
             }
             $reason = null;
-            if (in_array($action, ['screen_reject', 'request_data', 'review1_reject', 'review_reject', 'survey_again', 'survey_return', 'survey_decline', 'fund_reject', 'delivery_fail', 'cancel', 'reopen', 'comment'], true)) {
+            if (in_array($action, ['screen_reject', 'request_data', 'review1_reject', 'review_reject', 'survey_again', 'survey_return', 'survey_decline', 'fund_reject', 'delivery_fail', 'cancel', 'reopen', 'comment', 'revise_amount'], true)) {
                 $reason = $request->validate(['reason' => 'required|string|min:5|max:5000'])['reason'];
             }
             if (in_array($action, ['survey_review_save', 'survey_review_submit', 'survey_return'], true)) {
                 // Call Center may review their own survey when holding both roles.
                 // Approval decisions still require an independent Approver.
             }
-            if (in_array($action, ['review1_approve', 'review1_reject', 'approve', 'review_reject', 'survey_again'], true)) {
+            if (in_array($action, ['review1_approve', 'review1_reject', 'approve', 'revise_amount', 'review_reject', 'survey_again'], true)) {
                 abort_if($role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');
             }
             if ($action === 'request_data') {
@@ -164,7 +165,7 @@ class Workflow
                         'applicant' => array_replace($row->applicant ?? [], $request->input('applicant', []))]);
                 }
                 $surveyRules = ['survey' => 'required|array', 'survey.date' => 'required|date|before_or_equal:today',
-                    'survey.hasSktm' => 'required|boolean', 'survey.sktmExplanation' => 'nullable|string|max:5000',
+                    'survey.hasSktm' => 'required|boolean', 'survey.sunnahKnowledge' => 'required|in:Ya,Tidak,Sudah mulai', 'survey.sktmExplanation' => 'nullable|string|max:5000',
                     'survey.background' => 'required|string|max:10000', 'survey.currentCondition' => 'required|string|max:10000',
                     'survey.needs' => 'required|string|max:10000', 'survey.efforts' => 'required|string|max:5000',
                     'survey.homeObservation' => 'required|string|max:10000', 'survey.stayDuration' => 'required|numeric|min:0',
@@ -201,12 +202,16 @@ class Workflow
                         ->where('kind', 'like', 'survey_%')->whereNotNull('used_at')->count() < ($settings['minimumSurveyPhotos'] ?? 5), 422, 'Jumlah foto survei belum memenuhi minimum.');
                 }
                 $row->survey = $survey;
-                if ($request->has('applicant') || ($review && ! $draft)) {
-                    $corrected = app(Intake::class)->validateApplicant($corrections, $review && $draft);
+                if ($request->has('applicant') || !$draft) {
+                    $corrections->merge(['applicant' => array_replace($row->applicant ?? [], $request->input('applicant', []))]);
+                    $corrected = app(Intake::class)->validateApplicant($corrections, $draft, !$draft);
                     $row->applicant = $corrected;
                     $row->name = $corrected['name'];
                     $row->nik_hash = app(Intake::class)->nikHash($corrected['nik']);
                 }
+            }
+            if ($action === 'revise_amount') {
+                $row->amount = $request->validate(['amount' => 'required|integer|min:1|max:9000000000000'])['amount'];
             }
             if ($action === 'approve') {
                 $row->amount = $request->validate(['amount' => 'required|integer|min:1|max:9000000000000'])['amount'];

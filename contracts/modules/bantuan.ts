@@ -4,6 +4,7 @@ export const bantuanRoles: Record<string, string> = {
   volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Monitoring", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
+  admin_correct:"Koreksi data oleh admin", revise_amount:"Nominal bantuan dikoreksi",
   other_report:"Laporan penyaluran tambahan",
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
   update_mustahiq: "Profil mustahiq diperbarui", sync_mustahiq: "Profil diselaraskan dari review survei",
@@ -62,7 +63,7 @@ export interface AidDetail extends AidApplication {
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
   duplicateApplications: AidApplicantHistory[];
   documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null; location?:PhotoLocation|null }[];
-  events: { manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
+  events: { previousAmount?:number|null; amount?:number|null; manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {

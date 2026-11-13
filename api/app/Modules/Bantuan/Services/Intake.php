@@ -15,7 +15,7 @@ class Intake
         return hash_hmac('sha256', $nik, config('app.key'));
     }
 
-    public function validateApplicant(Request $request, bool $draft = false): array
+    public function validateApplicant(Request $request, bool $draft = false, bool $survey = false): array
     {
         if ($request->input('applicant.intakeType') === 'other') {
             $data = $request->validate([
@@ -109,6 +109,14 @@ class Intake
             $rules['applicant.dependents.*.age'] = 'required|integer|min:0|max:120';
             $rules['applicant.dependents.*.status'] = 'required|in:Belum sekolah,Sekolah,Kuliah,Bekerja,Belum bekerja,Tidak bekerja,Lainnya';
         }
+        if ($survey && !$draft) {
+            $count = $request->input('applicant.dependentCount');
+            $rules['applicant.dependents'] = ['present', 'array', 'size:'.(is_numeric($count) ? max(0, (int) $count) : 0)];
+        }
+        if (!$draft && preg_match('/kontrak|sewa|rent/iu', (string) $request->input('applicant.housing'))) {
+            $rules['applicant.rent'] = 'required|integer|min:1|max:9000000000000';
+            $rules['applicant.rentPeriod'] = 'required|in:bulan,tahun';
+        }
         if ($draft) {
             foreach ($rules as $field => $rule) {
                 if (! in_array($field, ['applicant', 'applicant.name', 'applicant.nik'], true)) {
@@ -119,7 +127,14 @@ class Intake
             }
         }
 
-        return $request->validate($rules)['applicant'];
+        return $request->validate($rules, [
+            'applicant.dependents.present' => 'Rinci setiap tanggungan sesuai jumlah yang diisi.',
+            'applicant.dependents.array' => 'Lengkapi daftar tanggungan per orang, bukan hanya jumlahnya.',
+            'applicant.dependents.size' => 'Jumlah rincian tanggungan harus sesuai jumlah tanggungan.',
+            'applicant.rent.required' => 'Isi biaya kontrak atau sewa.',
+            'applicant.rent.min' => 'Biaya kontrak atau sewa harus lebih dari Rp 0.',
+            'applicant.rentPeriod.required' => 'Pilih periode biaya sewa: bulan atau tahun.',
+        ])['applicant'];
     }
 
     public function save(Request $request, ?string $id = null): Application

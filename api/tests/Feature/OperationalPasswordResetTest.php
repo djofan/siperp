@@ -90,3 +90,12 @@ it('does not allow resetting admin accounts or the current account with this end
     $this->postJson('/api/v1/core/module-accounts/'.$otherAdmin->id.'/password-reset', $this->newPassword)->assertForbidden();
     $this->postJson('/api/v1/core/module-accounts/'.$super->id.'/password-reset', $this->newPassword)->assertForbidden();
 });
+
+
+it('allows the Teknisi module admin to reset only a technician password without knowing the current password', function () {
+    $admin=resetAccount(['code'=>'AMSIP0981']);resetAccess($admin,'reset-teknisi','admin');
+    $target=resetAccount(['code'=>'PTH98']);resetAccess($target,'reset-teknisi','technician');
+    Sanctum::actingAs($admin);
+    $this->postJson('/api/v1/core/module-accounts/'.$target->id.'/password-reset',$this->newPassword)->assertOk();
+    expect(Hash::check($this->newPassword['password'],$target->fresh()->password_hash))->toBeTrue();
+});

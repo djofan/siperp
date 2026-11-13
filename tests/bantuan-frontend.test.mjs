@@ -87,7 +87,11 @@ test("survey entry is a compact two column form with no resize corner or field b
 test("detail follows applicant documents action history order with survey entry only for its assigned verifier",()=>{
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
-  assert.match(workspace,/const detailTabs=\[\{id:"pemohon",label:row.intakeType==="other"\?"Data pelapor":"Data pemohon"\},\{id:"dokumen",label:"Dokumen pendukung"\},\{id:"tindakan",label:getActionSectionLabel\(row,viewer\)\},\{id:"riwayat",label:"Riwayat"\}\]/);
+  const tabs=workspace.slice(workspace.indexOf('const detailTabs='),workspace.indexOf('const upcoming='));
+  const ids=['id:"pemohon"','id:"dokumen"','id:"tindakan"','id:"penyerahan"','id:"riwayat"'];
+  for(let i=1;i<ids.length;i++)assert.ok(tabs.indexOf(ids[i-1])<tabs.indexOf(ids[i]));
+  assert.match(tabs,/hasHandoverReport/);
+  assert.match(workspace,/row.status==="completed"\|\|!!row.handover/);
   assert.match(workspace,/hasRole\(viewer,"verifier"\)&&row.verifierId===viewer.id&&row.status==="survey_assigned"/);
   assert.match(workspace,/row.survey&&!isSurveyEntry/);
   assert.match(actions,/\["survey_submit","survey_decline"\].includes\(a.key\)&&row.verifierId!==viewer.id/);

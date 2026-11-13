@@ -20,7 +20,7 @@ class Journal
     public function notify(Application $row, string $action, array $roles, array $users = [], ?string $dedupKey = null, ?string $reason = null): void
     {
         $eventAction = $action;
-        $action = ['submit' => 'Pengajuan dikirim', 'screen_pass' => 'Menunggu review tahap 1',
+        $action = ['revise_amount' => 'Nominal bantuan diperbarui', 'admin_correct' => 'Data pengajuan dikoreksi admin', 'submit' => 'Pengajuan dikirim', 'screen_pass' => 'Menunggu review tahap 1',
             'review1_approve' => 'Disetujui untuk survei', 'assign_survey' => 'Anda mendapat tugas survei',
             'survey_submit' => 'Hasil survei menunggu review Call Center', 'approve' => 'Nominal bantuan ditetapkan',
             'survey_revise' => 'Verifikator sedang memperbaiki hasil survei',
