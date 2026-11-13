@@ -1,8 +1,9 @@
 /* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
+import { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 
 import { OrganizationContact } from "@/components/OrganizationContact";
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 
 export function Footer() {
   return (
@@ -21,8 +22,8 @@ export function Footer() {
           {/* Links */}
           <div className="flex gap-6 text-sm text-gray-500">
             <Link href="/academy/materi" className="transition-colors hover:text-green-600">Materi</Link>
-            <a href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</a>
-            <a href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</a>
+            <AcademyAnchor href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</AcademyAnchor>
+            <AcademyAnchor href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</AcademyAnchor>
           </div>
         </div>
 

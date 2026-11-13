@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound } from "next/navigation";
 import { requireAcademyProfile } from "../../../api/access";
 import { getLearningOverview } from "../../../api/courses";

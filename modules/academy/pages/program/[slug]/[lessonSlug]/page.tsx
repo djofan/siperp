@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound, redirect } from "next/navigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage8 } from "@/modules/academy/api/page-contracts";
@@ -22,7 +23,7 @@ export default async function LessonPage({ params }: {
     if (!course)
         notFound();
     if (!await getEnrollment(profileId, course.id))
-        redirect("/academy/materi");
+        redirect(await academyServerHref("/academy/materi"));
     const { lesson, note } = await academyPage<AcademyPage8>(`academy/learning/lessons/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`);
     if (!lesson)
         notFound();

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound, redirect } from "next/navigation";
 import { requireAcademyProfile } from "../../../../../api/access";
 import { getOwnAttempt } from "../../../../../api/quizzes";
@@ -11,7 +12,7 @@ export default async function ResultPage({ params }: { params: Promise<{ quizId:
   const { quizId, attemptId } = await params;
   const attempt = await getOwnAttempt(profileId, quizId, attemptId);
   if (!attempt) notFound();
-  if (!attempt.isCompleted) redirect(`/academy/kuis/${quizId}/percobaan/${attemptId}`);
+  if (!attempt.isCompleted) redirect(await academyServerHref(`/academy/kuis/${quizId}/percobaan/${attemptId}`));
   const snapshot = readSnapshot(attempt.answers);
   return <div className="mx-auto max-w-3xl px-4 py-10"><LearnerNav /><Link href={`/academy/kuis/${quizId}`} className="mb-5 inline-flex items-center text-sm font-medium text-green-700 hover:underline">← Kembali ke detail ujian</Link><PageHeading eyebrow="Hasil ujian" title={attempt.quiz.title} />
     <p role="status" className="rounded-2xl border border-green-300 bg-green-50 p-5 font-semibold text-green-800">✓ Ujian sudah selesai</p>

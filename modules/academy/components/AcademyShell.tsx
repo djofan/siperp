@@ -1,4 +1,5 @@
 "use client";
+import { canonicalAcademyPath } from "../pwa/navigation";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 import { Navbar } from "./landing/navbar";
@@ -34,7 +35,7 @@ const adminLinks = [
   { path: "/angkatan", label: "Angkatan", icon: "Users" },
 ] as const;
 export function AcademyShell({ user, children, admin = false, csPhone = "628111186626", unreadReminders = 0, certificatesAvailable = false }: { user: { name: string; nis: string | null; isTeacher?: boolean; isSuperadmin?: boolean } | null; children: ReactNode; admin?: boolean; csPhone?: string; unreadReminders?: number; certificatesAvailable?: boolean }) {
-  const pathname = usePathname();
+  const pathname = canonicalAcademyPath(usePathname());
   const auth = pathname === "/academy/masuk" || pathname === "/academy/daftar";
   const publicPage = publicNavigation.some(item => item.href !== "/academy/program" && pathname === item.href);
   const dashboard = admin || (!publicPage && (!auth && pathname !== "/academy" && pathname !== "/academy/pemeliharaan" && (!!user || links.some(({ path }) => path !== "materi" && pathname.startsWith(`/academy/${path}`)))));

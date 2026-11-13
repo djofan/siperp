@@ -1,10 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { AcademySurfaceProvider } from "./AcademyNavigation";
+import type { AcademyBasePath } from "./navigation";
 type InstallEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: string }> };
 const PwaContext = createContext({ ready: false, installed: false, install: async () => {} });
 
-export function AcademyPwa({ children }: { children: ReactNode }) {
+export function AcademyPwa({ children, basePath = "/academy" }: { children: ReactNode; basePath?: AcademyBasePath }) {
   const [prompt, setPrompt] = useState<InstallEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -29,7 +31,7 @@ export function AcademyPwa({ children }: { children: ReactNode }) {
     mode.addEventListener("change", updateInstalled);
     if ("serviceWorker" in navigator && window.isSecureContext) {
       navigator.serviceWorker.addEventListener("controllerchange", changed);
-      void navigator.serviceWorker.register("/academy/sw.js", { scope: "/academy/", updateViaCache: "none" }).then(reg => {
+      void navigator.serviceWorker.register(`${basePath}/sw.js`, { scope: `${basePath}/`, updateViaCache: "none" }).then(reg => {
         if (!live) return;
         registration = reg;
         if (reg.waiting) setWaiting(reg.waiting);
@@ -45,15 +47,15 @@ export function AcademyPwa({ children }: { children: ReactNode }) {
       installing?.removeEventListener("statechange", stateChanged);
       if ("serviceWorker" in navigator) navigator.serviceWorker.removeEventListener("controllerchange", changed);
     };
-  }, []);
+  }, [basePath]);
   async function install() {
     if (!prompt) return;
     try { await prompt.prompt(); await prompt.userChoice; setPrompt(null); }
     catch { setIssue("Pemasangan belum berhasil. Gunakan menu browser untuk menambahkan Academy ke layar utama."); setPrompt(null); }
   }
-  return <PwaContext.Provider value={{ ready: !!prompt, installed, install }}>
+  return <AcademySurfaceProvider basePath={basePath}><PwaContext.Provider value={{ ready: !!prompt, installed, install }}>
     {children}
-    {(offline || waiting || issue) && <aside aria-label="Status aplikasi Academy" className="fixed bottom-4 left-4 right-4 z-40 mx-auto max-w-xl space-y-2 print:hidden">
+    {(offline || waiting || issue) && <aside aria-label="Status aplikasi Academy" className={`fixed ${basePath === "/academy-app" ? "bottom-24" : "bottom-4"} left-4 right-4 z-40 mx-auto max-w-xl space-y-2 print:hidden`}>
       {offline && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow">Koneksi terputus. Menyimpan materi, menjawab soal, dan mengirim pertanyaan memerlukan internet. Jangan tutup formulir yang belum tersimpan.</p>}
       {waiting && <div className="rounded-xl border border-green-200 bg-white p-4 text-sm shadow"><p>Versi baru Academy tersedia. Selesaikan dan simpan pekerjaan sebelum memperbarui.</p><button type="button" className="mt-2 rounded-lg bg-green-700 px-3 py-2 text-white" onClick={() => {
         if (!window.confirm("Sudah menyimpan semua formulir dan jawaban ujian? Halaman akan dimuat ulang.")) return;
@@ -62,7 +64,7 @@ export function AcademyPwa({ children }: { children: ReactNode }) {
       }}>Perbarui aplikasi</button></div>}
       {issue && <div role="status" className="rounded-xl border bg-white p-4 text-sm shadow">{issue}<button type="button" onClick={() => setIssue("")} className="ml-3 underline">Tutup</button></div>}
     </aside>}
-  </PwaContext.Provider>;
+  </PwaContext.Provider></AcademySurfaceProvider>;
 }
 
 export function AcademyInstallPanel() {

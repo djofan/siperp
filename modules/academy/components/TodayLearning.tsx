@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { listMaterials } from "../api/materials";
 import { getExamNotifications } from "../api/notifications";
 

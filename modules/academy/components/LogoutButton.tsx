@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useAcademyRouter } from "../pwa/AcademyNavigation";
 
 import { Button } from "./ui/button";
 import { LogOut } from "lucide-react";
 
 export function LogoutButton({ compact = false }: { compact?: boolean }) {
-  const router = useRouter();
+  const router = useAcademyRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   return <div><Button variant="outline" size={compact ? "sm" : "default"} disabled={pending} onClick={async () => {

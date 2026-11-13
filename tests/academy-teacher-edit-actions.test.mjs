@@ -27,8 +27,8 @@ test("teacher question table exposes an edit action and opens the selected form"
 });
 
 test("successful material and exam saves return to their tables with a notification", () => {
-  assert.match(actions, /redirect\(`\/academy\/pengajar\/materi\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)/);
-  assert.match(actions, /redirect\(`\/academy\/pengajar\/ujian\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)/);
+  assert.match(actions, /redirect\(await academyServerHref\(`\/academy\/pengajar\/materi\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)\)/);
+  assert.match(actions, /redirect\(await academyServerHref\(`\/academy\/pengajar\/ujian\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)\)/);
   assert.match(materials, /Materi berhasil dibuat\./);
   assert.match(materials, /Materi berhasil diperbarui\./);
   assert.match(list, /Ujian berhasil dibuat\./);
@@ -42,8 +42,8 @@ test("academy navigation highlights aliased detail routes and keeps the top bar 
   assert.match(chrome, /\/admin\/academy\/program\/.*\/admin\/academy\/kuis/);
   assert.match(chrome, /\/admin\/academy\/program.*\/admin\/academy\/materi/);
   assert.match(chrome, /\/academy\/program\/.*\/academy\/materi/);
-  assert.match(adminLayout, /href: "\/admin\/academy\/materi", label: "Program & Materi"/);
-  assert.doesNotMatch(adminLayout, /href: "\/admin\/academy\/program", label: "Program & Materi"/);
+  assert.match(adminLayout, /href: "\/admin\/academy\/materi", label: "Materi"/);
+  assert.doesNotMatch(adminLayout, /href: "\/admin\/academy\/program", label: "Materi"/);
   assert.doesNotMatch(chrome, />Website /);
   assert.doesNotMatch(logout, /Ubah password/);
   assert.match(participantExam, /Kembali ke daftar ujian/);

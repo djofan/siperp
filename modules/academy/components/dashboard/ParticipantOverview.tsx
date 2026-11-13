@@ -1,5 +1,5 @@
 import { TodayLearning } from "../TodayLearning";
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { BookOpen, ChartNoAxesCombined, ClipboardList, Trophy } from "lucide-react";
 import { requireAcademyParticipant } from "../../api/access";
 import { getOwnRankings, listParticipantQuizzes } from "../../api/courses";

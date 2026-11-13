@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { AcademyInstallPanel } from "../../pwa/AcademyPwa";
 import { PageHeading } from "../../components/ui";
 export default function InstallPage() {

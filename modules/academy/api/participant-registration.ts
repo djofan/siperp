@@ -1,4 +1,5 @@
 "use server";
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createParticipantAccount } from "@/modules/core/participant-accounts";
@@ -22,7 +23,7 @@ export async function editAcademyAccount(id: string, _: ActionState, form: FormD
   try { await editParticipantAccount("academy", id, form); revalidatePath("/admin/academy", "layout"); revalidatePath("/academy", "layout"); }
   catch (error) { return { error: error instanceof ApiError ? error.message : "Perubahan gagal. Periksa apakah nomor HP sudah digunakan." }; }
   const destination = "/admin/academy/peserta";
-  redirect(`${destination}?disimpan=1&q=${encodeURIComponent(String(form.get("name") ?? "").trim())}`);
+  redirect(await academyServerHref(`${destination}?disimpan=1&q=${encodeURIComponent(String(form.get("name") ?? "").trim())}`));
 }
 export async function deleteAcademyAccount(id: string): Promise<ActionState> {
   await requireAcademyAdmin();

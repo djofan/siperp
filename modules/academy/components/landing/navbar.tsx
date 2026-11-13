@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
 
-import Link from "next/link";
+import Link, { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "../icons";
 
@@ -41,14 +41,14 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
         {/* Desktop nav */}
         <div className="hidden items-center gap-2 lg:flex">
           {isLoggedIn ? (
-            <a href={dashboardHref} className="academy-lime-button inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
+            <AcademyAnchor href={dashboardHref} className="academy-lime-button inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
               Dashboard
-            </a>
+            </AcademyAnchor>
           ) : (
             <>
-              <a href="/academy/masuk" className="academy-nav-login inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
+              <AcademyAnchor href="/academy/masuk" className="academy-nav-login inline-flex items-center justify-center rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50">
                 Masuk
-              </a>
+              </AcademyAnchor>
               <Link href="/academy/daftar" className="academy-lime-button inline-flex items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700">
                 Daftar
               </Link>
@@ -71,14 +71,14 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
           <div className="flex flex-col gap-2">
             {publicNavigation.map(item => <Link key={item.href} href={item.href} className="rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700" onClick={() => setMenuOpen(false)}>{item.label}</Link>)}
             {isLoggedIn ? (
-              <a href={dashboardHref} className="academy-lime-button rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
+              <AcademyAnchor href={dashboardHref} className="academy-lime-button rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                 Dashboard
-              </a>
+              </AcademyAnchor>
             ) : (
               <>
-                <a href="/academy/masuk" className="rounded-lg border border-gray-200 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <AcademyAnchor href="/academy/masuk" className="rounded-lg border border-gray-200 px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50">
                   Masuk
-                </a>
+                </AcademyAnchor>
                 <Link href="/academy/daftar" className="academy-lime-button rounded-lg bg-green-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-green-700">
                   Daftar
                 </Link>

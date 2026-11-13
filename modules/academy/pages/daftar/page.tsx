@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { academyServerHref, getAcademyBasePath } from "@/modules/academy/pwa/server-navigation";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { redirect } from "next/navigation";
 import { getAcademyUser, getAcademyAvailability } from "../../api/access";
 import { RegistrationForm } from "../../components/RegistrationForm";
@@ -7,7 +8,7 @@ import { getIntake, getLearningSettings } from "../../api/learning";
 
 export default async function RegisterPage() {
   const user = await getAcademyUser();
-  if (user) redirect(academyLoginDestination(user, await getAcademyAvailability()));
+  if (user) redirect(await academyServerHref(academyLoginDestination(user, await getAcademyAvailability(), (await getAcademyBasePath()) === "/academy-app")));
   const [intake, settings] = await Promise.all([getIntake(), getLearningSettings()]);
   return <div className="mx-auto w-full max-w-sm"><div className="mb-8 text-center"><h1 className="text-2xl font-semibold tracking-tight">Daftar Insan Academy</h1><p className="mt-1 text-sm text-gray-500">Buat akun untuk mulai belajar zakat</p></div>
     <p className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-800">{intake.cohort ? `${intake.cohort.title} · ${intake.filled} peserta` : "Pendaftaran segera dibuka."}</p>

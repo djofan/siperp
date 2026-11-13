@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage5 } from "@/modules/academy/api/page-contracts";
 import { requireAcademyProfile } from "../../../api/access";

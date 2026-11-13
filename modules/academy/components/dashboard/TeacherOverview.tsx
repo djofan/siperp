@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { ArrowRight, BookOpen, ClipboardList, MessageCircle, Users } from "lucide-react";
 import { academyPage } from "../../api/page-data";
 import type { AcademyPage9 } from "../../api/page-contracts";

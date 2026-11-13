@@ -5,10 +5,10 @@ type AcademyViewer = {
   academyProfile: { mustChangePassword: boolean } | null;
 };
 
-export function academyLoginDestination(user: AcademyViewer | null, available: boolean) {
+export function academyLoginDestination(user: AcademyViewer | null, available: boolean, mobileApp = false) {
   if (!user) return "/academy/masuk";
   if (user.isSuperadmin || user.moduleAccess.some(access => access.role === "admin")) return "/admin/academy";
   if (user.academyProfile?.mustChangePassword) return "/academy/akun";
-  if (!available) return "/academy";
+  if (!available) return mobileApp ? "/academy/pemeliharaan" : "/academy";
   return user.isTeacher ? "/academy/pengajar" : "/academy/belajar";
 }

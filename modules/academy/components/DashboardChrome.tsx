@@ -1,6 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
+import { useAcademyBasePath } from "../pwa/AcademyNavigation";
+import { canonicalAcademyPath } from "../pwa/navigation";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ArrowUpRight, Bell, BookOpen, ChevronRight, GraduationCap, Headphones, Heart, LayoutDashboard, Menu, MessageCircle, Settings, Trophy, Users, ClipboardList, Layers, CalendarDays, NotebookPen } from "lucide-react";
@@ -39,7 +41,8 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
   groups: DashboardNavGroup[]; userName: string; role: "Admin" | "Pengajar" | "Peserta";
   userNumber?: string | null; unreadReminders?: number; csPhone?: string; children: ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = canonicalAcademyPath(usePathname());
+  const mobileApp = useAcademyBasePath() === "/academy-app";
   const [open, setOpen] = useState(false);
   const items = groups.flatMap(group => group.items);
   const navigationPathname = activeNavigationHref(pathname, role);
@@ -83,6 +86,12 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
         </div>
       </header>
       <main id="academy-content" className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8"><div className="mx-auto w-full max-w-7xl">{children}</div></main>
+      {mobileApp && role === "Peserta" && <nav aria-label="Navigasi cepat Academy" className="grid shrink-0 grid-cols-4 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden print:hidden">{[
+        { href: "/academy/belajar", label: "Beranda", icon: LayoutDashboard },
+        { href: "/academy/materi", label: "Materi", icon: BookOpen },
+        { href: "/academy/kuis", label: "Ujian", icon: ClipboardList },
+        { href: "/academy/akun", label: "Profil", icon: Users },
+      ].map(item => <Link key={item.href} href={item.href} aria-current={navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "page" : undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 px-1 text-xs ${navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) ? "bg-emerald-50 font-semibold text-emerald-800" : "text-slate-600"}`}><item.icon className="size-5" /><span>{item.label}</span></Link>)}</nav>}
     </div>
   </div></Sheet>;
 }

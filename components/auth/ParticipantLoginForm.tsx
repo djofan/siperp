@@ -14,7 +14,7 @@ export function ParticipantLoginForm({ moduleSlug, successHref }: { moduleSlug: 
       const response = await fetch(`/api/${moduleSlug}/masuk`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: String(data.get("code")).trim().toUpperCase(), password: data.get("password") }) });
       if (!response.ok) { setError("Kode akun atau password salah, atau akun tidak memiliki akses ke modul ini."); return; }
       const result = await response.json();
-      const nextPath = ["/teknisi/panel", "/teknisi/peserta", "/academy/lanjut"].includes(result.nextPath) ? result.nextPath : successHref;
+      const nextPath = ["/teknisi/panel", "/teknisi/peserta", "/academy/lanjut"].includes(result.nextPath) ? (moduleSlug === "academy" && result.nextPath === "/academy/lanjut" ? successHref : result.nextPath) : successHref;
       // Start the outlet workspace with the newly issued cookie, without anonymous prefetch state.
       if (moduleSlug === "teknisi") { window.location.assign(nextPath); return; }
       router.replace(nextPath); router.refresh();

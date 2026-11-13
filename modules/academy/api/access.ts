@@ -1,3 +1,4 @@
+import { academyServerHref } from "@/modules/academy/pwa/server-navigation";
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
@@ -17,31 +18,31 @@ export const getAcademyAvailability = cache(async () => {
 });
 
 export async function requireAcademyAvailable() {
-  if (!await getAcademyAvailability()) redirect("/academy/pemeliharaan");
+  if (!await getAcademyAvailability()) redirect(await academyServerHref("/academy/pemeliharaan"));
 }
 
 export async function requireAcademyUser() {
   await requireAcademyAvailable();
   const user = await getAcademyUser();
-  if (!user) redirect("/academy/masuk");
+  if (!user) redirect(await academyServerHref("/academy/masuk"));
   return user;
 }
 
 export async function requireAcademyProfile() {
   const user = await requireAcademyParticipant();
-  if (!user.academyProfile) redirect("/academy/program");
-  if (user.academyProfile.mustChangePassword) redirect("/academy/akun");
+  if (!user.academyProfile) redirect(await academyServerHref("/academy/program"));
+  if (user.academyProfile.mustChangePassword) redirect(await academyServerHref("/academy/akun"));
   return { ...user, profileId: user.academyProfile.id };
 }
 
 export async function requireAcademyParticipant() {
   const user = await requireAcademyUser();
-  if (user.isTeacher || user.isSuperadmin) redirect("/academy/pengajar");
+  if (user.isTeacher || user.isSuperadmin) redirect(await academyServerHref("/academy/pengajar"));
   return user;
 }
 
 export async function requireAcademyTeacher() {
   const user = await requireAcademyUser();
-  if (!user.isSuperadmin && !user.isTeacher) redirect("/academy/belajar");
+  if (!user.isSuperadmin && !user.isTeacher) redirect(await academyServerHref("/academy/belajar"));
   return user;
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { LogoutButton } from "./LogoutButton";
 
 import { publicNavigation } from "./public-navigation";

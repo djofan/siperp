@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { TeacherAudioField } from "../../../components/TeacherAudioField";
 import { ChapterSelect } from "../../../components/ChapterSelect";
 import { academyPage } from "@/modules/academy/api/page-data";

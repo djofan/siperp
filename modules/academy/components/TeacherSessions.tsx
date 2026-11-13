@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { academyPage } from "../api/page-data";
 import type { AcademyTeacherSessionList } from "@/contracts/modules/academy";
 import { createTeacherLiveSession } from "../api/teacher-actions";
