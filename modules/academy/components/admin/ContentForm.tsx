@@ -30,6 +30,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
 }) {
   const [state, formAction, pending] = useActionState(action, { error: "" });
   const [values, setValues] = useState<Values>({ order: kind === "lesson" ? 1 : 0, videoProvider: "AUDIO", releaseDay: 1, ...initial });
+  const [removedPdfs, setRemovedPdfs] = useState<string[]>([]);
   const prefix = useId();
   const fields: Field[] = [{ name: "title", label: "Judul", required: true }];
   if (kind !== "attachment") fields.push(
@@ -83,7 +84,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
     {uploadAudio && <AudioUploadField />}
     {flat && kind === "lesson" && <div className="space-y-3">
       <PdfUploadField />
-      {existingPdfs.length > 0 && <div className="space-y-2"><h2 className="text-sm font-semibold">File PDF tersimpan</h2><ul className="space-y-2">{existingPdfs.map(pdf => <li key={pdf.id}><a href={pdf.url} target="_blank" rel="noopener noreferrer" className="break-words text-sm text-green-700 underline">{pdf.title} ↗</a></li>)}</ul><p className="text-xs text-gray-500">PDF baru ditambahkan saat materi disimpan. File sebelumnya tetap tersedia.</p></div>}
+      {existingPdfs.length > 0 && <div className="space-y-2"><h2 className="text-sm font-semibold">File PDF tersimpan</h2><ul className="space-y-2">{existingPdfs.map(pdf => { const removed = removedPdfs.includes(pdf.id); return <li key={pdf.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-100 p-3"><div className="min-w-0 flex-1"><a href={pdf.url} target="_blank" rel="noopener noreferrer" className={"break-words text-sm text-green-700 underline " + (removed ? "line-through opacity-60" : "")}>{pdf.title} ↗</a>{removed && <><input type="hidden" name="removePdfIds[]" value={pdf.id} /><p className="mt-1 text-xs text-red-700">Akan dihapus saat perubahan disimpan.</p></>}</div><button type="button" disabled={pending} onClick={() => setRemovedPdfs(current => removed ? current.filter(id => id !== pdf.id) : [...current, pdf.id])} className="min-h-11 shrink-0 rounded-lg border px-3 text-sm text-red-700 disabled:opacity-50" aria-label={(removed ? "Batalkan hapus " : "Hapus PDF ") + pdf.title}>{removed ? "Batalkan" : "Hapus PDF"}</button></li>; })}</ul><p className="text-xs text-gray-500">PDF baru ditambahkan dan PDF yang ditandai dihapus saat Simpan perubahan ditekan.</p></div>}
     </div>}
     {flat && kind === "lesson" && <FormField label="Status publikasi" htmlFor={`${prefix}-status`} hint="Draft disimpan untuk pengelola. Terpublikasi ditampilkan kepada peserta sesuai jadwal rilis.">
       <Select id={`${prefix}-status`} name="isPublished" value={values.isPublished ? "1" : "0"} onChange={event => setValues({ ...values, isPublished: event.target.value === "1" })}>

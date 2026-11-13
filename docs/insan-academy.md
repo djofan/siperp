@@ -40,7 +40,7 @@
    Gunakan format teks pada kolom No HP agar angka awal tetap terlihat.
 5. Setelah berhasil, segera pilih **Unduh akun peserta** sebelum meninggalkan
    halaman atau memilih file lain. Bagikan NIP dan password awal kepada peserta
-   terkait. Password awal peserta baru dari impor adalah `12345678`; peserta
+   terkait. Password awal peserta baru dari impor adalah `1234567890`; peserta
    wajib menggantinya sebelum belajar dengan password baru minimal 10 karakter.
    Password disimpan sebagai hash. Impor ulang tidak mereset akun lama; perubahan
    ini juga tidak mengubah password akun yang sudah dibuat sebelumnya.
@@ -181,3 +181,27 @@ Setelah `npm run build`, jalankan `node tests/academy-app-proxy-smoke.mjs`
 untuk menguji Next yang bind ke `127.0.0.1` dengan header forwarded HTTPS.
 Tes memakai API tiruan lokal pada port 8119 dan frontend 3109; keduanya harus
 kosong. Tidak mengakses akun, database, atau layanan pembayaran sungguhan.
+
+PDF tersimpan dapat ditandai Hapus PDF pada editor, dibatalkan sebelum simpan,
+dan dihapus melalui Simpan perubahan. `removePdfIds[]` pada PUT material hanya
+menerima ID PDF milik materi tersebut dan memerlukan admin Academy. Semua
+perubahan dibatalkan jika validasi gagal; materi terpublikasi tidak boleh kosong.
+ID file yang dihapus tidak dapat diakses lagi. Berkas privat di storage tetap
+dipertahankan agar materi hasil duplikasi yang berbagi berkas tidak rusak.
+
+Pendaftaran publik Academy (`/academy/daftar` dan `/academy-app/daftar`)
+mengarahkan calon peserta menghubungi CS untuk formulir eksternal. Tidak ada
+form pembuatan akun mandiri. Buka/Tutup Pendaftaran pada angkatan hanya menentukan
+informasi penerimaan yang ditampilkan; akun tetap dibuat admin per angkatan melalui
+form admin atau impor Excel. Endpoint lama `POST /api/v1/academy/register` menolak
+pendaftaran mandiri dengan 403, termasuk saat penerimaan angkatan dibuka.
+
+Bobot penilaian ditampilkan pada halaman admin Angkatan, dengan cakupan global
+untuk seluruh angkatan seperti sebelumnya. Pengaturan CS/admin mendukung beberapa
+kontak bernama; kontak pertama tetap menjadi `csPhone` utama untuk klien lama.
+Semua nomor ditampilkan pada halaman pendaftaran dan Kontak. Penyimpanan bobot
+serta kontak dilakukan terpisah tanpa saling menimpa. Tidak memerlukan migration.
+
+Menu samping peserta pada PWA mobile hanya memuat navigasi tambahan. Beranda,
+Materi, Ujian, dan Profil tersedia melalui navigasi bawah. Sidebar desktop,
+versi web tanpa navigasi bawah, serta menu pengajar/admin tetap lengkap.

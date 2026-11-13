@@ -40,7 +40,7 @@ class ParticipantController
 
     public function registerAcademy(Request $request)
     {
-        return $this->create($request, 'academy', true);
+        abort(403, 'Pendaftaran akun Academy dikelola admin. Hubungi CS untuk formulir pendaftaran peserta.');
     }
 
     private function create(Request $request, string $module, bool $public)

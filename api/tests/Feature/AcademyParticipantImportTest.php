@@ -38,8 +38,8 @@ it('imports accounts and cohort learning access with hashed temporary passwords'
         $user = User::where('code', $account['code'])->firstOrFail();
         $profile = ZakatAcademyProfile::where('user_id', $user->id)->firstOrFail();
         expect($account['code'])->toBe('PAZ00'.($index + 1))
-            ->and($account['password'])->toBe('12345678')
-            ->and(Hash::check('12345678', $user->password_hash))->toBeTrue()
+            ->and($account['password'])->toBe('1234567890')
+            ->and(Hash::check('1234567890', $user->password_hash))->toBeTrue()
             ->and($profile->mustChangePassword)->toBeTrue()
             ->and($profile->phone)->toBe('628123456789'.$index)
             ->and($profile->address)->toBe($this->payload['rows'][$index]['address'])

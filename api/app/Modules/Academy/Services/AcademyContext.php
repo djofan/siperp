@@ -68,9 +68,13 @@ class AcademyContext
 
     public function settings(): array
     {
-        $values = ZakatAcademySetting::whereIn('key', ['cs_phone', 'daily_weight', 'weekly_weight', 'final_weight'])->pluck('value', 'key');
+        $values = ZakatAcademySetting::whereIn('key', ['cs_phone', 'cs_contacts', 'daily_weight', 'weekly_weight', 'final_weight'])->pluck('value', 'key');
 
-        return ['csPhone' => $values['cs_phone'] ?? '628111186626', 'weights' => ['DAILY' => (int) ($values['daily_weight'] ?? 20), 'WEEKLY' => (int) ($values['weekly_weight'] ?? 30), 'FINAL' => (int) ($values['final_weight'] ?? 50)]];
+        $phone = $values['cs_phone'] ?? '628111186626';
+        $contacts = json_decode($values['cs_contacts'] ?? 'null', true);
+        if (! is_array($contacts) || ! $contacts) $contacts = [['name' => 'CS Academy', 'phone' => $phone]];
+
+        return ['csContacts' => $contacts, 'csPhone' => $phone, 'weights' => ['DAILY' => (int) ($values['daily_weight'] ?? 20), 'WEEKLY' => (int) ($values['weekly_weight'] ?? 30), 'FINAL' => (int) ($values['final_weight'] ?? 50)]];
     }
 
     public function weighted(array $quizzes, array $attempts, ?array $weights = null): array

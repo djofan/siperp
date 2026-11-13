@@ -31,3 +31,13 @@ test('optional PDF inputs preserve an actual document and omit empty replacement
   assert.equal(file.name, 'modul.pdf');
   assert.equal(await file.text(), '%PDF-1.4');
 });
+
+test('PDF removals preserve every selected ID alongside a replacement upload', () => {
+  const form = new FormData();
+  form.append('removePdfIds[]', 'first-pdf');
+  form.append('removePdfIds[]', 'second-pdf');
+  form.set('pdfFile', new File(['%PDF-1.4'], 'replacement.pdf', { type: 'application/pdf' }));
+  const prepared = prepareMaterialForm(form);
+  assert.deepEqual(prepared.getAll('removePdfIds[]'), ['first-pdf', 'second-pdf']);
+  assert.equal(prepared.get('pdfFile').name, 'replacement.pdf');
+});
