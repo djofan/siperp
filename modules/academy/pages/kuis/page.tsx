@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAcademyParticipant } from "../../api/access";
 import { listParticipantQuizzes, type ListParticipantQuizzesResult } from "../../api/courses";
 import { learnerCohorts } from "../../api/learner-cohorts";
-import { PageHeading, EmptyState } from "../../components/ui";
+import { PageHeading, EmptyState, inputClass } from "../../components/ui";
 
 const dateFormat = new Intl.DateTimeFormat("id-ID", {
   weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta",
@@ -23,11 +23,16 @@ function ExamSchedule({ label, date }: { label: string; date: Date | null }) {
   </div>;
 }
 
-export default async function ExamsPage() {
+export default async function ExamsPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
+  const query = await searchParams;
+  const q = (query.q ?? "").slice(0, 100);
+  const status = query.status === "completed" || query.status === "pending" ? query.status : "";
   const user = await requireAcademyParticipant();
   const cohorts = user.academyProfile ? (await learnerCohorts()).filter(item => item.joined) : [];
   const cohort = cohorts.find(item => item.current)?.id ?? cohorts[0]?.id ?? "";
-  const quizzes = user.academyProfile ? await listParticipantQuizzes(user.academyProfile.id, cohort) : [];
+  const allQuizzes = user.academyProfile ? await listParticipantQuizzes(user.academyProfile.id, cohort) : [];
+  const quizzes = allQuizzes.filter(quiz => quiz.title.toLocaleLowerCase("id-ID").includes(q.toLocaleLowerCase("id-ID")) && (!status || quiz.attempts.some(attempt => attempt.isCompleted) === (status === "completed")));
+  const back = `/academy/kuis?${new URLSearchParams({ q, status })}`;
   const categories = [
     { kind: "DAILY", title: "Ujian Harian" },
     { kind: "WEEKLY", title: "Ujian Pekanan" },
@@ -58,7 +63,7 @@ export default async function ExamsPage() {
       <h3 className="mt-2 break-words text-base font-semibold leading-6">{quiz.title}</h3>
       <p className="mt-2 text-sm text-gray-500">{quiz._count.questions} soal <span aria-hidden="true">·</span> {quiz.timeLimitMinutes} menit</p>
       <dl className="my-4 grid gap-3 border-t border-gray-100 pt-4"><ExamSchedule label="Berakhir" date={quiz.closesAt} /></dl>
-      <Link href={`/academy/kuis/${quiz.id}`} className="mt-auto flex min-h-11 items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-center text-sm font-semibold text-green-700 hover:bg-green-100">
+      <Link href={`/academy/kuis/${quiz.id}?back=${encodeURIComponent(back)}`} className="mt-auto flex min-h-11 items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-center text-sm font-semibold text-green-700 hover:bg-green-100">
         {done ? "Lihat hasil ujian" : "Lihat ujian"} →
       </Link>
     </article>;
@@ -66,7 +71,8 @@ export default async function ExamsPage() {
 
   return <div className="mx-auto max-w-5xl p-4 md:p-8">
     <PageHeading title="Ujian">Kerjakan ujian untuk menguji pemahamanmu.</PageHeading>
-    {!quizzes.length && <EmptyState>Ujian belum dipublikasikan pengajar.</EmptyState>}
+    <form className="mb-5 flex flex-wrap items-end gap-3"><label className="min-w-0 basis-full text-sm sm:flex-1 sm:basis-auto">Cari ujian<input name="q" maxLength={100} defaultValue={q} className={inputClass}/></label><label className="text-sm">Status<select name="status" defaultValue={status} className={inputClass}><option value="">Semua status</option><option value="pending">Belum dikerjakan</option><option value="completed">Selesai</option></select></label><button className="min-h-11 rounded-xl bg-green-700 px-4 py-3 text-sm text-white">Terapkan</button></form>
+    {!quizzes.length && <EmptyState>{q || status ? "Tidak ada ujian yang sesuai filter." : "Ujian belum dipublikasikan pengajar."}</EmptyState>}
     {quizzes.length > 0 && <section className="min-w-0 sm:hidden" aria-label="Daftar ujian berdasarkan tenggat">
       <p className="mb-3 text-sm text-gray-500">Ujian yang belum selesai dengan tenggat terdekat ditampilkan lebih dahulu. Geser untuk melihat ujian lainnya.</p>
       <div tabIndex={0} aria-label="Kartu ujian, geser ke samping" className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">

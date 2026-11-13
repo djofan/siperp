@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedWork } from "../useUnsavedWork";
 import { useActionState, useId, useState, type ReactNode } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { FormField, Input, Select } from "@/modules/academy/components/ui/FieldCompat";
@@ -17,17 +18,20 @@ type Values = {
   releaseDay?: number;
 };
 
-export function QuizForm({ action, initial, creating = false, chapterField, chapters, questionCount, scopeLabel, withQuestions = false, questions }: {
+export function QuizForm({ action, initial, creating = false, chapterField, chapters, questionCount, scopeLabel, withQuestions = false, questions, returnTo }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: Values; creating?: boolean; chapterField?: ReactNode; withQuestions?: boolean; questions?: QuestionValues[];
-  questionCount?: number; scopeLabel?: string;
+  returnTo?: string; questionCount?: number; scopeLabel?: string;
   chapters?: { id: string; title: string; course: { id: string; title: string } }[];
 }) {
   const [review, setReview] = useState<Record<string, string> | null>(null);
+  const work = useUnsavedWork();
   const [state, formAction, pending] = useActionState(async (previous: ActionState, form: FormData) => {
     const activate = form.get("intent") === "activate";
     form.set("isActive", activate ? "on" : "");
     form.set("isPublished", activate ? "on" : "");
+    const version = work.snapshot();
     const result = await action(previous, form);
+    if (!result.error) work.markSaved(version);
     setReview(null);
     return result;
   }, { error: "" });
@@ -37,7 +41,7 @@ export function QuizForm({ action, initial, creating = false, chapterField, chap
   const [questionRows, setQuestionRows] = useState(() => (questions?.length ? questions : [undefined]).map((initial, index) => ({ key: index, initial })));
   const [nextQuestionKey, setNextQuestionKey] = useState(questionRows.length);
   const prefix = useId();
-  return <form action={formAction} onSubmit={event => {
+  return <form onReset={work.preventDraftReset} onChange={work.markChanged} action={formAction} onSubmit={event => {
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     if (submitter?.value !== "activate" || review) return;
     event.preventDefault();
@@ -55,6 +59,9 @@ export function QuizForm({ action, initial, creating = false, chapterField, chap
       close: String(fields.get("closesAt") ?? "").replace("T", " ") || "Tanpa batas tutup; pembahasan tetap terkunci",
     });
   }} className={panelClasses("space-y-5 p-5 sm:p-6")}>
+    {work.offline && <p role="alert">Anda sedang offline. Perubahan belum dikirim ke server.</p>}
+    {(work.status || pending) && <p role="status" className="text-xs text-gray-600">{pending ? "Sedang mengirim ke server…" : work.status}</p>}
+    {returnTo && <input type="hidden" name="back" value={returnTo}/>}
     {!chapters && chapterField}
     <input type="hidden" name="passingScore" value={values.passingScore} />
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}

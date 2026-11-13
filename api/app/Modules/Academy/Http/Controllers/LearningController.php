@@ -15,9 +15,11 @@ use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class LearningController
 {
@@ -84,7 +86,7 @@ class LearningController
     {
         $this->context->profile($request);
         if (array_diff(array_keys($request->all()), ['name', 'email', 'phone', 'address'])) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
+            throw ValidationException::withMessages([
                 'profile' => 'Hanya nama, email, nomor HP, dan alamat yang dapat diubah.',
             ]);
         }
@@ -113,7 +115,7 @@ class LearningController
                 abort_if($profile->mustChangePassword, 403, 'Ganti password awal sebelum melanjutkan.');
                 if (array_key_exists('email', $data)) {
                     if (User::whereRaw('LOWER(email) = ?', [$data['email']])->where('id', '!=', $user->id)->exists()) {
-                        throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+                        throw ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
                     }
                     $user->email = $data['email'];
                 }
@@ -123,12 +125,31 @@ class LearningController
                 $profile->address = $data['address'];
                 $profile->save();
             }, 3);
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+        } catch (UniqueConstraintViolationException $exception) {
+            throw ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
         }
         $request->user()->refresh();
 
         return $this->account($request);
+    }
+
+    public function visit(Request $request, string $lessonId)
+    {
+        $profile = $this->context->profile($request);
+        DB::transaction(function () use ($profile, $lessonId) {
+            $profile->newQuery()->whereKey($profile->id)->lockForUpdate()->firstOrFail();
+            $this->context->lesson($lessonId, $profile->id);
+            $row = Progress::where('profile_id', $profile->id)->where('lesson_id', $lessonId)->first() ?? new Progress;
+            $row->profileId = $profile->id;
+            $row->lessonId = $lessonId;
+            if (! $row->exists) {
+                $row->completed = false;
+            }
+            $row->updatedAt = now();
+            $row->save();
+        }, 3);
+
+        return $this->data(true);
     }
 
     public function mark(Request $request, string $lessonId)
@@ -235,6 +256,29 @@ class LearningController
         $row->startsAt = $date;
         $row->joinUrl = $data['joinUrl'];
         $row->save();
+
+        return $this->data(true);
+    }
+
+    public function updateSession(Request $request, string $id)
+    {
+        $this->context->teacher($request);
+        $data = $request->validate(['title' => 'required|string|max:191', 'startsAt' => 'required|date_format:Y-m-d\TH:i', 'joinUrl' => 'required|url:http,https|max:2048', 'status' => 'required|in:scheduled,completed,cancelled']);
+        DB::transaction(function () use ($id, $data) {
+            $row = LiveSession::whereKey($id)->lockForUpdate()->firstOrFail();
+            $date = CarbonImmutable::createFromFormat('!Y-m-d\TH:i', $data['startsAt'], 'Asia/Jakarta')->utc();
+            abort_unless($this->context->safeUrl($data['joinUrl']), 422, 'Tautan pertemuan tidak valid.');
+            if ($data['status'] === 'scheduled') {
+                abort_unless($date->isFuture() || (! $row->cancelledAt && ! $row->endedAt && $date->equalTo($row->startsAt)), 422, 'Jadwal baru harus berada di masa mendatang.');
+            }
+            abort_if($data['status'] === 'completed' && $date->isFuture(), 422, 'Sesi yang belum dimulai tidak dapat ditandai selesai.');
+            $row->title = $data['title'];
+            $row->startsAt = $date;
+            $row->joinUrl = $data['joinUrl'];
+            $row->cancelledAt = $data['status'] === 'cancelled' ? ($row->cancelledAt ?? now()) : null;
+            $row->endedAt = $data['status'] === 'completed' ? ($row->endedAt ?? now()) : null;
+            $row->save();
+        });
 
         return $this->data(true);
     }

@@ -17,6 +17,7 @@ use App\Modules\Academy\Models\ZakatAcademyQuiz as Quiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt as Attempt;
 use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Academy\Services\AcademyDto;
+use App\Modules\Academy\Services\ProgressService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -116,6 +117,17 @@ class PageDataController
         if ($request->query('view') === 'table') {
             $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
 
+            $filters = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:answered,waiting']);
+            if (! empty($filters['q'])) {
+                $query->where('question', 'like', '%'.$filters['q'].'%');
+            }
+            if (($filters['status'] ?? '') === 'answered') {
+                $query->whereNotNull('answer');
+            }
+            if (($filters['status'] ?? '') === 'waiting') {
+                $query->whereNull('answer');
+            }
+
             return $this->data(['enrollments' => $enrollments, 'questions' => AcademyDto::page($query, (int) ($input['page'] ?? 1), 10)]);
         }
 
@@ -153,6 +165,16 @@ class PageDataController
             if (! empty($input['cohort'])) {
                 $query->whereHas('chapter.course', fn ($q) => $q->where('cohort_id', $input['cohort']));
             }
+            $filters = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:published,draft']);
+            if (! empty($filters['q'])) {
+                $query->where('title', 'like', '%'.$filters['q'].'%');
+            }
+            if (($filters['status'] ?? '') === 'published') {
+                $query->where('is_published', true);
+            }
+            if (($filters['status'] ?? '') === 'draft') {
+                $query->where('is_published', false);
+            }
             $total = (clone $query)->count();
             $lastPage = max(1, (int) ceil($total / 10));
             $page = min((int) ($input['page'] ?? 1), $lastPage);
@@ -185,6 +207,16 @@ class PageDataController
             $query = Quiz::with('chapter.course.cohort')->withCount('questions');
             if (! empty($input['cohort'])) {
                 $query->whereHas('chapter.course', fn ($q) => $q->where('cohort_id', $input['cohort']));
+            }
+            $filters = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:published,draft']);
+            if (! empty($filters['q'])) {
+                $query->where('title', 'like', '%'.$filters['q'].'%');
+            }
+            if (($filters['status'] ?? '') === 'published') {
+                $query->where('is_published', true);
+            }
+            if (($filters['status'] ?? '') === 'draft') {
+                $query->where('is_published', false);
             }
             $total = (clone $query)->count();
             $lastPage = max(1, (int) ceil($total / 10));
@@ -236,7 +268,19 @@ class PageDataController
 
         if ($request->query('view') === 'table') {
             $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
-            $result = AcademyDto::page(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->orderByRaw('CASE WHEN answered_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('created_at')->orderBy('id'), (int) ($input['page'] ?? 1), 10);
+            $query = Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->orderByRaw('CASE WHEN answered_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('created_at')->orderBy('id');
+
+            $filters = $request->validate(['q' => 'nullable|string|max:100', 'status' => 'nullable|in:answered,waiting']);
+            if (! empty($filters['q'])) {
+                $query->where('question', 'like', '%'.$filters['q'].'%');
+            }
+            if (($filters['status'] ?? '') === 'answered') {
+                $query->whereNotNull('answer');
+            }
+            if (($filters['status'] ?? '') === 'waiting') {
+                $query->whereNull('answer');
+            }
+            $result = AcademyDto::page($query, (int) ($input['page'] ?? 1), 10);
 
             return $this->data($result);
         }
@@ -259,6 +303,35 @@ class PageDataController
         $this->context->teacher($request);
 
         return $this->data(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->findOrFail($id));
+    }
+
+    public function teacherProgress(Request $request)
+    {
+        $this->context->teacher($request);
+        $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000', 'cohort' => 'nullable|string|max:191', 'q' => 'nullable|string|max:100']);
+        $query = Enrollment::whereHas('profile', fn ($q) => $q->whereNull('deleted_at')->whereHas('user', fn ($u) => $u->where('is_active', true)))
+            ->with('profile:id,user_id,nis', 'profile.user:id,name', 'course.cohort:id,title');
+        if (! empty($input['cohort'])) {
+            $query->whereHas('course', fn ($q) => $q->where('cohort_id', $input['cohort']));
+        }
+        if (! empty($input['q'])) {
+            $query->whereHas('profile', fn ($q) => $q->where('nis', 'like', '%'.$input['q'].'%')->orWhereHas('user', fn ($u) => $u->where('name', 'like', '%'.$input['q'].'%')));
+        }
+        $total = (clone $query)->count();
+        $pages = max(1, (int) ceil($total / 10));
+        $page = min((int) ($input['page'] ?? 1), $pages);
+        $items = $query->orderBy('id')->skip(($page - 1) * 10)->take(10)->get()->map(function ($enrollment) {
+            $progress = app(ProgressService::class)->forEnrollment($enrollment);
+
+            return ['id' => $enrollment->id, 'name' => $enrollment->profile->user->name, 'nis' => $enrollment->profile->nis,
+                'cohortTitle' => $enrollment->course->cohort?->title ?? $enrollment->course->title,
+                'completedLessons' => $progress['completedLessons'], 'totalLessons' => $progress['totalLessons'],
+                'pendingExams' => max(0, $progress['totalQuizzes'] - $progress['completedQuizzes']),
+                'score' => $progress['grading']['score'], 'percent' => $progress['percent']];
+        });
+
+        return $this->data(['items' => $items, 'page' => $page, 'pages' => $pages, 'total' => $total,
+            'cohorts' => Cohort::orderBy('title')->get(['id', 'title'])]);
     }
 
     public function teacherGrades(Request $request)

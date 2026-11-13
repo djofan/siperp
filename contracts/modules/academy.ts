@@ -160,6 +160,8 @@ export interface AcademyLiveSession {
   courseId: string;
   title: string;
   startsAt: Date;
+  cancelledAt: Date | null;
+  endedAt: Date | null;
   joinUrl: string;
 }
 
@@ -257,8 +259,14 @@ export type ParticipantDiscussion = Omit<AcademyTeacherDiscussion, "profile">;
 export interface AcademyTeacherSessionList {
   courses: { id: string; title: string; cohort: { id: string; title: string } | null }[];
   sessions: {
-    items: { id: string; title: string; startsAt: string; joinUrl: string;
+    items: { id: string; title: string; startsAt: string; joinUrl: string; cancelledAt: string | null; endedAt: string | null;
       course: { title: string; cohort: { id: string; title: string } | null } }[];
     page: number; pages: number; total: number;
   };
+}
+
+export interface AcademyTeacherProgress {
+  items: { id: string; name: string; nis: string | null; cohortTitle: string;
+    completedLessons: number; totalLessons: number; pendingExams: number; score: number; percent: number }[];
+  page: number; pages: number; total: number; cohorts: { id: string; title: string }[];
 }

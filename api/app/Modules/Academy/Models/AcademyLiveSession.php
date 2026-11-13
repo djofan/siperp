@@ -17,9 +17,9 @@ class AcademyLiveSession extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['courseId' => 'course_id', 'startsAt' => 'starts_at', 'joinUrl' => 'join_url'];
+    protected array $fieldMap = ['courseId' => 'course_id', 'startsAt' => 'starts_at', 'joinUrl' => 'join_url', 'cancelledAt' => 'cancelled_at', 'endedAt' => 'ended_at'];
 
-    protected $casts = ['starts_at' => 'immutable_datetime'];
+    protected $casts = ['starts_at' => 'immutable_datetime', 'cancelled_at' => 'immutable_datetime', 'ended_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 

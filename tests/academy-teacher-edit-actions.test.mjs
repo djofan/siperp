@@ -12,7 +12,7 @@ const participantExam = fs.readFileSync("modules/academy/pages/kuis/[quizId]/pag
 const adminLayout = fs.readFileSync("modules/academy/admin/pages/layout.tsx", "utf8");
 
 test("teacher exam table exposes separate edit and question management actions", () => {
-  assert.match(list, /\?edit=ujian#edit-ujian/);
+  assert.match(list, /\?edit=ujian&back=/);
   assert.match(list, />Edit ujian<\/Link>/);
   assert.match(list, /#daftar-soal/);
   assert.match(list, />Kelola soal<\/Link>/);
@@ -27,8 +27,9 @@ test("teacher question table exposes an edit action and opens the selected form"
 });
 
 test("successful material and exam saves return to their tables with a notification", () => {
-  assert.match(actions, /redirect\(`\/academy\/pengajar\/materi\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)/);
-  assert.match(actions, /redirect\(`\/academy\/pengajar\/ujian\?saved=\$\{id \? "updated" : "created"\}&visibility=.+`\)/);
+  assert.match(actions, /listReturn\("\/academy\/pengajar\/materi", form.get\("back"\)\)/);
+  assert.match(actions, /listReturn\("\/academy\/pengajar\/ujian", form.get\("back"\)\)/);
+  assert.match(actions, /visibility=/);
   assert.match(materials, /Materi berhasil dibuat\./);
   assert.match(materials, /Materi berhasil diperbarui\./);
   assert.match(list, /Ujian berhasil dibuat\./);
@@ -42,8 +43,8 @@ test("academy navigation highlights aliased detail routes and keeps the top bar 
   assert.match(chrome, /\/admin\/academy\/program\/.*\/admin\/academy\/kuis/);
   assert.match(chrome, /\/admin\/academy\/program.*\/admin\/academy\/materi/);
   assert.match(chrome, /\/academy\/program\/.*\/academy\/materi/);
-  assert.match(adminLayout, /href: "\/admin\/academy\/materi", label: "Program & Materi"/);
-  assert.doesNotMatch(adminLayout, /href: "\/admin\/academy\/program", label: "Program & Materi"/);
+  assert.match(adminLayout, /href: "\/admin\/academy\/materi", label: "Materi"/);
+  assert.doesNotMatch(adminLayout, /href: "\/admin\/academy\/program", label: "Materi"/);
   assert.doesNotMatch(chrome, />Website /);
   assert.doesNotMatch(logout, /Ubah password/);
   assert.match(participantExam, /Kembali ke daftar ujian/);

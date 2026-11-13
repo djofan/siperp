@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { listReturn } from "../modules/academy/list-navigation.ts";
 
 function load(fail = false, participant = false) {
   let path;
@@ -10,6 +11,7 @@ function load(fail = false, participant = false) {
   class ApiError extends Error {}
   const source = ts.transpileModule(fs.readFileSync(participant ? "modules/academy/api/discussion-actions.ts" : "modules/academy/api/teacher-actions.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
   vm.runInNewContext(source, { module, exports: module.exports, Math, String, revalidatePath() {}, require(name) {
+    if (name === "../list-navigation") return { listReturn };
     if (name === "@/lib/api") return { ApiError, apiRequest: async (url, options) => { path = [url, options.method]; if (fail) throw new ApiError("Jawaban gagal"); return true; } };
     if (name === "next/cache") return { revalidatePath() {} };
     if (name === "next/navigation") return { redirect(url) { throw Object.assign(new Error("redirect"), { url }); } };
@@ -39,4 +41,17 @@ test("participant submission failure keeps its form error", async () => {
   const loaded = load(true, true);
   const form = new FormData(); form.set("courseId", "course-id");
   assert.equal((await loaded.answer({ error: "" }, form)).error, "Jawaban gagal");
+});
+
+test("teacher answer retains safe search and status filters after saving", async () => {
+  const loaded = load();
+  const form = new FormData(); form.set("back", "/academy/pengajar/pertanyaan?q=audio&status=waiting&page=2");
+  await assert.rejects(loaded.answer("id", 2, { error: "" }, form), error => error.url === "/academy/pengajar/pertanyaan?q=audio&status=waiting&page=2&saved=1");
+});
+test("list return URLs reject external and different routes and omit unrelated params", () => {
+ const base = "/academy/pengajar/pertanyaan";
+ assert.equal(listReturn(base, "https://evil.example/academy/pengajar/pertanyaan"), base);
+ assert.equal(listReturn(base, "//evil.example/academy/pengajar/pertanyaan"), base);
+ assert.equal(listReturn(base, "/admin?x=1"), base);
+ assert.equal(listReturn(base, base + "?q=audio&status=waiting&page=2&token=secret"), base + "?q=audio&status=waiting&page=2");
 });

@@ -69,3 +69,14 @@
 }
 
 .academy-workspace[role="dialog"] { background: var(--academy-green); }
+
+/* Keep wide data inside its own scroller, and leave touch targets usable. */
+@media (max-width: 640px) {
+  .academy-workspace main { min-width: 0; }
+  .academy-workspace form label { max-width: 100%; }
+  .academy-workspace input:not([type="checkbox"]):not([type="radio"]),
+  .academy-workspace select, .academy-workspace textarea { font-size: 16px; }
+  .academy-workspace button, .academy-workspace summary { min-height: 44px; }
+  .academy-workspace nav { flex-wrap: wrap; }
+  .academy-workspace .overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
+}

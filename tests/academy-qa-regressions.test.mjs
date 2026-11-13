@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url);
 const ts = require('typescript');
 const participant = { isSuperadmin: false, isTeacher: false, moduleAccess: [], academyProfile: { mustChangePassword: false } };
 
-test('material list and editors highlight Program & Materi instead of Dashboard', async () => {
+test('material list and editors highlight Materi instead of Dashboard', async () => {
   function compile(file, overrides) {
     const exports = {};
     const source = ts.transpileModule(readFileSync(file, 'utf8'), {
@@ -42,7 +42,7 @@ test('material list and editors highlight Program & Materi instead of Dashboard'
     assert.ok(links.length > 0, pathname);
     for (const link of links) assert.equal(link.props.href, '/admin/academy/materi', pathname);
     const header = nodes(tree).find(node => node.type === 'header');
-    assert.ok(nodes(header).some(node => node.type === 'span' && node.props.children === 'Program & Materi'), pathname);
+    assert.ok(nodes(header).some(node => node.type === 'span' && node.props.children === 'Materi'), pathname);
   }
   pathname = '/admin/academy';
   const dashboard = DashboardChrome({ ...layout.props, role: 'Admin' });

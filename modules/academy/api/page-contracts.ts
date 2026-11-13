@@ -221,6 +221,8 @@ export type AcademyPage5 = {
                 startsAt: Date;
                 courseId: string;
                 joinUrl: string;
+                cancelledAt: string | null;
+                endedAt: string | null;
             }[];
         };
     }[] | {
@@ -233,6 +235,8 @@ export type AcademyPage5 = {
                 startsAt: Date;
                 courseId: string;
                 joinUrl: string;
+                cancelledAt: string | null;
+                endedAt: string | null;
             }[];
         };
     }[];

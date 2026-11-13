@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedWork } from "../useUnsavedWork";
 import { useActionState, useId, useState } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { FormField } from "@/modules/academy/components/ui/FieldCompat";
@@ -10,8 +11,9 @@ import { QuestionMedia } from "../QuestionMedia";
 export type QuestionValues = { id?: string; question: string; explanation?: string | null; order: number; type?: string; weight?: number; mediaMime?: string | null; mediaName?: string | null; mediaAlt?: string | null; options: QuizOptionInput[] };
 
 export function QuestionForm({ action, initial }: { action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: QuestionValues }) {
- const [state, formAction, pending] = useActionState(action, { error: "" });
- return <form action={formAction} className="space-y-5">{state.error && <p role="alert">{state.error}</p>}{state.message && <p role="status">{state.message}</p>}<QuestionFields initial={initial} pending={pending} /><Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : "Simpan pertanyaan"}</Button></form>;
+ const work = useUnsavedWork();
+  const [state, formAction, pending] = useActionState(async (previous: ActionState, data: FormData) => { const version = work.snapshot(); const result = await action(previous, data); if (!result.error) work.markSaved(version); return result; }, { error: "" });
+ return <form onReset={work.preventDraftReset} onChange={work.markChanged} action={formAction} className="space-y-5">{work.offline && <p role="alert">Anda sedang offline. Perubahan belum dikirim ke server.</p>}{(work.status || pending) && <p role="status" className="text-xs text-gray-600">{pending ? "Sedang mengirim ke server…" : work.status}</p>}{state.error && <p role="alert">{state.error}</p>}{state.message && <p role="status">{state.message}</p>}<QuestionFields initial={initial} pending={pending} /><Button type="submit" disabled={pending}>{pending ? "Menyimpan…" : "Simpan pertanyaan"}</Button></form>;
 }
 export function QuestionFields({ initial, pending = false, namePrefix }: { initial?: QuestionValues; pending?: boolean; namePrefix?: string }) {
   const [question, setQuestion] = useState(initial?.question ?? "");

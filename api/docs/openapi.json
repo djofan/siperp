@@ -2114,7 +2114,7 @@
       },
       "get": {
         "summary": "List teacher materials with cohort filter and server pagination",
-        "description": "Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page.",
+        "description": "Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page. Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.",
         "parameters": [
           {
             "name": "view",
@@ -2141,6 +2141,25 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100000
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "published",
+                "draft"
+              ]
             }
           }
         ],
@@ -2361,7 +2380,7 @@
     "/api/v1/academy/teacher/quizzes": {
       "get": {
         "summary": "List teacher exams with cohort filtering and pagination",
-        "description": "Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table.",
+        "description": "Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table. Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.",
         "parameters": [
           {
             "name": "view",
@@ -2388,6 +2407,25 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100000
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "published",
+                "draft"
+              ]
             }
           }
         ],
@@ -2809,7 +2847,7 @@
     "/api/v1/academy/materials": {
       "get": {
         "summary": "List published materials within the viewer cohort access",
-        "description": "sort=latest orders by creation time descending then ID; default keeps curriculum ordering. Existing publication, membership and module checks remain. Returns items, total, page, pages.",
+        "description": "sort=latest orders by creation time descending then ID; default keeps curriculum ordering. Existing publication, membership and module checks remain. Returns items, total, page, pages. Each item has completed boolean from the authenticated viewer only. resume is null or id/title of own last unfinished accessible lesson. status=completed/unread filters own completion. search filters title.",
         "parameters": [
           {
             "name": "sort",
@@ -2834,6 +2872,25 @@
             "in": "query",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "completed",
+                "unread"
+              ]
             }
           }
         ],
@@ -2867,7 +2924,7 @@
     "/api/v1/academy/teacher/questions": {
       "get": {
         "summary": "List teacher discussions with pagination",
-        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table.",
+        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.",
         "parameters": [
           {
             "name": "view",
@@ -2886,6 +2943,25 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100000
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "waiting",
+                "answered"
+              ]
             }
           }
         ],
@@ -3000,7 +3076,7 @@
     "/api/v1/academy/learning/discussions": {
       "get": {
         "summary": "List own participant discussions",
-        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise.",
+        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise. Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.",
         "parameters": [
           {
             "name": "view",
@@ -3019,6 +3095,25 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100000
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "waiting",
+                "answered"
+              ]
             }
           }
         ],
@@ -6848,6 +6943,249 @@
             }
           },
           "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/teacher/progress": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Teacher learner progress overview",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Teacher/admin only. Active nondeleted enrolled learners, 10/page. Reuses the ERP grade policy. items contain id, name, nis, cohortTitle, completedLessons, totalLessons, pendingExams, score and percent. No contacts or answer keys. Returns cohorts selector metadata, page, pages and total.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "cohort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private progress summary"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/teacher/sessions/{id}": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Edit or change live session status",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Teacher/admin only. Full update. status scheduled/completed/cancelled. New or reopened schedule must be future WIB; an existing ongoing schedule can keep its original time. Completing before the supplied start is rejected. Cancellation and completion retain history using cancelledAt and endedAt nullable UTC timestamps, also returned in participant schedules. No hard deletion.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "startsAt",
+                  "joinUrl",
+                  "status"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "startsAt": {
+                    "type": "string",
+                    "description": "WIB YYYY-MM-DDTHH:mm"
+                  },
+                  "joinUrl": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "completed",
+                      "cancelled"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session updated"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/academy/lessons/{lessonId}/visits": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Record own last lesson visit",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Participant only; requires enrollment and released published material. Updates own progress timestamp without clearing completion or audio position. Idempotent progress row; no private history exposed to other participants.",
+        "parameters": [
+          {
+            "name": "lessonId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visit recorded"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
             "description": "Request rejected",
             "content": {
               "application/json": {

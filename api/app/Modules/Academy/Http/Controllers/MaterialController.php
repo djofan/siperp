@@ -6,6 +6,7 @@ use App\Modules\Academy\Models\ZakatAcademyChapter as Chapter;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment as Enrollment;
 use App\Modules\Academy\Models\ZakatAcademyLesson as Lesson;
+use App\Modules\Academy\Models\ZakatAcademyLessonProgress as Progress;
 use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademyQuiz as Quiz;
 use App\Modules\Academy\Services\AcademyContext;
@@ -37,7 +38,12 @@ class MaterialController
         if ($admin) {
             $this->context->admin($request);
         }
+        $profileId = $admin ? null : Profile::where('user_id', ($request->user() ?? auth('sanctum')->user())?->id)->whereNull('deleted_at')->value('id');
         $query = $admin ? Lesson::query() : $this->published($request);
+        if (! $admin && in_array($request->input('status'), ['completed', 'unread'], true)) {
+            $method = $request->input('status') === 'completed' ? 'whereHas' : 'whereDoesntHave';
+            $query->$method('lessonProgress', fn ($q) => $q->where('profile_id', $profileId ?? '')->where('completed', true));
+        }
         if ($request->input('cohort') === 'unassigned' && $admin) {
             $query->whereHas('chapter.course', fn ($c) => $c->whereNull('cohort_id'));
         } elseif ($request->filled('cohort')) {
@@ -68,7 +74,19 @@ class MaterialController
             return response()->json(['data' => ['items' => $items, 'total' => $items->count(), 'page' => 1, 'pages' => 1, 'nextOrder' => $nextOrder]]);
         }
 
-        return response()->json(['data' => AcademyDto::page($query, (int) $request->input('page', 1)) + ['nextOrder' => $nextOrder]]);
+        $data = AcademyDto::page($query, (int) $request->input('page', 1)) + ['nextOrder' => $nextOrder];
+        if (! $admin) {
+            $completed = Progress::where('profile_id', $profileId ?? '')->where('completed', true)->whereIn('lesson_id', $data['items']->pluck('id'))->pluck('lesson_id')->all();
+            $data['items'] = $data['items']->map(fn ($item) => $item + ['completed' => in_array($item['id'], $completed, true)]);
+            // Resume only an accessible published lesson from this learner's own history.
+            $recent = Progress::where('profile_id', $profileId ?? '')->where('completed', false)
+                ->whereIn('lesson_id', $this->published($request)->select((new Lesson)->qualifyColumn('id')))
+                ->orderByDesc('updated_at')->value('lesson_id');
+            $resume = $recent ? $this->published($request)->find($recent) : null;
+            $data['resume'] = $resume ? ['id' => $resume->id, 'title' => $resume->title] : null;
+        }
+
+        return response()->json(['data' => $data]);
     }
 
     public function adminIndex(Request $request)

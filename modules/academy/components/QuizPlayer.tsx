@@ -1,4 +1,5 @@
 "use client";
+import { useUnsavedWork } from "./useUnsavedWork";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { finishQuiz } from "../api/actions";
@@ -15,6 +16,8 @@ export function QuizPlayer({ attemptId, remainingSeconds, questions, responses }
   const [answers, setAnswers] = useState(responses);
   const [seconds, setSeconds] = useState(remainingSeconds);
   const [submitting, setSubmitting] = useState(false);
+  const work = useUnsavedWork(submitting);
+  const { markSaved } = work;
   const [error, setError] = useState("");
   const [incomplete, setIncomplete] = useState<number[]>([]);
   const deadline = useRef<number | null>(null);
@@ -30,12 +33,12 @@ export function QuizPlayer({ attemptId, remainingSeconds, questions, responses }
     try {
       const result = await finishQuiz(attemptId, answersRef.current);
       if (result.error) throw new Error(result.error);
-      router.replace(result.href); router.refresh();
+      markSaved(); router.replace(result.href); router.refresh();
     } catch (error) {
       setError(error instanceof Error ? error.message : "Gagal mengumpulkan jawaban. Coba lagi.");
       submitStarted.current = false; setSubmitting(false);
     }
-  }, [attemptId, questions, router]);
+  }, [attemptId, questions, router, markSaved]);
 
   useEffect(() => {
     deadline.current ??= Date.now() + remainingSeconds * 1000;
@@ -49,7 +52,7 @@ export function QuizPlayer({ attemptId, remainingSeconds, questions, responses }
 
   function selectAnswer(questionId: string, optionId: string | string[]) {
     if (submitting || seconds <= 0) return;
-    setError(""); setIncomplete([]);
+    work.markChanged(); setError(""); setIncomplete([]);
     setAnswers((previous) => {
       const next = { ...previous };
       if (selectedOptions(optionId).length) next[questionId] = optionId;
@@ -60,6 +63,7 @@ export function QuizPlayer({ attemptId, remainingSeconds, questions, responses }
   }
 
   return <div>
+    {work.offline && <p role="alert" className="mb-4 rounded-xl bg-amber-50 p-4 text-sm">Anda sedang offline. Jawaban masih di halaman ini dan belum terkirim. Waktu ujian tetap berjalan; sambungkan internet sebelum mengumpulkan. Jangan tutup atau muat ulang halaman.</p>}
     <div className="sticky top-0 z-10 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-lazsip-primary-200 bg-lazsip-cream p-4"><p className="text-sm">{Object.values(answers).filter(value => selectedOptions(value).length).length}/{questions.length} terjawab</p><p role="timer" className="font-mono text-lg font-bold">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</p><p role="status" className="text-xs">Jawaban disimpan saat dikumpulkan</p></div>
     {error && <p role="alert" className="mb-5 rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}
     <div className="space-y-6">{questions.map((question, index) => <fieldset key={question.id} disabled={submitting || seconds <= 0} className="rounded-2xl border border-lazsip-primary-100 bg-white p-6 disabled:opacity-70"><legend className="max-w-full px-2 font-semibold">{index + 1}. {question.question}</legend><p className="mt-2 text-xs text-gray-500">Bobot {question.weight ?? 1} · {question.type === "MULTIPLE" ? "Pilih semua jawaban yang benar" : "Pilih satu jawaban"}</p><QuestionMedia question={question} className="mt-4"/><div className="mt-3 space-y-3">{question.options.map((option) => <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-lazsip-primary-100 p-4 text-sm leading-6 hover:bg-lazsip-primary-50"><input className="mt-1 accent-lazsip-primary-700" type={question.type === "MULTIPLE" ? "checkbox" : "radio"} name={question.id} value={option.id} checked={selectedOptions(answers[question.id]).includes(option.id)} onChange={() => { const selected = selectedOptions(answers[question.id]); selectAnswer(question.id, question.type === "MULTIPLE" ? selected.includes(option.id) ? selected.filter(id => id !== option.id) : [...selected, option.id] : option.id); }} />{option.label}</label>)}</div></fieldset>)}</div>

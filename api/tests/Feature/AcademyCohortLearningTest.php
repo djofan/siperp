@@ -406,3 +406,58 @@ it('creates live sessions in WIB and shows them only to enrolled participants', 
     Sanctum::actingAs($foreign->user);
     $this->getJson('/api/v1/academy/learning/discussions?view=table')->assertJsonCount(0, 'data.enrollments.0.course.sessions');
 });
+
+it('keeps completion and last visit private and preserves completed lessons on repeat visits', function () {
+    $chapter = DB::transaction(fn () => app(CohortLearning::class)->container($this->first->id));
+    $chapter->course->forceFill(['startsAt' => now()->subDays(2)])->save();
+    $lesson = new ZakatAcademyLesson;
+    $lesson->forceFill(['chapterId' => $chapter->id, 'title' => 'Resume lesson', 'slug' => 'resume-lesson', 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'isPublished' => true, 'order' => 1, 'releaseDay' => 1])->save();
+    $owner = scopedStudent($this->first, 'resume-owner@scope.test');
+    $other = scopedStudent($this->first, 'resume-other@scope.test');
+    Sanctum::actingAs($owner->user);
+    $this->postJson('/api/v1/academy/lessons/'.$lesson->id.'/visits')->assertSuccessful();
+    $this->getJson('/api/v1/academy/materials')->assertJsonPath('data.resume.id', $lesson->id)->assertJsonPath('data.items.0.completed', false);
+    $this->putJson('/api/v1/academy/lessons/'.$lesson->id.'/progress', ['completed' => true])->assertSuccessful();
+    $this->postJson('/api/v1/academy/lessons/'.$lesson->id.'/visits')->assertSuccessful();
+    $this->getJson('/api/v1/academy/materials?status=completed')->assertJsonPath('data.total', 1)->assertJsonPath('data.items.0.completed', true)->assertJsonPath('data.resume', null);
+    $this->getJson('/api/v1/academy/materials?status=unread')->assertJsonPath('data.total', 0);
+    Sanctum::actingAs($other->user);
+    $this->getJson('/api/v1/academy/materials?status=unread')->assertJsonPath('data.total', 1)->assertJsonPath('data.items.0.completed', false)->assertJsonPath('data.resume', null);
+    $this->getJson('/api/v1/academy/teacher/progress')->assertForbidden();
+    Sanctum::actingAs($this->admin);
+    $this->getJson('/api/v1/academy/teacher/progress?cohort='.$this->first->id.'&q='.$owner->nis)->assertSuccessful()->assertJsonPath('data.total', 1)->assertJsonPath('data.items.0.completedLessons', 1)->assertJsonPath('data.items.0.totalLessons', 1)->assertJsonPath('data.items.0.pendingExams', 0)->assertJsonMissingPath('data.items.0.email');
+});
+
+it('updates cancels and completes live sessions with authorization and time checks', function () {
+    $chapter = DB::transaction(fn () => app(CohortLearning::class)->container($this->first->id));
+    $payload = ['title' => 'Sesi pertama', 'startsAt' => now()->addDays(2)->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i'), 'joinUrl' => 'https://meet.google.com/example'];
+    $this->postJson('/api/v1/academy/courses/'.$chapter->courseId.'/sessions', $payload)->assertSuccessful();
+    $row = AcademyLiveSession::firstOrFail();
+    $url = '/api/v1/academy/teacher/sessions/'.$row->id;
+    $this->putJson($url, $payload + ['status' => 'completed'])->assertUnprocessable();
+    $this->putJson($url, array_replace($payload, ['status' => 'cancelled', 'title' => 'Sesi batal']))->assertSuccessful();
+    expect($row->refresh()->cancelledAt)->not->toBeNull()->and($row->endedAt)->toBeNull();
+    $member = scopedStudent($this->first, 'cancel-member@scope.test');
+    Sanctum::actingAs($member->user);
+    $this->getJson('/api/v1/academy/learning/discussions?view=table')->assertJsonPath('data.enrollments.0.course.sessions.0.title', 'Sesi batal');
+    $this->putJson($url, $payload + ['status' => 'scheduled'])->assertForbidden();
+    Sanctum::actingAs($this->admin);
+    $this->putJson($url, array_replace($payload, ['joinUrl' => 'javascript:alert(1)', 'status' => 'scheduled']))->assertUnprocessable();
+    $this->putJson($url, $payload + ['status' => 'scheduled'])->assertSuccessful();
+    expect($row->refresh()->cancelledAt)->toBeNull();
+    $this->putJson($url, array_replace($payload, ['startsAt' => now()->subDay()->setTimezone('Asia/Jakarta')->format('Y-m-d\TH:i'), 'status' => 'completed']))->assertSuccessful();
+    expect($row->refresh()->endedAt)->not->toBeNull()->and($row->cancelledAt)->toBeNull();
+});
+
+it('searches and filters discussions before pagination without leaking other learners questions', function () {
+    $chapter = DB::transaction(fn () => app(CohortLearning::class)->container($this->first->id));
+    $owner = scopedStudent($this->first, 'filter-owner@scope.test');
+    $other = scopedStudent($this->first, 'filter-other@scope.test');
+    foreach ([[$owner, null], [$owner, 'Jawaban'], [$other, null]] as [$profile, $answer]) {
+        (new AcademyDiscussion)->forceFill(['profileId' => $profile->id, 'courseId' => $chapter->courseId, 'question' => 'Pertanyaan filter', 'answer' => $answer])->save();
+    }
+    $this->getJson('/api/v1/academy/teacher/questions?view=table&q=filter&status=waiting')->assertSuccessful()->assertJsonPath('data.total', 2);
+    Sanctum::actingAs($owner->user);
+    $this->getJson('/api/v1/academy/learning/discussions?view=table&q=filter&status=waiting')->assertSuccessful()->assertJsonPath('data.questions.total', 1);
+    $this->getJson('/api/v1/academy/learning/discussions?view=table&q=missing')->assertJsonPath('data.questions.total', 0);
+});

@@ -1,3 +1,4 @@
+import { ListFilters } from "../../../components/ListFilters";
 import Link from "next/link";
 import { TeacherAudioField } from "../../../components/TeacherAudioField";
 import { ChapterSelect } from "../../../components/ChapterSelect";
@@ -16,13 +17,15 @@ export default async function MaterialsPage({ searchParams }: {
   const query = await searchParams;
   const saved = query.saved === "created" ? "Materi berhasil dibuat." : query.saved === "updated" ? "Materi berhasil diperbarui." : null;
   const cohort = typeof query.cohort === "string" ? query.cohort.slice(0, 191) : "";
+  const q = typeof query.q === "string" ? query.q.slice(0, 100) : "";
+  const status = query.status === "draft" || query.status === "published" ? query.status : "";
   const page = Math.max(1, Math.min(100000, Number.parseInt(String(query.page ?? "1"), 10) || 1));
   const data = await academyPage<AcademyTeacherMaterialList>(
-    `academy/teacher/materials?${new URLSearchParams({ view: "table", cohort, page: String(page) })}`,
+    `academy/teacher/materials?${new URLSearchParams({ view: "table", cohort, q, status, page: String(page) })}`,
   );
   const selected = data.items.find(item => item.id === query.edit);
   const href = (target: number, edit?: string) => `/academy/pengajar/materi?${new URLSearchParams({
-    ...(cohort ? { cohort } : {}), page: String(target), ...(edit ? { edit } : {}),
+    ...(cohort ? { cohort } : {}), q, status, page: String(target), ...(edit ? { edit } : {}),
   })}`;
   const fields = (lesson?: AcademyTeacherMaterial) => <>
     <label className="block text-sm">Judul materi<input name="title" required maxLength={191} defaultValue={lesson?.title} className={inputClass}/></label>
@@ -38,23 +41,14 @@ export default async function MaterialsPage({ searchParams }: {
     <details id="tambah-materi" open={query.tambah === "1"} className="mb-6 rounded-2xl border border-gray-100 bg-white p-5">
       <summary className="cursor-pointer font-semibold text-green-700">Tambah materi</summary>
       <MaterialForm action={saveTeacherMaterial.bind(null, null)}>
-        <ChapterSelect chapters={data.chapters}/>{fields()}
+        <input type="hidden" name="back" value={href(data.page)}/><ChapterSelect chapters={data.chapters}/>{fields()}
       </MaterialForm>
     </details>
 
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Daftar materi">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-gray-100 p-5">
         <div><h2 className="font-semibold">Daftar materi</h2><p className="mt-1 text-sm text-gray-500">{data.total} materi ditemukan</p></div>
-        <form method="get" className="flex flex-wrap items-end gap-3">
-          <label className="text-sm">Filter angkatan
-            <select name="cohort" defaultValue={cohort} className={inputClass}>
-              <option value="">Semua angkatan</option>
-              {data.cohorts.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
-            </select>
-          </label>
-          <button className="rounded-xl bg-green-700 px-4 py-3 text-sm font-medium text-white">Terapkan</button>
-          {cohort && <Link href="/academy/pengajar/materi" className="px-2 py-3 text-sm text-gray-600 underline">Reset</Link>}
-        </form>
+        <ListFilters base="/academy/pengajar/materi" q={q} status={status} cohort={cohort} cohorts={data.cohorts}/>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
@@ -87,7 +81,7 @@ export default async function MaterialsPage({ searchParams }: {
     {selected && <section id="edit-materi" key={selected.id} className="mt-6 scroll-mt-24 rounded-2xl border border-gray-200 bg-white p-5">
       <div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="font-semibold">Edit materi: {selected.title}</h2><p className="mt-1 text-sm text-gray-500">{selected.cohortTitle} · {selected.chapterTitle}</p></div><Link href={href(data.page)} className="text-sm text-gray-600 underline">Tutup</Link></div>
       <MaterialForm action={saveTeacherMaterial.bind(null, selected.id)} initialPublished={selected.isPublished}>
-        <input type="hidden" name="chapterId" value={selected.chapterId}/>{fields(selected)}
+        <input type="hidden" name="back" value={href(data.page)}/><input type="hidden" name="chapterId" value={selected.chapterId}/>{fields(selected)}
       </MaterialForm>
       <UploadMaterial lessonId={selected.id}/>
     </section>}

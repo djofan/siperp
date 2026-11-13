@@ -8,6 +8,7 @@ use App\Modules\Academy\Http\Controllers\IntakeController;
 use App\Modules\Academy\Http\Controllers\LearningController;
 use App\Modules\Academy\Http\Controllers\MaterialController;
 use App\Modules\Academy\Http\Controllers\PageDataController;
+use App\Modules\Academy\Http\Controllers\ParticipantImportController;
 use App\Modules\Academy\Http\Controllers\QuizController;
 use App\Modules\Academy\Http\Controllers\TeacherController;
 use App\Modules\Core\Http\Controllers\ParticipantController;
@@ -46,7 +47,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
     Route::get('admin/intake', [$pages, 'intake']);
-    Route::post('admin/participant-imports', [App\Modules\Academy\Http\Controllers\ParticipantImportController::class, 'store']);
+    Route::post('admin/participant-imports', [ParticipantImportController::class, 'store']);
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
@@ -63,7 +64,9 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('teacher/quizzes/{id}', [$pages, 'teacherQuiz']);
     Route::get('teacher/questions', [$pages, 'teacherQuestions']);
     Route::get('teacher/sessions', [$pages, 'teacherSessions']);
+    Route::put('teacher/sessions/{id}', [LearningController::class, 'updateSession']);
     Route::get('teacher/questions/{id}', [$pages, 'teacherQuestion']);
+    Route::get('teacher/progress', [$pages, 'teacherProgress']);
     Route::get('teacher/grades', [$pages, 'teacherGrades']);
     Route::get('teacher/support', [$pages, 'support']);
     $teacher = TeacherController::class;
@@ -79,6 +82,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/quizzes', [CourseController::class, 'quizzes']);
     Route::get('learning/rankings', [CourseController::class, 'rankings']);
     Route::post('courses/{courseId}/enroll', [LearningController::class, 'enroll']);
+    Route::post('lessons/{lessonId}/visits', [LearningController::class, 'visit']);
     Route::put('lessons/{lessonId}/progress', [LearningController::class, 'mark']);
     Route::put('lessons/{lessonId}/note', [LearningController::class, 'note']);
     Route::put('profile/password', [LearningController::class, 'password']);

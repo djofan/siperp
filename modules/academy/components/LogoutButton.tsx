@@ -9,7 +9,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  return <div><Button variant="outline" size={compact ? "sm" : "default"} disabled={pending} onClick={async () => {
+  return <div><Button data-academy-leave variant="outline" size={compact ? "sm" : "default"} disabled={pending} onClick={async () => {
     setPending(true); setError("");
     try {
       const response = await fetch("/api/auth/logout", { method: "POST" });

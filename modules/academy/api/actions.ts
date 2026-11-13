@@ -282,3 +282,5 @@ export async function saveAcademyMaintenance(_state: ActionState, form: FormData
     refreshCurriculum();
     redirect("/admin/academy/pengaturan?tersimpan=1");
 }
+
+export async function visitLesson(lessonId: string): Promise<ActionState> { try { await apiRequest(`academy/lessons/${encodeURIComponent(lessonId)}/visits`, { method: "POST" }); return { error: "" }; } catch (error) { return errorState(error); } }

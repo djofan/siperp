@@ -475,6 +475,39 @@ document['x-bantuan-other-intake'] = {
   transfer:'For other intake, disburse additionally requires bank, recipientName, recipientRelationship and a new unused transfer evidence photo, alongside transferDate, transferAmount equal to approved amount, and account. Atomic recording stores encrypted recipient details and transfer date; completion requires the assigned distributor handover report and normal evidence. Missing fields/evidence rolls back all changes. Bulk verifier disbursement cannot bypass these checks.',
 };
 document.paths['/api/v1/bantuan/applications/{id}/actions/other_report']={post:{tags:['Bantuan'],summary:'Add an optional report after direct custom-request transfer',description:'Only completed other intake. Call Center, treasurer or module admin. Preserves completion status/date and amount; updates report with audit trail. Supporting photos can be appended privately at completed stage by these roles.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version','handover'],properties:{version:{type:'integer',minimum:1},handover:{type:'object',required:['date','notes'],properties:{date:{type:'string',format:'date'},notes:{type:'string',maxLength:5000}}}}})},responses:{200:{description:'Completed application with optional report'},403:error,404:error,409:error,422:error}}};
+
+// Academy learning UX: private history, teacher progress and session lifecycle.
+document.paths['/api/v1/academy/teacher/progress'] = { get: {
+ tags: ['Academy'], summary: 'Teacher learner progress overview', security: [{bearerAuth:[]}],
+ description: 'Teacher/admin only. Active nondeleted enrolled learners, 10/page. Reuses the ERP grade policy. items contain id, name, nis, cohortTitle, completedLessons, totalLessons, pendingExams, score and percent. No contacts or answer keys. Returns cohorts selector metadata, page, pages and total.',
+ parameters: [{name:'q',in:'query',schema:{type:'string',maxLength:100}},{name:'cohort',in:'query',schema:{type:'string',maxLength:191}},{name:'page',in:'query',schema:{type:'integer',minimum:1,maximum:100000}}],
+ responses:{200:{description:'Private progress summary'},401:error,403:error,422:error}
+} };
+document.paths['/api/v1/academy/teacher/sessions/{id}'] = { put: {
+ tags:['Academy'], summary:'Edit or change live session status', security:[{bearerAuth:[]}],
+ description:'Teacher/admin only. Full update. status scheduled/completed/cancelled. New or reopened schedule must be future WIB; an existing ongoing schedule can keep its original time. Completing before the supplied start is rejected. Cancellation and completion retain history using cancelledAt and endedAt nullable UTC timestamps, also returned in participant schedules. No hard deletion.',
+ parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],
+ requestBody:{required:true,content:json({type:'object',required:['title','startsAt','joinUrl','status'],properties:{title:{type:'string',maxLength:191},startsAt:{type:'string',description:'WIB YYYY-MM-DDTHH:mm'},joinUrl:{type:'string',format:'uri',maxLength:2048},status:{type:'string',enum:['scheduled','completed','cancelled']}}})},
+ responses:{200:{description:'Session updated'},401:error,403:error,404:error,422:error}
+} };
+document.paths['/api/v1/academy/lessons/{lessonId}/visits'] = { post: {
+ tags:['Academy'],summary:'Record own last lesson visit',security:[{bearerAuth:[]}],
+ description:'Participant only; requires enrollment and released published material. Updates own progress timestamp without clearing completion or audio position. Idempotent progress row; no private history exposed to other participants.',
+ parameters:[{name:'lessonId',in:'path',required:true,schema:{type:'string'}}],responses:{200:{description:'Visit recorded'},401:error,403:error,404:error}
+} };
+document.paths['/api/v1/academy/materials'].get.description += ' Each item has completed boolean from the authenticated viewer only. resume is null or id/title of own last unfinished accessible lesson. status=completed/unread filters own completion. search filters title.';
+document.paths['/api/v1/academy/materials'].get.parameters.push({name:'search',in:'query',schema:{type:'string',maxLength:100}},{name:'status',in:'query',schema:{type:'string',enum:['completed','unread']}});
+for (const [path, statuses] of [
+ ['/api/v1/academy/teacher/materials',['published','draft']], ['/api/v1/academy/teacher/quizzes',['published','draft']],
+ ['/api/v1/academy/teacher/questions',['waiting','answered']], ['/api/v1/academy/learning/discussions',['waiting','answered']],
+]) {
+ const operation = document.paths[path]?.get;
+ if (operation) {
+   operation.parameters ??= [];
+   operation.parameters.push({name:'q',in:'query',schema:{type:'string',maxLength:100}},{name:'status',in:'query',schema:{type:'string',enum:statuses}});
+   operation.description = (operation.description ?? '') + ' Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.';
+ }
+}
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
