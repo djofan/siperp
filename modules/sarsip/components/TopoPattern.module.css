@@ -1,0 +1,4 @@
+.frame { overflow: hidden; pointer-events: none; }
+.canvas { display: block; width: calc(100% + 960px); height: 100%; max-width: none; animation: waveTravel 65s linear infinite; }
+@keyframes waveTravel { from { transform: translateX(0); } to { transform: translateX(-960px); } }
+@media (prefers-reduced-motion: reduce) { .canvas { animation: none; transform: none; } }
