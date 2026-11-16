@@ -202,3 +202,11 @@
 .cardMain { display: flex; flex-direction: column; flex: 1; min-width: 0; }
 .cardDonate { display: flex; justify-content: center; align-items: center; gap: .7rem; margin: 0 1rem 1rem; padding: .7rem 1rem; border-radius: 30px; background: #f79633; color: #2b1400; font-size: .8rem; font-weight: 750; transition: background .2s; }
 .cardDonate:hover { background: #ffab5c; }
+
+.site :where(h1, h2, h3, p, dd) { overflow-wrap: anywhere; }
+@media (max-width: 767px) {
+  .primary, .secondary, .outline, .cardDonate { min-height: 44px; }
+  .home button[aria-pressed] { min-height: 42px; }
+  .heroFocus h2 { font-size: .88rem; }
+  .heroFocus p, .heroCommitments p { font-size: .78rem; }
+}
