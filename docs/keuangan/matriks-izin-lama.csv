@@ -1,0 +1,26 @@
+permission,Super Admin,Admin Keuangan,Bendahara,Ketua,Admin Operasional
+access-approval-settings,ya,ya,ya,tidak,tidak
+access-approvals,ya,ya,ya,ya,tidak
+access-categories,ya,ya,ya,tidak,tidak
+access-expenses,ya,ya,ya,ya,ya
+access-roles,ya,tidak,ya,tidak,tidak
+access-sources,ya,ya,ya,tidak,tidak
+access-users,ya,tidak,ya,tidak,tidak
+create-approval-settings,ya,ya,tidak,tidak,tidak
+create-categories,ya,ya,tidak,tidak,tidak
+create-expenses,ya,ya,tidak,tidak,ya
+create-roles,ya,tidak,tidak,tidak,tidak
+create-sources,ya,ya,tidak,tidak,tidak
+create-users,ya,tidak,tidak,tidak,tidak
+delete-approval-settings,ya,ya,tidak,tidak,tidak
+delete-categories,ya,ya,tidak,tidak,tidak
+delete-expenses,ya,ya,tidak,tidak,ya
+delete-roles,ya,tidak,tidak,tidak,tidak
+delete-sources,ya,ya,tidak,tidak,tidak
+delete-users,ya,tidak,tidak,tidak,tidak
+edit-approval-settings,ya,ya,tidak,tidak,tidak
+edit-categories,ya,ya,tidak,tidak,tidak
+edit-expenses,ya,ya,tidak,tidak,ya
+edit-roles,ya,tidak,tidak,tidak,tidak
+edit-sources,ya,ya,tidak,tidak,tidak
+edit-users,ya,tidak,tidak,tidak,tidak

@@ -1,0 +1,16 @@
+fitur,route_lama,bukti_kode,otorisasi_lama,batas_lama,target_usulan,catatan_keputusan
+Beranda,GET /,resources/views/home/index.blade.php,auth,"Sambutan, tidak ada saldo",/admin/keuangan,Statistik baru memerlukan definisi
+Login dan logout,GET/POST /login; GET /logout,app/Http/Controllers/AuthController.php,guest/auth,Session Laravel mandiri,Auth Core/Sanctum,Jangan bawa sesi/token reset lama
+Daftar/detail pengeluaran,GET /expenses; GET /expenses/{expense},app/Http/Controllers/ExpenseController.php,access-expenses,Baca umum; cari penerima/nominal; sort/paginate,keuangan/expenses,Lingkup baca baru perlu keputusan
+Buat pengeluaran,POST /expenses,ExpenseController::store; ExpenseStoreRequest,create-expenses atau edit-expenses di FormRequest lama,Pilih aturan nominal; buat assignment paralel,keuangan/expenses POST,Perbaiki policy per aksi
+Edit pengeluaran,PUT /expenses/{expense},ExpenseController::update; ExpenseStoreRequest,create-expenses atau edit-expenses di FormRequest lama,Tidak reset approval walau nominal berubah,keuangan/expenses PATCH,Tetapkan revisi dan approval ulang
+Hapus pengeluaran,DELETE /expenses/{expense},ExpenseController::destroy; Expense::hasResponded,delete-expenses,Ditolak bila ada keputusan; selain itu hapus beserta approval,Arsip/pembatalan dengan audit,Kebijakan mempertahankan riwayat perlu diterapkan
+Daftar tugas approval,GET /approvals,ApprovalController::index,access-approvals,Hanya user_id akun login,keuangan/approvals,Pertahankan ownership
+Putuskan approval,GET/PUT /approvals/{approval},ApprovalController::show/update,Ownership; detail/update tidak mengulang permission,Approved/Rejected; reject wajib note; dapat ditulis ulang,keuangan/approvals/{id}/decisions,Permission+ownership+versi; kebijakan revisi belum ditetapkan
+Master sumber dana,Resource /sources,SourceController; SourceStoreRequest,access/create/edit/delete-sources,Bukan rekening; hapus ditolak jika ada expense,keuangan/sources,Tidak infer saldo atau rekening
+Master kategori,Resource /categories,CategoryController; CategoryStoreRequest,access/create/edit/delete-categories,Hapus ditolak jika ada expense,keuangan/categories,Pertahankan kategori historis
+Aturan persetujuan,Resource /approval-settings,ApprovalSettingController; ApprovalSettingStoreRequest; DuplicateRange,access/create/edit/delete-approval-settings,Rentang inklusif; guarantors paralel; update tidak mengubah assignment lama,keuangan/approval-rules,Validasi irisan interval; snapshot aturan baru
+PDF pengeluaran,GET /expenses/{expense}/print,ExpensePrint; resources/views/expenses/print.blade.php,access-expenses,"Dokumen detail, bukan bukti transfer otomatis",keuangan/expenses/{id}/pdf,Unduhan privat
+Ekspor XLSX,GET /expenses/export,ExpenseExport; app/Exports/ExpensesExport.php,access-expenses,Filter source_id/category_id; sort; seluruh hasil,keuangan/reports/expenses,"Batas memori, hasil kosong, allowlist filter dan formula injection diuji"
+Akun dan peran,Resources /users; /roles,UserController; RoleController,access/create/edit/delete-users atau roles,Role lokal dan grant terpisah,Core + grant Keuangan,Tidak memberi akses akun/modul lain
+Profil,GET/PUT /profile,ProfileController; ProfileUpdateRequest,Akun login,Nama/username/email; password lama bila ganti,Profil Core,Kode/login/reserved namespace mengikuti Core
