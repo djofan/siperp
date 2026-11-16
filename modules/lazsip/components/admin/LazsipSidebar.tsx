@@ -14,7 +14,6 @@ export const LAZSIP_NAV_ITEMS = [
   { href: "/admin/lazsip/donatur-infaq", label: "Donatur Infaq" },
   { href: "/admin/lazsip/donatur-zakat", label: "Donatur Zakat" },
   { href: "/admin/lazsip/program", label: "Program Pemberdayaan" },
-  { href: "/admin/lazsip/kegiatan", label: "Kegiatan" },
   { href: "/admin/lazsip/pendaftar", label: "Pendaftar" },
   { href: "/admin/lazsip/penyaluran-bantuan", label: "Penyaluran Bantuan" },
   { href: "/admin/lazsip/berita", label: "Berita" },

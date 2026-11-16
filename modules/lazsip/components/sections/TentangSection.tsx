@@ -1,13 +1,9 @@
 import { getSiteContent } from "@/modules/lazsip/api/siteContent";
-import { listDistinctVerifierAreas } from "@/modules/lazsip/api/beneficiaries";
 import { getLazsipStatistics } from "@/modules/lazsip/api/statistics";
 import { LAZSIP_SITE_CONTENT_DEFAULTS } from "@/modules/lazsip/api/siteContentDefaults";
 import { formatNumber } from "@/modules/lazsip/components/format";
-import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
 import { SectionHeading } from "@/modules/lazsip/components/ui/SectionHeading";
 import { StatCounter } from "@/modules/lazsip/components/ui/StatCounter";
-
-const WILAYAH_DISPLAY_LIMIT = 12;
 
 const DEFAULT_VISI =
   "Menjadi lembaga amil zakat yang amanah, transparan, dan profesional dalam menghimpun serta menyalurkan zakat, infak, dan sedekah untuk kesejahteraan umat.";
@@ -22,18 +18,22 @@ const DEFAULT_LEGALITAS =
   "LAZSIP adalah Lembaga Amil Zakat Solidaritas Insan Peduli, bernaung di bawah Yayasan Solidaritas Insan Peduli.";
 
 export async function TentangSection() {
-  const [tentang, legalitas, wilayahCakupan, statistics] = await Promise.all([
+  const [tentang, legalitas, statistics] = await Promise.all([
     getSiteContent("tentang"),
     getSiteContent("legalitas"),
-    listDistinctVerifierAreas(),
     getLazsipStatistics(),
   ]);
 
-  const { totalMitra } = statistics;
+  const manualNumber = (value: string | undefined, fallback: number) => {
+    const number = Number(value);
+    return value?.trim() && Number.isSafeInteger(number) && number >= 0 ? number : fallback;
+  };
+  const foundedYear = manualNumber(tentang?.foundedYear, Number(LAZSIP_SITE_CONTENT_DEFAULTS.tentang.foundedYear));
+  const totalMitra = manualNumber(tentang?.totalMitra, statistics.totalMitra);
   const totalVerifikator = Number(tentang?.totalVerifikator ?? LAZSIP_SITE_CONTENT_DEFAULTS.tentang.totalVerifikator) || 0;
 
-  const wilayahShown = wilayahCakupan.slice(0, WILAYAH_DISPLAY_LIMIT);
-  const wilayahSisa = wilayahCakupan.length - wilayahShown.length;
+  const wilayahCakupan = Array.from(new Set((tentang?.wilayahCakupan ?? "")
+    .split(/\r?\n/).map((wilayah) => wilayah.trim()).filter(Boolean)));
 
   const misiItems = tentang?.misi
     ? tentang.misi
@@ -59,7 +59,7 @@ export async function TentangSection() {
         {/* Dua kolom sama tinggi; kartu di tiap kolom ikut memanjang (flex-auto) supaya
             ujung atas & bawah kiri-kanan sejajar, tidak ada sisi yang lebih panjang. */}
         <div className="flex flex-col gap-5">
-          <StatCounter icon="calendar" value={`${lazsipSiteConfig.foundedYear}`} label="Berdiri sejak" className="flex flex-auto flex-col justify-center border border-lazsip-primary-100" />
+          <StatCounter icon="calendar" value={`${foundedYear}`} label="Berdiri sejak" className="flex flex-auto flex-col justify-center border border-lazsip-primary-100" />
           <StatCounter
             icon="donors"
             value={formatNumber(totalVerifikator)}
@@ -129,10 +129,10 @@ export async function TentangSection() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4.5 w-4.5 text-lazsip-primary-500">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10zM12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
             </svg>
-            Wilayah Cakupan Verifikator
+            {tentang?.wilayahTitle?.trim() || LAZSIP_SITE_CONTENT_DEFAULTS.tentang.wilayahTitle}
           </h3>
           <div className="mt-4 flex flex-wrap gap-2">
-            {wilayahShown.map((wilayah) => (
+            {wilayahCakupan.map((wilayah) => (
               <span
                 key={wilayah}
                 className="rounded-full border border-lazsip-primary-100 bg-lazsip-primary-50/60 px-3.5 py-1.5 text-xs font-medium text-lazsip-primary-800/80"
@@ -140,11 +140,6 @@ export async function TentangSection() {
                 {wilayah}
               </span>
             ))}
-            {wilayahSisa > 0 && (
-              <span className="rounded-full border border-lazsip-primary-200 bg-lazsip-primary-900 px-3.5 py-1.5 text-xs font-semibold text-white">
-                +{wilayahSisa} Lainnya
-              </span>
-            )}
           </div>
         </div>
       )}

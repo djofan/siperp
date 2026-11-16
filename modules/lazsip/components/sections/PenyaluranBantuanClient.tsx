@@ -32,7 +32,7 @@ interface BeneficiaryItem {
   isPinned: boolean;
 }
 
-const SEMUA_VERIFIKATOR = "semua";
+
 
 export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] }) {
   const [filter, setFilter] = usePersistedPreference<FilterValue>(
@@ -41,25 +41,10 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
     "semua"
   );
 
-  const verifierOptions = useMemo(
-    () => Array.from(new Set(items.map((b) => b.verifierName))).sort(),
-    [items]
-  );
-  // Verifikator yang tersimpan tapi sudah tidak ada di data otomatis kembali ke "semua".
-  const [verifierFilter, setVerifierFilter] = usePersistedPreference(
-    "lazsip-penyaluran-bantuan:verifier",
-    [SEMUA_VERIFIKATOR, ...verifierOptions],
-    SEMUA_VERIFIKATOR
-  );
-
   const filtered = useMemo(
-    () =>
-      items
-        .filter((b) => filter === "semua" || b.aidType === filter)
-        .filter((b) => verifierFilter === SEMUA_VERIFIKATOR || b.verifierName === verifierFilter),
-    [items, filter, verifierFilter]
+    () => items.filter((b) => filter === "semua" || b.aidType === filter),
+    [items, filter]
   );
-
   const pinned = filtered.filter((b) => b.isPinned);
   // Item yang disematkan tetap ikut muncul di grid biasa di bawah, bukan cuma
   // di baris pin paling atas — biar gak "hilang" dari daftar utama.
@@ -90,36 +75,6 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
             </button>
           ))}
         </div>
-
-        {verifierOptions.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setVerifierFilter(SEMUA_VERIFIKATOR)}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                verifierFilter === SEMUA_VERIFIKATOR
-                  ? "border-lazsip-primary-900 bg-lazsip-primary-900 text-white"
-                  : "border-lazsip-primary-200 bg-white text-lazsip-primary-800 hover:border-lazsip-primary-400"
-              }`}
-            >
-              Semua Verifikator
-            </button>
-            {verifierOptions.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setVerifierFilter(name)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  verifierFilter === name
-                    ? "border-lazsip-primary-900 bg-lazsip-primary-900 text-white"
-                    : "border-lazsip-primary-200 bg-white text-lazsip-primary-800 hover:border-lazsip-primary-400"
-                }`}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="mt-8">
           <PinnedGridSection
