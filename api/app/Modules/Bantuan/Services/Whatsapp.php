@@ -121,7 +121,7 @@ class Whatsapp
         if ($row->status === 'disbursed') {
             if ($row->distribution_type === 'direct') {
                 if (! in_array('treasurer', $roles, true)) return null;
-            } elseif ($row->distribution_type !== 'verifier' || $row->distributor_id !== $userId || ! in_array('verifier', $roles, true)) return null;
+            } elseif ($row->distribution_type !== 'verifier' || $row->distributor_id !== $userId || ! array_intersect(['verifier', 'volunteer'], $roles)) return null;
         }
         return self::phone($member->phone);
     }
@@ -150,7 +150,7 @@ class Whatsapp
                 continue;
             }
             $name = DB::table('users')->where('id', $item->user_id)->value('name') ?? 'Petugas';
-            $message = ReminderMessage::greeting($name)."Ada tugas bantuan yang memerlukan tindak lanjut Bapak/Ibu.\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
+            $message = ReminderMessage::greeting($name)."Ada tugas bantuan yang memerlukan tindak lanjut Akh.\n\n".ReminderMessage::details($row)."\n\n".ReminderMessage::closing();
             try {
                 $response = Http::asForm()->withHeaders(['Authorization' => (string) config('bantuan.fonnte_token')])
                     ->connectTimeout(3)->timeout(10)->withoutRedirecting()->post('https://api.fonnte.com/send', [

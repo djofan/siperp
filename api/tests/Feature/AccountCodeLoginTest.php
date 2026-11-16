@@ -174,3 +174,29 @@ it('does not reuse a bantuan code still registered as a login alias', function (
     AccountCodes::register($user->id, 'SIP001');
     expect(AccountCodes::nextBantuan())->toBe('SIP002');
 });
+
+it('reuses a released code without colliding with the archived internal email', function () {
+    $first = codeAccount(['code' => 'SIP001', 'email' => 'sip001@accounts.sip.invalid']);
+    AccountCodes::releaseBantuan($first);
+    $replacement = codeAccount(['code' => AccountCodes::nextBantuan(), 'email' => null]);
+    expect($replacement->code)->toBe('SIP001')
+        ->and($replacement->email)->not->toBe($first->email)
+        ->and(AccountCodes::find('SIP001')->id)->toBe($replacement->id);
+});
+
+
+it('keeps PWA sessions beyond the browser token age while enforcing revocation', function () {
+    $user=codeAccount();
+    DB::table('module_access')->insert(['id'=>(string) Str::uuid(),'user_id'=>$user->id,'module_id'=>'code-bantuan','role'=>'verifier']);
+    $response=$this->postJson('/api/v1/auth/login',['code'=>$user->code,'password'=>'password-code-test','pwa'=>true])->assertOk();
+    $cookie=collect($response->headers->getCookies())->first(fn($cookie)=>$cookie->getName()==='sip_session');
+    $token=$user->tokens()->first();
+    expect($token->abilities)->toContain('bantuan-pwa-persistent');
+    expect($cookie->getExpiresTime())->toBe(now()->addDays(30)->timestamp);
+    $this->travel(14)->days();
+    app('auth')->forgetGuards();
+    $this->withToken($cookie->getValue())->getJson('/api/v1/auth/me')->assertOk();
+    $token->delete();
+    app('auth')->forgetGuards();
+    $this->getJson('/api/v1/auth/me')->assertUnauthorized();
+});

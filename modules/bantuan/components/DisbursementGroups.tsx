@@ -1,4 +1,5 @@
 "use client";
+import { attachmentAccept } from "../attachments";
 import {useRef,useState,type FormEvent} from "react";
 import Link from "./WorkspaceNavigation";
 import {Check,Wallet,ChevronDown} from "lucide-react";
@@ -14,10 +15,10 @@ export function DisbursementGroups({tickets,staff,onSaved}:{tickets:AidDashboard
 function TransferGroup({ticket,staff,onSaved}:{ticket:AidDashboard["tickets"][number];staff:BantuanStaff[];onSaved:()=>void}){
  const [rows,setRows]=useState<AidApplication[]>([]),[selected,setSelected]=useState<Record<string,boolean>>({});
  const [open,setOpen]=useState(false),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(""),[saved,setSaved]=useState("");
- const [date,setDate]=useState(()=>new Date().toLocaleDateString("en-CA")),[account,setAccount]=useState(""),[file,setFile]=useState<File|null>(null),[confirmed,setConfirmed]=useState(false);
+ const [date,setDate]=useState(()=>new Date().toLocaleDateString("en-CA")),[bank,setBank]=useState(""),[account,setAccount]=useState(""),[file,setFile]=useState<File|null>(null),[confirmed,setConfirmed]=useState(false);
  const lock=useRef(false),formRef=useRef<HTMLFormElement>(null),uploaded=useRef(new Set<string>());
  const name=ticket.distribution_type==="direct"?"Penyerahan langsung oleh Bendahara":staff.find(p=>p.id===ticket.distributor_id)?.name??"Penyalur belum tersedia";
- const chosen=rows.filter(row=>selected[row.id]),total=chosen.reduce((sum,row)=>sum+(row.amount??0),0);
+ const chosen=rows.filter(row=>selected[row.id]),hasOther=chosen.some(row=>row.intakeType==="other"),total=chosen.reduce((sum,row)=>sum+(row.amount??0),0);
  async function load(){
   if(lock.current)return;setOpen(true);setLoading(true);setError("");
   try{const query=new URLSearchParams({status:"fund_approved",distributionType:"verifier",distributorId:ticket.distributor_id??"",perPage:"48"});
@@ -29,7 +30,7 @@ function TransferGroup({ticket,staff,onSaved}:{ticket:AidDashboard["tickets"][nu
  async function save(event:FormEvent){event.preventDefault();if(lock.current||!chosen.length||!confirmed)return;lock.current=true;setBusy(true);setError("");
   try{
    if(file){const {file:photo,location}=await preparePhotoUpload(file);for(const row of chosen){if(uploaded.current.has(row.id))continue;const body=new FormData();body.set("kind","transfer");body.set("file",photo);appendPhotoLocation(body,location);await request(`applications/${row.id}/documents`,{method:"POST",body});uploaded.current.add(row.id);}}
-   await request("batch",{method:"POST",body:JSON.stringify({action:"disburse",transferDate:date,account:account.trim(),totalAmount:total,items:chosen.map(row=>({id:row.id,version:row.version,transferAmount:row.amount}))})});
+   await request("batch",{method:"POST",body:JSON.stringify({action:"disburse",transferDate:date,account:account.trim(),bank:bank.trim(),recipientName:name,recipientRelationship:"Penyalur bantuan",totalAmount:total,items:chosen.map(row=>({id:row.id,version:row.version,transferAmount:row.amount}))})});
    setSaved(`${chosen.length} bantuan senilai ${money(total)} sudah dicatat. Status menjadi siap diserahkan dan penyalur mendapat notifikasi.`);setOpen(false);onSaved();
   }catch(e){setError(e instanceof Error?e.message:"Pencairan belum dapat dicatat. Periksa status sebelum mencoba lagi.");}finally{lock.current=false;setBusy(false);}
  }
@@ -41,7 +42,7 @@ function TransferGroup({ticket,staff,onSaved}:{ticket:AidDashboard["tickets"][nu
  <div className={s.recipients}>{rows.map(row=><label key={row.id}><input type="checkbox" checked={!!selected[row.id]} onChange={e=>{setSelected(v=>({...v,[row.id]:e.target.checked}));setConfirmed(false);}}/><span><strong>{row.name}</strong><small>{row.program} · <Link href={`/admin/bantuan/pengajuan/${row.id}?from=pencairan`} target="_blank">{row.number}</Link></small></span><b>{money(row.amount)}</b></label>)}</div>
  <div className={s.summary}><span>Total transfer ke <strong>{name}</strong></span><strong>{money(total)}</strong></div>
  <div className={s.fields}><label>Tanggal transfer<input type="date" required max={new Date().toLocaleDateString("en-CA")} value={date} onChange={e=>{setDate(e.target.value);setConfirmed(false);}}/></label><label>Bank & rekening tujuan<input required maxLength={191} value={account} onChange={e=>{setAccount(e.target.value);setConfirmed(false);}} placeholder="Nama bank · nomor rekening · atas nama"/></label></div>
- <label className={s.evidence}>Bukti transfer <small>Opsional · satu bukti untuk semua bantuan terpilih</small><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>{setFile(e.target.files?.[0]??null);uploaded.current.clear();}}/></label>
+ {hasOther&&<label>Bank tujuan<input required maxLength={191} value={bank} onChange={e=>setBank(e.target.value)}/></label>}<label className={s.evidence}>Bukti transfer <small>{hasOther?"Wajib untuk Pengajuan lainnya":"Opsional"} · satu bukti untuk semua bantuan terpilih</small><input type="file" required={hasOther} accept={attachmentAccept} onChange={e=>{setFile(e.target.files?.[0]??null);uploaded.current.clear();}}/></label>
  <label className={s.confirm}><input type="checkbox" checked={confirmed} onChange={e=>setConfirmed(e.target.checked)}/>Saya memastikan {money(total)} sudah ditransfer ke {name} untuk {chosen.length} bantuan yang dipilih.</label>
  <div className={s.footer}><button type="button" className={s.secondary} onClick={()=>setOpen(false)}>Batal</button><button className={s.primary} disabled={!chosen.length||!confirmed||busy||loading}><Check size={18}/>{busy?"Mencatat transfer…":"Catat sudah ditransfer"}</button></div></fieldset></form>}
  {error&&<p role="alert" className={s.error}>{error} <button type="button" disabled={busy||loading} onClick={()=>void load()}>Muat ulang pilihan</button></p>}

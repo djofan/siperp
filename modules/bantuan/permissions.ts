@@ -12,7 +12,10 @@ export function intakeViewer(viewer: BantuanViewer, direct = false): BantuanView
   return { ...viewer, role };
 }
 export function canEditIntake(viewer: BantuanViewer, row: AidApplication): boolean {
-  return hasAnyRole(viewer, ["admin", "call_center"]) || ["draft", "needs_data", "screening"].includes(row.status) && (hasAnyRole(viewer, ["admin", "call_center"]) || row.createdBy === viewer.id && (hasRole(viewer, "requester") && row.source !== "bypass" && ["draft", "needs_data"].includes(row.status) || hasRole(viewer, "verifier") && row.source === "bypass"));
+  if (hasAnyRole(viewer, ["admin", "call_center"])) return true;
+  if (row.createdBy !== viewer.id) return false;
+  if (hasRole(viewer,"verifier") && ["draft","needs_data","screening","review1","survey_assignment","survey_assigned","bypass_review"].includes(row.status)) return true;
+  return hasRole(viewer,"requester") && row.source !== "bypass" && ["draft","needs_data"].includes(row.status);
 }
 
 export function canManageOwnPasswordInModule(viewer: RoleViewer & {canChooseModules?:boolean}):boolean { return !viewer.canChooseModules && !hasRole(viewer,"admin"); }

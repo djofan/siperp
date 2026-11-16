@@ -141,3 +141,16 @@ it('lets superadmin rename outlets and synchronizes technician and account names
     expect(User::find('workflow-tech-user')->name)->toBe('Teknisi baru');
     expect(TeknisiTechnician::find('workflow-tech')->name)->toBe('Teknisi baru');
 });
+
+
+it('lets an operational technician update their own identity and contact without changing assignment', function () {
+    DB::table('teknisi_participants')->insert(['id'=>'self-profile','userId'=>auth()->id(),'nip'=>'PTH01','address'=>'Alamat lama','phone'=>'0810000000','createdAt'=>now()]);
+    $this->putJson('/api/v1/teknisi/profile',['name'=>'Nama Teknisi Baru','phone'=>'+62 811-1111-111','address'=>'Cileungsi, Bogor'])->assertOk()->assertJsonPath('data.nip','PTH01')->assertJsonPath('data.phone','+628111111111')->assertHeader('Cache-Control','no-store, private');
+    expect(DB::table('teknisi_technicians')->where('id','workflow-tech')->value('name'))->toBe('Nama Teknisi Baru');
+    expect(DB::table('teknisi_technicians')->where('id','workflow-tech')->value('outletId'))->toBe('workflow-outlet');
+    expect(DB::table('users')->where('id','workflow-tech-user')->value('name'))->toBe('Nama Teknisi Baru');
+    $this->putJson('/api/v1/teknisi/profile',['name'=>'Attempt','phone'=>'0810000000','address'=>'Bogor','userId'=>'other','outletId'=>'other'])->assertUnprocessable();
+    $this->putJson('/api/v1/teknisi/profile',['name'=>'Attempt','phone'=>'x','address'=>'Bogor'])->assertUnprocessable();
+    DB::table('teknisi_technicians')->where('id','workflow-tech')->update(['isActive'=>false]);
+    $this->putJson('/api/v1/teknisi/profile',['name'=>'Attempt','phone'=>'0810000000','address'=>'Bogor'])->assertForbidden();
+});

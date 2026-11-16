@@ -1,5 +1,6 @@
 "use client";
 
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,7 +71,7 @@ export function CoreChrome({groups,userName,isSuperadmin,children}:{groups:NavGr
       <header className={s.topbar}><button ref={toggle} className={s.menu} onClick={()=>setOpen(true)} aria-label="Buka navigasi" aria-expanded={open}><Menu size={20}/></button><div className={s.breadcrumb}><span>{isSuperadmin?"Pusat kendali":"Ruang kerja"}</span><ChevronRight size={13}/><strong>{active?.label??"Dashboard"}</strong></div>
       <div className={s.search}><Search size={17}/><input aria-label="Cari menu Core" placeholder="Cari menu atau pengaturan…" value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Escape")setQuery("");}}/>{query&&<div className={s.results}>{matches.length?matches.map(item=><Link key={item.href} href={item.href} onClick={()=>setQuery("")}>{item.label}<ArrowUpRight size={14}/></Link>):<p>Menu tidak ditemukan.</p>}</div>}</div>
       <span className={s.roleBadge}><ShieldCheck size={14}/>{role}</span><span className={s.avatar} title={userName}>{initials}</span></header>
-      <main className={s.main}>{children}<footer className={s.footer}>Solidaritas Insan Peduli <span>·</span> {isSuperadmin?"Pusat pengelolaan platform":"Ruang kerja modul"}</footer></main>
+      <main className={s.main}>{children}<OrganizationContact/><footer className={s.footer}>Solidaritas Insan Peduli <span>·</span> {isSuperadmin?"Pusat pengelolaan platform":"Ruang kerja modul"}</footer></main>
     </div>
   </div>;
 }

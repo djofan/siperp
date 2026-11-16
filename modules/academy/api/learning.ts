@@ -3,6 +3,7 @@ import { apiRequest } from "@/lib/api";
 import { cache } from "react";
 export const getLearningSettings = cache(async () => apiRequest<{
     csPhone: string;
+    csContacts?: { name: string; phone: string }[];
     weights: {
         DAILY: number;
         WEEKLY: number;

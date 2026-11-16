@@ -4,6 +4,29 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Setoran Tanwir dan Ojol mendukung `files[]` (1–10 audio/video, total maksimal 50 MiB)
+pada `POST /api/v1/{module}/submissions`. Field lama `file` tetap didukung, tetapi
+tidak boleh digabung dengan `files`. Semua berkas harus sesuai jenis tugas. Batch
+disimpan atomik sebagai satu percobaan, dan pengiriman ulang mengganti seluruh batch
+yang ditolak. Detail peserta/guru mengembalikan `files` berisi index/nama/MIME/ukuran,
+tanpa path privat. Pemutaran memakai endpoint berizin dengan `?index=0..9`.
+
+Deployment perubahan ini memerlukan migration `2026_11_12_150000_add_learning_submission_media_files`.
+Backup database sebelum migration di VPS; kemudian build/restart frontend dan backend.
+PHP `upload_max_filesize` minimal 50M, `post_max_size` dan Nginx `client_max_body_size`
+minimal 64M untuk menampung multipart. File lama tetap bisa diputar tanpa backfill.
+
+Login Bantuan PWA memakai `pwa: true` pada `POST /api/v1/auth/login` dan memerlukan
+akses Bantuan aktif. Cookie HttpOnly dan token berlaku 30 hari, terpisah dari durasi
+login browser biasa. Tidak ada logout karena idle; logout eksplisit, pencabutan token,
+penggantian password yang mencabut sesi, dan penonaktifan akun tetap berlaku. Sesi PWA
+lama perlu login ulang sekali agar mendapat durasi baru.
+
+`POST /api/v1/bantuan/applications/{id}/actions/survey_revise` memerlukan `version`.
+Hanya verifikator penugasan dapat membuka kembali survei pada `survey_cc_review` atau
+`survey_submitted`, sebelum persetujuan nominal. Data dan dokumen dipertahankan; survei
+kembali ke `survey_assigned` dan dikirim ulang melalui pemeriksaan Call Center.
+
 Reset password akun operasional: `POST /api/v1/core/module-accounts/{id}/password-reset`
 memerlukan akun aktif dan otorisasi admin. Admin modul hanya boleh mereset akun operasional
 yang seluruh akses modulnya berada dalam cakupan pengelolaannya; Superadmin boleh lintas modul.
@@ -115,6 +138,7 @@ Daftar berikut membedakan endpoint aktif dari rancangan migrasi; tidak ada endpo
 | --- | --- | --- | --- |
 | `/api/v1/bantuan/mobile/login` | POST | Aktif | Login akun ERP melalui `LoginRequest` Core dan `throttle:login`; JSON `{code,password}`. Akun aktif dan akses Bantuan diperiksa sebelum `TokenIssuer` menerbitkan token `bantuan-mobile`. Respons 200 `{data:{token,expires_at}}` dengan `Cache-Control: no-store`, tanpa cookie. Error 401/403/422/429 memakai `ErrorResource`. Superadmin mengikuti pengecualian status modul Core; modul wajib terdaftar. |
 | `/api/v1/health` | GET | Aktif | Singleton diagnostik yang sudah disepakati; bukan koleksi atau aksi CRUD bisnis |
+| `/api/v1/academy/admin/participant-imports` | POST | Aktif | Aksi impor atomik maksimal 200 peserta dari Excel; admin Academy/superadmin saja. Respons 200 Resource berisi jumlah dibuat/dilewati dan akun baru, dengan `Cache-Control: no-store, private`. Password awal hanya pada respons ini, disimpan sebagai hash; impor ulang data sama di angkatan/grup sama melewati akun tanpa mengganti password. Konflik nomor HP dengan data/angkatan berbeda membatalkan semua baris (422). |
 | `/api/v1/auth/login` | POST | Placeholder 501 | Aksi autentikasi yang kelak menerbitkan token; password tidak boleh menjadi query GET |
 | `/api/v1/payment/transactions/{id}/checkout-sessions` | POST | Rancangan; belum aktif | Membuat sub-resource sesi checkout pada provider pembayaran; ada efek eksternal |
 | `/api/v1/payment/webhook-deliveries` | POST | Rancangan; belum aktif | Menerima event provider dan membuat catatan penerimaan; verifikasi signature serta deduplikasi event wajib |
@@ -253,3 +277,172 @@ Lokasi disimpan terenkripsi, tidak ditulis ke log/audit. Representasi dokumen
 privat menambahkan `location` nullable; foto lama null. Filtering dan izin foto
 berlaku juga untuk koordinat. Source menandakan asal klaim klien, bukan bukti
 terverifikasi. Tidak ada endpoint lokasi publik atau perubahan izin dokumen.
+
+Academy: POST /api/v1/academy/admin/cohorts/{id}/chapters requires Academy admin, prepares at least 12 chapters and duration 30 days transactionally and idempotently; returns data.courseId. Existing content is preserved. New cohorts are prepared automatically.
+
+Academy teacher materials POST accepts optional multipart file (audio <=50 MB), saved atomically with publication. Missing file/videoUrl preserves existing audio on edit. WebM browser audio uses the existing protected file endpoint.
+
+Daily teacher material form: release day and order inputs removed. New lessons append under a chapter lock; edits retain position. Teacher saves set releaseDay=1, respecting course start and publication/access rules. Existing unsaved materials and quiz schedules remain unchanged.
+
+Teacher material table: GET /api/v1/academy/teacher/materials?view=table&cohort={cohortId}&page=1 returns paginated lesson rows (10/page), actual cohort/chapter labels, publication/audio information, selector metadata and totals. Cohort filter is applied in Laravel before pagination; changing filters resets the page in the UI. Legacy requests without view=table keep their chapter response.
+
+Academy questions accept one optional private media upload: JPG/PNG/WebP images up to 5 MB or MP3/WAV/OGG/M4A/WebM audio up to 15 MB. Store only the private disk path; expose metadata in question payloads and stream bytes through authenticated `GET /api/v1/academy/questions/{id}/media`. Participant access must repeat quiz/enrollment authorization. Replacing or deleting a question cleans up its owned media file.
+
+Teacher exam and question tables: GET teacher/quizzes?view=table supports cohort filter and page; GET teacher/quizzes/{id}?view=table supports question page. Both use 10 rows/page in Laravel with stable ordering and clamp excess pages. Legacy response remains without view=table. Question keys/options require teacher/admin authorization. UI exposes exam configuration and question editing separately from table rows.
+
+Teacher exam creation: DAILY selects cohort curriculum and chapter; WEEKLY/FINAL select cohort curriculum only (courseId). Backend retains an internal chapter relationship for compatibility and preserves existing relationships on edit. The UI labels weekly/final scope as all chapters.
+
+Academy UX: teacher/admin dashboards include workflow guides; participant dashboard prioritizes recent cohort materials and exam reminders. GET materials accepts sort=latest (created_at desc,id desc), preserving cohort/publication access. Material forms offer explicit draft/publish actions. Exam activation includes a review of scope, question count, duration and WIB schedule; server publication validation remains authoritative. No automatic activation or messaging is performed by dashboard guides.
+
+Teacher Q&A: GET teacher/questions?view=table&page=1 returns 10 discussions/page (unanswered first); GET teacher/questions/{id} reads private detail. Teacher/admin authorization applies to both and the existing answer PUT. The dedicated answer page redirects back to the table after a successful save, preserving page and showing confirmation; validation errors remain on the answer form.
+
+Participant Q&A now has a 10-row paginated table, separate create/detail pages, and return-to-table confirmation on successful submission. GET learning/discussions?view=table uses the existing participant/enrollment scope; GET learning/discussions/{id} returns only owned discussions in published enrolled courses (foreign IDs 404). Session schedules remain accessible below the table.
+
+Live Q&A scheduling UI: teacher Questions > Live session schedule tab. Select cohort curriculum, title, future WIB datetime and meeting URL. Existing POST courses/{courseId}/sessions creates the schedule; new GET teacher/sessions returns manager-only options and a 10-row paginated session list. Enrolled participants see the meeting under Q&A session schedules; other cohorts cannot see it.
+### Galeri konten SIP
+
+Resource news, program-bantuan, dan penyaluran-bantuan mendukung documentationPhotos opsional (maks. 50 foto berurutan). Setiap foto berisi id UUID unik, image URL HTTP(S) atau /uploads/sip/UUID.jpg|png|webp, caption opsional maks. 500 karakter, serta isDemo opsional. Field yang tidak dikirim saat update dipertahankan; array kosong menghapus galeri dari konten. Akses penulisan mengikuti editor SIP; galeri berita draft tidak dibuka endpoint publik. Terapkan migration 2026_11_11_000001_add_sip_content_galleries setelah backup database sebelum deploy frontend.
+
+### Penggantian foto survei
+
+DELETE dokumen Bantuan mengizinkan penggantian KTP, KK, SKTM, foto pendukung dan survey_* pada survey_assigned atau survey_cc_review, termasuk bukti survei yang pernah dikirim. Otorisasi tetap memeriksa penugasan serta pengunggah/Admin. Penghapusan menandai deleted_at dan mempertahankan file privat untuk audit. Setelah diteruskan ke persetujuan, bukti terkunci kembali. Kirim hasil pemeriksaan memvalidasi ulang kelengkapan foto aktif dan menandai bukti pengganti sebagai digunakan.
+
+Ekspor lengkap Pengajuan Bantuan `GET /api/v1/bantuan/reports/full` diizinkan untuk
+Superadmin, admin modul, dan Call Center (termasuk akun multi-role yang memiliki Call Center).
+Role lain tidak memperoleh akses XLSX lengkap. Filter daftar dan scope data tetap diterapkan;
+ekspor dicatat di jurnal, dibatasi 5/menit, dan respons memakai `no-store, private`.
+
+LAZSIP: `DELETE /api/v1/lazsip/admin/transactions/{source}/{id}` menghapus catatan transaksi
+uji setelah admin modul/Superadmin mengonfirmasi `testTransaction=true` serta `confirmationCode`
+yang cocok dengan kode pelacakan (ID untuk legacy). Sumber: `payment`, `legacy-donation`, `zakat`.
+Termasuk transaksi uji Production, tanpa panggilan pembatalan/refund ke provider. Pencocokan bank,
+pembuatan sesi aktif, atau pengiriman receipt aktif ditolak 409. Receipt serta detail zakat yang
+sudah tidak dipakai dibersihkan; donor, campaign, dan tombstone idempotensi tetap disimpan.
+Target nominal campaign opsional: kosong/null/0 berarti tanpa target (disimpan sebagai 0).
+Omission saat update mempertahankan target lama; nilai negatif/noninteger ditolak.
+
+### Impor santunan Excel
+
+`POST /api/v1/bantuan/santunan/imports`: admin/bendahara, maksimal 200 baris JSON
+`{period, volunteerId, rows:[{recipientName, category, amount}]}` setelah Excel dibaca klien.
+Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib aktif.
+Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
+ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
+no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
+
+Impor santunan menerima `rows[].verifierName`: nama pada daftar penyalur aktif,
+trim/spasi berlebih dan kapital diabaikan. Harus cocok dengan tepat satu akun aktif
+yang memiliki role volunteer. Tidak membuat akun baru atau mencocokkan nama sebagian.
+Nama tidak dikenal/ambigu membatalkan seluruh impor (422). `volunteerId` tingkat atas
+tetap diterima untuk klien lama; bila nama per baris dikirim, nama itu yang digunakan.
+Template baru berisi Nama, Program, Nominal Bantuan, Nama Verifikator, dengan dropdown
+nama dari daftar aktif. Data dummy unduhan menggunakan nama dari daftar yang sama.
+
+### PDF materi Academy
+
+POST `/api/v1/academy/admin/materials` dan PUT `/api/v1/academy/admin/materials/{id}`
+menerima multipart `pdfFile` opsional (PDF maksimal 10 MiB) selain `file` audio
+maksimal 50 MiB. Total kedua file maksimal 50 MiB. Nama ekstensi bukan satu-satunya
+validasi: PDF diperiksa MIME dan header. Admin Academy saja; file tetap di storage
+privat dan endpoint download memakai izin peserta serta jadwal rilis yang sama.
+Materi hanya-PDF dapat dipublikasikan. PDF baru menambah lampiran; omission pada
+edit mempertahankan PDF/audio lama. `file` tetap hanya menerima audio pada formulir
+materi. Gagal menyimpan salah satu file membatalkan transaksi database dan membersihkan
+file baru yang sempat tersimpan. Listing menambahkan `_count.pdfs` tanpa membuka URL
+lampiran privat. Tidak memerlukan migration.
+
+### Profil peserta Academy
+
+GET `/api/v1/academy/profile` membutuhkan Sanctum dan akun aktif, lalu mengambil profil
+berdasarkan user login saja. Query userId/profileId tidak dapat memilih akun lain.
+Respons `{data:{name,code,email,nis,phone,address,gender,cohortName}}` hanya field yang diizinkan.
+`cohortName` adalah nama angkatan yang ditetapkan pada profil sendiri, tanpa metadata
+angkatan lain, hash password atau token. Header `no-store, private`.
+Peserta yang wajib mengganti password awal tetap dapat membaca profil miliknya.
+PUT `/api/v1/academy/profile` setelah ganti password awal menerima tepat `name`,
+`phone`, `address` (wajib), serta `email` (opsional untuk klien lama; bila dikirim wajib terisi dan valid RFC, maksimal 191 karakter, di-trim dan dinormalisasi lowercase, unik tanpa membedakan kapital kecuali milik akun sendiri). Nama 2–100 karakter, alamat maksimal 2000 karakter;
+nomor HP Indonesia dengan awalan 08/+628/628 dinormalisasi ke `^628[0-9]{7,12}$`.
+Field lain ditolak 422, termasuk nomor akun/peserta, kelompok, angkatan,
+userId/profileId dan password. Nama/email Core dan kontak profil Academy disimpan atomik
+hanya untuk user login; kode, enrollment dan password tidak berubah. Respons profil
+terbaru tetap `no-store, private`. Tidak memerlukan migration. Perubahan password
+tetap memakai PUT `/api/v1/academy/profile/password` dengan password saat ini.
+
+### Pengajuan lainnya (Bantuan)
+
+`applicant.intakeType=other` memakai identitas pelapor (`name`, `nik` 16 digit,
+`street`, `phone`, `reporterRelationship`), `otherCategory` (Proposal, Sedekah air bersih,
+Renovasi rumah, Lainnya), `customTitle`, `problem`, `customBudget`, dan `applicationNotes`
+opsional. Server menetapkan `source=online`, `program=Lainnya`; field demografi/survei
+perorangan tidak diwajibkan. Draft tetap memerlukan nama dan NIK. Foto pendukung awal
+opsional, beberapa file dengan caption. Berkas tetap privat dengan aturan upload gambar.
+
+Alur: submit -> screening Call Center -> screen_pass -> review2 (penetapan nominal
+Approver/Ketua) -> approved -> Call Center menentukan penyalur (verifier/volunteer) ->
+fund_ready -> pengajuan dana -> fund_approved -> disburse -> disbursed -> handover -> completed.
+Survei tidak berlaku. Transfer belum menyelesaikan pengajuan. Laporan dan bukti penyerahan
+diisi penyalur yang ditugaskan, atau dicatat Call Center melalui manual-processes dengan
+identitas pelaksana asli dan identitas pencatat terpisah. Jenis ini tidak dapat diganti setelah diproses.
+Disburse memerlukan tanggal, nominal sesuai persetujuan, account, bank, recipientName,
+recipientRelationship, serta bukti transfer baru. Data penerima disimpan terenkripsi dalam
+manual_process.transferRecipient; dicatat oleh akun autentikasi pada audit. Tidak memerlukan
+migration. Aksi `other_report` setelah completed menerima version dan handover.date/notes;
+Call Center/Bendahara/admin dapat melengkapi laporan serta foto supporting kemudian tanpa
+mengubah nominal, tanggal selesai, atau status. Hak akses lama tetap berlaku.
+
+
+### Lampiran Bantuan
+
+Seluruh slot dokumen pengajuan dan santunan menerima JPG/PNG/WEBP, PDF, DOC/DOCX,
+XLS/XLSX, PPT/PPTX, ODT/ODS, TXT/CSV/RTF hingga **10 MiB per berkas**. HEIC/HEIF
+foto dikonversi di browser; gambar dikompresi, dokumen tidak diubah. Validasi server
+memeriksa ekstensi serta jenis isi berkas. Skrip/HTML dan ekstensi macro tidak diterima.
+Hak akses, caption, antrean privat terenkripsi, audit, dan syarat jenis bukti tetap berlaku.
+Unduh memakai MIME dan ekstensi yang sesuai: gambar/PDF inline, dokumen lainnya attachment.
+Tidak ada viewer Office pihak ketiga; dokumen tidak dikirim ke layanan eksternal.
+
+Deployment: pastikan migration `2026_11_09_000001_add_bantuan_photo_locations` telah
+dijalankan; kolom photo_location yang belum ada menyebabkan DB_SCHEMA_MISMATCH saat
+upload/detail. Backup sebelum migrate di VPS. Pastikan upload_max_filesize minimal 10M,
+post_max_size dan client_max_body_size minimal 16M (jangan turunkan batas lebih besar yang
+sudah dipakai Tanwir/Ojol). Reload PHP-FPM/Nginx bila konfigurasi berubah. HTTP 413 berarti
+batas server/proxy masih terlalu kecil. Frontend kini menampilkan alasan/kode gagal per berkas.
+
+
+Office attachments also require migration `2026_11_13_100000_expand_bantuan_attachment_mime`.
+It widens mime from 40 to 255 characters in both Bantuan document tables. Word/Excel
+OOXML MIME strings exceed 40 characters; MySQL otherwise rejects the insert with
+SQLSTATE 22001 / driver 1406 (DATA_CONSTRAINT), even though SQLite tests allow it.
+This additive widening preserves all existing files/data. Rollback deliberately does not
+shrink the column, to avoid truncating already stored MIME values. Backup before VPS migration.
+
+
+### Kelengkapan hasil survei Bantuan
+
+Survei final (`survey_submit`, `survey_review_submit`, termasuk proses manual) wajib
+mengisi `survey.sunnahKnowledge`: Ya, Tidak, atau Sudah mulai. Draft tetap boleh belum lengkap.
+Validasi memakai gabungan data pemohon tersimpan dan koreksi yang dikirim: `dependents`
+berupa daftar terstruktur tepat sejumlah `dependentCount` (0 memakai daftar kosong).
+Setiap orang memerlukan nama, hubungan, jenis kelamin, umur, dan status sekolah/kerja.
+Status tempat tinggal yang mengandung kontrak/sewa/rent memerlukan `rent` > 0 serta
+`rentPeriod` bulan/tahun, termasuk saat pengajuan final. Harga sewa yang sudah ada tidak
+hilang bila survei tidak mengirim koreksi. Data pemohon dan hasil verifikasi untuk Approver
+menampilkan rincian ini. Tidak ada migration atau perubahan otomatis data selesai lama.
+
+
+### Koreksi Bantuan dan profil Teknisi
+
+Approver/Ketua dapat `revise_amount` hanya pada `approved`/`fund_ready`, sebelum pengajuan dana.
+Alasan wajib, versi optimistis, larangan memutuskan pengajuan sendiri, dan audit nominal lama/baru berlaku.
+
+`PUT bantuan/applications/{id}/admin-correction` khusus Superadmin/admin Bantuan, semua tahap.
+Nomor pengajuan harus diketik ulang dan alasan koreksi wajib. Koreksi status/nominal tidak melakukan transfer.
+Tanggal dan penyalur wajib sesuai tahap dana; dokumen tetap disimpan, termasuk saat diganti admin.
+Grup dana aktif memerlukan persetujuan eksplisit pembatalan grup: seluruh anggota kembali `fund_ready`,
+kemudian koreksi target diterapkan. Snapshot grup lama tidak diubah dan keputusan grup lama ditolak.
+Koreksi data pemohon tetap melalui form Edit data. Semua koreksi dicatat beserta aktor dan data sebelum/sesudah.
+
+`PUT teknisi/profile` hanya akun teknisi operasional aktif: nama, nomor HP, alamat sendiri.
+Kode, peran, dan outlet tidak dapat diubah lewat endpoint ini. Password memakai Core `PUT auth/password`
+di form inline Pengaturan akun Teknisi. Admin modul/Superadmin memakai reset Core tanpa password lama;
+seluruh sesi target dicabut. Tidak ada password yang dikembalikan pada API profil.

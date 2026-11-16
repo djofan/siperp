@@ -1,15 +1,17 @@
 export interface PhotoLocation { latitude:number; longitude:number; source:"exif"|"device"; accuracy?:number|null }
 export const bantuanRoles: Record<string, string> = {
   admin: "Admin", requester: "Petugas Pengajuan", call_center: "Call Center", approver: "Approver", verifier: "Verifikator",
-  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Pengurus", survey_approver: "Penyetuju Survei",
+  volunteer: "Penyalur", fund_requester: "Pengaju Dana", treasurer: "Pengirim bantuan / Bendahara", chair: "Ketua Yayasan", observer: "Monitoring", survey_approver: "Penyetuju Survei",
 };
 export const bantuanActionLabels: Record<string, string> = {
+  admin_correct:"Koreksi data oleh admin", revise_amount:"Nominal bantuan dikoreksi",
+  other_report:"Laporan penyaluran tambahan",
   prepare_task_reminder: "Pengingat petugas disiapkan Call Center",
   update_mustahiq: "Profil mustahiq diperbarui", sync_mustahiq: "Profil diselaraskan dari review survei",
   create: "Pengajuan dibuat", edit_intake: "Data pengajuan diperbarui", submit: "Pengajuan dikirim",
   screen_pass: "Lolos review Call Center", screen_reject: "Ditolak Call Center", request_data: "Diminta melengkapi data",
   review1_approve: "Disetujui untuk survei", review1_reject: "Ditolak pada review tahap 1",
-  assign_survey: "Verifikator ditugaskan", survey_save: "Draft survei disimpan", survey_submit: "Survei dikirim",
+  assign_survey: "Verifikator ditugaskan", survey_save: "Draft survei disimpan", survey_submit: "Survei dikirim", survey_revise: "Perbaikan survei dibuka oleh verifikator",
   survey_review_withdraw: "Hasil survei dikembalikan ke pemeriksaan Call Center", survey_review_save: "Koreksi survei disimpan Call Center", survey_review_submit: "Hasil survei diteruskan ke Approver", survey_return: "Hasil survei dikembalikan", survey_decline: "Penugasan survei ditolak", survey_location: "Titik alamat survei diperbarui",
   approve: "Nominal bantuan ditetapkan", review_reject: "Pengajuan ditolak", survey_again: "Diminta survei ulang",
   assign_distributor: "Penyalur ditetapkan", fund_submit: "Dana ditandai diajukan", fund_approve: "Dana ditandai disetujui",
@@ -40,6 +42,7 @@ export interface BantuanViewer { id: string; name: string; code?: string; role: 
 export interface BantuanStaff { id: string; name: string; code?: string; role: string; roles?: string[]; region?: string; active: boolean; email?: string; phone?: string; whatsappEnabled?: boolean; canBypass?: boolean; canManage?: boolean; canEditIdentity?: boolean; protectedAccount?: boolean; sharedAccount?: boolean }
 export interface ManualActor { actorId?:string|null; name:string; phone?:string|null; channel:string; date:string; note:string; recordedBy?:string; recordedByName?:string; recordedAt?:string }
 export interface AidApplication {
+  intakeType?: "new" | "returning" | "other";
   manualVerifierName?:string|null; manualDistributorName?:string|null;
   shortLocation?: string;
   rejectionReason?: string | null;
@@ -51,7 +54,7 @@ export interface AidDependent { name:string; relationship:string; gender:string;
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
 export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
 export interface AidDetail extends AidApplication {
-  manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string}}|null;
+  manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string};transferRecipient?:{bank:string;recipientName:string;recipientRelationship:string;account:string;transferDate:string;transferAmount:number}}|null;
   surveyDeadline?:{assignedAt:string;dueAt:string;days:number;overdue:boolean}|null;
   surveyLocation?: { address?: string; latitude?: number; longitude?: number } | null;
   fundingRequest?: { id:string; number:string } | null;
@@ -60,7 +63,7 @@ export interface AidDetail extends AidApplication {
   bypassReason: string | null; fundReference: string | null; duplicateCount: number;
   duplicateApplications: AidApplicantHistory[];
   documents: { id: string; kind: string; mime: string; created_at: string; used_at?: string | null; caption?: string | null; location?:PhotoLocation|null }[];
-  events: { manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
+  events: { previousAmount?:number|null; amount?:number|null; manual?:ManualActor|null; id: string; action: string; from_status: string | null; to_status: string; actor_role: string; actorName: string | null; reason: string | null; created_at: string }[];
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {
@@ -79,5 +82,5 @@ export interface SantunanRecord {
   transferStatus: "pending"|"transferred"; distributionStatus: "process"|"completed";
   transferredAt: string|null; completedAt: string|null; version: number;
   report: { distributionDate:string; location:string; recipient:string; description:string }|null;
-  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; created_at:string; location?:PhotoLocation|null }[];
+  documents: { id:string; kind:"aid_paper"|"recipient_photo"|"transfer_receipt"; mime?:string; created_at:string; location?:PhotoLocation|null }[];
 }

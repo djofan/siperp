@@ -14,6 +14,7 @@ export default async function PenyaluranBantuanEditPage({ params }: { params: Pr
       <PenyaluranBantuanForm
         itemId={item.id}
         initialValues={{
+          documentationPhotos: item.documentationPhotos ?? [],
           title: item.title,
           description: item.description,
           image: item.image ?? "",

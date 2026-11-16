@@ -15,7 +15,7 @@ class ManualProcesses
         'assign_survey'=>['verifier'], 'survey_save'=>['verifier'], 'survey_submit'=>['verifier'],
         'survey_review_save'=>['call_center'], 'survey_review_submit'=>['call_center'], 'survey_return'=>['call_center'],
         'approve'=>['approver','chair'], 'review_reject'=>['approver','chair'], 'survey_again'=>['approver','chair'],
-        'assign_distributor'=>['verifier'], 'fund_submit'=>['fund_requester'], 'fund_approve'=>['fund_requester'],
+        'assign_distributor'=>['verifier','volunteer'], 'fund_submit'=>['fund_requester'], 'fund_approve'=>['fund_requester'],
         'fund_reject'=>['fund_requester'], 'disburse'=>['treasurer'], 'handover'=>['verifier','volunteer'],
         'delivery_fail'=>['verifier','volunteer'], 'return_funds'=>['treasurer'],
     ];

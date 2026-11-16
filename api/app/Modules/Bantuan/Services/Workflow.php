@@ -19,6 +19,7 @@ class Workflow
         'assign_survey' => [['survey_assignment', 'survey_assigned'], ['call_center'], 'survey_assigned'],
         'survey_save' => [['survey_assigned'], ['verifier'], 'survey_assigned'],
         'survey_submit' => [['survey_assigned'], ['verifier'], 'survey_cc_review'],
+        'survey_revise' => [['survey_cc_review', 'survey_submitted'], ['verifier'], 'survey_assigned'],
         'survey_decline' => [['survey_assigned'], ['verifier'], 'survey_assignment'],
         'survey_review_save' => [['survey_cc_review'], ['call_center'], 'survey_cc_review'],
         'survey_review_submit' => [['survey_cc_review'], ['call_center'], 'survey_submitted'],
@@ -26,6 +27,7 @@ class Workflow
         'survey_return' => [['survey_cc_review'], ['call_center'], 'survey_assigned'],
         'survey_address' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center'], null],
         'survey_location' => [['survey_assignment', 'survey_assigned', 'survey_cc_review'], ['call_center', 'verifier'], null],
+        'revise_amount' => [['approved', 'fund_ready'], ['approver', 'chair'], null],
         'approve' => [['survey_submitted', 'review2', 'bypass_review'], ['approver', 'chair'], 'approved'],
         'review_reject' => [['survey_submitted', 'review2', 'bypass_review'], ['approver', 'chair'], 'rejected_t2'],
         'survey_again' => [['survey_submitted', 'review2'], ['approver', 'chair'], 'survey_assigned'],
@@ -34,8 +36,9 @@ class Workflow
         'fund_approve' => [['fund_submitted'], ['fund_requester'], 'fund_approved'],
         'fund_reject' => [['fund_submitted'], ['fund_requester'], 'review2'],
         'disburse' => [['fund_approved'], ['treasurer'], 'disbursed'],
-        'handover' => [['disbursed'], ['verifier', 'treasurer'], 'completed'],
-        'delivery_fail' => [['disbursed'], ['verifier', 'treasurer'], 'delivery_failed'],
+        'other_report' => [['completed'], ['call_center', 'treasurer'], null],
+        'handover' => [['disbursed'], ['verifier', 'volunteer', 'treasurer'], 'completed'],
+        'delivery_fail' => [['disbursed'], ['verifier', 'volunteer', 'treasurer'], 'delivery_failed'],
         'return_funds' => [['delivery_failed'], ['treasurer'], 'returned'],
         'reopen' => [['rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass', 'cancelled', 'returned'], ['approver', 'chair'], 'screening'],
         'cancel' => [['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'survey_submitted', 'bypass_review', 'approved', 'fund_ready'], ['call_center', 'verifier', 'requester'], 'cancelled'],
@@ -56,15 +59,20 @@ class Workflow
             abort_unless($row->version === $input['version'], 409, 'Data sudah berubah. Muat ulang sebelum melanjutkan.');
             abort_unless(! $states || in_array($row->status, $states, true), 409, 'Tindakan tidak sesuai tahap pengajuan.');
             $from = $row->status;
+            $other = ($row->applicant['intakeType'] ?? null) === 'other';
+            abort_if($action === 'other_report' && !$other, 422, 'Laporan tambahan hanya untuk Pengajuan lainnya.');
+            abort_if($other && in_array($action, ['review1_approve','assign_survey','survey_again'], true), 422, 'Pengajuan lainnya tidak melalui survei.');
+            if ($other && $action === 'screen_pass') $next = 'review2';
+            if ($action === 'survey_revise') abort_unless($row->verifier_id === $request->user()->id, 403, 'Hanya verifikator yang ditugaskan dapat memperbaiki survei ini.');
             $own = $row->created_by === $request->user()->id;
             $roles = match ($action) {
                 'request_data' => $row->status === 'screening' ? ['call_center'] : ['approver', 'chair', 'survey_approver'],
                 'survey_location' => ['call_center', ...($row->verifier_id === $request->user()->id ? ['verifier'] : [])],
                 'handover', 'delivery_fail' => $row->distribution_type === 'direct' ? ['treasurer']
-                    : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier'] : []),
+                    : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier', 'volunteer'] : []),
                 'submit' => $row->source === 'bypass' ? ['call_center', ...($own ? ['verifier'] : [])]
                     : ['call_center', ...($own ? ['requester'] : [])],
-                'cancel' => ['call_center', ...($own && in_array($row->status, ['draft', 'needs_data'], true) ? ['verifier'] : []),
+                'cancel' => ['call_center', ...($own && in_array($row->status, ['draft', 'needs_data'], true) ? ['verifier', 'volunteer'] : []),
                     ...($own && in_array($row->status, ['draft', 'needs_data', 'screening'], true) ? ['requester'] : [])],
                 default => $roles,
             };
@@ -81,14 +89,14 @@ class Workflow
                 abort_if($row->created_by === $request->user()->id, 403, 'Review Call Center harus dilakukan petugas lain.');
             }
             $reason = null;
-            if (in_array($action, ['screen_reject', 'request_data', 'review1_reject', 'review_reject', 'survey_again', 'survey_return', 'survey_decline', 'fund_reject', 'delivery_fail', 'cancel', 'reopen', 'comment'], true)) {
+            if (in_array($action, ['screen_reject', 'request_data', 'review1_reject', 'review_reject', 'survey_again', 'survey_return', 'survey_decline', 'fund_reject', 'delivery_fail', 'cancel', 'reopen', 'comment', 'revise_amount'], true)) {
                 $reason = $request->validate(['reason' => 'required|string|min:5|max:5000'])['reason'];
             }
             if (in_array($action, ['survey_review_save', 'survey_review_submit', 'survey_return'], true)) {
                 // Call Center may review their own survey when holding both roles.
                 // Approval decisions still require an independent Approver.
             }
-            if (in_array($action, ['review1_approve', 'review1_reject', 'approve', 'review_reject', 'survey_again'], true)) {
+            if (in_array($action, ['review1_approve', 'review1_reject', 'approve', 'revise_amount', 'review_reject', 'survey_again'], true)) {
                 abort_if($role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');
             }
             if ($action === 'request_data') {
@@ -157,7 +165,7 @@ class Workflow
                         'applicant' => array_replace($row->applicant ?? [], $request->input('applicant', []))]);
                 }
                 $surveyRules = ['survey' => 'required|array', 'survey.date' => 'required|date|before_or_equal:today',
-                    'survey.hasSktm' => 'required|boolean', 'survey.sktmExplanation' => 'nullable|string|max:5000',
+                    'survey.hasSktm' => 'required|boolean', 'survey.sunnahKnowledge' => 'required|in:Ya,Tidak,Sudah mulai', 'survey.sktmExplanation' => 'nullable|string|max:5000',
                     'survey.background' => 'required|string|max:10000', 'survey.currentCondition' => 'required|string|max:10000',
                     'survey.needs' => 'required|string|max:10000', 'survey.efforts' => 'required|string|max:5000',
                     'survey.homeObservation' => 'required|string|max:10000', 'survey.stayDuration' => 'required|numeric|min:0',
@@ -187,18 +195,23 @@ class Workflow
                 }
                 if ($action === 'survey_review_submit') {
                     // CC corrects the existing survey; its consumed evidence remains valid.
+                    DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')->where('kind', 'like', 'survey_%')->whereNull('used_at')->update(['used_at' => now()]);
                     $this->requiredDocuments($row, ['survey_recipient' => 1, 'survey_front' => 1, 'survey_inside' => 2, 'survey_environment' => 1], consumed: true);
                     $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
                     abort_if(DB::table('bantuan_documents')->where('application_id', $row->id)->whereNull('deleted_at')
                         ->where('kind', 'like', 'survey_%')->whereNotNull('used_at')->count() < ($settings['minimumSurveyPhotos'] ?? 5), 422, 'Jumlah foto survei belum memenuhi minimum.');
                 }
                 $row->survey = $survey;
-                if ($request->has('applicant') || ($review && ! $draft)) {
-                    $corrected = app(Intake::class)->validateApplicant($corrections, $review && $draft);
+                if ($request->has('applicant') || !$draft) {
+                    $corrections->merge(['applicant' => array_replace($row->applicant ?? [], $request->input('applicant', []))]);
+                    $corrected = app(Intake::class)->validateApplicant($corrections, $draft, !$draft);
                     $row->applicant = $corrected;
                     $row->name = $corrected['name'];
                     $row->nik_hash = app(Intake::class)->nikHash($corrected['nik']);
                 }
+            }
+            if ($action === 'revise_amount') {
+                $row->amount = $request->validate(['amount' => 'required|integer|min:1|max:9000000000000'])['amount'];
             }
             if ($action === 'approve') {
                 $row->amount = $request->validate(['amount' => 'required|integer|min:1|max:9000000000000'])['amount'];
@@ -212,6 +225,9 @@ class Workflow
                     $row->distribution_type = 'manual'; $row->distributor_id = null; $next = 'fund_ready';
                 }
                 // Bypass without a survey still needs an explicit accountable distributor.
+                if ($other) {
+                    $next = $row->distributor_id || !empty($row->manual_process['distributor']) ? 'fund_ready' : 'approved';
+                }
             }
             if ($action === 'review_reject' && $from === 'bypass_review') {
                 $next = 'rejected_bypass';
@@ -239,7 +255,7 @@ class Workflow
                 $input = $request->validate(['distributionType' => ['required', Rule::in($row->source === 'bypass' ? ['verifier', 'direct'] : ['verifier'])], 'distributorId' => 'nullable|string']);
                 $old = $row->distributor_id;
                 if ($input['distributionType'] === 'verifier') {
-                    abort_unless($access->assigned($input['distributorId'] ?? '', 'verifier'), 422, 'Pilih Verifikator penyalur yang aktif.');
+                    abort_unless(($access->assigned($input['distributorId'] ?? '', 'verifier') || $access->assigned($input['distributorId'] ?? '', 'volunteer')), 422, 'Pilih Verifikator penyalur yang aktif.');
                     $row->distributor_id = $input['distributorId'];
                 } else {
                     $row->distributor_id = null;
@@ -261,14 +277,34 @@ class Workflow
             if ($action === 'disburse') {
                 $transfer = $request->validate(['transferDate' => 'required|date|before_or_equal:today', 'transferAmount' => 'required|integer|min:1', 'account' => 'required|string|max:191']);
                 abort_unless((int) $transfer['transferAmount'] === $row->amount, 422, 'Nominal pencairan harus sama dengan nominal ditetapkan.');
+                if ($other) $this->requiredDocuments($row, ['transfer' => 1], unused: true);
                 if (DB::table('bantuan_documents')->where('application_id', $row->id)->where('kind', 'transfer')->whereNull('deleted_at')->whereNull('used_at')->exists()) {
                     $this->consumeEvidence($row, 'transfer');
                 }
                 $row->disbursed_at = $transfer['transferDate'];
+                if ($other) {
+                    $recipient = $request->validate([
+                        'bank' => 'required|string|max:191',
+                        'recipientName' => 'required|string|max:191',
+                        'recipientRelationship' => 'required|string|max:191',
+                    ]);
+                    $this->requiredDocuments($row, ['transfer' => 1]);
+                    $meta = $row->manual_process ?? [];
+                    $meta['transferRecipient'] = [...$recipient, ...$transfer];
+                    $row->manual_process = $meta;
+                    // Transfer to the assigned distributor is not a completed handover.
+                    $next = 'disbursed';
+                }
+            }
+            if ($action === 'other_report') {
+                $report = $request->validate(['handover' => 'required|array',
+                    'handover.date' => 'required|date|before_or_equal:today',
+                    'handover.notes' => 'required|string|max:5000'])['handover'];
+                $row->handover = $report;
             }
             if (in_array($action, ['handover', 'delivery_fail'], true)) {
                 if ($role !== 'admin') {
-                    abort_unless(($role === 'verifier' && $row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id)
+                    abort_unless((in_array($role, ['verifier', 'volunteer'], true) && $row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id)
                         || ($role === 'treasurer' && $row->distribution_type === 'direct'), 403);
                 }
             }
@@ -335,7 +371,7 @@ class Workflow
                 'fund_ready', 'fund_submitted' => ['fund_requester'], 'fund_approved' => ['treasurer'], default => [],
             };
             if ($action === 'fund_reject') $targets[] = 'call_center';
-            if ($action === 'survey_decline') $targets = ['call_center'];
+            if (in_array($action, ['survey_decline', 'survey_revise'], true)) $targets = ['call_center'];
             // Notify the next responsible team; field staff only receive events affecting their task.
             $users = match ($action) {
                 'assign_survey', 'survey_return', 'survey_again', 'survey_address' => [$row->verifier_id],
@@ -359,6 +395,7 @@ class Workflow
 
     private function intakeStage(Application $row): string
     {
+        if (($row->applicant['intakeType'] ?? null) === 'other') return 'screening';
         if ($row->source === 'bypass') return 'bypass_review';
         if ($row->intake_role === 'requester') return 'review1';
         if (in_array($row->intake_role, ['call_center', 'admin'], true)) return 'review1';

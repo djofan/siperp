@@ -35,9 +35,10 @@ function newAcademyCohort(string $title = 'Angkatan 1', int $quota = 200): Acade
     return $cohort;
 }
 
-it('creates cohorts without requiring or copying a program', function () {
+it('creates cohorts with a fresh twelve chapter curriculum', function () {
     $this->postJson('/api/v1/academy/admin/cohorts', ['title' => 'Angkatan Mandiri', 'quota' => 30])->assertSuccessful();
-    expect(ZakatAcademyCourse::count())->toBe(0);
+    expect(ZakatAcademyCourse::count())->toBe(1);
+    expect(DB::table('zakat_academy_chapters')->count())->toBe(12);
     $this->getJson('/api/v1/academy/admin/cohorts')->assertJsonPath('data.0.title', 'Angkatan Mandiri')->assertJsonPath('data.0.participants_count', 0);
     $this->postJson('/api/v1/academy/admin/cohorts', ['title' => 'Angkatan Mandiri', 'quota' => 30])->assertUnprocessable();
 });
@@ -63,17 +64,18 @@ it('requires a valid cohort and ignores the former quota when registering partic
     expect(ZakatAcademyProfile::count())->toBe(2)->and(User::count())->toBe(3);
 });
 
-it('opens only one public cohort and registers new accounts in that cohort without a program', function () {
+it('opens only one intake cohort while keeping account creation managed by admins', function () {
     $first = newAcademyCohort();
     $second = newAcademyCohort('Angkatan 2');
     $this->putJson('/api/v1/academy/admin/cohorts/'.$first->id.'/registration', ['open' => true])->assertSuccessful();
     $this->putJson('/api/v1/academy/admin/cohorts/'.$second->id.'/registration', ['open' => true])->assertSuccessful();
     expect($first->fresh()->registrationOpen)->toBeFalse();
     $this->getJson('/api/v1/academy/intake')->assertJsonPath('data.cohort.id', $second->id)->assertJsonPath('data.filled', 0);
-    $this->postJson('/api/v1/academy/register', cohortParticipant(['email' => 'student@cohort.test', 'confirmPassword' => 'test-password', 'cohortId' => $first->id]))->assertCreated();
-    expect(ZakatAcademyProfile::firstOrFail()->cohortId)->toBe($second->id)->and(ZakatAcademyCourse::count())->toBe(0);
+    $this->postJson('/api/v1/academy/register', cohortParticipant(['email' => 'student@cohort.test', 'confirmPassword' => 'test-password', 'cohortId' => $first->id]))->assertForbidden();
+    expect(ZakatAcademyProfile::count())->toBe(0)->and(ZakatAcademyCourse::count())->toBe(0);
+    $this->assertDatabaseMissing('users', ['email' => 'student@cohort.test']);
     $this->putJson('/api/v1/academy/admin/cohorts/'.$second->id.'/registration', ['open' => false])->assertSuccessful();
-    $this->postJson('/api/v1/academy/register', cohortParticipant(['email' => 'another@cohort.test', 'confirmPassword' => 'test-password']))->assertConflict();
+    $this->postJson('/api/v1/academy/register', cohortParticipant(['email' => 'another@cohort.test', 'confirmPassword' => 'test-password']))->assertForbidden();
 });
 
 it('forbids ordinary participants from creating cohorts', function () {

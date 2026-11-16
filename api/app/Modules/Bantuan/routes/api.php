@@ -36,6 +36,7 @@ Route::post('application-reminders', [\App\Modules\Bantuan\Http\Controllers\Appl
 Route::get('applications/{id}', [C::class, 'show']);
 Route::post('applications/{id}/locations', [SurveyLocationController::class, 'search'])->middleware('throttle:20,1');
 Route::post('applications/{id}/route', [SurveyLocationController::class, 'route'])->middleware('throttle:20,1');
+Route::put('applications/{id}/admin-correction', \App\Modules\Bantuan\Http\Controllers\AdminCorrectionController::class)->middleware('throttle:10,1');
 Route::put('applications/{id}', [C::class, 'update']);
 Route::delete('applications/{id}', [C::class, 'destroy']);
 Route::post('applications/{id}/manual-processes', [C::class, 'manualProcess']);
@@ -53,6 +54,7 @@ Route::post('staff', [S::class, 'store']);
 Route::put('staff/{id}', [S::class, 'update']);
 Route::delete('staff/{id}', [S::class, 'destroy']);
 Route::get('santunan', [SantunanController::class, 'index']);
+Route::post('santunan/imports', [SantunanController::class, 'import'])->middleware('throttle:10,1');
 Route::post('santunan/periods', [SantunanController::class, 'nextPeriod']);
 Route::post('santunan', [SantunanController::class, 'store']);
 Route::post('santunan/{id}/transferred', [SantunanController::class, 'transferred']);

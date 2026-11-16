@@ -1,3 +1,4 @@
+import { ORGANIZATION_CONTACT } from "@/lib/organization-contact";
 import type { SipSiteContentSectionKey } from "@/modules/sip/api/siteContent";
 
 // Salinan persis dari teks yang tampil di halaman publik (Hero, section, tentang, footer, dst)
@@ -88,10 +89,10 @@ export const SIP_SITE_CONTENT_DEFAULTS: Record<SipSiteContentSectionKey, Record<
     seeAllLabel: "Lihat Semua Laporan",
   },
   kontak: {
-    address: "",
+    address: ORGANIZATION_CONTACT.address,
     mapsUrl: "",
-    phone: "",
-    email: "",
+    phone: ORGANIZATION_CONTACT.phone,
+    email: ORGANIZATION_CONTACT.email,
     jamLayanan: "",
     instagram: "",
     facebook: "",

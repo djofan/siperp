@@ -7,7 +7,7 @@ class ReportController
 {
  public function __invoke(Request $request,Access $access,ApplicationQuery $listing)
  {
-  $access->allow($request,[]);
+  $access->allow($request,['call_center']);
   $filters=$listing->filters($request);
   $rows=$listing->ordered($listing->build($request,$access,$filters),$filters)->get();
   $staff=DB::table('users')->pluck('name','id');

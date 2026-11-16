@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import Link from "next/link";
-import { Home,ClipboardList,Bell,User,Menu } from "lucide-react";
+import { Home,ClipboardList,Bell,User } from "lucide-react";
 import type { BantuanViewer } from "@/contracts/modules/bantuan";
 import { navigation,canViewRoute } from "../policy";
 import { Workspace } from "../components/Workspace";
@@ -18,10 +18,9 @@ export function PwaApp({viewer,route}:{viewer:BantuanViewer;route:string[]}){
   },[]);
   return <WorkspaceNavigation><div className={s.root}>
     <Workspace route={workspace} initialViewer={viewer} mobileApp/>
-    <nav className={s.nav} aria-label="Navigasi aplikasi" style={{gridTemplateColumns:`repeat(${hasWork?5:4},1fr)`}}>
+    <nav className={s.nav} aria-label="Navigasi aplikasi" style={{gridTemplateColumns:`repeat(${hasWork?4:3},1fr)`}}>
       <Link href="/bantuan-app/beranda" aria-current={!tab||tab==="santunan"&&route[0]==="beranda"?"page":undefined}><Home size={21}/><span>Beranda</span></Link>
       {hasWork&&<Link href={canViewRoute(viewer,["proses"])?"/bantuan-app/workspace/proses":"/bantuan-app/workspace/pengajuan"} aria-current={tab==="proses"?"page":undefined}><ClipboardList size={21}/><span>Pekerjaan</span></Link>}
-      <button type="button" aria-controls="bantuan-sidebar" onClick={()=>window.dispatchEvent(new Event("bantuan-open-menu"))}><Menu size={21}/><span>Semua menu</span></button>
       <Link href="/bantuan-app/notifikasi" aria-current={tab==="notifikasi"?"page":undefined}><Bell size={21}/><span>Notifikasi</span></Link>
       <Link href="/bantuan-app/akun" aria-current={tab==="akun"?"page":undefined}><User size={21}/><span>Akun</span></Link>
     </nav>

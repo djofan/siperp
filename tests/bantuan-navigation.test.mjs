@@ -50,7 +50,7 @@ test("fund queue keeps submitted applications visible for manual approval",()=>{
 });
 
 test("every workflow status has a specific menu with a matching queue filter",()=>{
-  const statuses=["draft","screening","needs_data","review1","bypass_review","survey_assignment","survey_assigned","survey_submitted","review2","approved","fund_ready","fund_submitted","fund_approved","disbursed","delivery_failed","completed","returned","cancelled","rejected_screening","rejected_t1","rejected_t2","rejected_bypass"];
+  const statuses=["draft","screening","needs_data","review1","bypass_review","survey_assignment","survey_assigned","survey_submitted","review2","approved","fund_ready","fund_submitted","fund_approved","disbursed","delivery_failed","completed","cancelled","rejected_screening","rejected_t1","rejected_t2","rejected_bypass"];
   const covered=new Set(processMenus.flatMap(menu=>Array.from(menu.states)));
   for(const status of statuses)assert.equal(covered.has(status),true,status);
   for(const menu of processMenus){
@@ -66,7 +66,7 @@ test("operational accounts see each of their process queues without management a
     approver:["review-tahap-1","review-tahap-2","review-ulang","review-langsung"],
     verifier:["survei","penyaluran","gagal-salur","selesai"],
     fund_requester:["dana-siap","dana-diajukan","pencairan"],
-    treasurer:["pencairan","penyaluran","gagal-salur","dana-kembali"],
+    treasurer:["pencairan","penyaluran","gagal-salur","siap-disalurkan"],
   };
   for(const [role,keys] of Object.entries(expected)){
     const viewer={role,canBypass:false},menus=navigation(viewer);
@@ -77,6 +77,15 @@ test("operational accounts see each of their process queues without management a
   assert.equal(processInfo("penyaluran").task,"distribution");
   assert.equal(canViewRoute({role:"verifier",canBypass:false},["pengajuan","langsung"]),false);
   assert.equal(canViewRoute({role:"verifier",canBypass:true},["pengajuan","langsung"]),true);
+});
+
+test("archive ready-to-distribute card points to funds already held by the distributor",()=>{
+  const card=processInfo("siap-disalurkan");
+  assert.equal(card.label,"Siap disalurkan");
+  assert.equal(card.group,"06 · Arsip");
+  assert.deepEqual(Array.from(card.states),["disbursed"]);
+  assert.equal(card.task,undefined);
+  assert.equal(processMenus.some(menu=>menu.key==="dana-kembali"),false);
 });
 
 test("sidebar stays compact while the process launcher retains every authorized queue",()=>{
@@ -127,7 +136,7 @@ test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
     for(const key of ["berjalan","mustahiq","pengajuan-dana","laporan","santunan","tim","audit","pengaturan"])assert.equal(keys.includes(key),false,role+": "+key);
     assert.equal(sidebarNavigation(viewer).find(item=>item.key==="pengajuan").label,"Pengajuan saya");
   }
-  assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["santunan"]);
+  assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["proses","penyaluran","santunan"]);
   const multi={role:"requester",roles:["requester","verifier","volunteer","treasurer"],canBypass:false};
   const keys=sidebarNavigation(multi).map(item=>item.key);
   for(const key of ["proses","berjalan","pengajuan-dana","laporan","santunan","pencairan","survei"])assert.ok(keys.includes(key),key);
@@ -136,11 +145,20 @@ test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
   for(const key of ["tim","pengaturan","audit"])assert.equal(keys.includes(key),false,key);
 });
 
-test("Pengurus has monitoring routes and no creation, edit or management routes",()=>{
+test("Monitoring has monitoring routes and no creation, edit or management routes",()=>{
   const viewer={role:"observer",roles:["observer"],canBypass:false};
   for(const route of [[],["berjalan"],["pengajuan"],["pengajuan","id"],["mustahiq"],["pengajuan-dana"],["menu-survei"],["menu-penyaluran"]])assert.equal(canViewRoute(viewer,route),true,route.join("/"));
   for(const route of [["pengajuan","baru"],["pengajuan","langsung"],["pengajuan","id","edit"],["tim"],["pengaturan"],["audit"]])assert.equal(canViewRoute(viewer,route),false,route.join("/"));
   assert.equal(sidebarNavigation(viewer).some(item=>item.key==="proses"),false);
   const mixed={...viewer,roles:["observer","call_center"]};
   assert.equal(canViewRoute(mixed,["pengajuan","baru"]),true);
+});
+
+
+test("other intake describes amount approval and completion without a survey assignment",()=>{
+  const {nextStep}=sandbox.exports;
+  assert.match(nextStep("review2","online","requester","other").title,/nominal/);
+  assert.match(nextStep("completed","online","requester","other").title,/Laporan penyerahan/);
+  assert.match(nextStep("completed","online","requester","other").description,/laporan tercatat/);
+  assert.match(nextStep("survey_assigned","online","requester").owner,/Verifikator/);
 });

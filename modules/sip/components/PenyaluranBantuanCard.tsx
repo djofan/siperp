@@ -1,21 +1,30 @@
+import Link from "next/link";
+import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { SipGallery } from "./SipGallery";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
 import { formatDate } from "@/modules/sip/components/format";
 
 export function PenyaluranBantuanCard({
+  id,
+  documentationPhotos,
   title,
   description,
   image,
   location,
   date,
 }: {
+  id: string;
+  documentationPhotos?: SipDocumentationPhoto[] | null;
   title: string;
   description: string;
   image: string | null;
   location: string | null;
   date: Date;
 }) {
+  const photos = documentationPhotos ?? [];
   return (
     <div className="group flex w-full flex-col">
+      <Link href={`/penyaluran-bantuan/${encodeURIComponent(id)}`} className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sip-primary-500 focus-visible:ring-offset-4">
       <div className="relative">
         <ImagePlaceholder
           variant="activity"
@@ -38,6 +47,9 @@ export function PenyaluranBantuanCard({
         <h3 className="line-clamp-2 text-base font-semibold leading-snug text-sip-primary-900">{title}</h3>
         <p className="line-clamp-2 text-sm leading-relaxed text-sip-primary-900/55">{description}</p>
       </div>
+      <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-sip-primary-700">Lihat penyaluran <span aria-hidden="true">→</span></span>
+      </Link>
+      {photos.length>0&&<details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-sip-primary-700">Lihat galeri · {photos.length} foto</summary><SipGallery photos={photos} title={title} kind="activity"/></details>}
     </div>
   );
 }

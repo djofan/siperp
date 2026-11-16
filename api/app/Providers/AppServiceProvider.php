@@ -24,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Foundation\Console\ServeCommand::$passthroughVariables[] = 'PHP_INI_SCAN_DIR';
         }
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        Sanctum::authenticateAccessTokensUsing(static function ($token, bool $valid): bool {
+            if (!in_array('bantuan-pwa-persistent', $token->abilities ?? [], true)) return $valid;
+            // PWA uses its explicit expiry, not Sanctum's shorter browser-token age.
+            return $token->name === 'next-server' && $token->expires_at && $token->expires_at->isFuture()
+                && $token->tokenable instanceof \App\Modules\Core\Models\User && $token->tokenable->is_active;
+        });
         $testingSqlite = $this->app->environment('testing') && config('database.default') === 'sqlite' && config('database.connections.sqlite.database') === ':memory:';
         $driver = config('database.default');
         if (! $testingSqlite && $this->app->environment('local') && ($driver !== 'mysql' || config('database.connections.mysql.database') !== 'sipmodular_laravel_dev' || config('database.connections.mysql.url'))) {

@@ -71,6 +71,72 @@ class SantunanController
         return response()->json(['data' => $this->payload($row)], 201);
     }
 
+    public function import(Request $request, Access $access)
+    {
+        $access->allow($request, ['treasurer']);
+        $data = $request->validate([
+            'period' => 'required|date_format:Y-m',
+            'volunteerId' => 'sometimes|required|string|max:191',
+            'rows' => 'required|array|list|min:1|max:200',
+            'rows.*' => 'required|array:recipientName,category,amount,verifierName',
+            'rows.*.recipientName' => 'required|string|max:191',
+            'rows.*.category' => 'required|in:orphan,widow',
+            'rows.*.verifierName' => 'required_without:volunteerId|string|max:191',
+            'rows.*.amount' => 'required|integer|min:1|max:9000000000000',
+        ]);
+        if (isset($data['volunteerId'])) abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
+
+        return DB::transaction(function () use ($request, $access, $data) {
+            DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
+            $people = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
+                ->join('users', 'users.id', '=', 'module_access.user_id')
+                ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'users.id')
+                ->where('modules.slug', 'bantuan')->where('users.is_active', true)
+                ->get(['users.id', 'users.name', 'module_access.role', 'bantuan_staff.roles']);
+            $normalize = fn (string $name) => mb_strtolower(preg_replace('/\s+/u', ' ', trim($name)));
+            $seen = [];
+            $existing = Santunan::where('frequency', 'routine')->whereDate('period', $data['period'].'-01')
+                ->whereIn('category', ['orphan', 'widow'])->get();
+            foreach ($existing as $row) {
+                $seen[$row->category.':'.mb_strtolower(trim($row->recipient['name']))] = true;
+            }
+            foreach ($data['rows'] as $index => $item) {
+                $volunteerId = $data['volunteerId'] ?? null;
+                if (isset($item['verifierName'])) {
+                    $matches = $people->filter(fn ($person) => in_array('volunteer', Access::expandRoles($person->role, $person->roles), true)
+                        && $normalize($person->name) === $normalize($item['verifierName']));
+                    if ($matches->count() !== 1) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'rows.'.$index.'.verifierName' => 'Baris data '.($index + 1).': nama verifikator tidak cocok dengan satu penyalur aktif. Pilih nama unik dari daftar.',
+                        ]);
+                    }
+                    $volunteerId = $matches->first()->id;
+                }
+                $name = trim($item['recipientName']);
+                $key = $item['category'].':'.mb_strtolower($name);
+                if ($name === '' || isset($seen[$key])) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'rows.'.$index.'.recipientName' => 'Baris data '.($index + 1).': nama kosong atau penerima sudah ada pada program dan periode ini.',
+                    ]);
+                }
+                $seen[$key] = true;
+                $row = new Santunan;
+                $row->forceFill([
+                    'id' => (string) Str::uuid(), 'number' => $this->nextNumber(),
+                    'frequency' => 'routine', 'category' => $item['category'],
+                    'period' => $data['period'].'-01', 'recipient' => ['name' => $name],
+                    'volunteer_id' => $volunteerId, 'amount' => $item['amount'],
+                    'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
+                ])->save();
+                $this->event($request, $access, $row, 'created', ['source' => 'excel_import']);
+            }
+
+            return (new \Illuminate\Http\Resources\Json\JsonResource([
+                'createdCount' => count($data['rows']),
+            ]))->response()->header('Cache-Control', 'no-store, private');
+        });
+    }
+
     public function nextPeriod(Request $request, Access $access)
     {
         $access->allow($request, ['treasurer']);
@@ -126,7 +192,7 @@ class SantunanController
     {
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
-        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => 'required|file|mimes:jpg,jpeg,png,webp|max:2048']);
+        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => \App\Modules\Bantuan\Services\Attachment::RULES]);
         $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
         $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
 
@@ -175,8 +241,7 @@ class SantunanController
         $this->find($request, $access, $document->santunan_id);
         $bytes = Crypt::decryptString(Storage::disk('local')->get($document->path));
 
-        return response($bytes, 200, ['Content-Type' => $document->mime, 'Cache-Control' => 'no-store, private',
-            'Content-Disposition' => 'inline; filename="'.$document->kind.'.jpg"', 'X-Content-Type-Options' => 'nosniff']);
+        return response($bytes, 200, \App\Modules\Bantuan\Services\Attachment::headers($document->mime, $document->id));
     }
 
     private function find(Request $request, Access $access, string $id, bool $lock = false): Santunan
@@ -193,7 +258,7 @@ class SantunanController
 
     private function payload(Santunan $row): array
     {
-        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'created_at', 'photo_location'])->map(function ($doc) {
+        $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'mime', 'created_at', 'photo_location'])->map(function ($doc) {
             $doc->location = \App\Modules\Bantuan\Services\PhotoLocation::present($doc->photo_location);
             unset($doc->photo_location);
             return $doc;

@@ -1,5 +1,7 @@
 "use client";
 
+import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { DocumentationEditor, useDocumentationEditor } from "./SipDocumentationEditor";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SipImageUploadField } from "@/modules/sip/components/admin/SipImageUploadField";
@@ -9,6 +11,7 @@ import { slugify } from "@/modules/sip/api/slugify";
 import { panelClasses } from "@/components/ui/panel";
 
 interface ProgramBantuanFormValues {
+  documentationPhotos: SipDocumentationPhoto[];
   title: string;
   slug: string;
   description: string;
@@ -25,6 +28,7 @@ export function ProgramBantuanForm({
   initialValues?: Partial<ProgramBantuanFormValues>;
 }) {
   const router = useRouter();
+  const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!programId;
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [slug, setSlug] = useState(initialValues?.slug ?? "");
@@ -44,6 +48,7 @@ export function ProgramBantuanForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if(gallery.uploading || gallery.photos.some(photo=>!photo.image)){setError("Tunggu unggahan foto selesai dan hapus baris galeri yang kosong.");return;}
 
     if (!isEdit && !image) {
       setError("Gambar program wajib diunggah.");
@@ -58,7 +63,7 @@ export function ProgramBantuanForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, slug, description, image, campaignUrl, isPinned }),
+      body: JSON.stringify({ documentationPhotos: gallery.photos, title, slug, description, image, campaignUrl, isPinned }),
     });
 
     if (!response.ok) {
@@ -76,7 +81,7 @@ export function ProgramBantuanForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className={panelClasses("p-6 sm:p-8")}>
         <div className="flex flex-col gap-5">
-          <SipImageUploadField label="Gambar Program" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+          <SipImageUploadField label="Gambar Program" initialUrl={image} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
 
           <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3.5">
             <span className="text-sm font-medium text-white">Pin di halaman Program</span>
@@ -142,9 +147,10 @@ export function ProgramBantuanForm({
         </div>
       </div>
 
+      <DocumentationEditor editor={gallery} kind="program" saving={isSubmitting}/>
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
         {error && <p className="text-sm text-red-400">{error}</p>}
-        <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
+        <SipLoadingButton type="submit" loading={isSubmitting} disabled={gallery.uploading} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Program"}
         </SipLoadingButton>
       </div>

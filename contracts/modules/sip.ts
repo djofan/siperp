@@ -7,6 +7,7 @@ export interface SipSiteContent {
 }
 
 export interface SipProgramBantuan {
+  documentationPhotos?: SipDocumentationPhoto[] | null;
   id: string;
   title: string;
   slug: string;
@@ -18,6 +19,7 @@ export interface SipProgramBantuan {
 }
 
 export interface SipNews {
+  documentationPhotos?: SipDocumentationPhoto[] | null;
   id: string;
   title: string;
   content: string;
@@ -28,6 +30,7 @@ export interface SipNews {
 }
 
 export interface SipPenyaluranBantuan {
+  documentationPhotos?: SipDocumentationPhoto[] | null;
   id: string;
   title: string;
   description: string;
@@ -46,3 +49,5 @@ export interface SipLaporan {
   fileUrl: string;
   createdAt: Date;
 }
+
+export interface SipDocumentationPhoto { id: string; image: string; caption?: string; isDemo?: boolean; }

@@ -1,3 +1,4 @@
+import { ORGANIZATION_CONTACT } from "@/lib/organization-contact";
 // Konten situs publik Ojol Mengaji — diadaptasi dari situs lama (resources/views/welcome & pages/*),
 // tanpa angka klaim yang tidak bisa diverifikasi.
 
@@ -9,7 +10,7 @@ export const SITE_NAV = [
 ];
 
 export function whatsappAdminHref(message = "Assalamu'alaikum, saya ingin bertanya tentang program Ojol Mengaji.") {
-  const number = (process.env.NEXT_PUBLIC_OJOL_WHATSAPP ?? process.env.NEXT_PUBLIC_SIP_WHATSAPP ?? "").replace(/\D/g, "");
+  const number = (process.env.NEXT_PUBLIC_OJOL_WHATSAPP ?? process.env.NEXT_PUBLIC_SIP_WHATSAPP ?? ORGANIZATION_CONTACT.phoneDigits).replace(/\D/g, "");
   return number ? `https://wa.me/${number}?text=${encodeURIComponent(message)}` : "/ojol/kontak";
 }
 

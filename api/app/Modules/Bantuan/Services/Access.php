@@ -101,11 +101,15 @@ class Access
         if (! $row) return $this->has($request, ['requester', 'verifier']);
         $userId = $request->user()->id;
         return ($row->created_by === $userId && $this->has($request, ['requester', 'verifier']))
-            || ($this->has($request, ['verifier']) && in_array($userId, [$row->verifier_id, $row->distributor_id], true));
+            || ($this->has($request, ['verifier']) && in_array($userId, [$row->verifier_id, $row->distributor_id], true))
+            || (($row->applicant['intakeType'] ?? null) === 'other' && $this->has($request, ['volunteer']) && $row->distributor_id === $userId);
     }
 
     public function documentRole(Request $request, Application $row, string $kind): string
     {
+        if (($row->applicant['intakeType'] ?? null) === 'other' && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true)) {
+            return $this->allow($request, ['call_center', 'treasurer']);
+        }
         $own = $row->created_by === $request->user()->id;
         if ($this->has($request, ['call_center']) && (($row->status === 'disbursed' && in_array($kind, ['handover','certificate','receipt','education_other'], true)) || (in_array($row->status, ['fund_approved','delivery_failed'], true) && in_array($kind, ['transfer','return'], true)))) return 'call_center';
         $roles = match (true) {
@@ -119,7 +123,7 @@ class Access
             str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned' && $row->verifier_id === $request->user()->id ? ['verifier'] : [],
             in_array($kind, ['transfer', 'return'], true) => in_array($row->status, ['fund_approved', 'disbursed', 'delivery_failed'], true) ? ['treasurer'] : [],
             default => $row->status === 'disbursed' ? ($row->distribution_type === 'direct' ? ['treasurer']
-                : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier'] : [])) : [],
+                : ($row->distribution_type === 'verifier' && $row->distributor_id === $request->user()->id ? ['verifier', 'volunteer'] : [])) : [],
         };
         return $this->allow($request, $roles);
     }

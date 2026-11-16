@@ -67,11 +67,11 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
 
   return (
     <section id="penyaluran" className="bg-lazsip-primary-50/60">
-      <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
         <SectionHeading
           eyebrow="Penyaluran Bantuan"
           title="Penerima Manfaat LAZSIP"
-          description="Sebagian penerima manfaat yang telah dibantu — data ditampilkan sesuai kebijakan privasi penerima."
+          description="Bantuan yang telah disalurkan. Identitas ditampilkan sesuai persetujuan penerima."
         />
 
         <div className="mt-8 flex flex-wrap gap-2">
@@ -152,8 +152,8 @@ export function PenyaluranBantuanClient({ items }: { items: BeneficiaryItem[] })
             seeAllHref="/lazsip/penyaluran-bantuan"
             seeAllLabel="Lihat Semua Bantuan"
             emptyLabel="Belum ada data penerima manfaat untuk kategori ini."
-            pinnedItemClassName="w-[42vw] max-w-[170px] shrink-0 snap-start sm:w-[calc(33.333%-16px)] sm:max-w-none lg:w-[calc(25%-18px)]"
-            gridColsClassName="grid-cols-3 sm:grid-cols-4 lg:grid-cols-5"
+            pinnedItemClassName="w-[62vw] max-w-[240px] shrink-0 snap-start sm:w-[calc(33.333%-16px)] sm:max-w-none lg:w-[calc(25%-18px)]"
+            gridColsClassName="grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
           />
         </div>
       </div>

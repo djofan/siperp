@@ -1,3 +1,4 @@
+import { SipGallery } from "@/modules/sip/components/SipGallery";
 import { notFound } from "next/navigation";
 import { getPublishedNewsById } from "@/modules/sip/api/news";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
@@ -25,6 +26,7 @@ export default async function BeritaDetailPage({ params }: { params: Promise<{ i
         </p>
         <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-sip-primary-900 sm:text-[2.5rem]">{news.title}</h1>
         <p className="mt-4 whitespace-pre-line text-base leading-[1.8] text-sip-primary-900/70 sm:text-[1.0625rem]">{news.content}</p>
+        <SipGallery photos={news.documentationPhotos??[]} title={news.title} kind="news"/>
       </div>
     </div>
   );

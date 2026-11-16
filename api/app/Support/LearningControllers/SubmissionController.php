@@ -22,33 +22,44 @@ class SubmissionController extends BaseController
     public function media(Request $request, LearningFileStore $files)
     {
         $member = $this->member($request, 'peserta');
-        $input = $request->validate(['taskId' => 'required|string|max:191', 'file' => 'required|file|max:51200']);
-        $detected = $files->detect($request->file('file'));
-        $path = null;
-        $before = null;
+        $input = $request->validate(['taskId' => 'required|string|max:191',
+            'file' => 'required_without:files|prohibits:files|file|max:51200',
+            'files' => 'required_without:file|prohibits:file|array|min:1|max:10', 'files.*' => 'required|file|max:51200']);
+        $uploads = $request->hasFile('file') ? [$request->file('file')] : $request->file('files');
+        abort_if(array_sum(array_map(fn ($file) => $file->getSize(), $uploads)) > 50 * 1024 * 1024, 422, 'Total ukuran setoran maksimal 50 MB.');
+        $detected = array_map(fn ($file) => $files->detect($file), $uploads);
+        $paths = [];
+        $before = [];
         try {
-            $row = DB::transaction(function () use ($request, $input, $member, $detected, $files, &$path, &$before) {
+            $row = DB::transaction(function () use ($request, $input, $member, $uploads, $detected, $files, &$paths, &$before) {
                 $task = $this->taskForStudent($request, $input['taskId'], $member);
                 abort_unless($task->type !== 'quiz', 422, 'Kuis dikerjakan langsung di halaman tugas.');
-                $matches = $task->type === 'video' ? $detected['kind'] === 'video' : $detected['kind'] === 'audio';
-                abort_unless($matches, 422, 'Format file tidak sesuai tipe tugas.');
+                foreach ($detected as $media) {
+                    $matches = $task->type === 'video' ? $media['kind'] === 'video' : $media['kind'] === 'audio';
+                    abort_unless($matches, 422, 'Semua file harus sesuai tipe tugas: audio atau video.');
+                }
                 $existing = $task->submissions()->where('student_id', $member->id)->lockForUpdate()->first();
                 abort_unless(! $existing || $existing->status === 'rejected', 409, 'Tugas ini sudah dikumpulkan.');
-                $path = $files->save($this->module($request), 'submissions/'.$task->id.'/'.$member->id, $request->file('file'), $detected['ext']);
-                $before = $existing?->filePath;
+                $before = $existing ? array_column($existing->submissionFiles(), 'path') : [];
+                $mediaFiles = [];
+                foreach ($uploads as $index => $upload) {
+                    $path = $files->save($this->module($request), 'submissions/'.$task->id.'/'.$member->id, $upload, $detected[$index]['ext']);
+                    $paths[] = $path;
+                    $mediaFiles[] = ['path' => $path, 'mime' => $detected[$index]['mime'], 'name' => mb_substr(basename(str_replace('\\', '/', $upload->getClientOriginalName())), 0, 191), 'size' => $upload->getSize()];
+                }
                 $model = $this->model($request, 'Submission');
                 $row = $existing ?? new $model;
-                $row->forceFill(['taskId' => $task->id, 'studentId' => $member->id, 'filePath' => $path, 'fileMime' => $detected['mime'], 'status' => 'pending', 'attemptsCount' => $existing ? $existing->attemptsCount + 1 : 1, 'isLate' => now() > $task->originalDeadline, 'submittedAt' => now()])->save();
+                $row->forceFill(['taskId' => $task->id, 'studentId' => $member->id, 'filePath' => $mediaFiles[0]['path'], 'fileMime' => $mediaFiles[0]['mime'], 'mediaFiles' => $mediaFiles, 'status' => 'pending', 'attemptsCount' => $existing ? $existing->attemptsCount + 1 : 1, 'isLate' => now() > $task->originalDeadline, 'submittedAt' => now()])->save();
 
                 return $row;
-            }, 5);
+            });
         } catch (\Throwable $error) {
-            if ($path) {
+            foreach ($paths as $path) {
                 $files->delete($this->module($request), $path);
             } throw $error;
         }
-        if ($before) {
-            $files->delete($this->module($request), $before);
+        foreach ($before as $path) {
+            $files->delete($this->module($request), $path);
         }
 
         return response()->json(['ok' => true, 'isLate' => $row->isLate]);
@@ -119,6 +130,7 @@ class SubmissionController extends BaseController
         $student = $row->student;
         $data = ['id' => $row->id, 'status' => $row->status, 'attemptsCount' => $row->attemptsCount, 'isLate' => $row->isLate, 'submittedAt' => $row->submittedAt, 'fileMime' => $row->fileMime, 'filePath' => $row->filePath, 'score' => $row->score, 'task' => ['id' => $row->task->id, 'title' => $row->task->title, 'type' => $row->task->type, 'description' => $row->task->description], 'student' => ['code' => $student->code, 'teachingPlace' => $student->teachingPlace, 'group' => $student->group ? ['name' => $student->group->name] : null, 'user' => ['name' => $student->user->name]], 'logs' => app(TaskController::class)->logs($row), 'answers' => $row->answers()->with('question')->get()->map(fn ($answer) => ['questionId' => $answer->questionId, 'selectedOption' => $answer->selectedOption, 'isCorrect' => $answer->isCorrect, 'question' => $answer->question->toArray()])->all()];
 
+        $data['files'] = $row->mediaMetadata();
         return response()->json(['data' => $data]);
     }
 
@@ -160,10 +172,13 @@ class SubmissionController extends BaseController
         $model = $this->model($request, 'Submission');
         $row = $model::findOrFail($id);
         abort_unless($context['admin'] || $context['member']?->id === $row->studentId || $this->canReview($request, $row->task, $context['member']), 404);
-        $path = $files->path($this->module($request), $row->filePath);
-        abort_unless($path && $row->fileMime, 404);
+        $request->validate(['index' => 'sometimes|integer|min:0|max:9']);
+        $media = $row->submissionFiles()[$request->integer('index', 0)] ?? null;
+        abort_unless($media, 404);
+        $path = $files->path($this->module($request), $media['path']);
+        abort_unless($path, 404);
 
-        return response()->file($path, ['Content-Type' => $row->fileMime, 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
+        return response()->file($path, ['Content-Type' => $media['mime'], 'Cache-Control' => 'private, no-store', 'X-Content-Type-Options' => 'nosniff']);
     }
 
     public function photo(Request $request, string $id, LearningFileStore $files)

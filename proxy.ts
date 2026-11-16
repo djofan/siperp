@@ -1,12 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { academySurfaceHeader, isAcademyAppPath } from "@/modules/academy/pwa/navigation";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/academy/:path*", "/academy-app/:path*"],
 };
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (pathname === "/academy" || pathname.startsWith("/academy/") || isAcademyAppPath(pathname)) {
+    const forwarded = new Headers(request.headers);
+    const app = isAcademyAppPath(pathname);
+    // Derive the surface from the actual URL, never from client-supplied headers.
+    forwarded.set(academySurfaceHeader, app ? "app" : "web");
+    // Path-only aliases in next.config.ts stay internal behind HTTPS termination.
+    return NextResponse.next({ request: { headers: forwarded } });
+  }
 
   if (pathname.startsWith("/admin/login")) {
     return NextResponse.next();

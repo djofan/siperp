@@ -1,5 +1,6 @@
 export const surveyFields=[
   {key:"date",label:"Tanggal verifikasi",type:"date"},
+  {key:"sunnahKnowledge",label:"Apakah sudah mengenal sunnah?",options:["Ya","Tidak","Sudah mulai"]},
   {key:"hasSktm",label:"Sudah memiliki SKTM?",type:"boolean"},
   {key:"sktmExplanation",label:"Penjelasan jika belum memiliki SKTM",type:"textarea",optional:true},
   {key:"background",label:"Latar belakang",type:"textarea"},

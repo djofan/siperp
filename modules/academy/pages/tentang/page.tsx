@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 
 export const metadata = { title: "Tentang Insan Academy" };
 export default function Page() {

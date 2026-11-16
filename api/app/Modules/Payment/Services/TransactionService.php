@@ -33,7 +33,7 @@ class TransactionService
         $row->forceFill([
             ...$input, 'trackingCode' => $this->trackingCode($input['moduleSource']), 'destinationAccountId' => $account->id,
             'isAnonymous' => $input['isAnonymous'] ?? false, 'status' => 'pending', 'gateway' => $gateway,
-            'gatewayState' => 'not_started', 'gatewayAccountId' => in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true) ? config('payment.ipaymu.va') : null,
+            'gatewayState' => 'not_started', 'gatewayAccountId' => $gatewayConfig['va'] ?? null,
             'gatewayReferenceId' => in_array($gateway, ['ipaymu', 'ipaymu_sandbox'], true) ? 'SIP-'.Str::uuid() : null,
         ])->save();
         $row->refresh();

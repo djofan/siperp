@@ -214,8 +214,10 @@ export type GetLearningOverviewResult = {
     completedLessons: number;
     totalQuizzes: number;
     passedQuizzes: number;
+    completedQuizzes: number;
     percent: number;
     isEligible: boolean;
+    certificateVisible: boolean;
     grading: {
         means: {
             DAILY: number;
@@ -238,8 +240,10 @@ export async function getLearningOverview(_profileId: string): Promise<GetLearni
         completedLessons: number;
         totalQuizzes: number;
         passedQuizzes: number;
+        completedQuizzes: number;
         percent: number;
         isEligible: boolean;
+    certificateVisible: boolean;
         grading: {
             means: {
                 DAILY: number;
@@ -372,23 +376,32 @@ export type GetLeaderboardResult = {
     average: number;
 }[];
 export async function getLeaderboard(): Promise<GetLeaderboardResult> { return await apiRequest<GetLeaderboardResult>("academy/leaderboard"); }
+export type AcademyRankingParticipant = {
+    nis: string | null;
+    rank: number;
+    name: string;
+    score: number;
+    predicate: string;
+    complete: boolean;
+    finalCompleted: boolean;
+    durationMs: number;
+    finishedAt: Date | null;
+    isSelf: boolean;
+};
 export type GetOwnRankingsResult = {
     courseId: string;
+    cohortId: string | null;
     title: string;
     rank: number | null;
     total: number;
     score: number;
     predicate: string | null;
     complete: boolean;
+    finalCompleted: boolean;
+    durationMs: number | null;
+    finishedAt: Date | null;
+    participants: AcademyRankingParticipant[];
 }[];
 export async function getOwnRankings(_profileId: string): Promise<GetOwnRankingsResult> {
-    return await apiRequest<{
-        courseId: string;
-        title: string;
-        rank: number | null;
-        total: number;
-        score: number;
-        predicate: string | null;
-        complete: boolean;
-    }[]>("academy/learning/rankings");
+    return await apiRequest<GetOwnRankingsResult>("academy/learning/rankings");
 }

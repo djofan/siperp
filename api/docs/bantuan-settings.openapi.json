@@ -157,13 +157,13 @@
     },
     "/reports/full": {
       "get": {
-        "summary": "Admin-only complete private report, same filters as application listing including dates/status/program/source/staff/surveyOverdue",
+        "summary": "Module admin, superadmin or Call Center complete private report, same filters as application listing including dates/status/program/source/staff/surveyOverdue",
         "responses": {
           "200": {
             "description": "data: array of private report rows. No pagination; Cache-Control no-store, private. Includes identity, address, applicant needs, nominal, staff, timestamps and optional reporter."
           },
           "403": {
-            "description": "Not module admin/superadmin"
+            "description": "Not module admin, superadmin or Call Center"
           }
         }
       }

@@ -27,8 +27,8 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
   const isVideo = type === "video";
   const [mode, setMode] = useState<Mode>("record");
   const [phase, setPhase] = useState<Phase>("idle");
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [items, setItems] = useState<{id:string;file:File;url:string}[]>([]);
+  const urls = useRef(new Set<string>());
   const [seconds, setSeconds] = useState(0);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
@@ -48,14 +48,16 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
   }, []);
 
   useEffect(() => stopStream, [stopStream]);
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+  useEffect(() => {
+    const previews=urls.current;
+    return()=>{for (const url of previews) URL.revokeObjectURL(url);};
+  }, []);
 
   function reset() {
     stopStream();
-    setFile(null);
-    setPreviewUrl(null);
+    for (const url of urls.current) URL.revokeObjectURL(url);
+    urls.current.clear();
+    setItems([]);
     setSeconds(0);
     setProgress(0);
     setError("");
@@ -63,24 +65,29 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
   }
 
   function switchMode(next: Mode) {
-    reset();
+    stopStream();
+    setPhase("idle");
+    setError("");
     setMode(next);
   }
 
-  function acceptFile(next: File) {
-    if (next.size > MAX_SUBMISSION_BYTES) {
-      setError("Ukuran file maksimal 50 MB.");
-      setPhase("idle");
-      return;
-    }
-    setError("");
-    setFile(next);
-    setPreviewUrl(URL.createObjectURL(next));
-    setPhase("ready");
+  function acceptFiles(next: File[]) {
+    if (items.length + next.length > 10) {setError("Maksimal 10 file dalam satu setoran.");return;}
+    if (next.some(file=>file.type && !file.type.startsWith(isVideo?"video/":"audio/"))) {setError("Pilih file yang sesuai tipe tugas.");return;}
+    if ([...items.map(item=>item.file),...next].reduce((sum,file)=>sum+file.size,0)>MAX_SUBMISSION_BYTES) {setError("Total ukuran semua file maksimal 50 MB.");setPhase("idle");return;}
+    const added=next.map(file=>{const url=URL.createObjectURL(file);urls.current.add(url);return {id:crypto.randomUUID(),file,url};});
+    setItems(current=>[...current,...added]);setError("");setPhase("ready");
+  }
+  function removeFile(id:string){
+    const item=items.find(item=>item.id===id);
+    if(item){URL.revokeObjectURL(item.url);urls.current.delete(item.url);}
+    setItems(current=>current.filter(item=>item.id!==id));
+    if(items.length===1)setPhase("idle");
   }
 
   async function startRecording() {
     setError("");
+    if(items.length>=10){setError("Maksimal 10 file. Hapus salah satu sebelum merekam lagi.");return;}
     const mimeType = pickMimeType(isVideo);
     if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setError("Browser ini belum mendukung perekaman. Gunakan tombol Unggah file.");
@@ -107,7 +114,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
         const ext = blobType.includes("mp4") ? "mp4" : blobType.includes("ogg") ? "ogg" : "webm";
         const blob = new Blob(chunksRef.current, { type: blobType });
         stopStream();
-        acceptFile(new File([blob], `rekaman.${ext}`, { type: blobType }));
+        acceptFiles([new File([blob], `rekaman-${items.length+1}.${ext}`, { type: blobType })]);
       };
       recorder.start(1000);
       setSeconds(0);
@@ -124,12 +131,12 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
   }
 
   function submit() {
-    if (!file) return;
+    if (!items.length) return;
     setPhase("uploading");
     setError("");
     const form = new FormData();
     form.set("taskId", taskId);
-    form.set("file", file);
+    for (const item of items) form.append("files[]", item.file);
     // XHR (bukan fetch) supaya progres unggah bisa ditampilkan untuk file besar.
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/tanwir/submissions");
@@ -224,35 +231,33 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
         </div>
       )}
 
-      {mode === "upload" && phase === "idle" && (
+      {mode === "upload" && phase !== "uploading" && (
         <label className="flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-tanwir-line bg-tanwir-paper px-6 py-10 text-center transition-colors hover:bg-tanwir-primary-soft">
           <Icon name="upload" className="h-7 w-7 text-tanwir-primary" />
-          <span className="mt-3 text-sm font-medium">Pilih file {isVideo ? "video" : "audio"}</span>
+          <span className="mt-3 text-sm font-medium">Tambah file {isVideo ? "video" : "audio"}</span>
           <span className="mt-1 text-xs text-tanwir-muted">{isVideo ? "MP4, WEBM, atau MOV" : "MP3, WAV, OGG, M4A, atau WEBM"} · maksimal 50 MB</span>
           <input
             type="file"
+            multiple
             accept={isVideo ? "video/mp4,video/webm,video/quicktime" : "audio/*"}
             className="sr-only"
             onChange={(event) => {
-              const picked = event.target.files?.[0];
-              if (picked) acceptFile(picked);
+              const picked = Array.from(event.target.files??[]);
+              if (picked.length) acceptFiles(picked);
               event.target.value = "";
             }}
           />
         </label>
       )}
 
-      {(phase === "ready" || phase === "uploading") && previewUrl && file && (
+      {items.length>0 && (
         <div className="space-y-4 rounded-2xl bg-tanwir-paper p-4 sm:p-5">
-          <p className="text-sm font-medium">Pratinjau sebelum dikirim</p>
-          {isVideo ? (
-            <video src={previewUrl} controls playsInline className="aspect-video w-full rounded-xl bg-tanwir-ink" />
-          ) : (
-            <audio src={previewUrl} controls className="w-full" />
-          )}
-          <p className="text-xs text-tanwir-muted">
-            {file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB
-          </p>
+          <p className="text-sm font-medium">{items.length}/10 file - {(items.reduce((sum,item)=>sum+item.file.size,0)/1024/1024).toFixed(1)} / 50 MB</p>
+          <p className="text-xs text-tanwir-muted">Periksa semua file sebelum dikirim. Guru akan menerima seluruh file sebagai satu setoran.</p>
+          {items.map((item,index)=><div key={item.id} className="space-y-2 rounded-xl bg-tanwir-surface p-3">
+            <div className="flex min-w-0 items-center justify-between gap-3"><p className="min-w-0 break-all text-sm">{index+1}. {item.file.name}</p><button type="button" disabled={phase==="uploading"||phase==="recording"} onClick={()=>removeFile(item.id)} className={buttonClass("secondary","shrink-0")} aria-label={`Hapus ${item.file.name}`}>Hapus</button></div>
+            {isVideo?<video src={item.url} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-tanwir-ink"/>:<audio src={item.url} controls preload="metadata" className="w-full"/>}
+          </div>)}
           {phase === "uploading" ? (
             <div>
               <div className="h-2 overflow-hidden rounded-full bg-tanwir-line" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
@@ -262,12 +267,13 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={submit} className={buttonClass("primary", "h-12 px-6")}>
+              {mode==="record"&&<button type="button" disabled={phase==="recording"||items.length>=10} onClick={()=>setPhase("idle")} className={buttonClass("secondary","h-12")}>Tambah rekaman</button>}
+              <button type="button" onClick={submit} disabled={phase==="recording"} className={buttonClass("primary", "h-12 px-6")}>
                 <Icon name="check" className="h-4 w-4" />
                 {resubmit ? "Kirim ulang setoran" : "Kirim setoran"}
               </button>
-              <button type="button" onClick={reset} className={buttonClass("secondary", "h-12")}>
-                {mode === "record" ? "Rekam ulang" : "Ganti file"}
+              <button type="button" onClick={reset} disabled={phase==="recording"} className={buttonClass("secondary", "h-12")}>
+                Hapus semua
               </button>
             </div>
           )}

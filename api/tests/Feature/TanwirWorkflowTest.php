@@ -14,6 +14,66 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+function learningMultiFileActors($test, string $module): array
+{
+    if ($module === 'tanwir') return [$test->teacher, $test->student, $test->otherTeacher];
+    DB::table('modules')->insert(['id' => (string) Str::uuid(), 'slug' => 'ojol', 'name' => 'Ojol', 'is_active' => true]);
+    $actors = [];
+    foreach ([$test->teacher, $test->student, $test->otherTeacher] as $index => $source) {
+        $member = new \App\Modules\Ojol\Models\OjolMember;
+        $member->forceFill(['userId' => $source->userId, 'code' => 'OMTEST'.$index, 'role' => $source->role])->save();
+        $actors[] = $member;
+    }
+    $group = new \App\Modules\Ojol\Models\OjolGroup;
+    $group->forceFill(['code' => 'OMTEST', 'name' => 'Kelompok Ojol'])->save();
+    $actors[1]->forceFill(['groupId' => $group->id])->save();
+    return $actors;
+}
+
+it('stores and plays every private media file and replaces all files on resubmission', function (string $module, string $type) {
+    [$teacher, $student, $otherTeacher] = learningMultiFileActors($this, $module);
+    $base = '/api/v1/'.$module;
+    $input = tanwirTaskInput(['type' => $type, 'groupIds' => [$student->groupId]]);
+    $task = $this->actingAs($teacher->user, 'sanctum')->postJson($base.'/tasks', $input)->assertCreated()->json('data.id');
+    $upload = fn () => $type === 'video' ? tanwirMp4(['vide', 'soun']) : tanwirAudio();
+    $this->actingAs($student->user, 'sanctum')->post($base.'/submissions', ['taskId' => $task, 'files' => [$upload(), $upload()]], ['Accept' => 'application/json'])->assertOk();
+    $model = 'App\\Modules\\'.ucfirst($module).'\\Models\\'.ucfirst($module).'Submission';
+    $row = $model::where('task_id', $task)->firstOrFail();
+    expect($row->submissionFiles())->toHaveCount(2)->and($row->attemptsCount)->toBe(1);
+    $oldPaths = array_column($row->submissionFiles(), 'path');
+    $this->get($base.'/files/submission/'.$row->id.'?index=1')->assertOk();
+    $this->get($base.'/files/submission/'.$row->id.'?index=2')->assertNotFound();
+    $this->getJson($base.'/student/tasks/'.$task)->assertOk()->assertJsonCount(2, 'data.submission.files');
+    $this->actingAs($otherTeacher->user, 'sanctum')->get($base.'/files/submission/'.$row->id.'?index=1')->assertNotFound();
+    $this->actingAs($teacher->user, 'sanctum')->getJson($base.'/submissions/'.$row->id)->assertOk()->assertJsonCount(2, 'data.files')->assertJsonMissingPath('data.files.0.path');
+    $this->postJson($base.'/submissions/'.$row->id.'/reviews', ['decision' => 'rejected', 'feedback' => 'Ulangi bacaan agar lebih jelas'])->assertOk();
+    $this->actingAs($student->user, 'sanctum')->post($base.'/submissions', ['taskId' => $task, 'files' => [$upload(), $upload(), $upload()]], ['Accept' => 'application/json'])->assertOk();
+    expect($row->fresh()->submissionFiles())->toHaveCount(3)->and($row->fresh()->attemptsCount)->toBe(2);
+    foreach ($oldPaths as $path) Storage::disk('local')->assertMissing($module.'/'.$path);
+    $this->post($base.'/submissions', ['taskId' => $task, 'files' => [$upload()]], ['Accept' => 'application/json'])->assertConflict();
+    $newPaths = array_column($row->fresh()->submissionFiles(), 'path');
+    $this->actingAs($teacher->user, 'sanctum')->deleteJson($base.'/tasks/'.$task)->assertOk();
+    foreach ($newPaths as $path) Storage::disk('local')->assertMissing($module.'/'.$path);
+})->with([['tanwir', 'voice_note'], ['tanwir', 'video'], ['ojol', 'voice_note'], ['ojol', 'video']]);
+
+it('rejects invalid batches atomically while preserving legacy single file uploads', function (string $module) {
+    [$teacher, $student] = learningMultiFileActors($this, $module);
+    $base = '/api/v1/'.$module;
+    $task = $this->actingAs($teacher->user, 'sanctum')->postJson($base.'/tasks', tanwirTaskInput(['groupIds' => [$student->groupId]]))->assertCreated()->json('data.id');
+    $this->actingAs($student->user, 'sanctum');
+    foreach ([[], [tanwirAudio(), tanwirMp4(['vide'])], array_map(fn () => tanwirAudio(), range(1,11)), [UploadedFile::fake()->create('one.wav',30000), UploadedFile::fake()->create('two.wav',30000)]] as $batch) {
+        $this->post($base.'/submissions', ['taskId' => $task, 'files' => $batch], ['Accept' => 'application/json'])->assertUnprocessable();
+        $this->assertDatabaseCount($module.'_submissions', 0);
+        expect(Storage::disk('local')->allFiles($module.'/submissions'))->toBe([]);
+    }
+    $this->post($base.'/submissions', ['taskId' => $task, 'file' => tanwirAudio(), 'files' => [tanwirAudio()]], ['Accept' => 'application/json'])->assertUnprocessable();
+    $this->post($base.'/submissions', ['taskId' => $task, 'file' => tanwirAudio()], ['Accept' => 'application/json'])->assertOk();
+    DB::table($module.'_submissions')->where('task_id', $task)->update(['media_files' => null]);
+    $this->getJson($base.'/student/tasks/'.$task)->assertOk()->assertJsonCount(1, 'data.submission.files');
+    $submissionId = DB::table($module.'_submissions')->where('task_id', $task)->value('id');
+    $this->get($base.'/files/submission/'.$submissionId)->assertOk();
+})->with(['tanwir', 'ojol']);
+
 function tanwirMember(string $role, ?string $group = null): TanwirMember
 {
     $code = ($role === 'guru' ? 'GTQ' : 'PTQ').strtoupper(Str::random(8));

@@ -84,12 +84,15 @@ class PaymentController
             } else {
                 PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'needs_review']);
             }
-            Log::warning('iPaymu session request rejected.', ['transaction_id' => $id, 'gateway' => $row->gateway, 'provider_status' => $status]);
-            $message = in_array($status, [401, 403], true)
-                ? 'Kredensial iPaymu ditolak. Pastikan VA dan API key berasal dari mode yang sama.'
+            $diagnostic = $gateway->rejectionCode($error->response);
+            Log::warning('iPaymu session request rejected.', ['transaction_id' => $id, 'gateway' => $row->gateway, 'provider_status' => $status, 'diagnostic_code' => $diagnostic]);
+            $message = $diagnostic === 'IPAYMU_SIGNATURE_REJECTED'
+                ? 'Signature permintaan ditolak iPaymu. Admin perlu memeriksa pasangan VA/API key produksi, cache konfigurasi, dan uji koneksi server. [IPAYMU_SIGNATURE_REJECTED]'
+                : (in_array($status, [401, 403], true)
+                ? 'Autentikasi iPaymu ditolak. Admin perlu memeriksa kredensial sesuai mode serta izin domain/IP. ['.$diagnostic.']'
                 : ($status >= 400 && $status < 500
                     ? 'Permintaan ditolak iPaymu. Periksa domain, IP server, dan konfigurasi pembayaran.'
-                    : 'Sesi belum dapat dipastikan. Hubungi admin; jangan membuat pembayaran ulang.');
+                    : 'Sesi belum dapat dipastikan. Hubungi admin; jangan membuat pembayaran ulang.'));
             abort(502, $message);
         } catch (\Throwable $error) {
             PaymentTransaction::whereKey($id)->where('gateway_state', 'creating')->update(['gateway_state' => 'needs_review']);

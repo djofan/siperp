@@ -2,18 +2,19 @@
 
 namespace App\Modules\Academy\Http\Controllers;
 
+use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use App\Modules\Academy\Models\ZakatAcademyCourse as Course;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment as Enrollment;
 use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademySetting as Setting;
 use App\Modules\Academy\Services\AcademyContext;
-use App\Modules\Core\Models\User;
+use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Auth\AccountCodes;
+use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Modules\Academy\Models\AcademyCohort as Cohort;
 use Illuminate\Support\Str;
 
 class IntakeController
@@ -118,8 +119,10 @@ class IntakeController
                 if ($newUser) {
                     $profile->mustChangePassword = true;
                 } $profile->save();
-                app(\App\Modules\Academy\Services\CohortLearning::class)->join($profile, $cohort);
-                if (Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) { continue; }
+                app(CohortLearning::class)->join($profile, $cohort);
+                if (Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->exists()) {
+                    continue;
+                }
                 $enrollment = new Enrollment;
                 $enrollment->profileId = $profile->id;
                 $enrollment->courseId = $courseId;
@@ -163,14 +166,41 @@ class IntakeController
     public function settings(Request $request)
     {
         $this->context->admin($request);
-        $data = $request->validate(['csPhone' => 'required|string', 'daily_weight' => 'required|integer|min:0|max:100', 'weekly_weight' => 'required|integer|min:0|max:100', 'final_weight' => 'required|integer|min:0|max:100']);
-        $phone = $this->phone($data['csPhone']);
-        abort_unless($phone && $data['daily_weight'] + $data['weekly_weight'] + $data['final_weight'] === 100, 422, 'Nomor CS harus valid dan bobot harus berjumlah 100%.');
-        DB::transaction(function () use ($data, $phone) {
-            foreach (['daily_weight', 'weekly_weight', 'final_weight', 'cs_phone'] as $key) {
+        $data = $request->validate([
+            'csPhone' => 'sometimes|required|string|max:30',
+            'csContacts' => 'sometimes|required|array|min:1|max:20',
+            'csContacts.*.name' => 'required|string|max:100',
+            'csContacts.*.phone' => 'required|string|max:30',
+            'daily_weight' => 'required_with:weekly_weight,final_weight|integer|min:0|max:100',
+            'weekly_weight' => 'required_with:daily_weight,final_weight|integer|min:0|max:100',
+            'final_weight' => 'required_with:daily_weight,weekly_weight|integer|min:0|max:100',
+        ]);
+        $updates = [];
+        if (array_key_exists('daily_weight', $data)) {
+            abort_unless($data['daily_weight'] + $data['weekly_weight'] + $data['final_weight'] === 100, 422, 'Total bobot harus 100%.');
+            foreach (['daily_weight', 'weekly_weight', 'final_weight'] as $key) $updates[$key] = (string) $data[$key];
+        }
+        if (isset($data['csContacts']) || isset($data['csPhone'])) {
+            $contacts = $data['csContacts'] ?? $this->context->settings()['csContacts'];
+            if (! isset($data['csContacts'])) $contacts[0]['phone'] = $data['csPhone'];
+            $seen = [];
+            foreach ($contacts as &$contact) {
+                $contact['name'] = trim($contact['name']);
+                $phone = $this->phone($contact['phone']);
+                abort_unless($contact['name'] && $phone && ! isset($seen[$phone]), 422, 'Nama kontak dan nomor WhatsApp harus valid; nomor tidak boleh duplikat.');
+                $contact = ['name' => $contact['name'], 'phone' => $phone];
+                $seen[$phone] = true;
+            }
+            unset($contact);
+            $updates['cs_phone'] = $contacts[0]['phone'];
+            $updates['cs_contacts'] = json_encode(array_values($contacts), JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        }
+        abort_unless($updates, 422, 'Tidak ada pengaturan yang diubah.');
+        DB::transaction(function () use ($updates) {
+            foreach ($updates as $key => $value) {
                 $row = Setting::where('key', $key)->first() ?? new Setting;
                 $row->key = $key;
-                $row->value = $key === 'cs_phone' ? $phone : (string) $data[$key];
+                $row->value = $value;
                 $row->save();
             }
         });
@@ -205,9 +235,20 @@ class IntakeController
         $cohort->title = $data['title'];
 
         $cohort->registrationOpen = false;
-        $cohort->save();
+        DB::transaction(function () use ($cohort) {
+            $cohort->save();
+            app(CohortLearning::class)->prepareChapters($cohort->id);
+        });
 
         return $this->data(['id' => $cohort->id]);
+    }
+
+    public function prepareChapters(Request $request, string $id)
+    {
+        $this->context->admin($request);
+        $courseId = DB::transaction(fn () => app(CohortLearning::class)->prepareChapters($id));
+
+        return $this->data(['courseId' => $courseId]);
     }
 
     public function cohortRegistration(Request $request, string $id)

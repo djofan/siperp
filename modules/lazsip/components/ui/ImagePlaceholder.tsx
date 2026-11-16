@@ -13,17 +13,19 @@ export function ImagePlaceholder({
   src,
   alt = "",
   className = "",
+  naturalSize = false,
 }: {
   variant?: Variant;
   src?: string | null;
   alt?: string;
   className?: string;
+  naturalSize?: boolean;
 }) {
   if (src) {
     return (
       <div className={`overflow-hidden bg-lazsip-primary-100 ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- URL gambar bebas dari admin, belum lewat image storage terkelola */}
-        <img src={src} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+        <img src={src} alt={alt} loading="lazy" className={naturalSize ? "block h-auto w-full object-contain" : "h-full w-full object-cover"} />
       </div>
     );
   }

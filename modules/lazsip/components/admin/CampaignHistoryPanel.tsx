@@ -98,7 +98,7 @@ export function CampaignHistoryPanel({
           {formatRupiah(currentAmount)}
         </p>
         <p className="mt-1 break-words text-xs text-lazsip-primary-800/50 dark:text-white/45">
-          dari target {formatRupiah(targetAmount)} ({percentage}%)
+          {targetAmount > 0 ? `dari target ${formatRupiah(targetAmount)} (${percentage}%)` : "Terkumpul · Tanpa target nominal"}
         </p>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
           <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />

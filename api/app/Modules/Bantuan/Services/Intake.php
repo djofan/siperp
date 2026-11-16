@@ -15,8 +15,28 @@ class Intake
         return hash_hmac('sha256', $nik, config('app.key'));
     }
 
-    public function validateApplicant(Request $request, bool $draft = false): array
+    public function validateApplicant(Request $request, bool $draft = false, bool $survey = false): array
     {
+        if ($request->input('applicant.intakeType') === 'other') {
+            $data = $request->validate([
+                'applicant' => 'required|array',
+                'applicant.intakeType' => 'required|in:other',
+                'applicant.name' => 'required|string|max:191',
+                'applicant.nik' => 'required|digits:16',
+                'applicant.street' => ($draft ? 'nullable' : 'required').'|string|max:500',
+                'applicant.phone' => [$draft ? 'nullable' : 'required', 'string', 'max:30', new PhoneNumber],
+                'applicant.reporterRelationship' => ($draft ? 'nullable' : 'required').'|string|max:191',
+                'applicant.otherCategory' => ($draft ? 'nullable' : 'required').'|in:Proposal,Sedekah air bersih,Renovasi rumah,Lainnya',
+                'applicant.customTitle' => ($draft ? 'nullable' : 'required').'|string|max:191',
+                'applicant.problem' => ($draft ? 'nullable' : 'required').'|string|max:10000',
+                'applicant.customBudget' => ($draft ? 'nullable' : 'required').'|string|max:10000',
+                'applicant.applicationNotes' => 'nullable|string|max:10000',
+            ]);
+            return array_intersect_key($data['applicant'], array_flip([
+                'intakeType', 'name', 'nik', 'street', 'phone', 'reporterRelationship',
+                'otherCategory', 'customTitle', 'problem', 'customBudget', 'applicationNotes',
+            ]));
+        }
         $rules = [
             'applicant.requestCategory' => 'nullable|in:perorangan,renovasi rumah,air bersih,santunan rutin,bantuan janda,lainnya',
             'applicant.customTitle' => 'nullable|string|max:10000',
@@ -89,6 +109,14 @@ class Intake
             $rules['applicant.dependents.*.age'] = 'required|integer|min:0|max:120';
             $rules['applicant.dependents.*.status'] = 'required|in:Belum sekolah,Sekolah,Kuliah,Bekerja,Belum bekerja,Tidak bekerja,Lainnya';
         }
+        if ($survey && !$draft) {
+            $count = $request->input('applicant.dependentCount');
+            $rules['applicant.dependents'] = ['present', 'array', 'size:'.(is_numeric($count) ? max(0, (int) $count) : 0)];
+        }
+        if (!$draft && preg_match('/kontrak|sewa|rent/iu', (string) $request->input('applicant.housing'))) {
+            $rules['applicant.rent'] = 'required|integer|min:1|max:9000000000000';
+            $rules['applicant.rentPeriod'] = 'required|in:bulan,tahun';
+        }
         if ($draft) {
             foreach ($rules as $field => $rule) {
                 if (! in_array($field, ['applicant', 'applicant.name', 'applicant.nik'], true)) {
@@ -99,7 +127,14 @@ class Intake
             }
         }
 
-        return $request->validate($rules)['applicant'];
+        return $request->validate($rules, [
+            'applicant.dependents.present' => 'Rinci setiap tanggungan sesuai jumlah yang diisi.',
+            'applicant.dependents.array' => 'Lengkapi daftar tanggungan per orang, bukan hanya jumlahnya.',
+            'applicant.dependents.size' => 'Jumlah rincian tanggungan harus sesuai jumlah tanggungan.',
+            'applicant.rent.required' => 'Isi biaya kontrak atau sewa.',
+            'applicant.rent.min' => 'Biaya kontrak atau sewa harus lebih dari Rp 0.',
+            'applicant.rentPeriod.required' => 'Pilih periode biaya sewa: bulan atau tahun.',
+        ])['applicant'];
     }
 
     public function save(Request $request, ?string $id = null): Application
@@ -117,6 +152,9 @@ class Intake
             }
         }
         $applicant = $this->validateApplicant($request, $draft);
+        if (($applicant['intakeType'] ?? null) === 'other') {
+            $request->merge(['source' => 'online', 'program' => 'Lainnya']);
+        }
         $rules = ['source' => 'required|in:online,walk_in,bypass', 'program' => 'required|string|max:191',
             'region' => 'nullable|string|max:191', 'bypassReason' => 'nullable|string|max:5000',
         ];
@@ -128,20 +166,25 @@ class Intake
         $settings = json_decode(DB::table('bantuan_settings')->where('key', 'general')->value('value'), true);
         abort_unless(in_array($data['program'], [...$settings['programs'], 'Lainnya'], true), 422, 'Program tidak terdaftar.');
         abort_if(! $id && $data['source'] === 'bypass' && (! $access->bypass($request) || strlen(trim($data['bypassReason'] ?? '')) < 5), 422, 'Jalur langsung memerlukan izin dan alasan minimal 5 karakter.');
-        $access->allow($request, $data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']);
+        $access->allow($request, $id ? ['call_center', 'verifier', 'requester'] : ($data['source'] === 'bypass' ? ['call_center', 'verifier'] : ['call_center', 'requester']));
 
         return DB::transaction(function () use ($request, $id, $data, $applicant, $access, $draft) {
             $row = $id ? $access->find($request, $id, true) : new Application;
             if ($id) {
+                abort_if(($row->applicant['intakeType'] ?? null) !== ($applicant['intakeType'] ?? null)
+                    && in_array('other', [$row->applicant['intakeType'] ?? null, $applicant['intakeType'] ?? null], true)
+                    && !in_array($row->status, ['draft', 'needs_data'], true), 409, 'Jenis pengajuan tidak dapat diubah setelah diproses.');
                 abort_if($draft && ! in_array($row->status, ['draft', 'needs_data'], true), 409, 'Draft hanya tersedia sebelum pengajuan diproses.');
                 $sourceChanged = $data['source'] !== $row->source;
                 abort_if($sourceChanged && (! in_array($row->status, ['draft', 'needs_data'], true)
                     || ! in_array($row->source, ['online', 'walk_in'], true)
                     || ! in_array($data['source'], ['online', 'walk_in'], true)), 422,
                     'Sumber WhatsApp / datang langsung hanya dapat diubah selama draft atau perlu dilengkapi. Jalur khusus tidak dapat diubah.');
-                abort_unless($access->has($request, ['call_center']) || $access->role($request) === 'admin' || in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Perubahan pada tahap ini hanya dapat dilakukan Call Center.');
+                $ownVerifier = $row->created_by === $request->user()->id && $access->has($request, ['verifier']) && in_array($row->status, ['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'bypass_review'], true);
+                abort_if($row->created_by !== $request->user()->id && !$access->has($request, ['call_center']) && $access->role($request) !== 'admin', 403, 'Anda hanya dapat memperbaiki pengajuan yang Anda buat sendiri.');
+                abort_unless($ownVerifier || $access->has($request, ['call_center']) || $access->role($request) === 'admin' || in_array($row->status, ['draft', 'needs_data', 'screening'], true), 409, 'Perubahan pada tahap ini hanya dapat dilakukan Call Center.');
                 $own = $row->created_by === $request->user()->id;
-                $access->allow($request, ['call_center', ...($own && $row->source === 'bypass' ? ['verifier'] : []),
+                $access->allow($request, ['call_center', ...($ownVerifier ? ['verifier'] : []),
                     ...($own && $row->source !== 'bypass' && in_array($row->status, ['draft', 'needs_data'], true) ? ['requester'] : [])]);
                 abort_unless((int) $request->input('version') === $row->version, 409, 'Data sudah berubah. Muat ulang.');
             }

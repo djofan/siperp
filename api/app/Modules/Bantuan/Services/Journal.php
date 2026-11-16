@@ -20,9 +20,10 @@ class Journal
     public function notify(Application $row, string $action, array $roles, array $users = [], ?string $dedupKey = null, ?string $reason = null): void
     {
         $eventAction = $action;
-        $action = ['submit' => 'Pengajuan dikirim', 'screen_pass' => 'Menunggu review tahap 1',
+        $action = ['revise_amount' => 'Nominal bantuan diperbarui', 'admin_correct' => 'Data pengajuan dikoreksi admin', 'submit' => 'Pengajuan dikirim', 'screen_pass' => 'Menunggu review tahap 1',
             'review1_approve' => 'Disetujui untuk survei', 'assign_survey' => 'Anda mendapat tugas survei',
             'survey_submit' => 'Hasil survei menunggu review Call Center', 'approve' => 'Nominal bantuan ditetapkan',
+            'survey_revise' => 'Verifikator sedang memperbaiki hasil survei',
             'survey_review_withdraw' => 'Hasil survei dikembalikan ke pemeriksaan Call Center',
             'survey_review_save' => 'Draft koreksi survei disimpan',
             'survey_review_submit' => 'Hasil review survei menunggu keputusan',
@@ -38,6 +39,11 @@ class Journal
             'return_funds' => 'Dana dikembalikan ke Bendahara', 'reopen' => 'Pengajuan dibuka kembali',
             'cancel' => 'Pengajuan dibatalkan', 'request_data' => 'Data perlu dilengkapi',
         ][$action] ?? $action;
+        if (($row->applicant['intakeType'] ?? null) === 'other') {
+            if ($eventAction === 'screen_pass') $action = 'Pengajuan lainnya menunggu penetapan nominal';
+            if ($eventAction === 'disburse') $action = 'Dana diterima penyalur, silakan lengkapi laporan penyerahan';
+            if ($eventAction === 'other_report') $action = 'Laporan penyaluran tambahan disimpan';
+        }
         if ($reason && in_array($eventAction, ['survey_decline', 'survey_return', 'assign_survey'], true)) $action .= ' · '.$reason;
         $ids = DB::table('module_access')->join('modules', 'modules.id', '=', 'module_access.module_id')
             ->leftJoin('bantuan_staff', 'bantuan_staff.user_id', '=', 'module_access.user_id')

@@ -66,7 +66,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
     );
     if (statusFilter !== "all") rows = rows.filter((c) => c.status === statusFilter);
     if (sort === "progress") {
-      rows = [...rows].sort((a, b) => b.currentAmount / b.targetAmount - a.currentAmount / a.targetAmount);
+      rows = [...rows].sort((a, b) => (b.targetAmount > 0 ? b.currentAmount / b.targetAmount : 0) - (a.targetAmount > 0 ? a.currentAmount / a.targetAmount : 0));
     } else if (sort === "target") {
       rows = [...rows].sort((a, b) => b.targetAmount - a.targetAmount);
     }
@@ -106,7 +106,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
               </thead>
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {paginated.map((campaign, index) => {
-                  const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
+                  const percentage = campaign.targetAmount > 0 ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0;
                   return (
                     <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
                       <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
@@ -127,12 +127,12 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                       <td className="min-w-36 px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24 dark:bg-white/10">
-                            <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />
+                            <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}` }} />
                           </div>
-                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/50">{percentage}%</span>
+                          <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/50">{campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}</span>
                         </div>
                         <p className="mt-1 wrap-break-words text-[11px] text-lazsip-primary-800/40 dark:text-white/40">
-                          {formatRupiah(campaign.currentAmount)} / {formatRupiah(campaign.targetAmount)}
+                          {formatRupiah(campaign.currentAmount)}{campaign.targetAmount > 0 ? ` / ${formatRupiah(campaign.targetAmount)}` : " terkumpul"}
                         </p>
                       </td>
                       <td className="px-4 py-3.5">
@@ -164,7 +164,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
         <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {paginated.map((campaign) => {
-            const percentage = Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100));
+            const percentage = campaign.targetAmount > 0 ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0;
             return (
               <AdminOverlayCard
                 key={campaign.id}
@@ -175,9 +175,9 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                   <div className="flex w-full flex-col gap-1">
                     <div className="flex items-center gap-1.5">
                       <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/25">
-                        <div className="h-full rounded-full bg-white" style={{ width: `${percentage}%` }} />
+                        <div className="h-full rounded-full bg-white" style={{ width: `${campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}` }} />
                       </div>
-                      <span className="text-[9px] font-bold text-white/80">{percentage}%</span>
+                      <span className="text-[9px] font-bold text-white/80">{campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
                       <AdminBadge tone={campaign.status === "active" ? "secondary" : "overlay"} size="sm">

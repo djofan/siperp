@@ -11,10 +11,11 @@ export type UpdateAttemptResult = {
     completed: boolean;
     quizId: string;
 };
-export async function updateAttempt(profileId: string, attemptId: string, answer?: {
-    questionId: string;
-    optionId: string | string[];
-}, submit = false): Promise<UpdateAttemptResult> { return await apiRequest<UpdateAttemptResult>(`academy/attempts/${encodeURIComponent(attemptId)}`, { method: "PUT", body: JSON.stringify({ answer, submit }) }); }
+export async function updateAttempt(profileId: string, attemptId: string, payload: {
+    answer?: { questionId: string; optionId: string | string[] };
+    answers?: Record<string, string | string[]>;
+    submit?: boolean;
+}): Promise<UpdateAttemptResult> { return await apiRequest<UpdateAttemptResult>(`academy/attempts/${encodeURIComponent(attemptId)}`, { method: "PUT", body: JSON.stringify(payload) }); }
 export type GetOwnAttemptResult = ({
     quiz: {
         title: string;

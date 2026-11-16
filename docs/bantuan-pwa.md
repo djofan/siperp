@@ -5,8 +5,8 @@ Branch pengembangan awal: `feature/pwa-pengajuan`.
 PWA kini memakai `Workspace` yang sama dengan dashboard web. Menu, formulir,
 monitoring, peta survei, pin foto, dana, laporan, santunan, dan pengelolaan
 mengikuti `navigation`/`canViewRoute` serta hak akses Laravel yang sama.
-Navigasi bawah menyediakan Beranda, Pekerjaan (jika ada), Semua menu,
-Notifikasi dan Akun. Semua menu membuka sidebar responsif; pencarian,
+Navigasi bawah menyediakan Beranda, Pekerjaan (jika ada), Notifikasi dan Akun.
+Sidebar dibuka melalui tombol kiri atas; pencarian,
 filter, kartu/tabel dan tindakan massal tetap tersedia.
 
 ## Akses

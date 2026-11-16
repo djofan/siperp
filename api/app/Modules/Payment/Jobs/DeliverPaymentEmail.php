@@ -24,7 +24,7 @@ class DeliverPaymentEmail implements ShouldQueue
     public function handle(ReceiptService $receipts): void
     {
         if ($this->tracking) {
-            $receipts->tracking(PaymentTransaction::findOrFail($this->transactionId));
+            if ($row = PaymentTransaction::find($this->transactionId)) $receipts->tracking($row);
         } else {
             $receipts->deliver($this->transactionId);
         }

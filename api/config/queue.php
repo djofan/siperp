@@ -35,7 +35,8 @@ return [
             'driver' => 'database',
             'table' => 'payment_jobs',
             'queue' => 'callbacks',
-            'retry_after' => 90,
+            // Sync has two request budgets plus 30s job overhead; allow another 60s before retry.
+            'retry_after' => 2 * max(60, min(120, (int) env('IPAYMU_TIMEOUT', 90))) + 90,
             'after_commit' => true,
         ],
 

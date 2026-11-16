@@ -14,6 +14,7 @@ export default async function ProgramBantuanEditPage({ params }: { params: Promi
       <ProgramBantuanForm
         programId={program.id}
         initialValues={{
+          documentationPhotos: program.documentationPhotos ?? [],
           title: program.title,
           slug: program.slug,
           description: program.description,

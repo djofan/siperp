@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import type { getLearningOverview } from "../api/courses";
 import { EmptyState, ProgressBar } from "./ui";
 

@@ -27,13 +27,13 @@ export default async function Page({ params, searchParams }: {
       {data.record && <Link href={"/admin/academy/sertifikat/" + data.record.id} className="inline-block text-sm text-accent hover:underline">Kelola catatan kelulusan & sertifikat</Link>}
     </section>
     <section className="mt-8"><h2 className="mb-4 text-xl font-bold text-foreground">Progres materi</h2>
-      {data.lessons.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full text-left text-sm text-foreground"><thead><tr><th className="p-3">Materi / Bab</th><th className="p-3">Status</th><th className="p-3">Diselesaikan</th></tr></thead>
+      {data.lessons.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full min-w-[560px] text-left text-sm text-foreground"><thead><tr><th className="p-3">Materi / Bab</th><th className="p-3">Status</th><th className="p-3">Diselesaikan</th></tr></thead>
         <tbody>{data.lessons.items.map(lesson => <tr key={lesson.id} className="border-t border-border"><td className="p-3">{lesson.title}<p className="mt-1 text-xs text-foreground/60">{lesson.chapter.title}</p></td><td className="p-3">{lesson.lessonProgress[0]?.completed ? "Selesai" : "Belum selesai"}</td><td className="p-3">{adminDate(lesson.lessonProgress[0]?.completed ? lesson.lessonProgress[0].completedAt : null)}</td></tr>)}</tbody>
       </table></div> : <AdminEmpty>Tidak ada materi terpublikasi.</AdminEmpty>}
       <PageLinks {...data.lessons} base={base} query={pagination} pageKey="materi" />
     </section>
     <section className="mt-8"><h2 className="mb-4 text-xl font-bold text-foreground">Ringkasan ujian</h2>
-      {data.quizzes.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full text-left text-sm text-foreground"><thead><tr>{["Ujian / Bab", "Percobaan selesai", "Nilai terbaik", "Status"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead>
+      {data.quizzes.items.length ? <div className="overflow-x-auto rounded-2xl bg-surface p-4"><table className="w-full min-w-[680px] text-left text-sm text-foreground"><thead><tr>{["Ujian / Bab", "Percobaan selesai", "Nilai terbaik", "Status"].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead>
         <tbody>{data.quizzes.items.map(quiz => <tr key={quiz.id} className="border-t border-border"><td className="p-3">{quiz.title}<p className="mt-1 text-xs text-foreground/60">{quiz.chapter.title}</p></td><td className="p-3">{quiz.completedAttempts}</td><td className="p-3">{quiz.bestScore ?? "—"}</td><td className="p-3">{quiz.passed ? "Lulus" : "Belum lulus"}</td></tr>)}</tbody>
       </table></div> : <AdminEmpty>Tidak ada ujian terpublikasi.</AdminEmpty>}
       <PageLinks {...data.quizzes} base={base} query={pagination} pageKey="kuis" />

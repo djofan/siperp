@@ -8,12 +8,12 @@ class ReminderMessage
 {
     public static function greeting(string $name): string
     {
-        return "Assalamu'alaikum, Bapak/Ibu ".$name.",\n\n";
+        return "Assalamu'alaikum, Akh ".$name.",\n\n";
     }
 
     public static function closing(): string
     {
-        return "Baca selengkapnya di https://erp.lazsip.or.id/admin dan login menggunakan akun Anda.\n\nTerima kasih atas bantuannya.";
+        return "Baca selengkapnya di https://erp.lazsip.or.id/admin dan login menggunakan akun Anda.\n\nJazakallah khairon.";
     }
 
     public static function details(Application $row): string

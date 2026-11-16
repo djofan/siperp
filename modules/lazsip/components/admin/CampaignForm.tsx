@@ -30,7 +30,7 @@ export function CampaignForm({
   const isEdit = !!campaignId;
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [description, setDescription] = useState(initialValues?.description ?? "");
-  const [targetAmount, setTargetAmount] = useState(initialValues?.targetAmount ?? "");
+  const [targetAmount, setTargetAmount] = useState(initialValues?.targetAmount === "0" ? "" : initialValues?.targetAmount ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
   const [uniqueCode, setUniqueCode] = useState(initialValues?.uniqueCode ?? "");
   const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
@@ -105,12 +105,20 @@ export function CampaignForm({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              rows={6}
+              rows={10}
+              placeholder="Jelaskan kondisi penerima manfaat, tujuan donasi, lokasi, rincian penggunaan dana, serta cara dan rencana penyalurannya."
               required
               className="rounded-2xl border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm leading-relaxed text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
             />
           </div>
 
+          <div className="rounded-2xl bg-lazsip-primary-50 p-4 text-sm leading-relaxed text-lazsip-primary-900 dark:bg-white/5 dark:text-white/80">
+            <strong>Isi deskripsi donasi dengan jelas</strong>
+            <p className="mt-1">Jelaskan siapa yang dibantu, masalah yang dihadapi, lokasi program, penggunaan dana, dan rencana penyaluran. Gunakan data yang benar; hindari teks contoh atau klaim yang belum dapat dibuktikan.</p>
+            <button type="button" disabled={Boolean(description.trim())} onClick={()=>setDescription("Latar belakang dan kondisi penerima manfaat:\n\nTujuan dan sasaran bantuan:\n\nLokasi program:\n\nRencana penggunaan dana dan rincian kebutuhan:\n\nCara serta rencana waktu penyaluran:\n\nPelaporan dan dokumentasi penyaluran:")}
+              className="mt-3 rounded-xl bg-lazsip-primary-800 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">Gunakan kerangka deskripsi</button>
+            <p className="mt-2 text-xs">Kerangka hanya mengisi kolom kosong. Lengkapi setiap bagian sebelum menyimpan. Perubahan tampil pada halaman detail donasi publik.</p>
+          </div>
           <ImageUploadField label="Gambar Campaign" initialUrl={image} onChange={(url) => setImage(url ?? "")} onUploadingChange={busy=>setUploads(items=>({...items,cover:busy}))} required={!isEdit} />
         </div>
 
@@ -118,12 +126,12 @@ export function CampaignForm({
           <div className={panelClasses("flex flex-col gap-3.5 p-5")}>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
-                Target Nominal (Rp)<span className="ml-0.5 text-red-600">*</span>
+                Target Nominal (Rp) <span className="text-xs font-normal opacity-60">Opsional</span>
               </label>
               <input
                 type="number"
-                min={1}
-                required
+                min={0}
+                placeholder="Kosongkan jika tanpa target"
                 value={targetAmount}
                 onChange={(e) => setTargetAmount(e.target.value)}
                 className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"

@@ -1,10 +1,16 @@
 <?php
 
+use App\Modules\Payment\Jobs\ProcessIpaymuCallback;
+use App\Modules\Payment\Jobs\ReconcileIpaymuTransaction;
 use App\Modules\Payment\Models\PaymentTransaction;
 use App\Modules\Payment\Services\IpaymuService;
+use App\Modules\Payment\Services\TransactionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 uses(RefreshDatabase::class);
 
@@ -19,6 +25,18 @@ beforeEach(function () {
     Http::preventStrayRequests();
 });
 
+it('identifies a rejected signature and retries the same unpaid transaction after configuration is corrected', function () {
+    $this->row->forceFill(['gatewayState' => 'not_started', 'gatewaySessionId' => null, 'gatewayCheckoutUrl' => null])->save();
+    Http::fake(['*/payment' => Http::sequence()->push(['Status' => 401, 'Message' => 'Unauthorized Signature', 'Private' => 'private-provider-value'], 401)->push(['Status' => 200, 'Data' => ['SessionID' => 'retry-session', 'Url' => 'https://sandbox-payment.ipaymu.com/?sid=retry-session']])]);
+    $url = '/api/v1/payment/gateway-session/'.$this->row->id;
+    $response = $this->postJson($url)->assertStatus(502);
+    expect($response->json('error.message'))->toContain('IPAYMU_SIGNATURE_REJECTED')->not->toContain('private-provider-value');
+    expect($this->row->refresh()->gatewayState)->toBe('not_started')->and($this->row->status)->toBe('pending');
+
+    $this->postJson($url)->assertOk()->assertJsonPath('url', 'https://sandbox-payment.ipaymu.com/?sid=retry-session');
+    expect($this->row->refresh()->gatewayState)->toBe('ready')->and($this->row->status)->toBe('pending')->and(PaymentTransaction::count())->toBe(1);
+});
+
 it('verifies and links gateway IDs using subtotal and finalizes only once', function () {
     Http::fake(['sandbox.ipaymu.com/*' => Http::response(['Status' => 200, 'Data' => $this->detail])]);
     $gateway = app(IpaymuService::class);
@@ -26,6 +44,20 @@ it('verifies and links gateway IDs using subtotal and finalizes only once', func
     expect($row->status)->toBe('paid')->and($row->gatewayTransactionId)->toBe('123')->and($row->gatewayState)->toBe('settled');
     $paidAt = $row->paidAt->toISOString();
     expect($gateway->sync($row)->paidAt->toISOString())->toBe($paidAt);
+});
+
+it('stores a hosted production session and reuses it without another provider request', function () {
+    config(['payment.gateway' => 'ipaymu', 'payment.ipaymu.base_url' => 'https://my.ipaymu.com/api/v2',
+        'payment.public_url' => 'https://erp.example.test', 'payment.api_url' => 'https://erp.example.test/api/v1']);
+    $this->row->forceFill(['gateway' => 'ipaymu', 'gatewayState' => 'not_started', 'gatewaySessionId' => null, 'gatewayCheckoutUrl' => null])->save();
+    $url = 'https://payment.ipaymu.com/#production-hosted-session';
+    Http::fake(['*/payment' => Http::response(['Status' => '200', 'Data' => ['SessionID' => 'production-hosted-session', 'Url' => $url]])]);
+    $endpoint = '/api/v1/payment/gateway-session/'.$this->row->id;
+    $this->postJson($endpoint)->assertOk()->assertJsonPath('url', $url);
+    $this->postJson($endpoint)->assertOk()->assertJsonPath('url', $url);
+    expect($this->row->refresh()->gatewaySessionId)->toBe('production-hosted-session')
+        ->and($this->row->gatewayState)->toBe('ready')->and($this->row->status)->toBe('pending');
+    Http::assertSentCount(1);
 });
 
 it('discovers missing gateway ID from merchant history then verifies authoritative details', function () {
@@ -38,13 +70,13 @@ it('discovers missing gateway ID from merchant history then verifies authoritati
 });
 
 it('queues bounded background reconciliation without making a status read wait for the provider', function () {
-    Illuminate\Support\Facades\Queue::fake();
-    Illuminate\Support\Facades\Cache::flush();
+    Queue::fake();
+    Cache::flush();
     Http::fake();
     $gateway = app(IpaymuService::class);
     $gateway->enqueueReconciliation($this->row);
     $gateway->enqueueReconciliation($this->row);
-    Illuminate\Support\Facades\Queue::assertPushed(App\Modules\Payment\Jobs\ReconcileIpaymuTransaction::class, 1);
+    Queue::assertPushed(ReconcileIpaymuTransaction::class, 1);
     Http::assertNothingSent();
 });
 
@@ -53,15 +85,19 @@ it('keeps escrow out of spendable totals and settles later', function () {
     $gateway = app(IpaymuService::class);
     $row = $gateway->sync($this->row, '123');
     expect($row->status)->toBe('pending')->and($row->gatewayState)->toBe('escrow');
-    expect(app(App\Modules\Payment\Services\TransactionService::class)->publicData($row)['status'])->toBe('escrow');
+    expect(app(TransactionService::class)->publicData($row)['status'])->toBe('escrow');
     expect(PaymentTransaction::where('status', 'paid')->sum('amount'))->toBe(0);
     expect($gateway->sync($row)->status)->toBe('paid');
 });
 
 it('rejects mismatched references sessions and subtotals before saving', function (string $field, mixed $value) {
     Http::fake(['sandbox.ipaymu.com/*' => Http::response(['Status' => 200, 'Data' => [...$this->detail, $field => $value]])]);
-    try { app(IpaymuService::class)->sync($this->row, '123'); $this->fail('Must reject mismatched details'); }
-    catch (Symfony\Component\HttpKernel\Exception\HttpException $error) { expect($error->getStatusCode())->toBe(422); }
+    try {
+        app(IpaymuService::class)->sync($this->row, '123');
+        $this->fail('Must reject mismatched details');
+    } catch (HttpException $error) {
+        expect($error->getStatusCode())->toBe(422);
+    }
     expect($this->row->refresh()->gatewayTransactionId)->toBeNull()->and($this->row->status)->toBe('pending');
 })->with([['ReferenceId', 'wrong'], ['SessionId', 'wrong'], ['SubTotal', 1], ['PaidStatus', 'unpaid']]);
 
@@ -73,7 +109,7 @@ it('verifies callback via API even when merchant is absent and amount includes g
 
 it('accepts an authenticated webhook once and rejects invalid signatures without calling the provider', function () {
     $this->withoutMiddleware();
-    Illuminate\Support\Facades\Queue::fake();
+    Queue::fake();
     Http::fake(['sandbox.ipaymu.com/*' => Http::response(['Status' => 200, 'Data' => $this->detail])]);
     $payload = ['reference_id' => 'SIP-test', 'sid' => 'session-test', 'trx_id' => 123, 'sub_total' => '25000000', 'amount' => '25450000', 'additional_info' => []];
     $url = '/api/v1/payment/webhook/ipaymu';
@@ -84,9 +120,10 @@ it('accepts an authenticated webhook once and rejects invalid signatures without
     $this->postJson($url, $payload, ['X-Signature' => $signature])->assertOk();
     Http::assertNothingSent();
     expect($this->row->refresh()->status)->toBe('pending');
-    Illuminate\Support\Facades\Queue::assertPushed(App\Modules\Payment\Jobs\ProcessIpaymuCallback::class, function ($job) {
+    Queue::assertPushed(ProcessIpaymuCallback::class, function ($job) {
         expect($job->connection)->toBe('payment')->and($job->queue)->toBe('callbacks');
         $job->handle(app(IpaymuService::class));
+
         return true;
     });
     expect($this->row->refresh()->status)->toBe('paid');

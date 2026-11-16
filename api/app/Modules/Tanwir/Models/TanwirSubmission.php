@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TanwirSubmission extends DomainModel
 {
+    use \App\Support\HasSubmissionMedia;
+
     protected $table = 'tanwir_submissions';
 
     protected $primaryKey = 'id';
@@ -18,11 +20,11 @@ class TanwirSubmission extends DomainModel
 
     const UPDATED_AT = 'updated_at';
 
-    protected array $fieldMap = ['taskId' => 'task_id', 'studentId' => 'student_id', 'filePath' => 'file_path', 'fileMime' => 'file_mime', 'attemptsCount' => 'attempts_count', 'isLate' => 'is_late', 'submittedAt' => 'submitted_at', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
+    protected array $fieldMap = ['mediaFiles' => 'media_files', 'taskId' => 'task_id', 'studentId' => 'student_id', 'filePath' => 'file_path', 'fileMime' => 'file_mime', 'attemptsCount' => 'attempts_count', 'isLate' => 'is_late', 'submittedAt' => 'submitted_at', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
 
-    protected $casts = ['attempts_count' => 'integer', 'score' => 'integer', 'is_late' => 'boolean', 'submitted_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+    protected $casts = ['media_files' => 'array', 'attempts_count' => 'integer', 'score' => 'integer', 'is_late' => 'boolean', 'submitted_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
 
-    protected $hidden = [];
+    protected $hidden = ['media_files'];
 
     /** @return BelongsTo<TanwirTask, $this> */
     public function task(): BelongsTo

@@ -5,8 +5,9 @@ import { Button } from "@/modules/academy/components/ui/ButtonCompat";
 import { FormField } from "@/modules/academy/components/ui/FieldCompat";
 import type { ActionState } from "../../api/actions";
 import type { QuizOptionInput } from "../../api/admin-quiz-validation";
+import { QuestionMedia } from "../QuestionMedia";
 
-export type QuestionValues = { id?: string; question: string; explanation?: string | null; order: number; type?: string; weight?: number; options: QuizOptionInput[] };
+export type QuestionValues = { id?: string; question: string; explanation?: string | null; order: number; type?: string; weight?: number; mediaMime?: string | null; mediaName?: string | null; mediaAlt?: string | null; options: QuizOptionInput[] };
 
 export function QuestionForm({ action, initial }: { action: (state: ActionState, form: FormData) => Promise<ActionState>; initial?: QuestionValues }) {
  const [state, formAction, pending] = useActionState(action, { error: "" });
@@ -31,6 +32,15 @@ export function QuestionFields({ initial, pending = false, namePrefix }: { initi
     }} className="mt-2 w-full rounded-xl border border-border p-3"><option value="SINGLE">Pilihan ganda (satu jawaban)</option><option value="TRUE_FALSE">Benar / Salah</option><option value="MULTIPLE">Multiple choice (beberapa jawaban)</option></select></label>
     <input type="hidden" name={fieldName("weight")} value={initial?.weight ?? 1} />
     <FormField label="Pertanyaan *" htmlFor={prefix + "-question"}><textarea id={prefix + "-question"} name={fieldName("question")} required maxLength={10000} rows={4} value={question} onChange={event => setQuestion(event.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" /></FormField>
+    {!namePrefix && <section className="space-y-3 rounded-xl border border-border p-4">
+      <div><h3 className="font-semibold text-foreground">Media pendukung <span className="font-normal text-foreground/60">(opsional)</span></h3><p className="mt-1 text-xs text-foreground/60">Gambar JPG/PNG/WebP maksimal 5 MB atau audio MP3/WAV/OGG/M4A/WebM maksimal 15 MB.</p></div>
+      {initial?.id && initial.mediaMime && (
+        <QuestionMedia question={{ id: initial.id, mediaMime: initial.mediaMime, mediaName: initial.mediaName, mediaAlt: initial.mediaAlt }}/>
+      )}
+      <label className="block text-sm">{initial?.mediaMime ? "Ganti media" : "Tambah media"}<input name="media" type="file" accept="image/jpeg,image/png,image/webp,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/webm" className="mt-2 block w-full rounded-xl border border-border bg-surface p-3 text-sm"/></label>
+      <label className="block text-sm">Teks alternatif gambar<input name="mediaAlt" maxLength={500} defaultValue={initial?.mediaAlt ?? ""} className="mt-2 w-full rounded-xl border border-border bg-surface p-3 text-sm" placeholder="Jelaskan isi gambar untuk peserta yang memakai pembaca layar"/></label>
+      {initial?.mediaMime && <label className="flex items-center gap-2 text-sm text-danger"><input name="removeMedia" type="checkbox" value="1"/>Hapus media lama</label>}
+    </section>}
     <input type="hidden" name={fieldName("order")} value={order} />
     <input type="hidden" name={fieldName("explanation")} value={initial?.explanation ?? ""} />
     <input type="hidden" name={fieldName("options")} value={JSON.stringify(options.map(({ id, label, isCorrect }) => ({ id, label, isCorrect })))} />

@@ -202,8 +202,8 @@ test('field targeting skips hidden currency payloads, supports survey choices, a
 });
 
 test('Call Center corrects the original survey before forwarding without uploading replacement evidence', async () => {
-  const survey={date:'2026-01-01',hasSktm:true,background:'Kondisi keluarga',currentCondition:'Perlu bantuan',needs:'Kebutuhan pokok',efforts:'Mencari pekerjaan',homeObservation:'Rumah sederhana',stayDuration:3,stayUnit:'tahun',socialRecord:'Baik',recommendation:'layak',contacts:[]};
-  const app=mount({status:'survey_cc_review',role:'call_center',detail:{survey,verifierId:'other-verifier'}});
+  const survey={date:'2026-01-01',sunnahKnowledge:'Sudah mulai',hasSktm:true,background:'Kondisi keluarga',currentCondition:'Perlu bantuan',needs:'Kebutuhan pokok',efforts:'Mencari pekerjaan',homeObservation:'Rumah sederhana',stayDuration:3,stayUnit:'tahun',socialRecord:'Baik',recommendation:'layak',contacts:[]};
+  const app=mount({status:'survey_cc_review',role:'call_center',detail:{survey,verifierId:'other-verifier',applicant:{housing:'Menumpang',dependentCount:0,dependents:[]}}});
   app.click('Review & kirim hasil ke Approver');
   const fields=app.find(node=>node.type?.name==='Fields'&&node.props.prefix==='survey-');
   assert.ok(fields);
@@ -223,4 +223,18 @@ test('verifier decline requires a reason and sends only the decline action', asy
   await app.submit();
   assert.equal(app.requests[0][0],'applications/aid/actions/survey_decline');
   assert.equal(JSON.parse(app.requests[0][1].body).reason,'Lokasi terlalu jauh untuk jadwal ini.');
+});
+
+
+test('approver can explicitly open amount correction before funding but not after or on their own application', () => {
+  const available=mount({status:'fund_ready',role:'approver',detail:{amount:1000000}});
+  available.click('Ubah nominal bantuan');
+  assert.ok(available.actionForm());
+  assert.match(text(available.tree),/Koreksi nominal sebelum dana diajukan/);
+  const funded=mount({status:'fund_submitted',role:'approver'});
+  assert.equal(funded.find(n=>n.type==='button'&&text(n).startsWith('Ubah nominal bantuan')),undefined);
+  const own=mount({status:'fund_ready',role:'approver',detail:{createdBy:'actor'}});
+  assert.equal(own.find(n=>n.type==='button'&&text(n).startsWith('Ubah nominal bantuan')),undefined);
+  const grouped=mount({status:'fund_ready',role:'approver',detail:{fundingRequest:{id:'group',number:'DANA-TEST'}}});
+  assert.equal(grouped.find(n=>n.type==='button'&&text(n).startsWith('Ubah nominal bantuan')),undefined);
 });

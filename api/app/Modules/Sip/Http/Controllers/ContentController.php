@@ -76,6 +76,14 @@ class ContentController
         if ($resource === 'program-bantuan') {
             $request->merge(['slug' => Str::slug($request->input('slug') ?: $request->input('title', ''))]);
         }
+        if (in_array($resource, ['news', 'program-bantuan', 'penyaluran-bantuan'], true)) {
+            $rules += ['documentationPhotos' => 'sometimes|array|max:50',
+                'documentationPhotos.*' => 'array:id,image,caption,isDemo',
+                'documentationPhotos.*.id' => 'required|uuid|distinct',
+                'documentationPhotos.*.image' => ['required', ...array_filter($image, fn ($rule) => ! in_array($rule, ['sometimes', 'nullable'], true))],
+                'documentationPhotos.*.caption' => 'nullable|string|max:500',
+                'documentationPhotos.*.isDemo' => 'sometimes|boolean'];
+        }
         $data = $request->validate($rules);
         foreach ($data as $key => $value) {
             if (is_string($value)) {

@@ -1,5 +1,7 @@
 "use client";
 
+import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { DocumentationEditor, useDocumentationEditor } from "./SipDocumentationEditor";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SipImageUploadField } from "@/modules/sip/components/admin/SipImageUploadField";
@@ -8,6 +10,7 @@ import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButto
 import { panelClasses } from "@/components/ui/panel";
 
 interface NewsFormValues {
+  documentationPhotos: SipDocumentationPhoto[];
   title: string;
   content: string;
   image: string;
@@ -23,6 +26,7 @@ export function NewsForm({
   initialValues?: Partial<NewsFormValues>;
 }) {
   const router = useRouter();
+  const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!newsId;
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
@@ -35,6 +39,7 @@ export function NewsForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if(gallery.uploading || gallery.photos.some(photo=>!photo.image)){setError("Tunggu unggahan foto selesai dan hapus baris galeri yang kosong.");return;}
 
     if (!isEdit && !image) {
       setError("Gambar utama wajib diunggah.");
@@ -49,7 +54,7 @@ export function NewsForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, image, isPinned, status }),
+      body: JSON.stringify({ documentationPhotos: gallery.photos, title, content, image, isPinned, status }),
     });
 
     if (!response.ok) {
@@ -67,7 +72,7 @@ export function NewsForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className={panelClasses("p-6 sm:p-8")}>
         <div className="flex flex-col gap-5">
-          <SipImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+          <SipImageUploadField label="Gambar Utama" initialUrl={image} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
 
           <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3.5">
             <span className="text-sm font-medium text-white">Pin di beranda</span>
@@ -110,9 +115,10 @@ export function NewsForm({
         </div>
       </div>
 
+      <DocumentationEditor editor={gallery} kind="berita" saving={isSubmitting}/>
       <div className="flex flex-col-reverse items-center justify-end gap-4 sm:flex-row">
         {error && <p className="text-sm text-red-400">{error}</p>}
-        <SipLoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
+        <SipLoadingButton type="submit" loading={isSubmitting} disabled={gallery.uploading} className="w-full sm:w-auto">
           {isEdit ? "Simpan Perubahan" : "Tambah Berita"}
         </SipLoadingButton>
       </div>

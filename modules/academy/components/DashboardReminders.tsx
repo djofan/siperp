@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { getExamNotifications } from "../api/notifications";
 import { ExamReminders } from "./ExamReminders";
 export async function DashboardReminders({ profileId }: { profileId?: string }) {

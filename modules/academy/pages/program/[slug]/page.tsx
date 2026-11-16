@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound } from "next/navigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage7 } from "@/modules/academy/api/page-contracts";

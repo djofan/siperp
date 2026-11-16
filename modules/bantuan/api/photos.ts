@@ -1,14 +1,17 @@
 import type { PhotoLocation } from "@/contracts/modules/bantuan";
 import { readPhotoLocation } from "../photo-location";
+import { attachmentLimit, validateAttachment } from "../attachments";
 
 export async function preparePhotoUpload(original:File, deviceLocation?:PhotoLocation|null){
+  validateAttachment(original);
+  if (!/\.(jpe?g|png|webp|heic|heif)$/i.test(original.name)) return {file:original,location:null};
   const location=await readPhotoLocation(original)??deviceLocation??null;
   return {file:await preparePhoto(original),location};
 }
 
 // Processing stays on the device; HEIC is decoded lazily, without a conversion service.
 export async function preparePhoto(original: File): Promise<File> {
-  if(original.size>30*1024*1024)throw new Error("Ukuran foto asli maksimal 30 MB.");
+  if(original.size>attachmentLimit)throw new Error("Ukuran foto asli maksimal 10 MB.");
   let file=original;
   if(/heic|heif/i.test(file.type)||/\.hei[cf]$/i.test(file.name)){
     const {heicTo}=await import("heic-to/csp");

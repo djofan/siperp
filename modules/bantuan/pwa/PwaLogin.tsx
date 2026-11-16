@@ -1,4 +1,5 @@
 "use client";
+import { OrganizationContact } from "@/components/OrganizationContact";
 import { useState,type FormEvent } from "react";
 import Link from "next/link";
 import { Eye,EyeOff,ArrowRight,HeartHandshake,ShieldCheck } from "lucide-react";
@@ -9,7 +10,7 @@ export function PwaLogin() {
     event.preventDefault();if(busy)return;setBusy(true);setError("");
     const form=new FormData(event.currentTarget);
     try {
-      const response=await fetch("/api/auth/login",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({code:String(form.get("code")).trim().toUpperCase(),password:form.get("password")})});
+      const response=await fetch("/api/auth/login",{method:"POST",credentials:"same-origin",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({code:String(form.get("code")).trim().toUpperCase(),password:form.get("password"),pwa:true})});
       const data=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(data?.error?.message??"Kode akun atau password salah.");
       const access=await fetch("/api/bantuan/viewer",{cache:"no-store",credentials:"same-origin",headers:{Accept:"application/json"}});
@@ -29,6 +30,6 @@ export function PwaLogin() {
       <p className={s.help}>Lupa kode akun atau password? Hubungi admin pengelola Bantuan.</p>
     </form>
     <div className={s.loginFoot}><ShieldCheck size={16}/>Akses internal · Akun dan hak akses yang sama dengan web</div>
-    <Link className={s.webLink} href="/">Kembali ke website SIP</Link>
+    <OrganizationContact/><Link className={s.webLink} href="/">Kembali ke website SIP</Link>
   </main>;
 }

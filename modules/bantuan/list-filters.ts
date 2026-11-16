@@ -46,3 +46,12 @@ export function activeFilterChips(filters:ListFilters,names:Record<string,string
   };
   return Object.entries(labels).filter(([,label])=>!!label).map(([key,label])=>({key:key as FilterKey,label:label!}));
 }
+
+/** Human-readable report heading; request parameters and staff IDs stay out of the workbook. */
+export function reportFilterDescription(filters:ListFilters,names:Record<string,string>={}):string {
+  const date=(value:string)=>new Date(value+"T00:00:00Z").toLocaleDateString("id-ID",{day:"numeric",month:"long",year:"numeric",timeZone:"Asia/Jakarta"});
+  const field=dateLabels[filters.dateField]??dateLabels.created;
+  const period=filters.from&&filters.to?`${field}: ${date(filters.from)} – ${date(filters.to)}`:filters.from?`${field}: mulai ${date(filters.from)}`:filters.to?`${field}: sampai ${date(filters.to)}`:"Periode: semua tanggal";
+  const chips=activeFilterChips(filters,names).filter(chip=>chip.key!=="from"&&chip.key!=="to");
+  return [period, chips.length?"Filter: "+chips.map(chip=>chip.label).join(" · "):"Filter: semua pengajuan sesuai akses akun"].join("\n");
+}

@@ -34,9 +34,9 @@ class CampaignController
 
     private function input(Request $request, ?string $id = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title' => 'required|string|max:191', 'description' => 'required|string|max:1000000',
-            'targetAmount' => 'required|integer|min:1|max:2147483647', 'image' => 'sometimes|nullable|string|max:191',
+            'targetAmount' => 'sometimes|nullable|integer|min:0|max:2147483647', 'image' => 'sometimes|nullable|string|max:191',
             'uniqueCode' => ['required', 'string', 'regex:/^\d{2}$/D', Rule::unique('lazsip_campaigns', 'unique_code')->ignore($id)],
             'isPinned' => 'required|boolean', 'status' => 'required|in:active,completed',
             'documentationPhotos' => 'sometimes|nullable|array',
@@ -46,12 +46,14 @@ class CampaignController
             'documentationPhotos.*.caption' => 'present|nullable|string|max:500',
             'documentationPhotos.*.isDemo' => 'sometimes|boolean',
         ]);
+        if (array_key_exists('targetAmount', $data)) $data['targetAmount'] = $data['targetAmount'] ?? 0;
+        return $data;
     }
 
     public function store(Request $request): JsonResponse
     {
         $row = new LazsipCampaign;
-        $row->forceFill(['currentAmount' => 0, ...$this->input($request)])->save();
+        $row->forceFill(['currentAmount' => 0, 'targetAmount' => 0, ...$this->input($request)])->save();
 
         return response()->json(['ok' => true, 'id' => $row->id], 201)->header('Location', $request->url().'/'.$row->id);
     }

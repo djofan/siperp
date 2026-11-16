@@ -7,7 +7,7 @@ import { MediaSubmit } from "@/modules/tanwir/components/app/MediaSubmit";
 import { QuizForm } from "@/modules/tanwir/components/app/QuizForm";
 import { QuizReview } from "@/modules/tanwir/components/app/QuizReview";
 import { ReviewHistory } from "@/modules/tanwir/components/app/ReviewHistory";
-import { submissionFileUrl } from "@/modules/tanwir/components/app/media";
+import { SubmissionMedia } from "@/modules/tanwir/components/app/SubmissionMedia";
 import { Icon } from "@/modules/tanwir/components/icons";
 import { Card, LatePill, Notice, ScoreBadge, SectionTitle, TaskStatePill, TypePill, deadlineLabel, formatDateTime } from "@/modules/tanwir/components/ui";
 
@@ -68,12 +68,7 @@ export default async function PesertaTaskDetailPage({
           <p className="-mt-3 text-sm text-tanwir-muted">
             Percobaan ke-{submission.attemptsCount} · dikirim {formatDateTime(submission.submittedAt)}
           </p>
-          {submission.fileMime &&
-            (submission.fileMime.startsWith("video") && task.type === "video" ? (
-              <video src={submissionFileUrl(submission.id)} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-tanwir-ink" />
-            ) : (
-              <audio src={submissionFileUrl(submission.id)} controls preload="metadata" className="w-full" />
-            ))}
+          <SubmissionMedia submission={submission}/>
           {task.type !== "quiz" && (
             <div>
               <p className="mb-3 text-sm font-medium">Riwayat koreksi</p>

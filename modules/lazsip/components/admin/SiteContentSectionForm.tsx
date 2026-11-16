@@ -8,11 +8,14 @@ import { panelClasses } from "@/components/ui/panel";
 import type { SiteContentSectionKey } from "@/modules/lazsip/api/siteContent";
 
 export interface FieldDef {
+  options?: { value: string; label: string }[];
   key: string;
   label: string;
   multiline?: boolean;
   rows?: number;
   hint?: string;
+  required?: boolean;
+  type?: "text"|"email"|"tel"|"url";
 }
 
 export function SiteContentSectionForm({
@@ -30,7 +33,7 @@ export function SiteContentSectionForm({
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, string>>(() => {
-    const base: Record<string, string> = {};
+    const base: Record<string, string> = { ...initialValue };
     for (const field of fields) base[field.key] = initialValue[field.key] ?? "";
     return base;
   });
@@ -78,11 +81,16 @@ export function SiteContentSectionForm({
       <div className="mt-5 flex flex-wrap gap-4">
         {fields.map((field) => (
           <div key={field.key} className={field.multiline ? "w-full" : "w-full sm:w-72"}>
-            <FormField label={field.label} htmlFor={`${sectionKey}-${field.key}`} hint={field.hint}>
-              {field.multiline ? (
+            <FormField label={field.label+(field.required?" *":"")} htmlFor={`${sectionKey}-${field.key}`} hint={field.hint}>
+              {field.options ? (
+                <select id={`${sectionKey}-${field.key}`} value={values[field.key]} onChange={e => setValues(prev => ({...prev, [field.key]: e.target.value}))} className="min-h-11 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground dark:bg-white/5 dark:text-white">
+                  {field.options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              ) : field.multiline ? (
                 <textarea
                   id={`${sectionKey}-${field.key}`}
                   rows={field.rows ?? 3}
+                  required={field.required}
                   className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent-soft dark:bg-white/5 dark:text-white"
                   value={values[field.key]}
                   onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
@@ -91,6 +99,8 @@ export function SiteContentSectionForm({
                 <Input
                   className="dark:bg-white/5 dark:text-white"
                   id={`${sectionKey}-${field.key}`}
+                  type={field.type??"text"}
+                  required={field.required}
                   value={values[field.key]}
                   onChange={(e) => setValues((prev) => ({ ...prev, [field.key]: e.target.value }))}
                 />

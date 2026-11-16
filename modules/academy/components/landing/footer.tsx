@@ -1,11 +1,13 @@
 /* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
+import { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 
-import Link from "next/link";
+import { OrganizationContact } from "@/components/OrganizationContact";
+import Link from "@/modules/academy/pwa/AcademyNavigation";
 
 export function Footer() {
   return (
-    <footer className="border-t border-gray-100 bg-white px-4 py-10">
+    <footer className="academy-public-footer border-t border-gray-100 bg-white px-4 py-10">
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between">
           {/* Logo & tagline */}
@@ -20,12 +22,12 @@ export function Footer() {
           {/* Links */}
           <div className="flex gap-6 text-sm text-gray-500">
             <Link href="/academy/materi" className="transition-colors hover:text-green-600">Materi</Link>
-            <a href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</a>
-            <a href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</a>
+            <AcademyAnchor href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</AcademyAnchor>
+            <AcademyAnchor href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</AcademyAnchor>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
+        <OrganizationContact className="text-gray-700"/><div className="mt-8 border-t border-gray-100 pt-6 text-center text-xs text-gray-400">
           &copy; {new Date().getFullYear()} Insan Academy &middot; LAZSIP. Semua hak dilindungi.
         </div>
       </div>

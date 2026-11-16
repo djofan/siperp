@@ -1,4 +1,5 @@
 import { HeroUtilityCard } from "@/modules/lazsip/components/sections/HeroUtilityCard";
+import { SectionLink } from "../SectionLink";
 
 interface HeroContent {
   title?: string;
@@ -48,12 +49,12 @@ export function Hero({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </a>
-            <a
+            <SectionLink
               href="#donasi"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
             >
               Donasi Sekarang
-            </a>
+            </SectionLink>
           </div>
         </div>
 

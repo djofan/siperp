@@ -11,6 +11,7 @@ Route::group([], function () {
         Route::get('tracking/{token}', [QueryController::class, 'tracking']);
     });
     Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
+        Route::put('profile', [\App\Modules\Teknisi\Http\Controllers\ProfileController::class, 'update'])->middleware('throttle:10,1');
         Route::post('tickets', [WorkflowController::class, 'create']);
         Route::post('workflow', [WorkflowController::class, 'advance']);
         Route::get('service-finance', [WorkflowController::class, 'finance']);

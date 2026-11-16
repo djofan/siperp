@@ -201,7 +201,7 @@ class TaskController extends BaseController
         $model = $this->model($request, 'Task');
         $task = $model::findOrFail($id);
         abort_unless($context['admin'] || ($context['member']?->role === 'guru' && $task->teacherId === $context['member']->id), 404);
-        $paths = $task->submissions()->pluck('file_path');
+        $paths = $task->submissions()->get()->flatMap(fn ($row) => array_column($row->submissionFiles(), 'path'));
         $task->delete();
         foreach ($paths as $path) {
             $files->delete($this->module($request), $path);
@@ -256,7 +256,7 @@ class TaskController extends BaseController
             }
             $questions = $task->questions()->orderBy('order')->get($fields)->toArray();
         }
-        $submissionData = $submission ? ['id' => $submission->id, 'status' => $submission->status, 'score' => $submission->score, 'isLate' => $submission->isLate, 'attemptsCount' => $submission->attemptsCount, 'submittedAt' => $submission->submittedAt, 'fileMime' => $submission->fileMime, 'logs' => $this->logs($submission), 'answers' => $submission->answers()->get(['question_id', 'selected_option', 'is_correct'])->toArray()] : null;
+        $submissionData = $submission ? ['id' => $submission->id, 'status' => $submission->status, 'score' => $submission->score, 'isLate' => $submission->isLate, 'attemptsCount' => $submission->attemptsCount, 'submittedAt' => $submission->submittedAt, 'fileMime' => $submission->fileMime, 'files' => $submission->mediaMetadata(), 'logs' => $this->logs($submission), 'answers' => $submission->answers()->get(['question_id', 'selected_option', 'is_correct'])->toArray()] : null;
         $canSubmit = ! $locked && ($task->type === 'quiz' ? ! $submission : (! $submission || $submission->status === 'rejected'));
 
         return response()->json(['data' => ['task' => $this->data($request, $task), 'submission' => $submissionData, 'questions' => $questions, 'locked' => $locked, 'canSubmit' => $canSubmit, 'state' => $this->state($submission?->status, $locked)]]);

@@ -1,3 +1,4 @@
+import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "next/link";
 import { Icon } from "@/modules/ojol/components/icons";
 import { SITE_NAV, whatsappAdminHref } from "@/modules/ojol/components/site/content";
@@ -46,7 +47,7 @@ export default function OjolSiteLayout({ children }: { children: React.ReactNode
         <nav className={footer.column} aria-label="Navigasi footer"><h2>Jelajahi program</h2>{SITE_NAV.map(item=><Link key={item.href} href={item.href}>{item.label}</Link>)}</nav>
         <div className={footer.column}><h2>Ruang belajar</h2><Link href="/ojol/masuk">Masuk dengan kode akun</Link><Link href="/ojol#fitur">Setoran & bimbingan</Link><Link href="/ojol#bergabung">Panduan bergabung</Link><small>Peserta: POM…<br/>Guru: GOM…</small></div>
         <div className={footer.help}><h2>Belum memiliki akun?</h2><p>Admin membantu pendaftaran, penempatan kelompok, dan kendala akses akun.</p><a href={whatsappAdminHref()} className={footer.contact}><Icon name="whatsapp"/>Hubungi admin <Icon name="arrowRight"/></a></div>
-        </div><div className={footer.bottom}><span>© {new Date().getFullYear()} Ojol Mengaji · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP ↗</Link></div><div className={footer.wordmark} aria-hidden="true">Ojol Mengaji</div></footer>
+        </div><OrganizationContact/><div className={footer.bottom}><span>© {new Date().getFullYear()} Ojol Mengaji · LAZ Solidaritas Insan Peduli</span><Link href="/">Website SIP ↗</Link></div><div className={footer.wordmark} aria-hidden="true">Ojol Mengaji</div></footer>
     </div>
   );
 }

@@ -31,8 +31,12 @@ it('persists contact details for the public page with optional social links blan
     $this->putJson('/api/v1/lazsip/site-content/kontak', ['content' => $content])->assertOk();
     $this->getJson('/api/v1/lazsip/site-content/kontak')->assertOk()->assertExactJson(['data' => $content]);
 
+    $original = $content;
     $content['phone'] = '';
     $content['address'] = 'Alamat baru';
+    $this->putJson('/api/v1/lazsip/site-content/kontak', ['content' => $content])->assertUnprocessable();
+    $this->getJson('/api/v1/lazsip/site-content/kontak')->assertExactJson(['data' => $original]);
+    $content['phone'] = '+62 811-1186-626';
     $this->putJson('/api/v1/lazsip/site-content/kontak', ['content' => $content])->assertOk();
     $this->getJson('/api/v1/lazsip/site-content/kontak')->assertOk()->assertExactJson(['data' => $content]);
 

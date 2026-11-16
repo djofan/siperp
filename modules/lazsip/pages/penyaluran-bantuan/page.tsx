@@ -43,7 +43,7 @@ export default async function LazsipPenyaluranBantuanPage({
         Semua Penerima Bantuan
       </h1>
       <p className="mt-3 max-w-xl text-base leading-relaxed text-lazsip-secondary-700 sm:text-lg">
-        Sebagian penerima manfaat yang telah dibantu LAZSIP — data ditampilkan sesuai kebijakan privasi penerima.
+        Bantuan yang telah disalurkan LAZSIP. Identitas ditampilkan sesuai persetujuan penerima.
       </p>
 
       <div className="mt-8 flex flex-col gap-3">
@@ -61,7 +61,7 @@ export default async function LazsipPenyaluranBantuanPage({
         )}
       </div>
 
-      <div className="mt-8 grid grid-cols-3 gap-4 sm:grid-cols-4 sm:gap-5 lg:grid-cols-5">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 xl:grid-cols-5">
         {beneficiaries.map((item) => (
           <BeneficiaryCard
             key={item.id}

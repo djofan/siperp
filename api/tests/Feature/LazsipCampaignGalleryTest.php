@@ -25,3 +25,19 @@ it('creates, edits, reorders, removes and preserves campaign documentation', fun
     $this->putJson('/api/v1/lazsip/campaigns/'.$id, [...$input, 'documentationPhotos' => [['id' => 'unsafe', 'image' => 'javascript:alert(1)', 'caption' => 'invalid']]])->assertUnprocessable();
     $this->assertDatabaseHas('lazsip_campaigns', ['id' => $id, 'target_amount' => 100000, 'current_amount' => 0]);
 });
+
+it('accepts campaigns without a nominal target and preserves or clears targets on update', function () {
+    $this->withoutMiddleware();
+    $input = ['title'=>'Campaign tanpa target','description'=>'Donasi berkelanjutan','uniqueCode'=>'96','isPinned'=>false,'status'=>'active'];
+    $id=$this->postJson('/api/v1/lazsip/campaigns',$input)->assertCreated()->json('id');
+    $this->getJson('/api/v1/lazsip/campaigns/'.$id)->assertOk()->assertJsonPath('data.targetAmount',0);
+    $this->putJson('/api/v1/lazsip/campaigns/'.$id,[...$input,'targetAmount'=>1000000])->assertOk();
+    $this->putJson('/api/v1/lazsip/campaigns/'.$id,$input)->assertOk();
+    $this->getJson('/api/v1/lazsip/campaigns/'.$id)->assertJsonPath('data.targetAmount',1000000);
+    foreach ([null,0] as $target) {
+        $this->putJson('/api/v1/lazsip/campaigns/'.$id,[...$input,'targetAmount'=>$target])->assertOk();
+        $this->getJson('/api/v1/lazsip/campaigns/'.$id)->assertJsonPath('data.targetAmount',0);
+    }
+    foreach ([-1,1.5,2147483648] as $target) $this->putJson('/api/v1/lazsip/campaigns/'.$id,[...$input,'targetAmount'=>$target])->assertUnprocessable();
+    $this->assertDatabaseHas('lazsip_campaigns',['id'=>$id,'target_amount'=>0,'current_amount'=>0]);
+});
