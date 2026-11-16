@@ -12,6 +12,10 @@ export const LAZSIP_SITE_CONTENT_DEFAULTS: Record<SiteContentSectionKey, Record<
   },
   tentang: {
     body: "",
+    foundedYear: "2015",
+    totalMitra: "",
+    wilayahTitle: "Wilayah Cakupan Verifikator",
+    wilayahCakupan: "",
     totalVerifikator: "4",
     visi: "Menjadi lembaga amil zakat yang amanah, transparan, dan profesional dalam menghimpun serta menyalurkan zakat, infak, dan sedekah untuk kesejahteraan umat.",
     misi: [

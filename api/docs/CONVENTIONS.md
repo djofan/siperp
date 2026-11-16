@@ -446,3 +446,16 @@ Koreksi data pemohon tetap melalui form Edit data. Semua koreksi dicatat beserta
 Kode, peran, dan outlet tidak dapat diubah lewat endpoint ini. Password memakai Core `PUT auth/password`
 di form inline Pengaturan akun Teknisi. Admin modul/Superadmin memakai reset Core tanpa password lama;
 seluruh sesi target dicabut. Tidak ada password yang dikembalikan pada API profil.
+
+
+### Galeri publik SARSIP
+
+Konten `sarsip/entries` (campaign/kegiatan/berita) dan `sarsip/beneficiaries`
+menerima `gallery` opsional, maksimal 12 item `{id, image, caption}`.
+ID unik dalam satu galeri; image harus URL upload SARSIP lokal JPG/PNG/WebP,
+caption nullable maksimal 500 karakter. `[]` mengosongkan galeri; field yang
+absen pada update mempertahankan galeri lama. Upload memakai endpoint SARSIP
+berizin yang sudah ada (maksimal 2 MiB per foto). Galeri ikut publik hanya untuk
+konten published/completed atau penerima yang dipublikasikan dan tidak diarsip.
+Telepon, lokasi, nama internal, dan catatan penerima tetap tidak disertakan.
+Deployment memerlukan migration `2026_11_16_170000_add_sarsip_galleries`.

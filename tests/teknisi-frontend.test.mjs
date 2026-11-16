@@ -116,7 +116,10 @@ test('landing tracking uses an in-page dialog and the public API', () => {
   assert.match(popup,/referrerPolicy:"no-referrer"/);
   assert.match(popup,/AbortController/);
   assert.match(popup,/role="alert"/);
-  assert.doesNotMatch(popup,/router\.(push|replace)|window.location/);
+  assert.doesNotMatch(popup,/router\.(push|replace)|window\.location\.(assign|replace)\(|window\.location(?:\.href)?\s*=/);
+  assert.match(popup,/form\.current\?\.requestSubmit\(/);
+  assert.match(read('modules/teknisi/components/TrackingLink.tsx'),/\/teknisi#cek-status\?kode=/);
+  assert.match(read('modules/teknisi/pages/tracking/page.tsx'),/redirect\(/);
 });
 
 test('frontend validation still bounds amounts and protects CSV cells', () => {

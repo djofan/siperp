@@ -18,7 +18,7 @@ class SarsipBeneficiary extends DomainModel
 
     protected array $fieldMap = ['publicName' => 'public_name', 'isPublished' => 'is_published', 'receivedAt' => 'received_at', 'archivedAt' => 'archived_at', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
 
-    protected $casts = ['amount' => 'integer', 'is_published' => 'boolean', 'received_at' => 'immutable_datetime', 'archived_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+    protected $casts = ['gallery' => 'array', 'amount' => 'integer', 'is_published' => 'boolean', 'received_at' => 'immutable_datetime', 'archived_at' => 'immutable_datetime', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 }

@@ -35,20 +35,21 @@ function find(node, type) {
 
 dependencies['@/modules/lazsip/api/siteContentDefaults'] = load('modules/lazsip/api/siteContentDefaults.ts');
 
-test('public service cards replace financial counters while about statistics remain unchanged', async () => {
+test('public service cards replace financial counters and about counters respect manual content', async () => {
   const transparency = await load('modules/lazsip/components/sections/TransparansiSection.tsx').TransparansiSection();
   assert.equal(find(transparency, 'StatCounter').length, 0);
   assert.deepEqual(find(transparency, 'Link').map(link=>link.href), ['/lazsip/donasi','/lazsip/zakat','/lazsip/penyaluran-bantuan']);
   const about = await load('modules/lazsip/components/sections/TentangSection.tsx').TentangSection();
-  assert.deepEqual(find(about, 'StatCounter').map(stat => stat.value), ['2015', '999', '3']);
+  assert.deepEqual(find(about, 'StatCounter').map(stat => stat.value), ['2015', '999', '999']);
 });
 
-test('general content allows manual verifier count while other statistics stay automatic', async () => {
+test('general content exposes manual about counters and coverage without changing financial totals', async () => {
   const page = await load('modules/lazsip/admin/pages/konten/page.tsx').default();
   const sections = find(page, 'KontenUmumTabs')[0].sections;
   assert.equal(sections.some(section => section.sectionKey === 'transparansi'), true);
   const fieldKeys = sections.flatMap(section => section.fields.map(field => field.key));
-  for (const key of Object.keys(statistics)) assert.equal(fieldKeys.includes(key), false);
+  for (const key of ["totalDana", "totalDonatur", "totalPenerima"]) assert.equal(fieldKeys.includes(key), false);
+  for (const key of ["foundedYear", "totalVerifikator", "totalMitra", "wilayahTitle", "wilayahCakupan"]) assert.equal(fieldKeys.includes(key), true);
   assert.equal(sections.find(section => section.sectionKey === 'tentang').fields.some(field => field.key === 'totalVerifikator'), true);
 });
 

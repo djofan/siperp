@@ -1,19 +1,39 @@
+import { previewEntries } from "@/modules/sarsip/components/landingPreview";
+import Image from "next/image";
 import Link from "next/link";
+import styles from "@/modules/sarsip/components/Landing.module.css";
 import { SarsipHero } from "@/modules/sarsip/components/Hero";
 import { getProfile, listEntries, KINDS } from "@/modules/sarsip/api/data";
+import { getTransparency } from "@/modules/sarsip/api/beneficiaries";
 import { EntryCard } from "@/modules/sarsip/components/EntryCard";
 import { Transparency } from "@/modules/sarsip/components/Transparency";
 import { BeneficiariesSection } from "@/modules/sarsip/components/BeneficiariesSection";
 export default async function SarsipHome() {
-  const [profile, entries] = await Promise.all([getProfile(), listEntries()]);
-  return <>
-    <SarsipHero profile={profile} />
-    <section id="tentang" className="scroll-mt-32 mx-auto grid max-w-6xl gap-6 px-5 py-16 sm:px-8 md:grid-cols-[1fr_1.6fr]"><div><p className="text-xs font-bold uppercase tracking-widest text-orange-700">Tentang tim</p><h2 className="mt-3 text-3xl font-bold tracking-tight">Kepedulian yang<br/>bergerak bersama.</h2></div><p className="whitespace-pre-line text-base leading-8 text-slate-600">{profile.description}</p></section>
-    <BeneficiariesSection/>
-    {KINDS.map((kind, index) => {
-      const items = entries.filter((e) => e.kind === kind).slice(0,3);
-      return <section key={kind} className={index % 2 === 0 ? "border-y border-slate-200 bg-white" : ""}><div className="mx-auto max-w-6xl px-5 py-14 sm:px-8"><div className="mb-7 flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-widest text-orange-700">{kind === "kegiatan" ? "Catatan lapangan" : kind === "berita" ? "Kabar dari tim" : "Ambil bagian"}</p><h2 className="mt-2 text-3xl font-bold tracking-tight">{kind === "kegiatan" ? "Kegiatan tim" : kind === "berita" ? "Berita terbaru" : "Campaign donasi"}</h2></div><Link href={`/sarsip/${kind}`} className="text-sm font-semibold text-orange-700">Lihat semua ↗</Link></div>{items.length ? <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{items.map((entry) => <EntryCard key={entry.id} entry={entry}/>)}</div> : <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-sm text-slate-500">Belum ada {kind} yang dipublikasikan. Informasi terbaru akan tersedia di sini.</div>}</div></section>;
+  const [profile, entries, stats] = await Promise.all([getProfile(), listEntries(), getTransparency()]);
+  const showPreview = process.env.NODE_ENV === "development";
+  const orderedKinds = ["campaign", ...KINDS.filter((kind) => kind !== "campaign")];
+  return <div className={styles.home}>
+    <SarsipHero profile={profile}/>
+
+    {orderedKinds.map((kind) => {
+      const published = entries.filter((entry) => entry.kind === kind).slice(0, kind === "campaign" ? undefined : 8);
+      const items = [...published, ...(showPreview ? previewEntries(kind).slice(0, Math.max(0, 8 - published.length)) : [])];
+      return <section id={kind} key={kind} className={styles.entrySection}><div className={styles.sectionInner}>
+        <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>{kind === "campaign" ? "Program bantuan" : kind === "kegiatan" ? "Catatan lapangan" : "Kabar dari tim"}</p><h2>{kind === "campaign" ? "Pilih misi yang ingin Anda dukung" : kind === "kegiatan" ? "Kegiatan tim SARSIP" : "Berita terbaru"}</h2><p className={styles.sectionDescription}>{kind === "campaign" ? "Salurkan kepedulian melalui campaign kemanusiaan SARSIP." : kind === "kegiatan" ? "Dokumentasi kerja tim dan aksi kepedulian di lapangan." : "Ikuti informasi dan perkembangan terbaru dari tim."}</p></div><span className={styles.sectionCount}>{String(items.length).padStart(2, "0")} {kind === "campaign" ? "campaign" : kind === "kegiatan" ? "kegiatan" : "berita"}</span></div>
+        {showPreview && published.length < 8 && <p className={styles.previewNotice}>Pratinjau desain · Card berlabel contoh menggunakan data dan foto ilustrasi.</p>}
+        {items.length ? <div className={styles.entryGrid}>{items.map((entry) => <EntryCard key={entry.id} entry={entry}/>)}</div> : <p className={styles.empty}>Belum ada {kind} yang dipublikasikan. Informasi terbaru akan tersedia di sini.</p>}
+        {kind !== "campaign" && <div className={styles.sectionFooter}><Link href={`/sarsip/${kind}`} className={styles.outline}>Lihat semua {kind === "campaign" ? "campaign" : kind} <span aria-hidden="true">→</span></Link></div>}
+      </div></section>;
     })}
-    <Transparency/>
-  </>;
+    <BeneficiariesSection preview={showPreview}/>
+    <Transparency summary={stats} intro={
+    <div id="tentang" className={styles.aboutMerged}>
+      <p className={styles.eyebrow}>Tentang SARSIP</p><h2>Solidaritas yang bergerak bersama.</h2>
+      <div className={`${styles.aboutContent} ${profile.heroImage ? styles.withPhoto : ""}`}>
+        {profile.heroImage && <Image src={profile.heroImage} alt="Dokumentasi kegiatan tim SARSIP" width={800} height={550} unoptimized sizes="(min-width: 768px) 50vw, 100vw"/>}
+        <div><p className={styles.aboutDescription}>{profile.description}</p><div className={styles.aboutLinks}><Link className={styles.outline} href="/sarsip/kegiatan">Kenali kegiatan tim →</Link><Link className={styles.outline} href="/sarsip/berita">Baca kabar terbaru →</Link></div></div>
+      </div>
+    </div>
+    }/>
+  </div>;
 }

@@ -1,0 +1,96 @@
+.page { max-width: 1152px; margin: auto; padding: 2.25rem 2rem 4rem; color: #24331d; }
+.breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; font-size: .8rem; color: #5d7050; }
+.breadcrumb a { border: 1px solid #dce5d4; border-radius: 30px; padding: .5rem .85rem; background: #fff; }
+.breadcrumb a:hover { background: #fff0df; }
+.heading { margin: 1.6rem 0 1.8rem; }
+.heading > p { font-size: .65rem; text-transform: uppercase; letter-spacing: .12em; color: #688052; font-weight: 700; }
+.heading h1 { margin-top: .6rem; font-size: clamp(1.9rem, 3.5vw, 2.65rem); font-weight: 800; line-height: 1.15; letter-spacing: -.04em; max-width: 900px; text-wrap: balance; }
+.columns { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.campaign { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+.article { min-width: 0; }
+.article > img { width: 100%; height: auto; border-radius: 22px; }
+.article > p { color: #56654c; font-size: .9rem; line-height: 1.95; white-space: pre-line; margin-top: 1.5rem; }
+.article h2 { font-size: 1.15rem; font-weight: 750; margin-top: 1.6rem; }
+.meta { display: flex; flex-wrap: wrap; gap: .8rem; font-size: .78rem; color: #6b795f; margin-bottom: 1rem; }
+.sidebar { min-width: 0; position: sticky; top: 90px; }
+.summary { margin-top: 1.5rem; padding: 1.3rem; border: 1px solid #f2dfc8; background: #fff5e9; border-radius: 16px; }
+.progress { height: 6px; background: #f5e5d1; border-radius: 10px; overflow: hidden; }
+.progress > div { height: 100%; background: #f79633; }
+.summary > div:not(.progress) { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .6rem; margin-top: .8rem; font-size: .8rem; }
+.summary strong { font-size: 1.1rem; color: #9a551d; }
+.summary span, .summary p { color: #9a8065; }
+.summary p { margin-top: .6rem; font-size: .68rem; }
+.notice { padding: .8rem 1rem; margin-top: 1.2rem; color: #80511d; background: #fff5e6; border: 1px solid #efdbb9; border-radius: 12px; font-size: .75rem; line-height: 1.7; }
+.infoBox { padding: 1.5rem; background: white; border: 1px solid #dce5d4; border-radius: 22px; }
+.infoBox h2 { font-size: 1.1rem; font-weight: 750; }
+.infoBox p { margin-top: .8rem; line-height: 1.8; font-size: .85rem; color: #6b795f; }
+.infoBox a { display: block; padding: .8rem 0; font-size: .82rem; font-weight: 600; color: #ab6124; border-bottom: 1px solid #edf1e8; }
+.related { margin-top: 3rem; border-top: 1px solid #dce5d4; padding-top: 2rem; }
+.related > h2 { font-size: 1.4rem; font-weight: 750; margin-bottom: 1.3rem; }
+.relatedGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+.form { display: flex; flex-direction: column; gap: 1.1rem; padding: 1.7rem; background: #fff; border: 1px solid #dce5d4; border-radius: 24px; }
+.form h2 { font-size: 1.4rem; font-weight: 750; color: #24331d; }
+.form > div:first-child > p { font-size: .62rem; letter-spacing: .1em; color: #718260; }
+.form input:not([type=checkbox]), .form select { border-radius: 30px; border-color: #ebe7e1; font-size: .83rem; color: #34452b; }
+.form input:focus, .form select:focus { border-color: #f79633; box-shadow: 0 0 0 3px #f7963315; }
+.form label { color: #44543a; font-size: .82rem; }
+.form input[type=checkbox] { accent-color: #629439; }
+.presets { display: flex; flex-wrap: wrap; gap: .5rem; }
+.presets button { padding: .5rem .7rem; border: 1px solid #ecdac3; border-radius: 30px; font-size: .76rem; color: #ab6124; }
+.presets button[aria-pressed=true] { background: #fff0df; border-color: #f79633; color: #99501d; }
+.presets button:hover { background: #fff7ef; }
+.identity { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.payButton { background: #f79633; color: #2b1400; border-radius: 30px; width: 100%; padding: .9rem 1rem; font-size: .85rem; font-weight: 750; }
+.payButton:hover { background: #ffab5c; }
+.payButton:disabled { background: #e5e9e0; color: #7a866f; cursor: not-allowed; }
+.form dl { border-color: #e1e9d9; font-size: .8rem; }
+@media (max-width: 900px) { .columns, .campaign { grid-template-columns: 1fr; gap: 1.5rem; } .sidebar { position: static; } .relatedGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 540px) { .page { padding: 1.5rem 1.25rem 3rem; } .form { padding: 1.25rem; border-radius: 20px; } .identity, .relatedGrid { grid-template-columns: 1fr; } }
+
+.form input:not([type=checkbox]), .form select { border-color: #eeebe6; background: #faf9f7; border-width: 1px; }
+.form input:not([type=checkbox]):focus, .form select:focus { border-color: #edb77e; background: white; box-shadow: 0 0 0 3px #f7963310; }
+
+.form { scroll-margin-top: 90px; }
+
+/* Keep the complete donation panel visible without an inner scrollbar. */
+.form { gap: .7rem; padding: 1.2rem; }
+.form > div:first-child > p { display: none; }
+.form h2 { margin-top: 0; font-size: 1.25rem; }
+.form input:not([type=checkbox]), .form select { height: 40px; padding: .5rem .85rem; }
+.form label > input:not([type=checkbox]), .form label > select { margin-top: .3rem; }
+.form label > span:last-child:not(:first-child) { margin-top: .3rem; font-size: .66rem; line-height: 1.5; }
+.form label { font-size: .76rem; line-height: 1.5; }
+.form > label:has(input[type=checkbox]) { gap: .5rem; font-size: .7rem; }
+.form > label:has(input[type=checkbox]) span { font-size: .7rem; }
+.form input[type=checkbox] { accent-color: #f79633; flex-shrink: 0; }
+.presets { gap: .35rem; }
+.presets button { padding: .4rem .6rem; font-size: .7rem; }
+.form dl { padding-top: .6rem; font-size: .74rem; }
+.form dl > div { margin-top: .3rem; }
+.form dl > div:first-child { margin-top: 0; }
+.payButton { padding: .7rem .9rem; font-size: .8rem; }
+.form > p:last-child { font-size: .65rem; line-height: 1.55; }
+@media (min-width: 901px) { .sidebar { top: 78px; } }
+@media (min-width: 901px) and (max-height: 740px) { .sidebar { position: static; } }
+
+/* Donation form follows the LAZSIP order and compact rounded controls. */
+.fieldTitle { font-size: .76rem; font-weight: 600; color: #44543a; margin-bottom: -.25rem; }
+.paymentHint { padding: .65rem .8rem; border-radius: 12px; background: #fff5e8; color: #926239; font-size: .7rem; line-height: 1.6; }
+.form label:has(> :global(.sr-only)) > input { margin-top: 0; }
+
+/* Match LAZSIP's natural article/form columns; no viewport lock or tabs. */
+.columns { align-items: start; gap: 2rem; }
+.campaign { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); }
+.sidebar { position: static; }
+.form { height: auto; justify-content: flex-start; gap: .85rem; padding: 1.5rem; }
+.form dl { margin-top: 0; }
+@media (max-width: 900px) { .campaign { grid-template-columns: 1fr; } .campaign > .sidebar { order: -1; } }
+
+/* Let article text reclaim the full width once it passes the payment panel. */
+@media (min-width: 901px) {
+  .columns.campaign { display: flow-root; }
+  .campaign > .sidebar { float: right; width: calc(45% - 16px); margin: 0 0 1.25rem 2rem; position: static; }
+  .campaign > .article { width: auto; }
+  .campaign > .article > img, .campaign > .article > .summary, .campaign > .article > .meta { width: calc(55% - 16px); }
+  .campaign > .article > p, .campaign > .article > h2 { max-width: none; }
+}

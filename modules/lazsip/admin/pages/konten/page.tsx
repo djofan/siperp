@@ -43,7 +43,7 @@ export default async function KontenUmumPage() {
         <p className="mt-4 text-xs leading-relaxed text-lazsip-primary-800/60 dark:text-white/50">
           Dana berasal dari donasi dan zakat yang sudah dibayar, ditambah penyesuaian saldo campaign, tanpa biaya admin.
           Donatur dihitung sekali meski bertransaksi berulang. Penerima dan mitra mengikuti data terdaftar.
-          Jumlah verifikator diatur manual melalui tab Tentang LAZSIP.
+          Tahun berdiri, jumlah verifikator, dan jumlah mitra yang tampil di beranda diatur melalui tab Tentang LAZSIP.
         </p>
       </section>
       <KontenUmumTabs
@@ -86,9 +86,13 @@ export default async function KontenUmumPage() {
               { key: "body", label: "Isi", multiline: true, rows: 4 },
               { key: "visi", label: "Visi", multiline: true, rows: 3 },
               { key: "misi", label: "Misi", multiline: true, rows: 4, hint: "Satu poin per baris." },
+              { key: "foundedYear", label: "Tahun berdiri", hint: "Tahun yang ditampilkan pada kartu Berdiri sejak. Contoh: 2015." },
               { key: "totalVerifikator", label: "Jumlah Verifikator Lapangan Terlatih", hint: "Isi jumlah verifikator yang ditampilkan di beranda. Angka saja." },
+              { key: "totalMitra", label: "Jumlah mitra kerja sama", hint: "Angka yang ditampilkan di beranda. Diatur manual, terpisah dari jumlah data mitra terdaftar." },
+              { key: "wilayahTitle", label: "Judul wilayah cakupan" },
+              { key: "wilayahCakupan", label: "Daftar wilayah cakupan verifikator", multiline: true, rows: 5, hint: "Satu wilayah per baris. Diatur manual, tidak mengambil data penyaluran. Kosongkan untuk menyembunyikan bagian ini." },
             ],
-            initialValue: { ...LAZSIP_SITE_CONTENT_DEFAULTS.tentang, ...(tentang ?? {}) },
+            initialValue: { ...LAZSIP_SITE_CONTENT_DEFAULTS.tentang, ...(tentang ?? {}), totalMitra: tentang?.totalMitra?.trim() || String(statistics.totalMitra) },
           },
           {
             sectionKey: "legalitas",

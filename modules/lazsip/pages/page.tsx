@@ -7,7 +7,6 @@ import { MitraMarquee } from "@/modules/lazsip/components/sections/MitraMarquee"
 import { PenyaluranBantuanSection } from "@/modules/lazsip/components/sections/PenyaluranBantuanSection";
 import { DonasiSection } from "@/modules/lazsip/components/sections/DonasiSection";
 import { BeritaSection } from "@/modules/lazsip/components/sections/BeritaSection";
-import { KegiatanSection } from "@/modules/lazsip/components/sections/KegiatanSection";
 import { ProgramSection } from "@/modules/lazsip/components/sections/ProgramSection";
 import { TentangSection } from "@/modules/lazsip/components/sections/TentangSection";
 import { TransparansiSection } from "@/modules/lazsip/components/sections/TransparansiSection";
@@ -27,7 +26,6 @@ export default async function LazsipHomePage() {
       <PenyaluranBantuanSection />
       <DonasiSection />
       <BeritaSection />
-      <KegiatanSection />
       <ProgramSection
         id="program"
         eyebrow="Program Pemberdayaan"

@@ -18,7 +18,7 @@ class SarsipEntry extends DomainModel
 
     protected array $fieldMap = ['eventDate' => 'event_date', 'targetAmount' => 'target_amount', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
 
-    protected $casts = ['event_date' => 'immutable_datetime', 'target_amount' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+    protected $casts = ['gallery' => 'array', 'event_date' => 'immutable_datetime', 'target_amount' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
 
     protected $hidden = [];
 }

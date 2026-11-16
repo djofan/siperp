@@ -8,7 +8,7 @@ Logo resmi berada di `public/sarsip-logo.png`, dipakai pada navbar, footer, dan 
 Foto hero diubah lewat **Admin SARSIP → Profil Tim → Foto hero halaman utama**.
 Pilih JPG/PNG/WebP maksimal 2 MB, tunggu upload selesai, lalu klik **Simpan profil**.
 Foto disimpan di storage Laravel melalui endpoint upload SARSIP yang memerlukan akses admin;
-URL-nya disimpan pada `sarsip_profiles.hero_image`. Menghapus foto mengembalikan ilustrasi bawaan,
+URL-nya disimpan pada `sarsip_profiles.hero_image`. Foto tampil sebagai latar hero yang redup serta dokumentasi pada bagian Tentang. Menghapus foto menampilkan hero pola topografi tanpa foto,
 tanpa menghapus berkas yang mungkin masih dipakai konten lain.
 
 Runtime aktif memakai Laravel. Terapkan migration `2026_11_02_000000_add_sarsip_hero_image`
@@ -74,3 +74,13 @@ npm run test:donation
 
 Tes SARSIP membuat data sementara dan membersihkannya kembali; meliputi akses, draft/publikasi, jenis konten,
 validasi pembayaran, deduplikasi donatur, pemisahan rekening, privasi, konfirmasi berulang, dan arsip campaign.
+
+
+## Galeri dokumentasi
+
+Setiap campaign, kegiatan, berita, dan penerima manfaat memiliki galeri publik
+opsional. Admin dapat menambahkan hingga 12 foto JPG/PNG/WebP (2 MB per foto),
+mengisi keterangan, serta menghapus foto dari galeri tanpa menghapus file storage.
+Galeri mengikuti status publikasi konten/penerima. Data pribadi penerima tetap privat.
+Terapkan migration Laravel `2026_11_16_170000_add_sarsip_galleries` sebelum deploy.
+Foto dummy galeri hanya tampil pada detail pratinjau development.

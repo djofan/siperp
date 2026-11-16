@@ -8,7 +8,6 @@ export const lazsipSiteConfig = {
     { label: "Berita", href: "#berita" },
     { label: "Donasi", href: "#donasi" },
     { label: "Program", href: "#program" },
-    { label: "Kegiatan", href: "#kegiatan" },
     { label: "Penyaluran", href: "#penyaluran" },
   ],
 };

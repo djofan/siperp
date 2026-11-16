@@ -949,6 +949,40 @@
           }
         },
         "description": "files returned in authorized teacher-review and student-task detail. Legacy single-file submissions return one item."
+      },
+      "SarsipGalleryPhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "image",
+          "caption"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "image": {
+            "type": "string",
+            "maxLength": 191,
+            "pattern": "^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          }
+        }
+      },
+      "SarsipGallery": {
+        "type": "array",
+        "maxItems": 12,
+        "items": {
+          "$ref": "#/components/schemas/SarsipGalleryPhoto"
+        }
       }
     }
   },
@@ -7444,6 +7478,346 @@
             }
           },
           "429": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/entries": {
+      "post": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Save SARSIP entries with optional gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active SARSIP admin access. Existing content fields remain required. Optional gallery is at most 12 photos uploaded through SARSIP; IDs must be distinct. Omitting gallery preserves existing photos; [] clears references without deleting stored files. Photos/captions become public only when the content is published.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gallery": {
+                    "$ref": "#/components/schemas/SarsipGallery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved content"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Published SARSIP entries",
+        "description": "Paginated public rows include gallery (empty array for no photos). Archived/draft rows are excluded; beneficiaries expose only id, publicName, category, amount, image and gallery, never internal identity/contact/location/notes.",
+        "responses": {
+          "200": {
+            "description": "Paginated public content with gallery"
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/entries/{id}": {
+      "put": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Save SARSIP entries with optional gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active SARSIP admin access. Existing content fields remain required. Optional gallery is at most 12 photos uploaded through SARSIP; IDs must be distinct. Omitting gallery preserves existing photos; [] clears references without deleting stored files. Photos/captions become public only when the content is published.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gallery": {
+                    "$ref": "#/components/schemas/SarsipGallery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved content"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/beneficiaries": {
+      "post": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Save SARSIP beneficiaries with optional gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active SARSIP admin access. Existing content fields remain required. Optional gallery is at most 12 photos uploaded through SARSIP; IDs must be distinct. Omitting gallery preserves existing photos; [] clears references without deleting stored files. Photos/captions become public only when the content is published.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gallery": {
+                    "$ref": "#/components/schemas/SarsipGallery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Saved content"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Published SARSIP beneficiaries",
+        "description": "Paginated public rows include gallery (empty array for no photos). Archived/draft rows are excluded; beneficiaries expose only id, publicName, category, amount, image and gallery, never internal identity/contact/location/notes.",
+        "responses": {
+          "200": {
+            "description": "Paginated public content with gallery"
+          }
+        }
+      }
+    },
+    "/api/v1/sarsip/beneficiaries/{id}": {
+      "put": {
+        "tags": [
+          "Sarsip"
+        ],
+        "summary": "Save SARSIP beneficiaries with optional gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active SARSIP admin access. Existing content fields remain required. Optional gallery is at most 12 photos uploaded through SARSIP; IDs must be distinct. Omitting gallery preserves existing photos; [] clears references without deleting stored files. Photos/captions become public only when the content is published.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gallery": {
+                    "$ref": "#/components/schemas/SarsipGallery"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved content"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
             "description": "Request rejected",
             "content": {
               "application/json": {

@@ -1,18 +1,22 @@
 "use client";
+import { GalleryEditor } from "./GalleryEditor";
+import type { SarsipGalleryPhoto } from "@/contracts/modules/sarsip";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { BENEFICIARY_CATEGORIES } from "@/modules/sarsip/beneficiaryCategories";
-type Row = { id: string; name: string; phone: string | null; location: string; assistance: string; receivedAt: string; notes: string | null; publicName: string | null; category: string; amount: number; image: string | null; isPublished: boolean };
+type Row = { gallery?: SarsipGalleryPhoto[]; id: string; name: string; phone: string | null; location: string; assistance: string; receivedAt: string; notes: string | null; publicName: string | null; category: string; amount: number; image: string | null; isPublished: boolean };
 export function BeneficiaryManager({ rows }: { rows: Row[] }) {
   const router = useRouter();
+  const [gallery, setGallery] = useState<SarsipGalleryPhoto[]>([]);
+  const [galleryBusy, setGalleryBusy] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground";
   async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); if (busy) return;
+    event.preventDefault(); if (busy || galleryBusy) return;
     const form = new FormData(event.currentTarget);
     const values = Object.fromEntries(form);
     setBusy(true); setError("");
@@ -30,20 +34,20 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
       delete values.photo; delete values.removeImage;
       values.image = image;
       values.isPublished = form.has("isPublished") ? "on" : "";
-      const response = await fetch(editing ? `/api/sarsip/beneficiaries/${editing.id}` : "/api/sarsip/beneficiaries", { method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
+      const response = await fetch(editing ? `/api/sarsip/beneficiaries/${editing.id}` : "/api/sarsip/beneficiaries", { method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, isPublished: form.has("isPublished"), gallery }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? "Gagal menyimpan data.");
-      setEditing(null); setVersion((v) => v + 1); router.refresh();
+      setEditing(null); setGallery([]); setVersion((v) => v + 1); router.refresh();
     } catch (err) { setError((err as Error).message); }
     finally { setBusy(false); }
   }
   async function archive(id: string) {
-    if (busy || !confirm("Arsipkan penerima manfaat ini? Data tidak lagi dihitung dalam ringkasan publik.")) return;
+    if (busy || galleryBusy || !confirm("Arsipkan penerima manfaat ini? Data tidak lagi dihitung dalam ringkasan publik.")) return;
     setBusy(true); setError("");
     try {
       const response = await fetch(`/api/sarsip/beneficiaries/${id}`, { method: "DELETE" });
       if (!response.ok) throw new Error("Gagal mengarsipkan data.");
-      if (editing?.id === id) { setEditing(null); setVersion((v) => v + 1); }
+      if (editing?.id === id) { setEditing(null); setGallery([]); setVersion((v) => v + 1); }
       router.refresh();
     } catch (err) { setError((err as Error).message); }
     finally { setBusy(false); }
@@ -61,12 +65,13 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
         <label className="text-sm">Nominal bantuan tersalurkan (Rp)<input name="amount" type="number" min={0} max={2147483647} step={1} required defaultValue={editing?.amount ?? 0} className={field}/></label>
         <label className="text-sm">Nama tampilan publik<input name="publicName" maxLength={191} defaultValue={editing?.publicName ?? ""} placeholder="Nama yang diizinkan atau nama samaran" className={field}/></label>
         <div className="text-sm sm:col-span-2"><label>Foto dokumentasi<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" className={field}/></label><p className="mt-2 text-xs text-foreground/60">JPG, PNG, atau WebP, maksimal 2 MB. Foto baru menggantikan foto sebelumnya.</p>{editing?.image && <div className="mt-3"><Image unoptimized src={editing.image} width={200} height={160} alt="Foto penerima manfaat" className="max-h-40 rounded-lg object-contain"/><label className="mt-2 flex items-center gap-2"><input type="checkbox" name="removeImage"/>Hapus foto lama</label></div>}</div>
+        <div className="sm:col-span-2"><GalleryEditor value={gallery} onChange={setGallery} disabled={busy} onUploadingChange={setGalleryBusy}/></div>
         <label className="flex items-start gap-3 text-sm sm:col-span-2"><input name="isPublished" type="checkbox" defaultChecked={editing?.isPublished} className="mt-1"/><span>Tampilkan di daftar penerima manfaat publik. Pastikan nama tampilan, foto, kategori, dan nominal boleh dipublikasikan. Telepon, lokasi, serta catatan internal tidak ditampilkan.</span></label>
         <label className="text-sm sm:col-span-2">Catatan (opsional)<textarea name="notes" rows={3} maxLength={5000} defaultValue={editing?.notes ?? ""} className={field}/></label>
-        <div className="flex gap-3 sm:col-span-2"><button className="rounded-full bg-orange-600 px-6 py-3 text-sm font-bold text-white">{busy ? "Menyimpan…" : "Simpan"}</button>{editing && <button type="button" onClick={() => { setEditing(null); setVersion((v) => v + 1); }} className="rounded-full border border-border px-6 py-3 text-sm">Batal edit</button>}</div>
+        <div className="flex gap-3 sm:col-span-2"><button disabled={busy || galleryBusy} className="rounded-full bg-orange-600 px-6 py-3 text-sm font-bold text-white">{busy ? "Menyimpan…" : "Simpan"}</button>{editing && <button type="button" onClick={() => { setEditing(null); setGallery([]); setVersion((v) => v + 1); }} className="rounded-full border border-border px-6 py-3 text-sm">Batal edit</button>}</div>
       </fieldset>
     </form>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-    <div className="overflow-x-auto rounded-2xl border border-border bg-surface"><table className="w-full min-w-[800px] text-left text-sm text-foreground"><thead><tr className="border-b border-border">{["Nama", "Telepon", "Lokasi", "Bantuan", "Tanggal", "Aksi"].map((label) => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-b border-border"><td className="p-4">{row.name}</td><td className="p-4">{row.phone || "—"}</td><td className="p-4">{row.location}</td><td className="p-4">{row.assistance}</td><td className="p-4">{row.receivedAt}</td><td className="space-x-3 whitespace-nowrap p-4"><button disabled={busy} onClick={() => { setEditing(row); setError(""); }} className="text-orange-600">Edit</button><button disabled={busy} onClick={() => archive(row.id)} className="text-foreground/60">Arsipkan</button></td></tr>)}</tbody></table>{!rows.length && <p className="p-6 text-sm text-foreground/60">Belum ada penerima manfaat tercatat.</p>}</div>
+    <div className="overflow-x-auto rounded-2xl border border-border bg-surface"><table className="w-full min-w-[800px] text-left text-sm text-foreground"><thead><tr className="border-b border-border">{["Nama", "Telepon", "Lokasi", "Bantuan", "Tanggal", "Aksi"].map((label) => <th key={label} className="p-4">{label}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.id} className="border-b border-border"><td className="p-4">{row.name}</td><td className="p-4">{row.phone || "—"}</td><td className="p-4">{row.location}</td><td className="p-4">{row.assistance}</td><td className="p-4">{row.receivedAt}</td><td className="space-x-3 whitespace-nowrap p-4"><button disabled={busy || galleryBusy} onClick={() => { setEditing(row); setGallery(row.gallery ?? []); setError(""); }} className="text-orange-600">Edit</button><button disabled={busy || galleryBusy} onClick={() => archive(row.id)} className="text-foreground/60">Arsipkan</button></td></tr>)}</tbody></table>{!rows.length && <p className="p-6 text-sm text-foreground/60">Belum ada penerima manfaat tercatat.</p>}</div>
   </div>;
 }
