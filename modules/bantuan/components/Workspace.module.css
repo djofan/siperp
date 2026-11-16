@@ -238,3 +238,30 @@
 @media(max-width:760px){.app.mobileApp .main{padding:16px 12px calc(100px + env(safe-area-inset-bottom))}.app.mobileApp .heading h1{font-size:24px}.app.mobileApp .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}.app.mobileApp .topbar{position:sticky;top:0;z-index:20}.app.mobileApp .popover{max-width:calc(100vw - 24px);max-height:70dvh;overflow:auto}}
 
 .pwaAccount{display:flex;align-items:center;gap:16px;padding:22px;background:#fff;border-radius:20px;margin-bottom:24px}.pwaAccount>div{flex:1;min-width:0}.pwaAccount h2{font-size:18px;margin:0 0 6px;overflow-wrap:anywhere}.pwaAccount p{font-size:12px;color:var(--muted);margin:4px 0;overflow-wrap:anywhere}.app.mobileApp{background:#f7f8f7}.app.mobileApp .body{background:#f7f8f7}.app.mobileApp .sidebar{padding-bottom:max(18px,env(safe-area-inset-bottom))}@media(max-width:480px){.pwaAccount{flex-wrap:wrap;padding:18px}.pwaAccount>.button{width:100%}}
+
+/* Applicant history is a visible review reminder, not an intake blocker. */
+.applicantHistory { border: 1px solid #e6bd76; border-left: 5px solid #cf8a26; background: #fff8e9; padding: 22px; box-shadow: 0 4px 18px #61471609; }
+.applicantHistoryHeading { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.historyIcon { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; flex-shrink: 0; border-radius: 13px; background: #fce8c1; color: #9b621c; }
+.applicantHistoryHeading h3 { font-size: 17px; color: #714916; font-weight: 750; margin: 0 0 6px; }
+.applicantHistoryHeading p { color: #826d4e; font-size: 13px; margin: 0; }
+.historyHelped { border-left-color: #af641e; background: #fff5e8; }
+.applicantHistoryList { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; max-height: 580px; }
+.applicantHistoryItem { display: block; padding: 16px; border: 1px solid #eddfc6; background: #fff; border-radius: 12px; }
+.applicantHistoryItem:hover { border-color: #c9954e; background: #fffdf9; }
+.historyCardTop { display: flex; align-items: flex-start; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #f0eadf; }
+.historyCardTop > div { flex: 1; min-width: 0; }
+.applicantHistoryItem strong { font-size: 14px; color: #31472e; }
+.applicantHistoryItem small { font-size: 11px; color: #7a806f; }
+.historyFacts { display: grid; grid-template-columns: 1fr 1fr; gap: 13px 16px; margin: 14px 0; }
+.historyFacts > div { min-width: 0; }
+.historyFacts dt { font-size: 10px; color: #888470; margin-bottom: 4px; }
+.historyFacts dd { margin: 0; font-size: 12px; color: #354432; font-weight: 600; overflow-wrap: anywhere; }
+.historyDelivery dd { color: #985d1c; }
+.historyCardFoot { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-top: 1px solid #f0eadf; padding-top: 10px; font-size: 10px; color: #8a795d; }
+.historyCardFoot b { color: #8c591c; font-size: 11px; }
+.applicantHistory > small { font-size: 11px; color: #827356; }
+@media(max-width:900px) { .applicantHistoryList { grid-template-columns: 1fr; } }
+@media(max-width:540px) { .applicantHistory { padding: 16px; } .applicantHistoryHeading h3 { font-size: 15px; } .historyFacts { gap: 12px; } .historyCardTop { flex-wrap: wrap; } }
+
+@media(max-width:760px){.applicantHistoryItem>span.historyCardFoot{display:flex}}

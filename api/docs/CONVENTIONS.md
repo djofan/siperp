@@ -459,3 +459,11 @@ berizin yang sudah ada (maksimal 2 MiB per foto). Galeri ikut publik hanya untuk
 konten published/completed atau penerima yang dipublikasikan dan tidak diarsip.
 Telepon, lokasi, nama internal, dan catatan penerima tetap tidak disertakan.
 Deployment memerlukan migration `2026_11_16_170000_add_sarsip_galleries`.
+
+
+Riwayat NIK Bantuan pada `duplicate-check.applications` dan
+`applications/{id}.duplicateApplications` tetap dibatasi scope akses akun.
+Setiap ringkasan juga memuat createdByName/intakeRole/source, disbursedAt,
+completedAt, handedOverAt, dan handedOverAmount (nullable). Tanggal/nominal
+penyerahan diambil dari laporan handover, bukan tanggal pencairan atau nominal
+persetujuan. Catatan dan isi lengkap handover tidak disertakan. Tidak ada migration.

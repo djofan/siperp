@@ -983,6 +983,75 @@
         "items": {
           "$ref": "#/components/schemas/SarsipGalleryPhoto"
         }
+      },
+      "AidApplicantHistory": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "number": {
+            "type": "string"
+          },
+          "program": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "amount": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdByName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "intakeRole": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string"
+          },
+          "disbursedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "completedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "handedOverAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "handedOverAmount": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
       }
     }
   },
@@ -7808,6 +7877,100 @@
             }
           },
           "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/duplicate-check": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Find prior applications for an exact NIK within own access scope",
+        "description": "Does not block intake. Both count and applications are access-scoped. Also used as duplicateApplications in application detail. Handover dates/amounts come from the handover report; transfer and completion dates remain separate. No raw NIK or private handover notes in response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "nik"
+                ],
+                "properties": {
+                  "nik": {
+                    "type": "string",
+                    "pattern": "^[0-9]{16}$"
+                  },
+                  "excludeId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scoped prior history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "count": {
+                          "type": "integer"
+                        },
+                        "applications": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AidApplicantHistory"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
             "description": "Request rejected",
             "content": {
               "application/json": {

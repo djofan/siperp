@@ -52,7 +52,7 @@ export interface AidApplication {
 }
 export interface AidDependent { name:string; relationship:string; gender:string; age:number|""; status:string }
 export type AidValues = Record<string, string | number | boolean | null | AidDependent[]>;
-export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string }
+export interface AidApplicantHistory { id:string; number:string; program:string; status:string; amount:number|null; createdAt:string; createdByName?:string|null; intakeRole?:string|null; source?:string; disbursedAt?:string|null; completedAt?:string|null; handedOverAt?:string|null; handedOverAmount?:number|null }
 export interface AidDetail extends AidApplication {
   manualProcess?:{verifier?:ManualActor;distributor?:ManualActor;last?:ManualActor & {action:string};transferRecipient?:{bank:string;recipientName:string;recipientRelationship:string;account:string;transferDate:string;transferAmount:number}}|null;
   surveyDeadline?:{assignedAt:string;dueAt:string;days:number;overdue:boolean}|null;

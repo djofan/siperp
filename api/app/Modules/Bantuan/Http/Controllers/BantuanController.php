@@ -56,11 +56,21 @@ class BantuanController
 
     private function applicantHistory(Request $request, Access $access, string $nikHash, ?string $excludeId = null)
     {
-        return $access->scope(Application::query(), $request)->where('nik_hash', $nikHash)
+        $rows = $access->scope(Application::query(), $request)->where('nik_hash', $nikHash)
             ->when($excludeId, fn ($query) => $query->where('id', '!=', $excludeId))
-            ->latest('created_at')->orderBy('id')->get(['id', 'number', 'program', 'status', 'amount', 'created_at'])
-            ->map(fn ($item) => ['id' => $item->id, 'number' => $item->number, 'program' => $item->program,
-                'status' => $item->status, 'amount' => $item->amount, 'createdAt' => $item->created_at->toIso8601String()]);
+            ->latest('created_at')->orderBy('id')->get(['id', 'number', 'program', 'status', 'amount', 'created_at', 'created_by', 'intake_role', 'source', 'disbursed_at', 'completed_at', 'handover']);
+        $creators = DB::table('users')->whereIn('id', $rows->pluck('created_by')->filter()->unique())->pluck('name', 'id');
+
+        return $rows->map(fn ($item) => [
+            'id' => $item->id, 'number' => $item->number, 'program' => $item->program,
+            'status' => $item->status, 'amount' => $item->amount,
+            'createdAt' => $item->created_at->toIso8601String(),
+            'createdByName' => $creators[$item->created_by] ?? null, 'intakeRole' => $item->intake_role,
+            'source' => $item->source, 'disbursedAt' => $item->disbursed_at?->toDateString(),
+            'completedAt' => $item->completed_at?->toDateString(),
+            'handedOverAt' => $item->handover['date'] ?? null,
+            'handedOverAmount' => isset($item->handover['amount']) ? (int) $item->handover['amount'] : null,
+        ]);
     }
 
     public function index(Request $request, Access $access, ApplicationQuery $listing)
