@@ -513,6 +513,20 @@ for (const resource of ['entries','beneficiaries']) {
 document.components.schemas.AidApplicantHistory = {type:'object',properties:{id:{type:'string'},number:{type:'string'},program:{type:'string'},status:{type:'string'},amount:{type:['integer','null']},createdAt:{type:'string',format:'date-time'},createdByName:{type:['string','null']},intakeRole:{type:['string','null']},source:{type:'string'},disbursedAt:{type:['string','null'],format:'date'},completedAt:{type:['string','null'],format:'date'},handedOverAt:{type:['string','null'],format:'date'},handedOverAmount:{type:['integer','null']}}};
 document.paths['/api/v1/bantuan/duplicate-check']={post:{tags:['Bantuan'],security:[{bearerAuth:[]}],summary:'Find prior applications for an exact NIK within own access scope',description:'Does not block intake. Both count and applications are access-scoped. Also used as duplicateApplications in application detail. Handover dates/amounts come from the handover report; transfer and completion dates remain separate. No raw NIK or private handover notes in response.',requestBody:{required:true,content:json({type:'object',required:['nik'],properties:{nik:{type:'string',pattern:'^[0-9]{16}$'},excludeId:{type:'string'}}})},responses:{200:{description:'Scoped prior history',content:json({type:'object',properties:{data:{type:'object',properties:{count:{type:'integer'},applications:{type:'array',items:{$ref:'#/components/schemas/AidApplicantHistory'}}}}}})},401:error,403:error,422:error}}};
 
+document.paths['/api/v1/keuangan/overview'] = { get: {
+  tags: ['Keuangan'], summary: 'Read-only finance foundation overview', security: [{bearerAuth: []}],
+  description: 'Active Core account and Keuangan module access required. Module starts inactive; only Core superadmin can preview inactive modules. Unknown roles denied. Counts expenses across this module only; approval count is own waiting assignments only. Null counters mean no capability. No recipient, amount, notes, IDs, ledger balance or credentials. No business writes or legacy import. Cache-Control no-store, private.',
+  responses: {200: {description: 'Authorized overview', content: {'application/json': {schema: {
+    type: 'object', additionalProperties: false, required: ['data'], properties: {data: {
+      type: 'object', additionalProperties: false, required: ['phase','readOnly','role','roleLabel','permissions','counts'], properties: {
+        phase: {const:'foundation'}, readOnly: {const:true}, role: {enum:['superadmin','admin','finance_admin','treasurer','approver','operator']}, roleLabel:{type:'string'},
+        permissions:{type:'object',additionalProperties:false,required:['readMasters','readApprovals','manageAccounts'],properties:Object.fromEntries(['readMasters','readApprovals','manageAccounts'].map(name=>[name,{type:'boolean'}]))},
+        counts:{type:'object',additionalProperties:false,required:['expenses','sources','categories','myPendingApprovals'],properties:{expenses:{type:'integer',minimum:0},...Object.fromEntries(['sources','categories','myPendingApprovals'].map(name=>[name,{type:['integer','null'],minimum:0}]))}},
+      },
+    }},
+  }}}}, 401:{description:'Unauthenticated or inactive account'},403:{description:'Module inactive, no access or role denied'},404:{description:'Module not registered'}},
+}};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

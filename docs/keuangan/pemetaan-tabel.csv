@@ -1,0 +1,16 @@
+tabel_lama,fungsi,target_usulan,kolom_kunci,aturan_migrasi
+approval,penugasan dan keputusan terakhir,keuangan_approvals + keuangan_approval_events,expense_id; user_id; approval_status_id,Map identitas dan status eksplisit; event import bukan keputusan baru
+approval_settings,aturan rentang nominal,keuangan_approval_rules,from_amount; to_amount,Batas inklusif; hindari overlap; bukan aturan historis setiap assignment
+approval_statuses,kamus status,enum waiting/approved/rejected pada modul,id 1/2/3,Mapping eksplisit; bukan status pembayaran
+categories,master kategori,keuangan_categories,id; name,Tidak merge berdasarkan nama; arsip bila dipakai
+expenses,catatan pengeluaran,keuangan_expenses + keuangan_expense_events,source_id; category_id,Nominal BIGINT integer; pembuat/bukti bayar tidak diketahui
+guarantors,penanggung jawab aturan,keuangan_rule_approvers,approval_setting_id; user_id,Map akun Core; tidak menyiratkan urutan tahap
+users,identitas,users Core melalui layanan/mapping privat,id; username; email,Tidak restore tabel users; tidak overwrite password/status akun Core
+roles,role lokal keuangan,keuangan_roles + primary role module_access,id; slug; name,Super Admin lama bukan Superadmin Core
+permissions,katalog 25 izin,keuangan_permissions,id; slug; name,Allowlist modul; tidak membuka permission global
+permission_role,grant per role,keuangan_permission_role,permission_id; role_id,Unik pasangan; pertahankan gabungan grant
+role_user,role per akun,keuangan_role_user + keuangan_staff,role_id; user_id,Satu primary role Core; tidak collapse gabungan role lama
+sources,label sumber dana,keuangan_sources,id; name,Bukan rekening bank atau saldo; mapping rekening tahap terpisah
+migrations,metadata schema lama,tidak diimpor ke migrations SIPERP,migration; batch,SIPERP hanya menjalankan migration barunya sendiri
+failed_jobs,data teknis,tidak dipindahkan sebagai bisnis,payload; exception,Dapat mengandung rahasia; bukan riwayat transaksi
+password_resets,token sementara,tidak dimigrasi,email; token,Tidak membawa token reset atau sesi ke Core

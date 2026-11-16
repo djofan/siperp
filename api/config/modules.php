@@ -1,7 +1,9 @@
 <?php
 
 use App\Modules\Academy\Providers\AcademyServiceProvider;
+use App\Modules\Bantuan\Providers\BantuanServiceProvider;
 use App\Modules\Core\Providers\CoreServiceProvider;
+use App\Modules\Keuangan\Providers\KeuanganServiceProvider;
 use App\Modules\Lazsip\Providers\LazsipServiceProvider;
 use App\Modules\Ojol\Providers\OjolServiceProvider;
 use App\Modules\Payment\Providers\PaymentServiceProvider;
@@ -12,6 +14,7 @@ use App\Modules\Teknisi\Providers\TeknisiServiceProvider;
 
 return ['providers' => [
     CoreServiceProvider::class,
+    KeuanganServiceProvider::class,
     PaymentServiceProvider::class,
     LazsipServiceProvider::class,
     SipServiceProvider::class,
@@ -20,5 +23,5 @@ return ['providers' => [
     TanwirServiceProvider::class,
     OjolServiceProvider::class,
     TeknisiServiceProvider::class,
-    \App\Modules\Bantuan\Providers\BantuanServiceProvider::class,
+    BantuanServiceProvider::class,
 ]];
