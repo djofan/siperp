@@ -25,3 +25,10 @@
 .gallery { width: 100%; padding: 24px; margin-top: 28px; }
 @media (max-width: 900px) { .fullGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
 @media (max-width: 540px) { .gallery { padding: 16px; } .fullGrid { gap: 12px; } }
+
+@media (max-width: 540px) {
+  .card figcaption p { font-size: 12px; line-height: 1.65; }
+  .card small { font-size: 10px; }
+  .headingTitle { gap: 6px; }
+}
+@media (max-width: 359px) { .fullGrid { grid-template-columns: minmax(0, 1fr); } }
