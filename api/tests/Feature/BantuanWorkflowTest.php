@@ -426,11 +426,17 @@ it('encrypts personal information and detects duplicate NIK without blocking int
 it('shows same NIK application history without blocking new applications or leaking unassigned records', function () {
     $input = bantuanInput();
     $first = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    Application::findOrFail($first)->forceFill(['status' => 'completed', 'amount' => 2500000, 'disbursed_at' => '2026-11-01', 'completed_at' => '2026-11-03', 'handover' => ['date' => '2026-11-03', 'amount' => 2400000, 'notes' => 'PRIVATE HANDOVER NOTES']])->save();
     $second = $this->postJson('/api/v1/bantuan/applications', [...$input, 'program' => 'Kesehatan'])->assertCreated()->json('data.id');
     $other = bantuanInput(); $other['applicant']['nik'] = '3271051234567891';
     $this->postJson('/api/v1/bantuan/applications', $other)->assertCreated();
     $this->postJson('/api/v1/bantuan/duplicate-check', ['nik' => $input['applicant']['nik'], 'excludeId' => $second])
-        ->assertOk()->assertJsonPath('data.count', 1)->assertJsonCount(1, 'data.applications')->assertJsonPath('data.applications.0.id', $first);
+        ->assertOk()->assertJsonPath('data.count', 1)->assertJsonCount(1, 'data.applications')->assertJsonPath('data.applications.0.id', $first)
+        ->assertJsonPath('data.applications.0.createdByName', $this->cc->name)
+        ->assertJsonPath('data.applications.0.disbursedAt', '2026-11-01')
+        ->assertJsonPath('data.applications.0.handedOverAt', '2026-11-03')
+        ->assertJsonPath('data.applications.0.handedOverAmount', 2400000);
+    expect($this->getJson('/api/v1/bantuan/applications/'.$second)->json('data.duplicateApplications.0'))->not->toHaveKey('handover');
     $this->getJson('/api/v1/bantuan/applications/'.$second)->assertOk()->assertJsonPath('data.duplicateCount', 1)->assertJsonCount(1, 'data.duplicateApplications');
     $history = $this->actingAs($this->verifier, 'sanctum')->postJson('/api/v1/bantuan/duplicate-check', ['nik' => $input['applicant']['nik']])
         ->assertOk()->assertJsonPath('data.count', 0)->assertJsonCount(0, 'data.applications');
