@@ -58,7 +58,7 @@ class ContentController
 
     private function entryData(SarsipEntry $row): array
     {
-        return [...$row->toArray(), 'currentAmount' => (int) PaymentTransaction::where('module_source', 'sarsip')->where('source_type', 'campaign')->where('source_id', $row->id)->where('status', 'paid')->sum('amount')];
+        return [...$row->toArray(), 'gallery' => $row->gallery ?? [], 'currentAmount' => (int) PaymentTransaction::where('module_source', 'sarsip')->where('source_type', 'campaign')->where('source_id', $row->id)->where('status', 'paid')->sum('amount')];
     }
 
     public function entries(Request $request): JsonResponse
@@ -75,12 +75,23 @@ class ContentController
         return response()->json(['data' => $this->entryData($this->entriesQuery($request)->findOrFail($id))]);
     }
 
+    private function galleryRules(): array
+    {
+        return [
+            'gallery' => 'sometimes|array|max:12',
+            'gallery.*' => 'required|array:id,image,caption',
+            'gallery.*.id' => 'required|string|max:64|distinct',
+            'gallery.*.image' => ['required', 'string', 'max:191', 'regex:~^/uploads/sarsip/[a-f0-9-]{36}\.(?:jpg|png|webp)$~i'],
+            'gallery.*.caption' => 'present|nullable|string|max:500',
+        ];
+    }
+
     private function entryInput(Request $request, ?SarsipEntry $row = null): array
     {
         if ($row) {
             $request->merge(['kind' => $row->kind]);
         }
-        $data = $request->validate(['kind' => 'required|in:kegiatan,campaign,berita', 'title' => 'required|string|max:191', 'description' => 'required|string|max:50000', 'status' => 'required|in:draft,published,completed,archived', 'location' => 'sometimes|nullable|string|max:191', 'image' => 'sometimes|nullable|string|max:191', 'eventDate' => 'sometimes|nullable|date', 'targetAmount' => 'required_if:kind,campaign|integer|min:0|max:2147483647']);
+        $data = $request->validate([...$this->galleryRules(), 'kind' => 'required|in:kegiatan,campaign,berita', 'title' => 'required|string|max:191', 'description' => 'required|string|max:50000', 'status' => 'required|in:draft,published,completed,archived', 'location' => 'sometimes|nullable|string|max:191', 'image' => 'sometimes|nullable|string|max:191', 'eventDate' => 'sometimes|nullable|date', 'targetAmount' => 'required_if:kind,campaign|integer|min:0|max:2147483647']);
         $data['targetAmount'] = $data['kind'] === 'campaign' ? ($data['targetAmount'] ?? 0) : 0;
         if ($data['kind'] === 'campaign' && $data['targetAmount'] <= 0) {
             throw ValidationException::withMessages(['targetAmount' => 'Target campaign harus lebih dari Rp0.']);
@@ -139,11 +150,11 @@ class ContentController
         $request->validate(['page' => 'sometimes|integer|min:1', 'per_page' => 'sometimes|integer|min:1|max:100']);
         $query = SarsipBeneficiary::whereNull('archived_at');
         if (! $request->route('admin')) {
-            $query->where('is_published', true)->select(['id', 'public_name', 'category', 'amount', 'image', 'received_at']);
+            $query->where('is_published', true)->select(['id', 'public_name', 'category', 'amount', 'image', 'gallery', 'received_at']);
         }
         $page = $query->orderByDesc('received_at')->orderBy('id')->paginate($request->integer('per_page', 100));
         if (! $request->route('admin')) {
-            $page->through(fn ($row) => ['id' => $row->id, 'publicName' => $row->publicName, 'category' => $row->category, 'amount' => $row->amount, 'image' => $row->image]);
+            $page->through(fn ($row) => ['id' => $row->id, 'publicName' => $row->publicName, 'category' => $row->category, 'amount' => $row->amount, 'image' => $row->image, 'gallery' => $row->gallery ?? []]);
         }
 
         return response()->json($page);
@@ -157,7 +168,7 @@ class ContentController
     private function beneficiaryInput(Request $request): array
     {
         $today = now('Asia/Jakarta')->format('Y-m-d');
-        $data = $request->validate(['name' => 'required|string|max:191', 'location' => 'required|string|max:191', 'assistance' => 'required|string|max:191', 'phone' => ['sometimes', 'nullable', 'string', 'regex:/^\+?[0-9 ()-]{6,25}$/D'], 'notes' => 'sometimes|nullable|string|max:5000', 'receivedAt' => 'required|date_format:Y-m-d|before_or_equal:'.$today, 'publicName' => 'required_if:isPublished,true|nullable|string|max:191', 'category' => 'sometimes|in:Evakuasi,Kebutuhan Pokok,Kesehatan,Pemulihan,Lainnya', 'amount' => 'sometimes|integer|min:0|max:2147483647', 'image' => ['sometimes', 'nullable', 'string', 'regex:~^(?:/uploads/sarsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|https?://[^\s]+)$~i'], 'isPublished' => 'required|boolean']);
+        $data = $request->validate([...$this->galleryRules(), 'name' => 'required|string|max:191', 'location' => 'required|string|max:191', 'assistance' => 'required|string|max:191', 'phone' => ['sometimes', 'nullable', 'string', 'regex:/^\+?[0-9 ()-]{6,25}$/D'], 'notes' => 'sometimes|nullable|string|max:5000', 'receivedAt' => 'required|date_format:Y-m-d|before_or_equal:'.$today, 'publicName' => 'required_if:isPublished,true|nullable|string|max:191', 'category' => 'sometimes|in:Evakuasi,Kebutuhan Pokok,Kesehatan,Pemulihan,Lainnya', 'amount' => 'sometimes|integer|min:0|max:2147483647', 'image' => ['sometimes', 'nullable', 'string', 'regex:~^(?:/uploads/sarsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|https?://[^\s]+)$~i'], 'isPublished' => 'required|boolean']);
         $data['receivedAt'] = CarbonImmutable::createFromFormat('!Y-m-d', $data['receivedAt'], 'Asia/Jakarta')->utc();
 
         return $data;

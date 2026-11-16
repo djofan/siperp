@@ -33,6 +33,8 @@ function component(path, name, extras = {}) {
       'next/link': { default: 'Link' },
       'next/navigation': { useRouter: () => ({ refresh() {} }) },
       '@/modules/sarsip/brand': brand,
+      './Landing.module.css': { default: new Proxy({}, { get: (_, name) => name }) },
+      '@/modules/sarsip/api/data': { money: value => `Rp ${value}` },
       '@/modules/sarsip/components/admin/HeroImageField': { HeroImageField: 'HeroImageField' },
     })[name] ?? {},
   });
@@ -45,13 +47,17 @@ function find(node, predicate) {
   return [...(predicate(node) ? [node] : []), ...find(node.props?.children, predicate)];
 }
 
-test('hero uses the saved photo and returns to an illustration when cleared', () => {
+test('centered hero keeps admin headline and photo with public assistance information', () => {
   const render = component('modules/sarsip/components/Hero.tsx', 'SarsipHero');
-  for (const [heroImage, expected] of [[photo, photo], [null, brand.DEFAULT_HERO_IMAGE]]) {
-    const image = find(render({ profile: { headline: 'Tim SARSIP', heroImage } }), node => node.type === 'Image')[0];
-    assert.equal(image.props.src, expected);
-    assert.equal(image.props.preload, true);
-  }
+  const props = { profile: { headline: 'Tim SARSIP', heroImage: photo }, stats: { totalAmount: 15000, donorCount: 2, beneficiaryCount: 7 }, campaignCount: 3 };
+  const tree = render(props);
+  assert.equal(find(tree, node => node.type === 'h1')[0].props.children, 'Tim SARSIP');
+  const image = find(tree, node => node.type === 'Image')[0];
+  assert.equal(image.props.src, photo);
+  assert.equal(image.props.preload, true);
+  assert.equal(find(tree, node => node.type === 'strong').length, 0);
+  assert.ok(find(tree, node => node.type === 'h2').some(node => node.props.children === 'Pencarian & pertolongan'));
+  assert.equal(find(render({ ...props, profile: { ...props.profile, heroImage: null } }), node => node.type === 'Image').length, 0);
 });
 
 test('photo upload reports progress and preserves the saved photo after an API failure', async () => {

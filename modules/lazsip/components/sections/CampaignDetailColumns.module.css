@@ -1,0 +1,10 @@
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+.payment, .article { min-width: 0; }
+.description { margin-top: 2rem; }
+.description > p + p { margin-top: 1.25rem; }
+@media (min-width: 1024px) {
+  .layout { display: flow-root; }
+  .payment { float: right; width: calc(45% - 20px); margin: 0 0 1.5rem 2.5rem; }
+  .media { width: calc(55% - 20px); }
+  .article, .description { width: auto; max-width: none; }
+}

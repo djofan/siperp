@@ -1,21 +1,31 @@
 "use client";
 
+
+import styles from "./Landing.module.css";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { SarsipMark } from "@/modules/sarsip/components/SarsipMark";
 
 const links = [
+  ["Beranda", "/sarsip"],
+  ["Campaign", "/sarsip#campaign"],
+  ["Kegiatan", "/sarsip#kegiatan"],
+  ["Berita", "/sarsip#berita"],
   ["Tentang", "/sarsip#tentang"],
-  ["Kegiatan", "/sarsip/kegiatan"],
-  ["Berita", "/sarsip/berita"],
-  ["Campaign", "/sarsip/campaign"],
-  ["Transparansi", "/sarsip#transparansi"],
 ];
 
 export default function Navbar() {
-  const isHome = usePathname() === "/sarsip";
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   const headerRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -44,12 +54,23 @@ export default function Navbar() {
     };
   }, [open]);
 
+  function navigate(event: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    setOpen(false);
+    if (pathname !== "/sarsip" || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const id = href.split("#")[1];
+    const target = id ? document.getElementById(id) : document.documentElement;
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    window.history.replaceState(null, "", href);
+  }
+
   return (
-    <header ref={headerRef} className={`${isHome ? "fixed inset-x-0" : "sticky"} top-3 z-40 mx-auto max-w-6xl px-3 pt-3 sm:px-6`}>
-      <div className="relative flex items-center justify-between gap-3 rounded-full border border-slate-100 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-md lg:px-6">
-        <Link href="/sarsip" onClick={() => setOpen(false)} className="flex shrink-0 items-center gap-3">
-          <SarsipMark />
-          <span className="text-xl font-black tracking-tight">SAR<span className="text-orange-600">SIP</span><span className="block text-[9px] font-semibold tracking-[.15em] text-slate-500">SEARCH & RESCUE</span></span>
+    <header ref={headerRef} className={`${styles.navbar} ${pathname === "/sarsip" && !scrolled && !open ? styles.navSeamless : ""}`}>
+      <div className={styles.navInner}>
+        <Link href="/sarsip" onClick={(event) => navigate(event, "/sarsip")} className={styles.navBrand}>
+          <SarsipMark className={styles.navLogo}/>
+          <span className={styles.brandName}>SAR<span className="text-[#629439]">SIP</span><span className={styles.brandCaption}>SEARCH & RESCUE</span></span>
         </Link>
         <button
           ref={buttonRef}
@@ -58,21 +79,21 @@ export default function Navbar() {
           aria-expanded={open}
           aria-controls="sarsip-navigation"
           onClick={() => setOpen(!open)}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-900 hover:bg-orange-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 lg:hidden"
+          className={styles.menuButton}
         >
-          <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d={open ? "M6 6l12 12M18 6L6 18" : "M4 6h16M4 12h16M4 18h16"} />
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+            <path d={open ? "M6 6l12 12M18 6L6 18" : "M4 8h16M4 16h16"} />
           </svg>
         </button>
         <nav
           id="sarsip-navigation"
           aria-label="Navigasi SARSIP"
-          className={`${open ? "flex" : "hidden"} absolute inset-x-0 top-full mt-3 max-h-[calc(100dvh-7rem)] flex-col gap-1 overflow-y-auto rounded-3xl border border-slate-100 bg-white p-3 text-sm font-medium shadow-xl lg:static lg:mt-0 lg:flex lg:max-h-none lg:flex-row lg:items-center lg:gap-5 lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none`}
+          className={`${styles.navLinks} ${open ? styles.navOpen : ""}`}
         >
           {links.map(([label, href]) => (
-            <Link key={label} href={href} onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 hover:bg-orange-50 hover:text-orange-700 focus-visible:outline-orange-600 lg:p-0 lg:hover:bg-transparent">{label}</Link>
+            <Link key={label} href={href} onClick={(event) => navigate(event, href)} aria-current={pathname === href ? "page" : undefined} className={styles.navLink}>{label}</Link>
           ))}
-          <Link href="/sarsip/campaign" onClick={() => setOpen(false)} className="mt-2 rounded-full bg-orange-600 px-5 py-3 text-center font-bold text-white hover:bg-orange-700 lg:mt-0 lg:py-2.5">Donasi</Link>
+          <Link href="/sarsip#campaign" onClick={(event) => navigate(event, "/sarsip#campaign")} className={styles.navDonate}>Donasi sekarang</Link>
         </nav>
       </div>
     </header>

@@ -48,3 +48,14 @@
 .mobileMenu>div>a{padding:12px;font-size:12px;border-radius:8px}.mobileMenu>div>a:hover{background:#f0f3e9}
 .site:has([data-teknisi-landing]) main [id]{scroll-margin-top:76px}
 }
+/* Public navigation: consistent, compact button surfaces. */
+.site .navigation nav{gap:8px}
+.site .navigation .desktopLink{align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 16px;border-radius:12px;background:#e9ede3;color:#3f5736;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;transition:background .18s,color .18s,box-shadow .18s}
+.site .navigation .desktopLink:hover{background:#dce6d2;color:#2d4925}
+.site .navigation .desktopLink[href="/teknisi/masuk"]{background:#365b2c;color:#fff}
+.site .navigation .desktopLink[href="/teknisi/masuk"]:hover{background:#294821;color:#fff}
+.site .navigation .trackButton{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:10px 16px;border:0;border-radius:12px;background:#dfeacb;color:#34532b;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;transition:background .18s}
+.site .navigation .trackButton:hover{background:#d0e0b5;color:#28471f}
+.site .navigation .desktopLink:focus-visible,.site .navigation .trackButton:focus-visible{outline:2px solid #638a49;outline-offset:3px}
+@media(max-width:640px){.site .navigation .desktopLink{display:none}.site:has([data-teknisi-landing]) .navigation .trackButton{min-height:36px;padding:9px 12px;border-radius:10px;font-size:11px}.site .mobileMenu>summary{width:36px;height:36px;border-radius:10px;background:#e9ede3;color:#36532d}.site .mobileMenu>div{gap:6px;padding:9px}.site .mobileMenu>div>a{display:flex;align-items:center;min-height:42px;padding:11px 13px;background:#f1f4ed;color:#36512d;font-weight:500;text-decoration:none}.site .mobileMenu>div>a:last-child{background:#365b2c;color:#fff}.site .mobileMenu>div>a:hover{background:#dfe8d6}.site .mobileMenu>div>a:last-child:hover{background:#294821}}
+@media(prefers-reduced-motion:reduce){.site .navigation .desktopLink,.site .navigation .trackButton{transition:none}}

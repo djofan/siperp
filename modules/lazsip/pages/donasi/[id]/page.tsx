@@ -1,3 +1,4 @@
+import columnStyles from "@/modules/lazsip/components/sections/CampaignDetailColumns.module.css";
 import { notFound } from "next/navigation";
 import { getCampaignById, listCampaigns } from "@/modules/lazsip/api/campaigns";
 import { listCheckoutMethods as listPaymentFeeRefs } from "@/modules/lazsip/api/paymentFees";
@@ -41,6 +42,7 @@ export default async function LazsipDonasiDetailPage({
         isActive={campaign.status === "active"}
         articleTop={
           <>
+            <div className={columnStyles.media}>
             <ImagePlaceholder variant="campaign" src={campaign.image} alt={campaign.title} naturalSize className={`w-full rounded-3xl ${campaign.image ? "" : "aspect-[21/9]"}`} />
 
             <div className="mt-8 rounded-2xl border border-lazsip-primary-100 bg-lazsip-primary-50/60 p-6">
@@ -51,7 +53,8 @@ export default async function LazsipDonasiDetailPage({
               </div>
             </div>
 
-            <div className="mt-8 flex flex-col gap-5">
+            </div>
+            <div className={columnStyles.description}>
               <p className="whitespace-pre-line text-sm leading-relaxed text-lazsip-primary-900/80">{campaign.description}</p>
             </div>
           </>

@@ -11,18 +11,41 @@ type PublicTicket = {
 const formatDate=(value:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short",timeZone:"Asia/Jakarta"}).format(new Date(value));
 const label=(status:string)=>isStatus(status)?statuses[status]:"Perkembangan servis";
 
-export function TrackingPopup({children="Cek status servis",className}:{children?:React.ReactNode;className?:string}) {
+export function TrackingPopup({children="Cek status servis",className,autoFromLink=false}:{children?:React.ReactNode;className?:string;autoFromLink?:boolean}) {
   const dialog=useRef<HTMLDialogElement>(null),request=useRef<AbortController|null>(null),previousOverflow=useRef("");
   const id=useId();
-  const [code,setCode]=useState(""),[pending,setPending]=useState(false),[error,setError]=useState(""),[ticket,setTicket]=useState<PublicTicket|null>(null);
+  const [pending,setPending]=useState(false),[error,setError]=useState(""),[ticket,setTicket]=useState<PublicTicket|null>(null);
   const resultTitle=useRef<HTMLHeadingElement>(null),codeInput=useRef<HTMLInputElement>(null);
+  const form=useRef<HTMLFormElement>(null);
+  useEffect(()=>{
+    if(!autoFromLink)return;
+    const popup=dialog.current;
+    function openFromLink(){
+      const match=window.location.hash.match(/^#cek-status(?:\?kode=([a-f0-9]{48}))?$/i);
+      if(!match)return;
+      previousOverflow.current=document.body.style.overflow;
+      dialog.current?.showModal();document.body.style.overflow="hidden";
+      if(match[1]){
+        const input=codeInput.current;
+        if(input)input.value=match[1];
+        form.current?.requestSubmit();
+      }
+      window.history.replaceState(null,"",window.location.pathname+window.location.search);
+    }
+    const timer=window.setTimeout(openFromLink,0);window.addEventListener("hashchange",openFromLink);
+    return()=>{window.clearTimeout(timer);window.removeEventListener("hashchange",openFromLink);request.current?.abort();if(popup?.open)document.body.style.overflow=previousOverflow.current;};
+  },[autoFromLink]);
   useEffect(()=>{if(ticket)resultTitle.current?.focus();},[ticket]);
   function close(){request.current?.abort();dialog.current?.close();}
   async function submit(event:React.FormEvent<HTMLFormElement>){
     event.preventDefault();
     setError("");setTicket(null);
-    const token=code.trim().toLowerCase();
-    if(!/^[a-f0-9]{48}$/.test(token)){setError("Kode pelacakan terdiri dari 48 karakter. Salin kode yang diberikan outlet, bukan nomor tiket HP-….");return;}
+    const value=String(new FormData(event.currentTarget).get("kode")??"").trim();
+    let token=value.toLowerCase();
+    if(!/^[a-f0-9]{48}$/.test(token)){
+      try{const url=new URL(value);token=(url.searchParams.get("kode")??new URLSearchParams(url.hash.split("?")[1]).get("kode")??"").toLowerCase();}catch{token="";}
+    }
+    if(!/^[a-f0-9]{48}$/.test(token)){setError("Tempel kode atau tautan pelacakan yang diberikan outlet.");return;}
     request.current?.abort();
     const controller=new AbortController();request.current=controller;setPending(true);
     try{
@@ -48,9 +71,9 @@ export function TrackingPopup({children="Cek status servis",className}:{children
       <header className={styles.heading}><span className={styles.symbol} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/></svg></span><div><p className={styles.eyebrow}>PELANGGAN · TEKNISI HP</p><h2 id={`${id}-title`} ref={resultTitle} tabIndex={-1}>{ticket?"Perkembangan servis":"Cek status servis"}</h2></div><button type="button" className={styles.close} aria-label="Tutup pelacakan" onClick={close}>×</button></header>
       <div className={styles.body}>
       <p className={styles.description} id={`${id}-description`}>{ticket?"Informasi terbaru dari outlet tempat Anda menitipkan perangkat.":"Masukkan kode dari outlet untuk melihat status dan riwayat pengerjaan. Tidak perlu login."}</p>
-      <form onSubmit={submit} className={styles.form} hidden={!!ticket}>
+      <form ref={form} onSubmit={submit} className={styles.form} hidden={!!ticket}>
         <label htmlFor={`${id}-code`}>Kode pelacakan</label>
-        <input ref={codeInput} id={`${id}-code`} value={code} disabled={pending} onChange={event=>setCode(event.target.value)} required maxLength={48} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="Tempel kode pelacakan dari outlet" aria-invalid={!!error} aria-describedby={error?`${id}-error`:undefined}/>
+        <input ref={codeInput} name="kode" id={`${id}-code`} disabled={pending} required maxLength={2048} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="Tempel kode atau tautan dari outlet" aria-invalid={!!error} aria-describedby={error?`${id}-error`:undefined}/>
         <button disabled={pending} type="submit">{pending?"Mengecek progres…":"Lihat status servis"}<span aria-hidden="true">→</span></button>
       </form>
       {error&&<p className={styles.error} id={`${id}-error`} role="alert">{error}</p>}

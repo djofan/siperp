@@ -1,6 +1,9 @@
+export interface SarsipGalleryPhoto { id: string; image: string; caption: string | null; isDemo?: boolean }
+
 // Stable data contracts only; no runtime module implementation imports.
 
 export interface SarsipBeneficiary {
+  gallery?: SarsipGalleryPhoto[];
   id: string;
   name: string;
   phone: string | null;
@@ -19,6 +22,7 @@ export interface SarsipBeneficiary {
 }
 
 export interface SarsipEntry {
+  gallery?: SarsipGalleryPhoto[];
   id: string;
   kind: string;
   title: string;
