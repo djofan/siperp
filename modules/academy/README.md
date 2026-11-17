@@ -238,3 +238,35 @@ Setelah MySQL aktif dan tersedianya konten uji melalui admin, periksa:
     dan tautan sertifikat tidak dapat diberikan sebelum syarat kembali terpenuhi.
 15. Pada waktu pemeliharaan yang disepakati, aktifkan maintenance dan periksa
     peserta dialihkan ke halaman pemeliharaan sementara admin tetap dapat masuk.
+
+
+## Kegiatan beranda terjadwal manual
+
+Admin mengatur tanggal/jam mulai dan berakhir (WIB) pada setiap materi, melalui
+Tambah/Edit Materi. Jadwal ini hanya menentukan masa tampil di beranda, bukan
+menghapus riwayat. Kosongkan kedua waktu untuk tidak menampilkan materi di beranda.
+Semua ujian (harian, pekanan, akhir) memakai tanggal mulai dan berakhir yang diisi
+admin pada formulir ujian. Durasi pengerjaan diisi dalam menit (1–1440).
+Tidak ada sinkronisasi otomatis dari tanggal Ahad pertama atau batas 12 materi.
+Kolom anchor lama dipertahankan untuk kompatibilitas tetapi tidak lagi digunakan.
+Jadwal ujian yang sudah tersimpan tidak diubah oleh pembaruan ini.
+
+Beranda menampilkan maksimal satu materi dan satu ujian pada mulai <= waktu
+server < berakhir. Jika bertumpuk, waktu mulai terbaru dipilih, lalu ID stabil.
+Materi/ujian mendatang atau kedaluwarsa tidak dijadikan pengganti slot kosong.
+Kartu kedaluwarsa hilang walaupun refresh jaringan gagal. Riwayat tetap di menu
+Materi Belajar/Ujian selama dipublikasikan, dengan otorisasi Laravel yang sama.
+
+Migration `2026_11_17_000003_add_academy_manual_material_schedule` hanya menambah
+dua datetime nullable pada materi. Tidak mengubah jadwal atau data lama.
+
+
+## Tanya Ustadz melalui admin
+
+Admin Academy membuka `/admin/academy/pertanyaan` dari sidebar atau dashboard.
+Daftar menampilkan pertanyaan belum dijawab lebih dahulu dan mendukung pagination.
+Detail menyediakan salin pertanyaan untuk diteruskan manual kepada ustadz; aplikasi
+tidak mengirim pesan WhatsApp/email otomatis. Admin mengisi jawaban ustadz lalu
+menekan Sampaikan jawaban ke peserta. Jawaban tampil pada Tanya Ustadz milik
+peserta yang bertanya. Endpoint pengajar/jawaban yang sudah ada tetap memeriksa
+peran admin/pengajar; peserta lain tidak dapat membaca pertanyaan privat tersebut.

@@ -1,5 +1,5 @@
 import type * as Domain from "@/contracts/modules/academy";
-export type AcademyCohort = { id: string; title: string; registrationOpen: boolean; participants_count: number };
+export type AcademyCohort = { id: string; title: string; registrationOpen: boolean; dashboardStartsOn?: string | null; participants_count: number };
 export type AcademyPage1 = {
     cohorts: AcademyCohort[];
     people: {

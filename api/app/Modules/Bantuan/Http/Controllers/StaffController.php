@@ -125,7 +125,7 @@ class StaffController
             abort_if(DB::table('module_access')->where('user_id', $id)->where('module_id', $module->id)->where('role', 'admin')->exists() && ! $request->user()->is_superadmin, 403, 'Hanya superadmin yang dapat menghapus akun admin.');
             $activeAssignment = DB::table('bantuan_applications')->whereNotIn('status', ['completed', 'cancelled', 'returned', 'rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass'])
                 ->where(fn ($q) => $q->where('verifier_id', $id)->orWhere('distributor_id', $id))->exists();
-            $activeSantunan = DB::table('bantuan_santunan')->where('volunteer_id', $id)->whereNull('completed_at')->exists();
+            $activeSantunan = DB::table('bantuan_santunan')->where(fn ($q) => $q->where('volunteer_id', $id)->orWhere('companion_id', $id))->whereNull('completed_at')->exists();
             abort_if($activeAssignment || $activeSantunan, 409, 'Akun masih memiliki tugas aktif. Selesaikan atau alihkan penugasannya terlebih dahulu.');
             DB::table('module_access')->where('user_id', $id)->where('module_id', $module->id)->delete();
             DB::table('bantuan_staff')->where('user_id', $id)->delete();

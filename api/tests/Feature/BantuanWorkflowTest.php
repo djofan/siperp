@@ -1502,16 +1502,16 @@ it('copies fifty routine recipients and rejects inactive distributors without pa
 });
 
 
-it('accepts routine card programs and restricts non-routine santunan to orphans', function (string $category) {
+it('accepts routine santunan programs and validates non-routine programs', function (string $category) {
     $distributor = bantuanUser('volunteer');
     $input = ['frequency' => 'routine', 'category' => $category, 'period' => '2026-11',
         'recipientName' => 'Penerima Program', 'volunteerId' => $distributor->id, 'amount' => 500000];
     $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', $input)
         ->assertCreated()->assertJsonPath('data.category', $category);
     $result = $this->postJson('/api/v1/bantuan/santunan', [...$input, 'frequency' => 'non_routine']);
-    if ($category === 'orphan') $result->assertCreated();
+    if (in_array($category, ['orphan', 'tahfidz', 'education', 'general'], true)) $result->assertCreated();
     else $result->assertUnprocessable();
-})->with(['widow', 'orphan', 'foster_child', 'tahfidz']);
+})->with(['widow', 'orphan', 'foster_child', 'tahfidz', 'education', 'general']);
 
 
 it('prepares immediate survey assignment details only for call center with an active assignment',function(){
@@ -2285,6 +2285,66 @@ it('lets superadmin correct status with required financial dates and keeps close
 });
 
 
+it('imports expanded programs and explicit verifier corrections without guessing identities', function () {
+    $person = bantuanUser('volunteer');
+    $person->forceFill(['name' => 'Petugas Penyalur'])->save();
+    $rows = [];
+    foreach (['orphan', 'tahfidz', 'education', 'general'] as $category) {
+        foreach (['routine', 'non_routine'] as $frequency) {
+            $rows[] = ['recipientName' => 'Penerima '.$category, 'category' => $category, 'frequency' => $frequency, 'amount' => 10000, 'verifierName' => 'Petgas Penyalr', 'verifierId' => $person->id];
+        }
+    }
+    $url = '/api/v1/bantuan/santunan/imports';
+    $this->actingAs($this->treasurer, 'sanctum')->postJson($url, ['period' => '2026-11', 'rows' => $rows])->assertOk()->assertJsonPath('data.createdCount', 8);
+    $this->postJson($url, ['period' => '2026-11', 'rows' => $rows])->assertUnprocessable();
+    expect(DB::table('bantuan_santunan')->count())->toBe(8);
+    $rows[0]['verifierId'] = $this->verifier->id;
+    $this->postJson($url, ['period' => '2026-12', 'rows' => $rows])->assertUnprocessable();
+    unset($rows[0]['verifierId']);
+    $this->postJson($url, ['period' => '2026-12', 'rows' => $rows])->assertUnprocessable();
+    $rows[0]['verifierId'] = $person->id;
+    $person->forceFill(['is_active' => false])->save();
+    $this->postJson($url, ['period' => '2026-12', 'rows' => $rows])->assertUnprocessable();
+    expect(DB::table('bantuan_santunan')->count())->toBe(8);
+});
+
+it('gives only the selected santunan companion access and revokes it without changing the owner', function (string $role) {
+    $owner = bantuanUser('volunteer');
+    $helper = bantuanUser($role);
+    $outsider = bantuanUser($role);
+    $id = $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/santunan', [
+        'frequency' => 'routine', 'category' => 'education', 'period' => '2026-11',
+        'recipientName' => 'Penerima QA', 'volunteerId' => $owner->id, 'amount' => 10000,
+    ])->assertCreated()->json('data.id');
+    $url = '/api/v1/bantuan/santunan/'.$id;
+    $this->actingAs($helper, 'sanctum')->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(0, 'data');
+    $this->putJson($url.'/companion', ['version' => 1, 'companionId' => $helper->id])->assertForbidden();
+    $this->actingAs($this->treasurer, 'sanctum')->putJson($url.'/companion', ['version' => 1, 'companionId' => $helper->id])->assertOk()->assertJsonPath('data.volunteerId', $owner->id);
+    $this->putJson($url.'/companion', ['version' => 1, 'companionId' => null])->assertConflict();
+    $this->putJson($url.'/companion', ['version' => 2, 'companionId' => $owner->id])->assertUnprocessable();
+    $this->putJson($url.'/companion', ['version' => 2, 'companionId' => $this->treasurer->id])->assertUnprocessable();
+    $this->putJson($url.'/companion', ['version' => 2, 'companionId' => $helper->id, 'volunteerId' => $helper->id])->assertUnprocessable();
+    $this->postJson($url.'/transferred', ['version' => 2, 'transferredAt' => now()->toDateString()])->assertOk();
+    $this->actingAs($helper, 'sanctum')->postJson($url.'/transferred', ['version' => 3, 'transferredAt' => now()->toDateString()])->assertForbidden();
+    $this->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(1, 'data');
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3XcAAAAASUVORK5CYII=');
+    $doc = $this->post($url.'/documents', ['kind' => 'aid_paper', 'file' => UploadedFile::fake()->createWithContent('photo.png', $png)], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $this->get('/api/v1/bantuan/santunan-documents/'.$doc)->assertOk();
+    $this->actingAs($outsider, 'sanctum')->get('/api/v1/bantuan/santunan-documents/'.$doc)->assertNotFound();
+    $this->post($url.'/documents', ['kind' => 'recipient_photo', 'file' => UploadedFile::fake()->createWithContent('photo.png', $png)], ['Accept' => 'application/json'])->assertNotFound();
+    $this->actingAs($this->treasurer, 'sanctum')->putJson($url.'/companion', ['version' => 3, 'companionId' => null])->assertOk();
+    $this->actingAs($helper, 'sanctum')->get('/api/v1/bantuan/santunan-documents/'.$doc)->assertNotFound();
+    $this->getJson('/api/v1/bantuan/santunan')->assertOk()->assertJsonCount(0, 'data');
+    $this->actingAs($this->treasurer, 'sanctum')->putJson($url.'/companion', ['version' => 4, 'companionId' => $helper->id])->assertOk();
+    $this->actingAs($helper, 'sanctum')->post($url.'/documents', ['kind' => 'recipient_photo', 'file' => UploadedFile::fake()->createWithContent('photo.png', $png)], ['Accept' => 'application/json'])->assertCreated();
+    $this->postJson($url.'/complete', ['version' => 5, 'distributionDate' => now()->toDateString(), 'location' => 'Lokasi QA', 'recipient' => 'Penerima QA', 'description' => 'Bantuan telah diserahkan.'])->assertOk();
+    expect(DB::table('bantuan_santunan')->where('id', $id)->value('volunteer_id'))->toBe($owner->id);
+    expect(DB::table('bantuan_santunan')->where('id', $id)->value('completed_by'))->toBe($helper->id);
+    expect(DB::table('bantuan_santunan_documents')->where('id', $doc)->value('uploaded_by'))->toBe($helper->id);
+    $this->actingAs($this->treasurer, 'sanctum')->putJson($url.'/companion', ['version' => 6, 'companionId' => null])->assertConflict();
+    $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-11'])->assertCreated();
+    expect(DB::table('bantuan_santunan')->whereDate('period', '2026-12-01')->value('companion_id'))->toBeNull();
+})->with(['verifier', 'volunteer']);
 it('allows multiple optional handover supporting photos for the assigned distributor and keeps them in the report', function () {
     Storage::fake('local');
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');

@@ -4,6 +4,8 @@ export const routineCardTemplates = {
   widow: { label: "Janda dhuafa", image: "/bantuan/templates/janda-dhuafa-rutin.png" },
   orphan: { label: "Anak yatim rutin", image: "/bantuan/templates/yatim-rutin.png" },
   foster_child: { label: "Anak asuh", image: "/bantuan/templates/anak-asuh-rutin.png" },
+  education: { label: "Pendidikan", image: "/bantuan/templates/anak-asuh-rutin.png" },
+  general: { label: "Umum", image: "/bantuan/templates/yatim-rutin.png" },
   tahfidz: { label: "Lembaga Tahfidz", image: "/bantuan/templates/lembaga-tahfidz.png" },
 } satisfies Record<SantunanCategory, {label:string;image:string}>;
 
@@ -49,11 +51,12 @@ export async function renderSantunanCard(canvas: HTMLCanvasElement, values: Sant
   ctx.drawImage(image, 0, 0);
   ctx.scale(canvas.width / 842.25, canvas.height / 595.5);
   ctx.fillStyle = "#00671a"; ctx.textAlign = "center";
-  if (values.frequency === "non_routine") {
+  if (values.frequency === "non_routine" || ["education", "general"].includes(values.category)) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(140, 176, 560, 48);
     ctx.fillStyle = "#00671a";
-    centered(ctx, "BANTUAN YATIM TIDAK RUTIN", 421, 216, 700, 34);
+    const heading = values.category === "orphan" ? "BANTUAN YATIM TIDAK RUTIN" : values.category === "education" ? "BANTUAN PENDIDIKAN" : values.category === "general" ? "BANTUAN UMUM" : "BANTUAN LEMBAGA TAHFIDZ";
+    centered(ctx, heading, 421, 216, 700, 34);
   }
   centered(ctx, `Rp ${new Intl.NumberFormat("id-ID").format(values.amount)}`, 421, 331, 685, 82);
   name(ctx, values.verifier, 215);

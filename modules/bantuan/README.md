@@ -196,7 +196,7 @@ Tes memakai SQLite in-memory; database aplikasi tidak di-reset.
 Tombol **Cetak kertas bantuan** tersedia pada setiap santunan rutin, untuk
 Janda dhuafa, Anak yatim, Anak asuh, dan Lembaga Tahfidz. Template dipilih
 otomatis berdasarkan kategori. Kategori tahfidz tersedia dalam form tambah
-santunan rutin; santunan tidak rutin tetap hanya untuk anak yatim dan tidak
+santunan rutin; santunan tidak rutin mendukung yatim, lembaga tahfidz, pendidikan dan umum; tidak
 menggunakan template berjudul rutin.
 
 Nominal, nama penyalur/verifikator, serta nama penerima mengikuti data santunan.
@@ -242,3 +242,36 @@ Foto lama tetap tanpa pin; tidak ada backfill lokasi perkiraan.
 Deployment: backup database, jalankan `npm ci`, migration Laravel
 `2026_11_09_000001_add_bantuan_photo_locations`, build dan restart seperti biasa.
 Pastikan HTTPS dan izin lokasi HP aktif jika ingin memakai lokasi perangkat.
+
+
+## Santunan: pendamping dan program tambahan (17 November 2026)
+
+Admin/Bendahara membuka detail santunan, memilih satu **Pendamping laporan** lalu
+menyimpan. Verifikator atau penyalur terpilih melihatnya di menu Santunan dan boleh
+mengunggah bukti serta menyelesaikan laporan setelah transfer dicatat. Penyalur
+utama tidak berubah; pengunggah/pelapor sebenarnya tetap diaudit. Akses tidak
+diberikan kepada semua petugas. Pendamping dapat dicabut/diganti sebelum selesai,
+dan tidak ikut disalin saat membuat periode bulan berikutnya.
+
+Program baru: **Pendidikan** dan **Umum**. Impor mencakup yatim tidak rutin,
+Lembaga Tahfidz, Pendidikan dan Umum; program rutin sebelumnya tetap tersedia.
+Template mempunyai empat kolom lama serta **Jenis Santunan** opsional (Rutin/Tidak
+rutin). Program Anak Yatim Tidak Rutin juga menetapkan jenis tidak rutin. File lama
+empat kolom tetap bisa dibaca. Jika jenis kosong, default rutin. Janda dhuafa dan
+anak asuh tetap rutin.
+
+Pratinjau menampilkan nama dari Excel dan akun tujuan. Kapital/spasi diabaikan untuk
+kecocokan persis. Salah ketik/kurang kata diberi saran dan pilihan koreksi manual;
+**tidak ada penugasan otomatis dari nama mirip**. Nama sama dapat dibedakan lewat
+pilihan akun. ID akun aktif/peran diperiksa ulang server. Impor atomik maksimal 200
+baris; duplikat nama/program/jenis/periode membatalkan seluruh impor.
+
+Terapkan migration `2026_11_17_000001_add_santunan_companion` setelah backup dan
+review sebelum deployment. Tidak perlu mengubah data santunan lama; pendamping
+lama null. Jangan menjalankan migration pada database pengguna untuk tes.
+
+Verifikasi lokal: 232 tes BantuanWorkflow (2.581 assertion) dan 37 tes frontend
+terkait santunan/navigasi/foto/kartu lulus. Typecheck, lint file frontend yang berubah,
+Pint file backend baru/utama, dan sinkronisasi OpenAPI lulus. Tes backend hanya
+SQLite dalam memori; tidak mengimpor dump atau mengubah database pengguna.
+Build lokal `npx next build --webpack` juga lulus. Belum commit/push atau deploy.

@@ -33,3 +33,16 @@ test('print action covers both frequencies and transfer evidence input remains o
   assert.doesNotMatch(input,/\brequired\b/);
   assert.match(page,/doc.kind==="transfer_receipt"\?"Foto bukti transfer"/);
 });
+
+
+for (const [category,heading] of [['education','BANTUAN PENDIDIKAN'],['general','BANTUAN UMUM'],['tahfidz','BANTUAN LEMBAGA TAHFIDZ']]) {
+  test(`new ${category} cards render the correct program heading without an orphan heading`, async()=>{
+    const texts=[];
+    class Image { naturalWidth=842; naturalHeight=595; async decode(){} }
+    const context={exports:{},Image,Intl,Date};
+    vm.runInNewContext(ts.transpileModule(readFileSync('modules/bantuan/api/santunan-card.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,context);
+    await context.exports.renderSantunanCard({getContext:()=>({drawImage(){},scale(){},fillRect(){},measureText:value=>({width:value.length*6}),fillText:value=>texts.push(value)})},{category,frequency:'non_routine',amount:100,verifier:'Penyalur QA',recipient:'Penerima QA',date:'2026-11-17'});
+    assert.ok(texts.includes(heading));
+    assert.ok(!texts.includes('BANTUAN YATIM TIDAK RUTIN'));
+  });
+}

@@ -67,7 +67,7 @@ function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntr
   if(["admin","call_center","requester"].includes(viewer.role))items.push({key:"pengajuan/baru",label:"Pengajuan baru",icon:"plus",group:"01 · Pengajuan"});
   if(viewer.canBypass&&["admin","call_center","verifier"].includes(viewer.role))items.push({key:"pengajuan/langsung",label:"Pengajuan langsung",icon:"plus",group:"01 · Pengajuan"});
   items.push(...processMenus.filter(item=>viewer.role==="admin"||item.roles.includes(viewer.role)));
-  if(["admin","treasurer","chair"].includes(viewer.role))items.push({key:"santunan",label:"Santunan",icon:"hand",group:"Umum"});
+  if(["admin","treasurer","chair","verifier"].includes(viewer.role))items.push({key:"santunan",label:"Santunan",icon:"hand",group:"Umum"});
   if(["admin","fund_requester","treasurer","chair"].includes(viewer.role))items.push({key:"pengajuan-dana",label:"Pengajuan dana",icon:"wallet",group:"Umum",description:"Buat kartu pengajuan dana dari beberapa pemohon dan pantau total serta hasilnya."});
   items.push({key:"laporan",label:"Laporan penyaluran",icon:"chart",group:"Laporan"});
   if(viewer.role==="admin")items.push(
@@ -89,7 +89,7 @@ export function sidebarNavigation(viewer:RoleViewer&Pick<BantuanViewer,"canBypas
     admin:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","tim","pengaturan","audit"],
     call_center:["","pengajuan","berjalan","proses","mustahiq","laporan"],
     requester:["","pengajuan","proses"],
-    verifier:["","pengajuan","proses"],
+    verifier:["","pengajuan","proses","santunan"],
     volunteer:["santunan","proses","penyaluran"],
     approver:["","pengajuan","berjalan","proses","mustahiq"],
     chair:["","pengajuan","berjalan","proses","mustahiq","pengajuan-dana","laporan","santunan","audit"],
