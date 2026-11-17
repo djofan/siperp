@@ -14,6 +14,7 @@ export default async function BeritaEditPage({ params }: { params: Promise<{ id:
       <NewsForm
         newsId={news.id}
         initialValues={{
+          newsDate: news.newsDate ?? "",
           documentationPhotos: news.documentationPhotos ?? [],
           title: news.title,
           content: news.content,

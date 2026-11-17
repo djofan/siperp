@@ -1,3 +1,4 @@
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 import { notFound } from "next/navigation";
 import { getBeneficiaryPublicById, listBeneficiariesPublic } from "@/modules/lazsip/api/beneficiaries";
 import { formatRupiah } from "@/modules/lazsip/components/format";
@@ -109,6 +110,7 @@ export default async function LazsipBeneficiaryDetailPage({
             Kembali ke Semua Bantuan
           </Button>
         </div>
+        <CampaignGallery photos={item.documentationPhotos ?? []} title={item.name} kind="beneficiary"/>
       </article>
 
       {others.length > 0 && (

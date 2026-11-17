@@ -551,3 +551,20 @@ pengeluaran membentuk round baru dengan snapshot aturan baru; audit lama append-
 Nominal tanpa aturan tercatat unassigned, tidak pernah dianggap disetujui. Tidak
 ada transaksi bank/ledger/iPaymu. Modul inactive tetap preview-only bagi Superadmin.
 Migration workflow baru harus direview/backup sebelum deploy, bukan dijalankan saat build.
+
+### Galeri LAZSIP dan tanggal berita
+
+Galeri detail berita dan penyaluran LAZSIP memakai `documentationPhotos` (opsional,
+maksimal 50 foto dengan id unik, image, caption maksimal 500 karakter, isDemo).
+Admin dapat menambah, mengubah urutan/keterangan, dan menghapus referensi foto.
+Field tidak dikirim mempertahankan galeri lama; [] mengosongkannya. Galeri berita
+draft tetap privat. Foto penyaluran sengaja publik: jangan unggah KTP, rekening,
+atau dokumen privat. Foto penyerahan/sertifikat yang lama tetap terpisah.
+Deployment memerlukan migration `2026_11_17_140000_add_lazsip_news_beneficiary_galleries`;
+backup database sebelum menjalankan migration lalu build/restart aplikasi.
+
+Berita SIP dan LAZSIP menerima `newsDate` opsional (YYYY-MM-DD/null). Field ini
+menentukan tanggal publik dan urutan berita sesudah prioritas pin; `createdAt`
+tetap riwayat pembuatan. Field dihilangkan mempertahankan nilai; null kembali
+ke tanggal pembuatan. Ini bukan penjadwalan publish, status tetap menentukan
+visibilitas. Memerlukan migration `2026_11_17_150000_add_editorial_news_dates`.

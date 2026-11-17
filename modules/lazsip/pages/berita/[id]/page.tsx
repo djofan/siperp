@@ -1,6 +1,7 @@
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 import { notFound } from "next/navigation";
 import { getPublishedNewsById, listPublishedNews } from "@/modules/lazsip/api/news";
-import { formatDate } from "@/modules/lazsip/components/format";
+import { formatNewsDate } from "@/modules/lazsip/components/format";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { Button } from "@/modules/lazsip/components/ui/Button";
 import { BackLinkGroup } from "@/modules/lazsip/components/ui/BackLinkGroup";
@@ -35,7 +36,7 @@ export default async function LazsipBeritaDetailPage({
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3M16 3v3M3.5 9h17M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" />
           </svg>
-          {formatDate(news.createdAt)}
+          {formatNewsDate(news.newsDate, news.createdAt)}
         </div>
 
         <ImagePlaceholder variant="news" src={news.image} alt={news.title} className="mt-8 aspect-[16/9] w-full rounded-3xl" />
@@ -45,6 +46,8 @@ export default async function LazsipBeritaDetailPage({
             {news.content}
           </p>
         </div>
+
+        <CampaignGallery photos={news.documentationPhotos ?? []} title={news.title} kind="news"/>
 
         <div className="mt-12 border-t border-lazsip-primary-100 pt-8">
           <Button href="/lazsip/berita" variant="secondary">
@@ -59,7 +62,7 @@ export default async function LazsipBeritaDetailPage({
           <RelatedCardsRow
             items={otherNews}
             renderItem={(n) => (
-              <NewsCard id={n.id} title={n.title} content={n.content} image={n.image} createdAt={n.createdAt} />
+              <NewsCard id={n.id} title={n.title} content={n.content} image={n.image} createdAt={n.createdAt} newsDate={n.newsDate} />
             )}
           />
         </div>

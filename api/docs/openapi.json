@@ -844,6 +844,36 @@
           }
         }
       },
+      "LazsipDocumentationPhoto": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "image",
+          "caption"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "image": {
+            "type": "string",
+            "maxLength": 191,
+            "pattern": "^/(?:uploads/lazsip/[a-f0-9-]{36}\\.(?:jpg|png|webp)|aid/[a-z0-9-]+\\.(?:jpg|png|webp))$"
+          },
+          "caption": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500
+          },
+          "isDemo": {
+            "type": "boolean"
+          }
+        }
+      },
       "AcademyMaterialUpload": {
         "type": "object",
         "properties": {
@@ -6424,6 +6454,292 @@
         }
       }
     },
+    "/api/v1/lazsip/news": {
+      "post": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Save LAZSIP news with optional documentation gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP content admin access. Existing resource fields remain required. Optional ordered documentationPhotos has at most 50 photos. Omitted preserves current gallery; [] clears gallery references. IDs must be distinct. Images must use approved LAZSIP upload or aid paths. Draft news is not public. Beneficiary gallery is intentionally public and must not contain private identity or financial documents.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentationPhotos": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "maxItems": 50,
+                    "items": {
+                      "$ref": "#/components/schemas/LazsipDocumentationPhoto"
+                    }
+                  },
+                  "newsDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Content saved"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Invalid content or gallery"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/news/{id}": {
+      "put": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Save LAZSIP news with optional documentation gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP content admin access. Existing resource fields remain required. Optional ordered documentationPhotos has at most 50 photos. Omitted preserves current gallery; [] clears gallery references. IDs must be distinct. Images must use approved LAZSIP upload or aid paths. Draft news is not public. Beneficiary gallery is intentionally public and must not contain private identity or financial documents.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentationPhotos": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "maxItems": 50,
+                    "items": {
+                      "$ref": "#/components/schemas/LazsipDocumentationPhoto"
+                    }
+                  },
+                  "newsDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content saved"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Invalid content or gallery"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read public LAZSIP news detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Public detail includes optional nullable documentationPhotos containing id, image, caption and isDemo. Draft news returns 404. Beneficiary detail remains explicitly allowlisted without address, NIK or birthDate.",
+        "responses": {
+          "200": {
+            "description": "Public content detail with optional gallery"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/beneficiaries": {
+      "post": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Save LAZSIP beneficiaries with optional documentation gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP content admin access. Existing resource fields remain required. Optional ordered documentationPhotos has at most 50 photos. Omitted preserves current gallery; [] clears gallery references. IDs must be distinct. Images must use approved LAZSIP upload or aid paths. Draft news is not public. Beneficiary gallery is intentionally public and must not contain private identity or financial documents.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentationPhotos": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "maxItems": 50,
+                    "items": {
+                      "$ref": "#/components/schemas/LazsipDocumentationPhoto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Content saved"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Invalid content or gallery"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/beneficiaries/{id}": {
+      "put": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Save LAZSIP beneficiaries with optional documentation gallery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP content admin access. Existing resource fields remain required. Optional ordered documentationPhotos has at most 50 photos. Omitted preserves current gallery; [] clears gallery references. IDs must be distinct. Images must use approved LAZSIP upload or aid paths. Draft news is not public. Beneficiary gallery is intentionally public and must not contain private identity or financial documents.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "documentationPhotos": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "maxItems": 50,
+                    "items": {
+                      "$ref": "#/components/schemas/LazsipDocumentationPhoto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Content saved"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Invalid content or gallery"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read public LAZSIP beneficiaries detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Public detail includes optional nullable documentationPhotos containing id, image, caption and isDemo. Draft news returns 404. Beneficiary detail remains explicitly allowlisted without address, NIK or birthDate.",
+        "responses": {
+          "200": {
+            "description": "Public content detail with optional gallery"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
     "/api/v1/academy/settings/learning": {
       "get": {
         "tags": [
@@ -10563,6 +10879,21 @@
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
     "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
     "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
+  },
+  "x-editorial-news-date": {
+    "modules": [
+      "sip",
+      "lazsip"
+    ],
+    "field": "newsDate",
+    "schema": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "behavior": "Optional editable calendar date YYYY-MM-DD for public news cards/details and chronological ordering after pin priority. Omitted on update preserves value; null uses creation date as fallback. createdAt stays unchanged. Active module content admins only. This is not scheduled publishing; status still controls visibility."
   },
   "x-sip-content-galleries": {
     "resources": [

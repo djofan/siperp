@@ -22,6 +22,7 @@ export default async function EditBeneficiaryPage({
       <BeneficiaryForm
         beneficiaryId={beneficiary.id}
         initialValues={{
+          documentationPhotos: beneficiary.documentationPhotos ?? [],
           name: beneficiary.name,
           address: beneficiary.address,
           problemFaced: beneficiary.problemFaced,

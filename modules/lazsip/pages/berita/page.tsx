@@ -24,7 +24,7 @@ export default async function LazsipBeritaPage() {
 
       <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {news.map((item) => (
-          <NewsCard key={item.id} id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} />
+          <NewsCard key={item.id} id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} newsDate={item.newsDate} />
         ))}
       </div>
 

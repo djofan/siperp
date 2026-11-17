@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { CampaignDocumentationPhoto } from "@/contracts/modules/lazsip";
 import styles from "./CampaignGallery.module.css";
 
-export function CampaignGallery({photos,title,kind="campaign"}:{photos:CampaignDocumentationPhoto[];title:string;kind?:"campaign"|"activity"|"program"}){
+export function CampaignGallery({photos,title,kind="campaign"}:{photos:CampaignDocumentationPhoto[];title:string;kind?:"campaign"|"activity"|"program"|"news"|"beneficiary"}){
   const strip=useRef<HTMLDivElement>(null);
   const id=useId();
   const [page,setPage]=useState(0);
@@ -23,7 +23,7 @@ export function CampaignGallery({photos,title,kind="campaign"}:{photos:CampaignD
     const observer=new ResizeObserver(syncPage);observer.observe(node);
     return ()=>observer.disconnect();
   },[syncPage]);
-  const category=kind==="activity"?"kegiatan":kind==="program"?"program pemberdayaan":"campaign";
+  const category=kind==="news"?"berita":kind==="beneficiary"?"penyaluran bantuan":kind==="activity"?"kegiatan":kind==="program"?"program pemberdayaan":"campaign";
   if(!photos.length)return null;
   function goToPage(target:number){const node=strip.current;if(!node?.firstElementChild)return;const step=node.firstElementChild.getBoundingClientRect().width+parseFloat(getComputedStyle(node).columnGap||"0");const reduced=window.matchMedia("(prefers-reduced-motion: reduce)").matches;node.scrollTo({left:Math.max(0,Math.min(target,pageCount-1))*step*2,behavior:reduced?"instant":"smooth"});}
   function scroll(direction:number){goToPage(active+direction);}

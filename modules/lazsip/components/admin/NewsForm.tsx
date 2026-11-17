@@ -5,9 +5,13 @@ import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
+import type { DocumentationPhoto } from "@/contracts/modules/lazsip";
+import { DocumentationEditor, useDocumentationEditor } from "./DocumentationEditor";
 import { panelClasses } from "@/components/ui/panel";
 
 interface NewsFormValues {
+  newsDate: string;
+  documentationPhotos: DocumentationPhoto[];
   title: string;
   content: string;
   image: string;
@@ -23,7 +27,9 @@ export function NewsForm({
   initialValues?: Partial<NewsFormValues>;
 }) {
   const router = useRouter();
+  const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!newsId;
+  const [newsDate, setNewsDate] = useState(initialValues?.newsDate ?? "");
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
@@ -35,6 +41,8 @@ export function NewsForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (gallery.uploading) { setError("Tunggu hingga semua foto selesai diunggah."); return; }
+    if (gallery.photos.some(photo => !photo.image)) { setError("Lengkapi foto galeri atau hapus baris kosong."); return; }
 
     if (!isEdit && !image) {
       setError("Gambar utama wajib diunggah.");
@@ -49,7 +57,7 @@ export function NewsForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, image, isPinned, status }),
+      body: JSON.stringify({ newsDate: newsDate || null, title, content, image, isPinned, status, documentationPhotos: gallery.photos }),
     });
 
     if (!response.ok) {
@@ -94,7 +102,11 @@ export function NewsForm({
             />
           </div>
 
-          <ImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
+          <label className="flex flex-col gap-2 text-sm font-medium text-foreground">Tanggal berita
+            <input type="date" value={newsDate} onChange={event=>setNewsDate(event.target.value)} className="rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"/>
+            <span className="text-xs font-normal opacity-70">Tanggal yang ditampilkan pada card dan detail berita. Jika kosong, tanggal pembuatan digunakan.</span>
+          </label>
+          <ImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} />
         </div>
 
         <div className="flex flex-col gap-5">
@@ -114,11 +126,12 @@ export function NewsForm({
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <LoadingButton type="submit" loading={isSubmitting}>
+          <LoadingButton type="submit" loading={isSubmitting} disabled={gallery.uploading}>
             {isEdit ? "Simpan Perubahan" : "Tambah Berita"}
           </LoadingButton>
         </div>
       </div>
+      <DocumentationEditor editor={gallery} kind="berita" saving={isSubmitting}/>
     </form>
   );
 }

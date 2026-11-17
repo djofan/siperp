@@ -26,10 +26,10 @@ export async function BeritaSection({ content }: { content: Record<string, strin
             maxPinnedItems={6}
             maxGridItems={4}
             renderItem={(item) => (
-              <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} />
+              <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} newsDate={item.newsDate} />
             )}
             renderPinnedItem={(item) => (
-              <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} featured />
+              <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} newsDate={item.newsDate} featured />
             )}
             seeAllHref="/berita"
             seeAllLabel={content.seeAllLabel}

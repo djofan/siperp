@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/sip/components/ui/ImagePlaceholder";
-import { formatDate } from "@/modules/sip/components/format";
+import { formatNewsDate } from "@/modules/sip/components/format";
 
 interface NewsCardProps {
   id: string;
@@ -8,10 +8,11 @@ interface NewsCardProps {
   content: string;
   image: string | null;
   createdAt: Date;
+  newsDate?: string | null;
   featured?: boolean;
 }
 
-export function NewsCard({ id, title, content, image, createdAt, featured = false }: NewsCardProps) {
+export function NewsCard({ id, title, content, image, createdAt, newsDate, featured = false }: NewsCardProps) {
   return (
     <Link href={`/berita/${id}`} className="group flex w-full flex-col rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sip-primary-500 focus-visible:ring-offset-4">
       <ImagePlaceholder
@@ -22,7 +23,7 @@ export function NewsCard({ id, title, content, image, createdAt, featured = fals
         imgClassName="transition-transform duration-500 group-hover:scale-[1.03]"
       />
       <div className="flex flex-col gap-2 pt-4">
-        <span className="text-xs font-medium text-sip-primary-900/45">{formatDate(createdAt)}</span>
+        <span className="text-xs font-medium text-sip-primary-900/45">{formatNewsDate(newsDate, createdAt)}</span>
         <h3
           className={`line-clamp-2 font-semibold leading-snug text-sip-primary-900 transition-colors group-hover:text-sip-primary-600 ${
             featured ? "text-lg" : "text-base"

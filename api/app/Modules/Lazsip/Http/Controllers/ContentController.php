@@ -20,7 +20,7 @@ class ContentController
 
     private const PUBLIC_CARD = ['id', 'name', 'age', 'amount_received', 'aid_type', 'photo', 'is_pinned', 'verifier_area', 'verifier_name'];
 
-    private const PUBLIC_DETAIL = ['id', 'name', 'age', 'problem_faced', 'gender', 'photo', 'handover_photo', 'certificate_photo', 'referral_source', 'needs', 'aid_type', 'amount_received', 'verifier_name', 'verifier_area'];
+    private const PUBLIC_DETAIL = ['id', 'name', 'age', 'problem_faced', 'gender', 'photo', 'handover_photo', 'certificate_photo', 'documentation_photos', 'referral_source', 'needs', 'aid_type', 'amount_received', 'verifier_name', 'verifier_area'];
 
     private function query(Request $request, bool $detail = false)
     {
@@ -60,6 +60,8 @@ class ContentController
         }
         if ($resource === 'activities') {
             $query->orderByDesc('date');
+        } elseif ($resource === 'news') {
+            $query->orderByRaw('COALESCE(news_date, DATE(created_at)) DESC')->orderByDesc('created_at');
         } elseif ($resource === 'partners') {
             $query->orderBy('name');
         } elseif ($resource === 'payment-fees') {
@@ -91,7 +93,7 @@ class ContentController
         $title = 'required|string|max:191';
         $text = 'required|string|max:1000000';
         $rules = match ($request->route('resource')) {
-            'news' => ['title' => $title, 'content' => $text, 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
+            'news' => ['newsDate' => 'sometimes|nullable|date_format:Y-m-d', 'title' => $title, 'content' => $text, 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
             'activities' => ['title' => $title, 'description' => $text, 'image' => $image, 'date' => 'required|date', 'isPinned' => 'required|boolean'],
             'partners' => ['name' => $title, 'logo' => $image, 'url' => 'sometimes|nullable|url:http,https|max:191'],
             'programs' => ['title' => $title, 'description' => $text, 'requirements' => 'sometimes|nullable|string|max:1000000', 'image' => $image, 'category' => 'sometimes|in:umum,pendidikan,sarsip', 'type' => 'required|in:berita,daftar', 'formUrl' => 'required_if:type,daftar|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],
@@ -103,9 +105,9 @@ class ContentController
             $rules['handoverPhoto'] = $image;
             $rules['certificatePhoto'] = $image;
         }
-        if (in_array($request->route('resource'), ['activities', 'programs'], true)) {
+        if (in_array($request->route('resource'), ['activities', 'programs', 'news', 'beneficiaries'], true)) {
             $rules = [...$rules,
-                'documentationPhotos' => 'sometimes|nullable|array',
+                'documentationPhotos' => 'sometimes|nullable|array|max:50',
                 'documentationPhotos.*' => 'array:id,image,caption,isDemo',
                 'documentationPhotos.*.id' => 'required|string|max:64|distinct',
                 'documentationPhotos.*.image' => ['required', 'string', 'max:191', 'regex:~^/(?:uploads/lazsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|aid/[a-z0-9-]+\.(?:jpg|png|webp))$~D'],

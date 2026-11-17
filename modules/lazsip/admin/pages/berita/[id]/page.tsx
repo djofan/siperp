@@ -22,6 +22,8 @@ export default async function EditBeritaPage({
       <NewsForm
         newsId={news.id}
         initialValues={{
+          newsDate: news.newsDate ?? "",
+          documentationPhotos: news.documentationPhotos ?? [],
           title: news.title,
           content: news.content,
           image: news.image ?? "",
