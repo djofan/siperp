@@ -14,7 +14,7 @@ class OverviewController
         $context = $access->context($request);
         // Even administrators only receive their own approval task count.
         $pending = $context['canReadApprovals']
-            ? DB::table('keuangan_approvals')->where('assigned_user_id', $request->user()->id)->where('decision', 'waiting')->count()
+            ? DB::table('keuangan_approvals')->where('assigned_user_id', $request->user()->id)->where('decision', 'waiting')->whereNull('cancelled_at')->whereExists(fn ($q) => $q->selectRaw('1')->from('keuangan_expenses as e')->whereColumn('e.id', 'keuangan_approvals.expense_id')->whereColumn('e.revision', 'keuangan_approvals.revision')->whereNull('e.archived_at'))->count()
             : null;
 
         return new OverviewResource([

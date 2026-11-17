@@ -529,5 +529,25 @@ pada zakat_academy_lessons, tanpa backfill atau perubahan data lama.
 
 Daftar ujian peserta `/api/v1/academy/learning/quizzes` mengikuti urutan pembuatan
 `created_at ASC, id ASC`, sama dengan daftar admin. Nomor harian/pekanan/akhir
-mengikuti urutan tersebut per jenis. Desktop mempertahankan urutan admin; kartu
-mobile boleh mengutamakan tenggat tanpa mengubah nomor ujian.
+mengikuti urutan tersebut per jenis. Desktop dan mobile mempertahankan urutan admin per jenis ujian,
+tanpa mengurutkan ulang menurut tenggat atau status pengerjaan.
+
+
+### Workflow Keuangan
+
+`keuangan/expenses` GET/POST, GET/PUT `expenses/{id}`; `expense-options` GET;
+`settings` GET; `masters/sources|categories` POST; `approval-rules` POST/PUT id;
+`approvals` GET, GET id, POST `approvals/{id}/decisions`. Kontrak eksplisit pada
+`tools/keuangan-contract.mjs`. RequestId UUID wajib untuk semua mutasi, per akun,
+fingerprint operasi+payload, transaksi/lock row modul. Reuse berbeda atau versi
+lama 409. Respon private/no-store, nominal string rupiah bulat; daftar 25 per halaman.
+
+FinanceAccess mengikuti Core. Operator boleh input/revisi seluruh pengeluaran,
+bukan mengelola master/approval. Admin Keuangan tidak memperoleh kelola akun Core.
+Approval milik akun login saja, termasuk bagi admin. Penolakan menutup tugas lain
+masih menunggu; jawaban lama sementara tidak bisa direvisi oleh approver lain.
+Revisi penolakan membuka kembali yang ditutup karena penolakan saja. Revisi
+pengeluaran membentuk round baru dengan snapshot aturan baru; audit lama append-only.
+Nominal tanpa aturan tercatat unassigned, tidak pernah dianggap disetujui. Tidak
+ada transaksi bank/ledger/iPaymu. Modul inactive tetap preview-only bagi Superadmin.
+Migration workflow baru harus direview/backup sebelum deploy, bukan dijalankan saat build.
