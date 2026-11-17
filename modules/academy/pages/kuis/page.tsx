@@ -39,18 +39,6 @@ export default async function ExamsPage() {
   }));
   const labels = new Map(groups.flatMap(group => group.items.map((quiz, index) => [quiz.id, `${group.title} ${index + 1}`] as const)));
 
-  // This async Server Component evaluates deadlines once per server request.
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
-  const priority = (quiz: ListParticipantQuizzesResult[number]) => {
-    if (quiz.attempts.some(attempt => attempt.isCompleted)) return 2;
-    if (quiz.closesAt && quiz.closesAt.getTime() <= now) return 1;
-    return 0;
-  };
-  const byDeadline = (a: ListParticipantQuizzesResult[number], b: ListParticipantQuizzesResult[number]) =>
-    priority(a) - priority(b) ||
-    (a.closesAt?.getTime() ?? Infinity) - (b.closesAt?.getTime() ?? Infinity) ||
-    a.releaseDay - b.releaseDay || a.id.localeCompare(b.id);
   const card = (quiz: ListParticipantQuizzesResult[number], mobile = false) => {
     const done = quiz.attempts.some(attempt => attempt.isCompleted);
     return <article key={quiz.id} className={`academy-quiz-card flex min-w-0 flex-col rounded-2xl border border-gray-200 bg-white p-5 ${mobile ? "w-[88%] max-w-sm shrink-0 snap-start" : ""}`}>
@@ -67,10 +55,10 @@ export default async function ExamsPage() {
   return <div className="mx-auto max-w-5xl p-4 md:p-8">
     <PageHeading title="Ujian">Kerjakan ujian untuk menguji pemahamanmu.</PageHeading>
     {!quizzes.length && <EmptyState>Ujian belum dipublikasikan pengajar.</EmptyState>}
-    {quizzes.length > 0 && <section className="min-w-0 sm:hidden" aria-label="Daftar ujian berdasarkan tenggat">
-      <p className="mb-3 text-sm text-gray-500">Ujian yang belum selesai dengan tenggat terdekat ditampilkan lebih dahulu. Geser untuk melihat ujian lainnya.</p>
+    {quizzes.length > 0 && <section className="min-w-0 sm:hidden" aria-label="Daftar ujian berurutan">
+      <p className="mb-3 text-sm text-gray-500">Geser untuk melihat ujian harian, pekanan, dan akhir secara berurutan.</p>
       <div tabIndex={0} aria-label="Kartu ujian, geser ke samping" className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700">
-        {[...quizzes].sort(byDeadline).map(quiz => card(quiz, true))}
+        {groups.flatMap(group => group.items).map(quiz => card(quiz, true))}
       </div>
     </section>}
     <div className="hidden sm:block">{groups.filter(group => group.items.length > 0).map(group => <section key={group.kind} className="mb-8" aria-label={group.title}>

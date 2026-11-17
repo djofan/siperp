@@ -4,7 +4,7 @@ namespace App\Modules\Keuangan\Services;
 
 use Illuminate\Http\Request;
 
-/** Foundation capabilities are read-only. No legacy grants or identities are imported. */
+/** Capabilities remain restricted to the current Core role; legacy grants are not imported. */
 class KeuanganAccess
 {
     public const ROLES = [
@@ -29,6 +29,8 @@ class KeuanganAccess
                 default => self::ROLES[$role],
             },
             'canReadMasters' => $master,
+            'canWriteExpenses' => in_array($role, ['superadmin', 'admin', 'finance_admin', 'operator'], true),
+            'canWriteMasters' => in_array($role, ['superadmin', 'admin', 'finance_admin'], true),
             'canReadApprovals' => $role !== 'operator',
             'canManageAccounts' => in_array($role, ['superadmin', 'admin'], true),
         ];

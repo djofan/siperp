@@ -53,7 +53,7 @@ it('limits overview metadata according to Core role', function (string $role, bo
     Sanctum::actingAs($actor);
     $this->getJson('/api/v1/keuangan/overview')->assertOk()
         ->assertHeader('Cache-Control', 'no-store, private')
-        ->assertJsonPath('data.readOnly', true)->assertJsonPath('data.role', $role)
+        ->assertJsonPath('data.readOnly', false)->assertJsonPath('data.role', $role)
         ->assertJsonPath('data.permissions.readMasters', $masters)
         ->assertJsonPath('data.permissions.manageAccounts', $manage)
         ->assertJsonPath('data.counts.sources', $masters ? 0 : null)
@@ -97,5 +97,5 @@ it('counts only assigned waiting approvals and does not disclose private rows or
     expect((string) DB::table('keuangan_expenses')->value('amount'))->toBe('9007199254740993');
     expect(DB::table('core_expenses')->count())->toBe(0);
     expect(DB::table('keuangan_approvals')->where('decision', 'waiting')->count())->toBe(2);
-    $this->postJson('/api/v1/keuangan/expenses', [])->assertNotFound();
+    $this->postJson('/api/v1/keuangan/expenses', [])->assertForbidden();
 });

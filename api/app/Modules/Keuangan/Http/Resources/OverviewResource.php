@@ -4,17 +4,20 @@ namespace App\Modules\Keuangan\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\DB;
 
 class OverviewResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
         return [
-            'phase' => 'foundation',
-            'readOnly' => true,
+            'phase' => 'workflow',
+            'readOnly' => ! DB::table('modules')->where('slug', 'keuangan')->value('is_active'),
             'role' => $this->resource['role'],
             'roleLabel' => $this->resource['roleLabel'],
             'permissions' => [
+                'writeExpenses' => $this->resource['canWriteExpenses'],
+                'writeMasters' => $this->resource['canWriteMasters'],
                 'readMasters' => $this->resource['canReadMasters'],
                 'readApprovals' => $this->resource['canReadApprovals'],
                 'manageAccounts' => $this->resource['canManageAccounts'],

@@ -1213,6 +1213,591 @@
             ]
           }
         }
+      },
+      "FinanceExpense": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "recipient",
+          "description",
+          "amount",
+          "sourceId",
+          "categoryId",
+          "source",
+          "category",
+          "version",
+          "revision",
+          "origin",
+          "createdAt",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+          },
+          "sourceId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "categoryId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "source": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "origin": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "unassigned",
+              "waiting",
+              "approved",
+              "rejected"
+            ]
+          }
+        }
+      },
+      "FinanceExpenseDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "recipient",
+          "description",
+          "amount",
+          "sourceId",
+          "categoryId",
+          "source",
+          "category",
+          "version",
+          "revision",
+          "origin",
+          "createdAt",
+          "status",
+          "approvals",
+          "history",
+          "decisionHistory"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "recipient": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+          },
+          "sourceId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "categoryId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "source": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "origin": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "unassigned",
+              "waiting",
+              "approved",
+              "rejected"
+            ]
+          },
+          "approvals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "revision",
+                "name",
+                "decision",
+                "note",
+                "version",
+                "closed",
+                "closeReason",
+                "mine"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 191
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "name": {
+                  "type": "string"
+                },
+                "decision": {
+                  "enum": [
+                    "waiting",
+                    "approved",
+                    "rejected"
+                  ]
+                },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "version": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "closed": {
+                  "type": "boolean"
+                },
+                "closeReason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "mine": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "action",
+                "reason",
+                "actor",
+                "at",
+                "changes"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 191
+                },
+                "action": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "actor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "at": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "changes": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "decisionHistory": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "action",
+                "reason",
+                "actor",
+                "at",
+                "changes"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 191
+                },
+                "action": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "actor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "at": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "changes": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FinanceApproval": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canDecide",
+          "id",
+          "expenseId",
+          "revision",
+          "version",
+          "decision",
+          "note",
+          "closed",
+          "closeReason"
+        ],
+        "properties": {
+          "canDecide": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "expenseId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decision": {
+            "enum": [
+              "waiting",
+              "approved",
+              "rejected"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "closeReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "FinanceApprovalDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canDecide",
+          "id",
+          "expenseId",
+          "revision",
+          "version",
+          "decision",
+          "note",
+          "closed",
+          "closeReason",
+          "expense",
+          "history"
+        ],
+        "properties": {
+          "canDecide": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "expenseId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decision": {
+            "enum": [
+              "waiting",
+              "approved",
+              "rejected"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "closeReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expense": {
+            "$ref": "#/components/schemas/FinanceExpense"
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "action",
+                "reason",
+                "actor",
+                "at",
+                "changes"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "maxLength": 191
+                },
+                "action": {
+                  "type": "string"
+                },
+                "reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "actor": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "at": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "changes": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FinanceApprovalTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "canDecide",
+          "id",
+          "expenseId",
+          "revision",
+          "version",
+          "decision",
+          "note",
+          "closed",
+          "closeReason",
+          "expense"
+        ],
+        "properties": {
+          "canDecide": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "expenseId": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "decision": {
+            "enum": [
+              "waiting",
+              "approved",
+              "rejected"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "closeReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "expense": {
+            "$ref": "#/components/schemas/FinanceExpense"
+          }
+        }
+      },
+      "FinanceRule": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "minAmount",
+          "maxAmount",
+          "active",
+          "approverIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 191
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minAmount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+          },
+          "maxAmount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "approverIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        }
       }
     }
   },
@@ -8273,13 +8858,13 @@
         "tags": [
           "Keuangan"
         ],
-        "summary": "Read-only finance foundation overview",
+        "summary": "Finance workflow overview by current Core role",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "description": "Active Core account and Keuangan module access required. Module starts inactive; only Core superadmin can preview inactive modules. Unknown roles denied. Counts expenses across this module only; approval count is own waiting assignments only. Null counters mean no capability. No recipient, amount, notes, IDs, ledger balance or credentials. No business writes or legacy import. Cache-Control no-store, private.",
+        "description": "Active account and Keuangan role required. Only Core superadmin can preview inactive module; mutations require module active even for Superadmin. Counts current, unclosed own pending tasks. No legacy import, money transfer or ledger posting. no-store, private.",
         "responses": {
           "200": {
             "description": "Authorized overview",
@@ -8305,10 +8890,10 @@
                       ],
                       "properties": {
                         "phase": {
-                          "const": "foundation"
+                          "const": "workflow"
                         },
                         "readOnly": {
-                          "const": true
+                          "type": "boolean"
                         },
                         "role": {
                           "enum": [
@@ -8329,7 +8914,9 @@
                           "required": [
                             "readMasters",
                             "readApprovals",
-                            "manageAccounts"
+                            "manageAccounts",
+                            "writeExpenses",
+                            "writeMasters"
                           ],
                           "properties": {
                             "readMasters": {
@@ -8339,6 +8926,12 @@
                               "type": "boolean"
                             },
                             "manageAccounts": {
+                              "type": "boolean"
+                            },
+                            "writeExpenses": {
+                              "type": "boolean"
+                            },
+                            "writeMasters": {
                               "type": "boolean"
                             }
                           }
@@ -8410,7 +9003,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Requires an active Academy participant with the initial password changed. Published exams from own enrollments and published parent course/chapter only. Ordered by created_at ASC, id ASC, matching admin. Desktop preserves this order and numbers exams per kind. Mobile may prioritize deadlines without renumbering exams. Contains question counts and own attempt summaries, never question answer keys or snapshots.",
+        "description": "Requires an active Academy participant with the initial password changed. Published exams from own enrollments and published parent course/chapter only. Ordered by created_at ASC, id ASC, matching admin. Desktop and mobile preserve this order and number exams per kind, independent of deadlines and completion status. Contains question counts and own attempt summaries, never question answer keys or snapshots.",
         "parameters": [
           {
             "name": "cohort",
@@ -8762,6 +9355,1395 @@
           },
           "422": {
             "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/expenses": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "List module expenses",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. All recognized roles read expenses across this module, following legacy policy. Search by recipient/description, page size 25.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "items",
+                        "page",
+                        "pages",
+                        "total"
+                      ],
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FinanceExpense"
+                          }
+                        },
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pages": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Record expense and snapshot approvers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/operator/Superadmin only. Active source/category. Inclusive nominal rule selects active eligible approvers in parallel; overlapping/misconfigured rule aborts atomically. No matching rule records unassigned, never approved. Creator and immutable event recorded.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "revision",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "sourceId",
+                  "categoryId",
+                  "recipient",
+                  "description",
+                  "amount"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "recipient": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,15}$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/expenses/{id}": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Expense and approval history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. All expense readers; operator receives empty approval/history arrays. Other roles read explicit approval summaries and new expense audit. Historical revisions retained.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceExpenseDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Revise expense and request fresh approval",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Same writers. Version required. Every change creates new revision, closes old tasks, retains all decisions/events and snapshots, creates new approval round from current rules. Native and legacy records may be revised; origin/provenance unchanged.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "revision",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "sourceId",
+                  "categoryId",
+                  "recipient",
+                  "description",
+                  "amount",
+                  "version",
+                  "reason"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sourceId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "categoryId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "recipient": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 10000
+                  },
+                  "amount": {
+                    "type": "string",
+                    "pattern": "^[1-9][0-9]{0,15}$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/expense-options": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Minimal input source/category options",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. Expense writers only, including operator; no master management privilege granted.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "sources",
+                        "categories"
+                      ],
+                      "properties": {
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/settings": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Master data and approval rules",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. admin/finance_admin/treasurer/Superadmin read. Approver candidates are active Keuangan members with admin/finance_admin/treasurer/approver roles, minimal id/name only.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "sources",
+                        "categories",
+                        "approvers",
+                        "rules"
+                      ],
+                      "properties": {
+                        "sources": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "name",
+                              "archived"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "archived": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "categories": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "name",
+                              "archived"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "archived": {
+                                "type": "boolean"
+                              }
+                            }
+                          }
+                        },
+                        "approvers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "rules": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FinanceRule"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/masters/sources": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Add sources",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/Superadmin only; trimmed, case-insensitive duplicate name rejected.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "name"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/masters/categories": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Add categories",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/Superadmin only; trimmed, case-insensitive duplicate name rejected.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "name"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/approval-rules": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Create nominal approval rule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Master writers only. Bounds inclusive; min <= max. Active intervals must not intersect, including containment and shared endpoints. Only eligible active approvers.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "minAmount",
+                  "maxAmount",
+                  "approverIds",
+                  "active"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "minAmount": {
+                    "type": "string",
+                    "pattern": "^[0-9]+$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "maxAmount": {
+                    "type": "string",
+                    "pattern": "^[0-9]+$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "approverIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 191
+                    }
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/approval-rules/{id}": {
+      "put": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Update or deactivate approval rule",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Master writers only; optimistic version. Existing assignments retain their snapshots.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "minAmount",
+                  "maxAmount",
+                  "approverIds",
+                  "active",
+                  "version"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "minAmount": {
+                    "type": "string",
+                    "pattern": "^[0-9]+$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "maxAmount": {
+                    "type": "string",
+                    "pattern": "^[0-9]+$",
+                    "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "approverIds": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 191
+                    }
+                  },
+                  "active": {
+                    "type": "boolean"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/approvals": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Own current approval tasks",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. Approval-capable roles except operator. Assigned user only, current expense revision; pending/unclosed tasks first. Includes own answered/closed current tasks for review.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "items",
+                        "page",
+                        "pages",
+                        "total"
+                      ],
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/FinanceApprovalTask"
+                          }
+                        },
+                        "page": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "pages": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/approvals/{id}": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Own approval detail and audit",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Authenticated, active account with recognized module role; no-store, private. Assigned user only, even for administrators. Historical tasks readable but no decisions on old expense revisions.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FinanceApprovalDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/approvals/{id}/decisions": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Decide or revise own approval",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Assigned actor with approval capability only. Reject note >=10 trimmed characters. Revisions need reason >=10 trimmed characters. Version/expense revision/closed checks. Rejection closes others still waiting. Revising the rejection to approval reopens only tasks closed by rejection when no other rejection remains. All prior decisions append to audit; no old event overwritten.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "version",
+                        "decision"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "decision": {
+                          "enum": [
+                            "approved",
+                            "rejected"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "version",
+                  "decision"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "decision": {
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "note": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
           }
         }
       }
