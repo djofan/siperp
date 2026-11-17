@@ -39,7 +39,7 @@ export function HeroSection() {
             Mulai Belajar
           </AcademyAnchor>
           <AcademyAnchor href="#programs" className="academy-hero-secondary inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:border-gray-300 hover:shadow-md hover:-translate-y-0.5">
-            Lihat Materi
+            Lihat Program
           </AcademyAnchor>
         </div>
 

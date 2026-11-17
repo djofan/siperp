@@ -80,7 +80,7 @@ class CourseController
     public function quizzes(Request $request)
     {
         $profile = $this->context->profile($request);
-        $query = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->where('is_published', true)->whereHas('course', fn ($c) => $c->where('is_published', true)->whereHas('enrollments', fn ($e) => $e->where('profile_id', $profile->id))))->withCount('questions')->with(['chapter:id,course_id,title', 'chapter.course:id,starts_at', 'attempts' => fn ($q) => $q->where('profile_id', $profile->id)->select('id', 'quiz_id', 'attempt_number', 'is_completed', 'score', 'passed')->orderByDesc('attempt_number')])->orderByDesc('quiz_date')->orderBy('id');
+        $query = Quiz::where('is_published', true)->whereHas('chapter', fn ($q) => $q->where('is_published', true)->whereHas('course', fn ($c) => $c->where('is_published', true)->whereHas('enrollments', fn ($e) => $e->where('profile_id', $profile->id))))->withCount('questions')->with(['chapter:id,course_id,title', 'chapter.course:id,starts_at', 'attempts' => fn ($q) => $q->where('profile_id', $profile->id)->select('id', 'quiz_id', 'attempt_number', 'is_completed', 'score', 'passed')->orderByDesc('attempt_number')])->orderBy('created_at')->orderBy('id');
 
         if ($request->filled('cohort')) { $query->whereHas('chapter.course', fn ($c) => $c->where('cohort_id', $request->input('cohort'))); }
         return $this->data($query->get()->map(fn ($row) => AcademyDto::make($row)));

@@ -367,6 +367,7 @@ it('paginates teacher discussions and protects question detail and answer mutati
     Sanctum::actingAs($profile->user);
     $this->getJson($base.'/'.$ids[0])->assertForbidden();
     $this->putJson('/api/v1/academy/discussions/'.$ids[0].'/answer', ['answer' => 'Unauthorized'])->assertForbidden();
+    $this->getJson('/api/v1/academy/learning/discussions/'.$ids[0])->assertSuccessful()->assertJsonPath('data.answer', 'Jawaban pengajar');
 });
 
 it('keeps participant discussion tables and detail private to their owner', function () {

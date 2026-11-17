@@ -170,3 +170,13 @@ it('never uses query selectors to expose another cohort or participant', functio
     $profile->save();
     $this->getJson('/api/v1/academy/learning/today')->assertForbidden();
 });
+
+
+it('lists participant exams in the same creation order as admin regardless of deadlines and release days', function () {
+    $this->quizzes[0]->forceFill(['quizDate' => now()->subDays(3), 'closesAt' => now()->subDays(2), 'releaseDay' => 3])->save();
+    $this->quizzes[1]->forceFill(['quizDate' => now()->addDays(2), 'closesAt' => now()->addDays(3), 'releaseDay' => 1])->save();
+    $this->quizzes[2]->forceFill(['quizDate' => now()->addDay(), 'closesAt' => now()->addDays(2), 'releaseDay' => 2])->save();
+    $rows = $this->getJson('/api/v1/academy/learning/quizzes?cohort='.$this->cohort->id)->assertOk()->json('data');
+    $daily = collect($rows)->where('kind', 'DAILY')->pluck('id')->values()->all();
+    expect($daily)->toBe(array_map(fn ($quiz) => $quiz->id, $this->quizzes));
+});

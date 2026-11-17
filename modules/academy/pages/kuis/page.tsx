@@ -35,7 +35,7 @@ export default async function ExamsPage() {
   ] as const;
   const groups = categories.map(category => ({
     ...category,
-    items: quizzes.filter(quiz => quiz.kind === category.kind).sort((a, b) => a.releaseDay - b.releaseDay),
+    items: quizzes.filter(quiz => quiz.kind === category.kind),
   }));
   const labels = new Map(groups.flatMap(group => group.items.map((quiz, index) => [quiz.id, `${group.title} ${index + 1}`] as const)));
 
@@ -75,7 +75,7 @@ export default async function ExamsPage() {
     </section>}
     <div className="hidden sm:block">{groups.filter(group => group.items.length > 0).map(group => <section key={group.kind} className="mb-8" aria-label={group.title}>
       <h2 className="mb-4 font-semibold">{group.title}</h2>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{[...group.items].sort(byDeadline).map(quiz => card(quiz))}</div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{group.items.map(quiz => card(quiz))}</div>
     </section>)}</div>
   </div>;
 }

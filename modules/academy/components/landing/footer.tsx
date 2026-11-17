@@ -21,7 +21,7 @@ export function Footer() {
 
           {/* Links */}
           <div className="flex gap-6 text-sm text-gray-500">
-            <Link href="/academy/materi" className="transition-colors hover:text-green-600">Materi</Link>
+            <Link href="/academy/program" className="transition-colors hover:text-green-600">Program</Link>
             <AcademyAnchor href="https://wa.me/628111186626" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-green-600">Hubungi Kami</AcademyAnchor>
             <AcademyAnchor href="/academy/masuk" className="transition-colors hover:text-green-600">Masuk</AcademyAnchor>
           </div>

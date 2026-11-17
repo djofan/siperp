@@ -64,3 +64,35 @@ test("exam duration edits use a single total-minute input including durations ov
   assert.equal((html.match(/<input /g) ?? []).length,1);
   assert.doesNotMatch(html,/Jam|hours/);
 });
+
+
+test("desktop exams preserve admin order and mobile urgency never renumbers cards", async () => {
+  const quizzes = [
+    {id:"first",title:"Materi Pertama",releaseDay:3,closesAt:new Date("2020-01-01"),attempts:[{isCompleted:true}]},
+    {id:"second",title:"Materi Kedua",releaseDay:1,closesAt:new Date("2099-01-01"),attempts:[]},
+    {id:"third",title:"Materi Ketiga",releaseDay:2,closesAt:new Date("2098-01-01"),attempts:[]},
+  ].map(item => ({...item,kind:"DAILY",timeLimitMinutes:4,_count:{questions:2}}));
+  const context={exports:{},Date,Intl,Map,require(name){
+    if(name.includes("AcademyNavigation")) return {default:({children,href,...props})=>React.createElement("a",{href,...props},children)};
+    if(name.includes("api/access")) return {requireAcademyParticipant:async()=>({academyProfile:{id:"participant"}})};
+    if(name.includes("api/courses")) return {listParticipantQuizzes:async()=>quizzes};
+    if(name.includes("learner-cohorts")) return {learnerCohorts:async()=>[{id:"cohort",joined:true,current:true}]};
+    if(name === "../../components/ui") return {PageHeading:({children})=>React.createElement("h1",null,children),EmptyState:()=>null};
+    return require(name);
+  }};
+  vm.runInNewContext(compile("modules/academy/pages/kuis/page.tsx"),context);
+  const html=renderToStaticMarkup(await context.exports.default());
+  const desktop=html.slice(html.indexOf('class="hidden sm:block"'));
+  assert.ok(desktop.indexOf("Materi Pertama") < desktop.indexOf("Materi Kedua"));
+  assert.ok(desktop.indexOf("Materi Kedua") < desktop.indexOf("Materi Ketiga"));
+  const mobile=html.slice(0,html.indexOf('class="hidden sm:block"'));
+  assert.ok(mobile.indexOf("Materi Ketiga") < mobile.indexOf("Materi Kedua"));
+  assert.ok(mobile.indexOf("Materi Kedua") < mobile.indexOf("Materi Pertama"));
+  for (const [title,number] of [["Materi Pertama",1],["Materi Kedua",2],["Materi Ketiga",3]]) {
+    for (const section of [desktop,mobile]) {
+      const cards=section.match(/<article[\s\S]*?<\/article>/g) ?? [];
+      const card=cards.find(card=>card.includes(title));
+      assert.ok(card?.includes(`Ujian Harian ${number}`));
+    }
+  }
+});
