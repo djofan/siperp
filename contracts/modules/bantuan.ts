@@ -35,7 +35,7 @@ export const documentLabels: Record<string, string> = {
   face: "Foto wajah", ktp: "Foto KTP", kk: "Foto KK", supporting: "Foto pendukung", survey_recipient: "Penerima saat survei", survey_front: "Tampak depan rumah",
   survey_inside: "Ruangan dalam (minimal 2)", survey_environment: "Rumah & lingkungan", survey_other: "Foto survei lainnya",
   sktm: "Foto SKTM", transfer: "Bukti transfer Bendahara", handover: "Foto penyerahan", certificate: "Foto sertifikat",
-  education_other: "Bukti tambahan pendidikan", receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
+  handover_supporting: "Foto pendukung penyerahan", education_other: "Bukti tambahan pendidikan", receipt: "Bukti tunai / transfer penerima", return: "Bukti pengembalian dana",
 };
 export interface BantuanSettings { programs: string[]; regions: string[]; housing: string[]; minimumSurveyPhotos: number; distributionDays: number; surveyReminderDays?: number; closingText: string }
 export interface BantuanViewer { id: string; name: string; code?: string; role: string; roles?: string[]; canChooseModules?: boolean; canBypass: boolean; settings: BantuanSettings }
