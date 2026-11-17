@@ -269,7 +269,7 @@
     "/application-reminders": {
       "post": {
         "summary": "Prepare grouped reminders for current task owners",
-        "description": "Call Center/admin only. Atomic batch; stale stages or missing recipients reject all. Creates daily deduplicated bell notifications. Does not send WhatsApp. Returns one message per recipient; copyRequired indicates a long message to paste manually.",
+        "description": "Call Center/admin only. Stale stages, closed applications or forbidden access reject the batch atomically. Applications without an active task recipient other than the caller are skipped, without notifications or events. Creates daily deduplicated bell notifications for remaining applications. Does not send WhatsApp. Returns one message per recipient; copyRequired indicates a long message to paste manually.",
         "requestBody": {
           "required": true,
           "content": {
@@ -308,7 +308,7 @@
         },
         "responses": {
           "200": {
-            "description": "data.count; recipients: id, name, count, message, nullable url, copyRequired"
+            "description": "data.count counts prepared applications; data.skipped lists id, number, task and reason for skipped applications; recipients: id, name, count, message, nullable url, copyRequired. All skipped returns 200 with count 0 and empty recipients."
           },
           "403": {
             "description": "Forbidden"

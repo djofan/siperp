@@ -38,6 +38,13 @@ Daftar akun menyediakan `canResetPassword` untuk UI, tetapi endpoint tetap mengo
 
 ### Diagnosis error untuk pengelola
 
+`POST /api/v1/bantuan/application-reminders` melewati pengajuan yang tidak memiliki
+penerima tugas aktif selain akun pengirim. Respons `data.count` menghitung pengajuan
+yang disiapkan, sedangkan `data.skipped` berisi `id`, `number`, `task`, dan `reason`.
+Jika semuanya dilewati, respons tetap 200 tanpa notifikasi atau event pengingat baru.
+Status usang/tertutup dan pelanggaran akses tetap membatalkan seluruh batch secara atomik.
+Pesan WhatsApp tetap diperiksa dan dikirim manual oleh pengguna.
+
 Respons error mempertahankan `error.code`, `message`, dan `details`, serta menambahkan
 `diagnosticCode`, `requestId`, dan `retryAfter` (detik atau null). ID dibuat oleh server,
 dikembalikan juga dalam header `X-Request-ID`. Untuk error server, cari ID yang sama pada
