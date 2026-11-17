@@ -2322,3 +2322,17 @@ it('gives only the selected santunan companion access and revokes it without cha
     $this->postJson('/api/v1/bantuan/santunan/periods', ['sourcePeriod' => '2026-11'])->assertCreated();
     expect(DB::table('bantuan_santunan')->whereDate('period', '2026-12-01')->value('companion_id'))->toBeNull();
 })->with(['verifier', 'volunteer']);
+it('allows multiple optional handover supporting photos for the assigned distributor and keeps them in the report', function () {
+    Storage::fake('local');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'disbursed', 'distribution_type' => 'verifier', 'distributor_id' => $this->verifier->id, 'amount' => 1000000])->save();
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGZkAAAAASUVORK5CYII=');
+    foreach (['Sudut pertama', 'Sudut kedua'] as $caption) {
+        $this->actingAs($this->verifier, 'sanctum')->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'handover_supporting', 'caption' => $caption, 'file' => UploadedFile::fake()->createWithContent('pendukung.png', $png)], ['Accept' => 'application/json'])->assertCreated();
+    }
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->where('kind', 'handover_supporting')->count())->toBe(2);
+    bantuanDoc($id, 'handover'); bantuanDoc($id, 'certificate');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/handover', ['version' => 1, 'handover' => ['method' => 'tunai', 'date' => now()->toDateString(), 'amount' => 1000000]])->assertOk()->assertJsonPath('data.status', 'completed');
+    $docs = $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->json('data.documents');
+    expect(collect($docs)->where('kind', 'handover_supporting')->pluck('caption')->all())->toEqualCanonicalizing(['Sudut pertama', 'Sudut kedua']);
+});

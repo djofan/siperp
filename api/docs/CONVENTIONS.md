@@ -468,6 +468,14 @@ completedAt, handedOverAt, dan handedOverAmount (nullable). Tanggal/nominal
 penyerahan diambil dari laporan handover, bukan tanggal pencairan atau nominal
 persetujuan. Catatan dan isi lengkap handover tidak disertakan. Tidak ada migration.
 
+
+Lampiran laporan penyerahan Bantuan memakai jenis `handover_supporting` pada
+endpoint upload documents yang sudah ada. Opsional, dapat berisi beberapa berkas
+(ID berbeda), dengan caption per berkas. Hanya penyalur yang ditugaskan/aktor
+penyerahan berwenang, Call Center, atau admin sesuai scope dan tahap pencairan.
+Bukti penyerahan serta sertifikat tetap wajib. Lampiran ikut tab Laporan penyerahan,
+tersimpan terenkripsi, dan tidak menambah persyaratan penyelesaian. Tanpa migration.
+
 ### Fondasi Keuangan
 
 GET `/api/v1/keuangan/overview`: Sanctum, user aktif, module.access:keuangan,

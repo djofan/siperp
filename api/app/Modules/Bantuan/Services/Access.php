@@ -111,7 +111,7 @@ class Access
             return $this->allow($request, ['call_center', 'treasurer']);
         }
         $own = $row->created_by === $request->user()->id;
-        if ($this->has($request, ['call_center']) && (($row->status === 'disbursed' && in_array($kind, ['handover','certificate','receipt','education_other'], true)) || (in_array($row->status, ['fund_approved','delivery_failed'], true) && in_array($kind, ['transfer','return'], true)))) return 'call_center';
+        if ($this->has($request, ['call_center']) && (($row->status === 'disbursed' && in_array($kind, ['handover','certificate','receipt','education_other','handover_supporting'], true)) || (in_array($row->status, ['fund_approved','delivery_failed'], true) && in_array($kind, ['transfer','return'], true)))) return 'call_center';
         $roles = match (true) {
             (str_starts_with($kind, 'survey_') || in_array($kind, ['sktm', 'ktp', 'kk', 'supporting'], true))
                 && in_array($row->status, ['survey_assigned', 'survey_cc_review'], true)

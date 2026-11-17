@@ -5448,7 +5448,7 @@
             }
           }
         ],
-        "description": "Existing stage, role and sensitive-document permissions apply. Use multipart fields location[latitude], location[longitude], location[source] and optionally location[accuracy]. No location is inferred for old photos. clientId replay preserves the first upload and its location.",
+        "description": "Existing stage, role and sensitive-document permissions apply. handover_supporting is optional, repeatable handover evidence during disbursed status; it never replaces mandatory handover/certificate documents. Use multipart fields location[latitude], location[longitude], location[source] and optionally location[accuracy]. No location is inferred for old photos. clientId replay preserves the first upload and its location.",
         "requestBody": {
           "required": true,
           "content": {
@@ -5478,6 +5478,7 @@
                       "certificate",
                       "receipt",
                       "education_other",
+                      "handover_supporting",
                       "return"
                     ]
                   },
