@@ -16,7 +16,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
   }>(`academy/learning/discussions?view=table&page=${page}`);
   return <div className="mx-auto max-w-7xl p-4 md:p-6">
     <PageHeading title="Tanya jawab Ustadz">Kirim pertanyaan pribadi kepada ustadz.</PageHeading>
-    {query.saved === "1" && <p role="status" className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-800">Pertanyaan berhasil dikirim. Jawaban pengajar dapat dibaca dari tabel ini.</p>}
+    {query.saved === "1" && <p role="status" className="mb-5 rounded-xl bg-green-50 p-4 text-sm text-green-800">Pertanyaan berhasil dikirim. Jawaban Ustadz dapat dibaca dari tabel ini.</p>}
     {enrollments.length ? <Link href="/academy/tanya-jawab/baru" className="mb-6 inline-block rounded-xl bg-green-700 px-5 py-3 text-sm font-medium text-white">Ajukan pertanyaan</Link> : <p className="mb-6 rounded-xl bg-amber-50 p-4 text-sm">Ikuti angkatan / program terlebih dahulu untuk bertanya. <Link href="/academy/angkatan" className="text-green-700 underline">Lihat angkatan</Link></p>}
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Pertanyaan saya">
       <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Pertanyaan saya</h2><p className="mt-1 text-sm text-gray-500">Hanya pertanyaan milik Anda yang ditampilkan.</p></div>

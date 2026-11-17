@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { applySantunanContract } from './santunan-contract.mjs';
+import { applyKeuanganContract } from './keuangan-contract.mjs';
 import { applyAcademyTodayContract } from './academy-today-contract.mjs';
 
 // Preserve the existing partial Core/Academy contract as the baseline. Module
@@ -515,6 +516,7 @@ document.paths['/api/v1/keuangan/overview'] = { get: {
 
 applyAcademyTodayContract(document);
 applySantunanContract(document);
+applyKeuanganContract(document);
 
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
