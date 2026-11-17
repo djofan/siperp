@@ -13,9 +13,9 @@ class AcademyCohort extends DomainModel
 
     protected $hidden = ['quota'];
 
-    protected array $fieldMap = ['registrationOpen' => 'registration_open', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
+    protected array $fieldMap = ['dashboardStartsOn' => 'dashboard_starts_on', 'registrationOpen' => 'registration_open', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at'];
 
-    protected $casts = ['registration_open' => 'boolean', 'quota' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
+    protected $casts = ['dashboard_starts_on' => 'immutable_date:Y-m-d', 'registration_open' => 'boolean', 'quota' => 'integer', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime'];
 
     public function participants(): HasManyThrough
     {

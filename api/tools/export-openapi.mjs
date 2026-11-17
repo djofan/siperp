@@ -1,4 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { applySantunanContract } from './santunan-contract.mjs';
+import { applyAcademyTodayContract } from './academy-today-contract.mjs';
 
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
@@ -37,22 +39,6 @@ for (const [path, method, summary] of [
     responses: { [method === 'post' ? 201 : 200]: {description:method === 'get' ? 'Own attempt; answers snapshot includes optional kind enum DAILY/WEEKLY/FINAL, questions and responses. Correct-answer fields and explanations are omitted while the attempt is unfinished.' : 'Attempt started or answers saved; grading is server-controlled'},401:{description:'Unauthenticated'},403:{description:'Not permitted or unavailable'},404:{description:'Not found'},409:{description:'Retake not allowed'},422:{description:'Invalid answers'}},
   } };
 }
-document.paths['/api/v1/bantuan/santunan/imports'] = { post: {
-  tags: ['Bantuan'], summary: 'Impor santunan rutin dari Excel yang telah dibaca klien',
-  description: 'Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.',
-  security: [{ bearerAuth: [] }],
-  requestBody: { required: true, content: { 'application/json': { schema: {
-    type: 'object', required: ['period', 'rows'], allOf: [{if:{not:{required:['volunteerId']}},then:{properties:{rows:{items:{required:['verifierName']}}}}}], properties: {
-      period: { type: 'string', pattern: '^[0-9]{4}-(0[1-9]|1[0-2])$' }, volunteerId: { type: 'string', maxLength: 191 },
-      rows: { type: 'array', minItems: 1, maxItems: 200, items: { type: 'object', additionalProperties: false,
-        required: ['recipientName', 'category', 'amount'], properties: {
-          verifierName: {type:'string',maxLength:191,description:'Nama persis dari daftar penyalur aktif; abaikan kapital dan spasi berlebih. Nama ambigu/tidak aktif/tidak ada ditolak. Wajib bila volunteerId legacy tidak dikirim.'}, recipientName: { type: 'string', minLength: 1, maxLength: 191 }, category: { type: 'string', enum: ['orphan', 'widow'] },
-          amount: { type: 'integer', minimum: 1, maximum: 9000000000000 },
-        } } },
-    },
-  } } } },
-  responses: { 200: { description: 'Impor berhasil', content: { 'application/json': { schema: { type: 'object', required: ['data'], properties: { data: { type: 'object', required: ['createdCount'], properties: { createdCount: { type: 'integer', minimum: 1, maximum: 200 } } } } } } } }, 403: { description: 'Peran tidak diizinkan' }, 422: { description: 'Data invalid, penerima ganda, atau penyalur tidak aktif; tidak ada baris disimpan' }, 429: { description: 'Batas impor tercapai' } },
-} };
 const image = {
   type: ['string', 'null'], maxLength: 191,
   pattern: '^/uploads/sarsip/[a-fA-F0-9-]{36}\\.(?:jpg|png|webp)$',
@@ -526,6 +512,9 @@ document.paths['/api/v1/keuangan/overview'] = { get: {
     }},
   }}}}, 401:{description:'Unauthenticated or inactive account'},403:{description:'Module inactive, no access or role denied'},404:{description:'Module not registered'}},
 }};
+
+applyAcademyTodayContract(document);
+applySantunanContract(document);
 
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);

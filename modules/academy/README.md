@@ -238,3 +238,45 @@ Setelah MySQL aktif dan tersedianya konten uji melalui admin, periksa:
     dan tautan sertifikat tidak dapat diberikan sebelum syarat kembali terpenuhi.
 15. Pada waktu pemeliharaan yang disepakati, aktifkan maintenance dan periksa
     peserta dialihkan ke halaman pemeliharaan sementara admin tetap dapat masuk.
+
+
+## Kegiatan beranda terjadwal (17 November 2026)
+
+Admin > Angkatan > Jadwal beranda peserta: tentukan **Ahad pertama**. Jadwal tidak
+aktif pada angkatan lama sampai tanggal ini dipilih. Materi 1–4, 5–8, dan 9–12
+ditampilkan pada pekan 1–3: Ahad/Senin/Selasa/Rabu 17.00 WIB sampai hari berikutnya
+17.00 WIB. Posisi mengikuti urutan bab dan materi, termasuk draft; menyembunyikan
+publikasi satu materi tidak memajukan materi lain ke slotnya. Pekan keempat tidak
+ada materi beranda. Jangan mengubah urutan/menghapus materi di tengah program
+jika ingin posisi jadwal tetap sama.
+
+Penyimpanan anchor mengatur tanggal ujian harian/akhir yang sudah ada; ujian yang
+dibuat kemudian juga mengikuti anchor. Harian 1–12 berurutan berdasarkan waktu
+pembuatan: Senin–Kamis 17.00, masing-masing 24 jam selama tiga pekan. Akhir:
+**Jumat pekan keempat 17.00 sampai Ahad 17.00 WIB**. Pekanan tetap diatur admin.
+Batas jadwal otomatis: 12 harian dan 1 akhir per angkatan, termasuk draft. Jadwal
+relatif empat pekan bisa melintasi pergantian bulan. Setelah peserta mulai ujian,
+anchor tidak bisa digeser; edit judul/publikasi tidak menghapus deadline otomatis.
+
+Beranda menampilkan maksimal satu materi dan satu ujian aktif pada start <= waktu
+server < end. Jika slot kosong, tidak mengambil materi/ujian kedaluwarsa sebagai
+pengganti. Jika ada ujian bertumpuk, pilih waktu mulai terbaru lalu ID stabil.
+Ujian yang sudah dikerjakan masih menempati slotnya sampai deadline. Tab/PWA terbuka
+menghapus kartu saat berakhir dan memuat slot berikut pada batas waktu; jam memakai
+acuan server, bukan jam perangkat. Refresh juga dilakukan tiap menit dan saat tab
+aktif kembali. Saat jaringan gagal, kartu lama tetap hilang ketika waktunya habis.
+
+Materi/ujian hanya dihilangkan dari **beranda**, tidak dihapus atau dibatalkan
+publikasinya. Menu Materi/Ujian tetap menyimpan riwayat; akses file dan batas
+pengerjaan ujian tetap diperiksa Laravel. Draft, konten angkatan lain, dan kunci
+jawaban tidak dikirim pada feed. Menonaktifkan publikasi menyembunyikan konten dari
+menu dan feed sesuai pemeriksaan akses yang ada.
+
+Migration `2026_11_17_000002_add_academy_dashboard_schedule` menambah tanggal nullable
+pada cohort. Review/backup sebelum deployment; belum dijalankan pada database
+pengguna oleh pekerjaan lokal ini.
+
+Verifikasi lokal jadwal: 135 tes backend Academy (909 assertion), 21 tes frontend
+terkait beranda/PWA/ujian, typecheck, lint file frontend yang berubah, Pint file PHP
+baru, dan sinkronisasi OpenAPI lulus. Seluruh tes database memakai SQLite memori.
+Build lokal `npx next build --webpack` juga lulus. Jadwal belum diaktifkan pada database pengguna atau VPS.

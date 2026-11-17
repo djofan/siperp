@@ -133,7 +133,8 @@ test("sidebar omits unrelated general menus and unions all assigned roles",()=>{
   const personal=["requester","verifier"];
   for(const role of personal){
     const viewer={role,canBypass:false};const keys=sidebarNavigation(viewer).map(item=>item.key);
-    for(const key of ["berjalan","mustahiq","pengajuan-dana","laporan","santunan","tim","audit","pengaturan"])assert.equal(keys.includes(key),false,role+": "+key);
+    for(const key of ["berjalan","mustahiq","pengajuan-dana","laporan","tim","audit","pengaturan"])assert.equal(keys.includes(key),false,role+": "+key);
+    assert.equal(keys.includes("santunan"),role==="verifier");
     assert.equal(sidebarNavigation(viewer).find(item=>item.key==="pengajuan").label,"Pengajuan saya");
   }
   assert.deepEqual(Array.from(sidebarNavigation({role:"volunteer",canBypass:false}),item=>item.key),["proses","penyaluran","santunan"]);

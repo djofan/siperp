@@ -306,7 +306,16 @@ class CurriculumController
                 $this->ready($row);
             }
 
-            return $this->assign($row, $data + ['chapterId' => $chapterId]);
+            $cohortId = $this->course($courseId)->cohortId;
+            if ($cohortId && $row->exists && $row->kind === $data['kind'] && in_array($row->kind, ['DAILY', 'FINAL'], true)
+                && Cohort::whereKey($cohortId)->whereNotNull('dashboard_starts_on')->exists()
+                && \App\Modules\Academy\Models\ZakatAcademyQuizAttempt::where('quiz_id', $row->id)->exists()) {
+                // Publication/title edits must not erase a running or historical automatic deadline.
+                $data = array_replace($data, ['quizDate' => $row->quizDate, 'closesAt' => $row->closesAt, 'releaseDay' => $row->releaseDay]);
+            }
+            $row = $this->assign($row, $data + ['chapterId' => $chapterId]);
+            if ($cohortId) app(\App\Modules\Academy\Services\AcademyTimetable::class)->syncExams($cohortId);
+            return $row;
         }, 3));
     }
 

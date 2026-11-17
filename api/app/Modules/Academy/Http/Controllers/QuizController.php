@@ -64,6 +64,8 @@ class QuizController
         $id = DB::transaction(function () use ($profile, $quizId) {
             // Lock a stable parent to serialize the first attempt as well as retakes.
             $profile->newQuery()->where('id', $profile->id)->lockForUpdate()->firstOrFail();
+            $cohortId = ZakatAcademyQuiz::findOrFail($quizId)->chapter->course->cohortId;
+            if ($cohortId) \App\Modules\Academy\Models\AcademyCohort::whereKey($cohortId)->lockForUpdate()->firstOrFail();
             ZakatAcademyQuiz::where('id', $quizId)->lockForUpdate()->firstOrFail();
             $quiz = $this->context->quiz($quizId, $profile->id);
             abort_unless($this->context->released($quiz->chapter->course->startsAt, $quiz->releaseDay) && $quiz->isActive && (! $quiz->quizDate || ! $quiz->quizDate->isFuture()) && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Ujian belum dibuka atau sudah ditutup.');
