@@ -149,6 +149,14 @@ class CurriculumController
     public function lessonInput(Request $request, bool $hasPdfAttachment = false): array
     {
         $data = $this->common($request) + $request->validate(['videoProvider' => 'required|in:AUDIO,YOUTUBE,VIMEO,BUNNY', 'videoUrl' => 'nullable|string|max:2048', 'shortDescription' => 'nullable|string|max:2000', 'contentSummary' => 'nullable|string|max:30000', 'thumbnailUrl' => 'nullable|string|max:2048', 'releaseDay' => 'sometimes|integer|min:1|max:30']);
+        $schedule = $request->validate(['dashboardOpensAt' => 'nullable|date_format:Y-m-d\TH:i', 'dashboardClosesAt' => 'nullable|date_format:Y-m-d\TH:i']);
+        foreach (['dashboardOpensAt', 'dashboardClosesAt'] as $key) {
+            if (array_key_exists($key, $schedule)) {
+                $data[$key] = $schedule[$key] ? CarbonImmutable::parse($schedule[$key], 'Asia/Jakarta')->utc() : null;
+            }
+        }
+        abort_if(! empty($data['dashboardOpensAt']) !== ! empty($data['dashboardClosesAt']), 422, 'Isi waktu mulai dan berakhir materi.');
+        abort_if(! empty($data['dashboardOpensAt']) && $data['dashboardClosesAt'] <= $data['dashboardOpensAt'], 422, 'Waktu berakhir materi harus setelah mulai.');
         $data['videoUrl'] = $data['videoUrl'] ?? '';
         $data['releaseDay'] = $data['releaseDay'] ?? 1;
         $data['thumbnailUrl'] = $this->url($data['thumbnailUrl'] ?? null);
@@ -306,15 +314,7 @@ class CurriculumController
                 $this->ready($row);
             }
 
-            $cohortId = $this->course($courseId)->cohortId;
-            if ($cohortId && $row->exists && $row->kind === $data['kind'] && in_array($row->kind, ['DAILY', 'FINAL'], true)
-                && Cohort::whereKey($cohortId)->whereNotNull('dashboard_starts_on')->exists()
-                && \App\Modules\Academy\Models\ZakatAcademyQuizAttempt::where('quiz_id', $row->id)->exists()) {
-                // Publication/title edits must not erase a running or historical automatic deadline.
-                $data = array_replace($data, ['quizDate' => $row->quizDate, 'closesAt' => $row->closesAt, 'releaseDay' => $row->releaseDay]);
-            }
             $row = $this->assign($row, $data + ['chapterId' => $chapterId]);
-            if ($cohortId) app(\App\Modules\Academy\Services\AcademyTimetable::class)->syncExams($cohortId);
             return $row;
         }, 3));
     }

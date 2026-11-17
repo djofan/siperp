@@ -13,7 +13,7 @@ type Values = {
   description?: string | null; shortDescription?: string | null; contentSummary?: string | null;
   thumbnailUrl?: string | null; materialUrl?: string | null; videoProvider?: string; videoUrl?: string;
   fileUrl?: string; fileType?: string | null; fileSize?: number | null;
-  releaseDay?: number;
+  releaseDay?: number; dashboardOpensAt?: string; dashboardClosesAt?: string;
 };
 
 type Field = { name: keyof Values; label: string; required?: boolean; long?: boolean; number?: boolean; hint?: string };
@@ -62,6 +62,7 @@ export function ContentForm({ kind, action, initial = {}, flat = false, contextF
   return <form action={formAction} className={panelClasses("space-y-5 p-5 sm:p-6")}>
     {contextField}
     {flat && <input type="hidden" name="releaseDay" value={values.releaseDay ?? 1} />}
+    {kind === "lesson" && <fieldset className="space-y-3"><legend className="text-sm font-semibold">Jadwal tampil di beranda (WIB)</legend><p className="text-xs text-foreground/60">Atur manual waktu mulai dan berakhir. Setelah berakhir, materi tetap tersedia di menu Materi Belajar selama dipublikasikan. Kosongkan keduanya agar tidak tampil di beranda.</p><div className="grid gap-4 sm:grid-cols-2">{(["dashboardOpensAt", "dashboardClosesAt"] as const).map(name => <FormField key={name} label={name === "dashboardOpensAt" ? "Mulai" : "Berakhir"} htmlFor={prefix + name}><Input id={prefix + name} name={name} type="datetime-local" value={values[name] ?? ""} onChange={event => setValues({ ...values, [name]: event.target.value })} /></FormField>)}</div></fieldset>}
     {state.error && <p role="alert" className="rounded-xl bg-danger-soft p-4 text-sm text-danger">{state.error}</p>}
     {kind === "lesson" && <FormField label="Jenis materi" htmlFor={`${prefix}-provider`}>
       <Select id={`${prefix}-provider`} name="videoProvider" value={flat ? "AUDIO" : values.videoProvider} onChange={(event) => setValues({ ...values, videoProvider: event.target.value })}>

@@ -18,9 +18,9 @@ class ZakatAcademyLesson extends DomainModel
 
     const UPDATED_AT = 'updated_at';
 
-    protected array $fieldMap = ['chapterId' => 'chapter_id', 'shortDescription' => 'short_description', 'contentSummary' => 'content_summary', 'thumbnailUrl' => 'thumbnail_url', 'videoProvider' => 'video_provider', 'videoUrl' => 'video_url', 'isPublished' => 'is_published', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'releaseDay' => 'release_day'];
+    protected array $fieldMap = ['dashboardOpensAt' => 'dashboard_opens_at', 'dashboardClosesAt' => 'dashboard_closes_at', 'chapterId' => 'chapter_id', 'shortDescription' => 'short_description', 'contentSummary' => 'content_summary', 'thumbnailUrl' => 'thumbnail_url', 'videoProvider' => 'video_provider', 'videoUrl' => 'video_url', 'isPublished' => 'is_published', 'createdAt' => 'created_at', 'updatedAt' => 'updated_at', 'releaseDay' => 'release_day'];
 
-    protected $casts = ['order' => 'integer', 'is_published' => 'boolean', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime', 'release_day' => 'integer'];
+    protected $casts = ['dashboard_opens_at' => 'immutable_datetime', 'dashboard_closes_at' => 'immutable_datetime', 'order' => 'integer', 'is_published' => 'boolean', 'created_at' => 'immutable_datetime', 'updated_at' => 'immutable_datetime', 'release_day' => 'integer'];
 
     protected $hidden = [];
 
