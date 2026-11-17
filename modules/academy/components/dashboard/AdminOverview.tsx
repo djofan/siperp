@@ -1,5 +1,5 @@
 import Link from "@/modules/academy/pwa/AcademyNavigation";
-import { ArrowRight, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers, Users } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, ClipboardList, GraduationCap, Layers, MessageCircle, Users } from "lucide-react";
 import { requireAcademyAdmin } from "../../api/admin-access";
 import { curriculumStats } from "../../api/admin-curriculum";
 import { AdminHeading } from "../admin/AdminUi";
@@ -11,6 +11,7 @@ export default async function AdminOverview() {
   const user = await requireAcademyAdmin();
   const stats = await curriculumStats();
   const shortcuts = [
+    { href: "pertanyaan", title: "Tanya Ustadz", detail: "Baca pertanyaan peserta, teruskan kepada ustadz, lalu sampaikan jawabannya.", icon: MessageCircle },
     { href: "materi", title: "Materi", detail: "Unggah audio dan PDF, atur urutan, serta ubah status publikasi materi.", icon: BookOpen },
     { href: "kuis", title: "Ujian", detail: "Kelola ujian harian, pekanan, dan akhir beserta soal, jawaban, serta tenggatnya.", icon: ClipboardList },
     { href: "peserta", title: "Peserta", detail: "Kelola profil, nomor peserta, kelompok, dan keikutsertaan angkatan.", icon: Users },

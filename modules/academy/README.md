@@ -259,3 +259,14 @@ Materi Belajar/Ujian selama dipublikasikan, dengan otorisasi Laravel yang sama.
 
 Migration `2026_11_17_000003_add_academy_manual_material_schedule` hanya menambah
 dua datetime nullable pada materi. Tidak mengubah jadwal atau data lama.
+
+
+## Tanya Ustadz melalui admin
+
+Admin Academy membuka `/admin/academy/pertanyaan` dari sidebar atau dashboard.
+Daftar menampilkan pertanyaan belum dijawab lebih dahulu dan mendukung pagination.
+Detail menyediakan salin pertanyaan untuk diteruskan manual kepada ustadz; aplikasi
+tidak mengirim pesan WhatsApp/email otomatis. Admin mengisi jawaban ustadz lalu
+menekan Sampaikan jawaban ke peserta. Jawaban tampil pada Tanya Ustadz milik
+peserta yang bertanya. Endpoint pengajar/jawaban yang sudah ada tetap memeriksa
+peran admin/pengajar; peserta lain tidak dapat membaca pertanyaan privat tersebut.

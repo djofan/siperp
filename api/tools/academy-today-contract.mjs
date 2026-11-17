@@ -1,4 +1,10 @@
 export function applyAcademyTodayContract(document) {
+  document.paths['/api/v1/academy/learning/quizzes'] = {get:{
+    tags:['Academy'],summary:'List own published exams in admin order',security:[{bearerAuth:[]}],
+    description:'Requires an active Academy participant with the initial password changed. Published exams from own enrollments and published parent course/chapter only. Ordered by created_at ASC, id ASC, matching admin. Desktop preserves this order and numbers exams per kind. Mobile may prioritize deadlines without renumbering exams. Contains question counts and own attempt summaries, never question answer keys or snapshots.',
+    parameters:[{name:'cohort',in:'query',schema:{type:'string'},description:'Optional cohort filter within own enrollments.'}],
+    responses:{200:{description:'Exam list in data array',content:{'application/json':{schema:{type:'object',required:['data'],properties:{data:{type:'array',items:{type:'object'}}}}}}},401:{description:'Unauthenticated'},403:{description:'Module unavailable or initial password change required'},404:{description:'No participant profile'}},
+  }};
   const schedule = {type:['string','null'],pattern:'^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$',description:'Manual WIB local datetime. Both endpoints must be set together, close after open. Null pair removes the dashboard window only; history stays published.'};
   Object.assign(document.components.schemas.AcademyMaterialUpload.properties, {dashboardOpensAt:schedule,dashboardClosesAt:schedule});
   const date = {type:'string',format:'date-time'};

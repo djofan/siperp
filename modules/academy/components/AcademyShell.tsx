@@ -25,6 +25,7 @@ const teacherLinks = [
   { path: "/nilai", label: "Nilai Peserta", icon: "Trophy" },
 ] as const;
 const adminLinks = [
+  { path: "/pertanyaan", label: "Tanya Ustadz", icon: "Users" },
   { path: "", label: "Dashboard", icon: "Dashboard" },
   { path: "/materi", label: "Materi", icon: "BookOpen" },
   { path: "/kuis", label: "Ujian", icon: "Quiz" },

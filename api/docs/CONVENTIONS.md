@@ -518,3 +518,9 @@ Semua tanggal ujian diisi admin, durasi tetap timeLimitMinutes integer 1–1440.
 Endpoint dashboard-schedule otomatis dihapus. Tidak ada penulisan ulang tanggal
 ujian dari anchor cohort lama. Migration baru hanya menambah dua datetime nullable
 pada zakat_academy_lessons, tanpa backfill atau perubahan data lama.
+
+
+Daftar ujian peserta `/api/v1/academy/learning/quizzes` mengikuti urutan pembuatan
+`created_at ASC, id ASC`, sama dengan daftar admin. Nomor harian/pekanan/akhir
+mengikuti urutan tersebut per jenis. Desktop mempertahankan urutan admin; kartu
+mobile boleh mengutamakan tenggat tanpa mengubah nomor ujian.

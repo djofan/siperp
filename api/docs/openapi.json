@@ -8083,6 +8083,62 @@
         }
       }
     },
+    "/api/v1/academy/learning/quizzes": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "List own published exams in admin order",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires an active Academy participant with the initial password changed. Published exams from own enrollments and published parent course/chapter only. Ordered by created_at ASC, id ASC, matching admin. Desktop preserves this order and numbers exams per kind. Mobile may prioritize deadlines without renumbering exams. Contains question counts and own attempt summaries, never question answer keys or snapshots.",
+        "parameters": [
+          {
+            "name": "cohort",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Optional cohort filter within own enrollments."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exam list in data array",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Module unavailable or initial password change required"
+          },
+          "404": {
+            "description": "No participant profile"
+          }
+        }
+      }
+    },
     "/api/v1/academy/learning/today": {
       "get": {
         "tags": [
