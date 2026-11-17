@@ -256,7 +256,7 @@ class BantuanController
     {
         return DB::transaction(function () use ($request, $id, $access, $journal) {
             $row = $access->find($request, $id, true);
-            $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,education_other,return',
+            $data = $request->validate(['kind' => 'required|in:face,ktp,kk,supporting,sktm,survey_recipient,survey_front,survey_inside,survey_environment,survey_other,transfer,handover,certificate,receipt,education_other,handover_supporting,return',
                 'file' => \App\Modules\Bantuan\Services\Attachment::RULES, 'clientId' => 'nullable|uuid', 'caption' => 'nullable|string|max:1000']);
             $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
             $kind = $data['kind'];

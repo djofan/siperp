@@ -63,7 +63,7 @@ test("santunan uses compact cards without changing its transfer and two evidence
 test("survey evidence uploads inside survey entry and remains visible in the document gallery",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const documentUpload=actions.slice(actions.indexOf("export function DocumentUpload"),actions.indexOf("export function ActionPanel"));
-  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\|\|k==="transfer"\|\|\["handover","certificate","receipt","education_other"\].includes\(k\)\)return false/);
+  assert.match(documentUpload,/if\(k.startsWith\("survey_"\)\|\|k==="sktm"\|\|k==="transfer"\|\|\["handover","certificate","receipt","education_other","handover_supporting"\].includes\(k\)\)return false/);
   assert.match(actions,/aria-label="Foto hasil survei"/);
   assert.match(actions,/<PhotoSlots owner=\{viewer.id\} applicationId=\{row.id\} documents=\{row.documents\} requirements=\{surveyPhotosFor\(row.source\)\}/);
   assert.match(actions,/minimumTotal=\{viewer.settings.minimumSurveyPhotos\}/);

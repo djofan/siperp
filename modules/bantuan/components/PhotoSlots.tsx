@@ -21,7 +21,7 @@ export const surveyPhotosFor=(source:string):PhotoRequirement[]=>source==="onlin
   {kind:"ktp",minimum:1,hint:"Wajib sebelum hasil survei dikirim. Foto dari pengajuan awal tetap berlaku."},
   {kind:"kk",minimum:1,hint:"Seluruh kartu keluarga dan tulisannya harus terbaca."},...surveyPhotos
 ]:surveyPhotos;
-export const handoverPhotos:PhotoRequirement[]=[{kind:"handover",minimum:1},{kind:"certificate",minimum:1,hint:"Foto sertifikat kertas yang telah diserahkan."},{kind:"receipt",minimum:0}];
+export const handoverPhotos:PhotoRequirement[]=[{kind:"handover",minimum:1},{kind:"certificate",minimum:1,hint:"Foto sertifikat kertas yang telah diserahkan."},{kind:"receipt",minimum:0},{kind:"handover_supporting",minimum:0,hint:"Opsional. Tambahkan beberapa foto pendukung penyerahan bantuan atau uang, masing-masing dapat diberi keterangan."}];
 export function PhotoSlots({owner,applicationId,documents=[],requirements,editable=true,allowSurveyRevision=false,onReady,onUploaded,minimumTotal=0}:
   {owner:string;applicationId:string;documents?:AidDetail["documents"];requirements:PhotoRequirement[];editable?:boolean;allowSurveyRevision?:boolean;
    onReady?:(ready:boolean,missing:string[])=>void;onUploaded?:()=>void;minimumTotal?:number}){
