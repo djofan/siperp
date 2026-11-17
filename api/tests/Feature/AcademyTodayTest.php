@@ -8,7 +8,6 @@ use App\Modules\Academy\Models\ZakatAcademyProfile as Profile;
 use App\Modules\Academy\Models\ZakatAcademyQuiz as Quiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizOption as Option;
 use App\Modules\Academy\Models\ZakatAcademyQuizQuestion as Question;
-use App\Modules\Academy\Services\AcademyTimetable;
 use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
@@ -53,28 +52,18 @@ beforeEach(function () {
     $this->profile = (new Profile)->forceFill(['userId' => $this->student->id, 'nis' => 'QA-TODAY', 'mustChangePassword' => false]);
     $this->profile->save();
     DB::transaction(fn () => app(CohortLearning::class)->join($this->profile, $this->cohort));
-    Sanctum::actingAs($this->admin);
-    $this->putJson('/api/v1/academy/admin/cohorts/'.$this->cohort->id.'/dashboard-schedule', ['startsOn' => '2026-12-06'])->assertOk();
+    // Arbitrary manual dates: no cohort anchor is required.
+    foreach ($this->lessons as $i => $lesson) {
+        $start = CarbonImmutable::parse('2026-12-06 17:00', 'Asia/Jakarta')->addDays(intdiv($i, 4) * 7 + $i % 4);
+        $lesson->forceFill(['dashboardOpensAt' => $start->utc(), 'dashboardClosesAt' => $start->addDay()->utc()])->save();
+        $this->quizzes[$i]->forceFill(['quizDate' => $start->addDay()->utc(), 'closesAt' => $start->addDays(2)->utc(), 'releaseDay' => 1])->save();
+    }
+    $this->final->forceFill(['quizDate' => CarbonImmutable::parse('2027-01-01 17:00', 'Asia/Jakarta')->utc(), 'closesAt' => CarbonImmutable::parse('2027-01-03 17:00', 'Asia/Jakarta')->utc()])->save();
     Sanctum::actingAs($this->student);
 });
 
 afterEach(function () {
     $this->travelBack();
-});
-
-it('schedules twelve material windows and daily exams with the correct weekday offsets', function () {
-    foreach ([1 => 0, 2 => 1, 4 => 3, 5 => 7, 8 => 10, 9 => 14, 12 => 17] as $number => $days) {
-        [$start,$end] = app(AcademyTimetable::class)->materialWindow('2026-12-06', $number);
-        expect($start->setTimezone('Asia/Jakarta')->format('H:i'))->toBe('17:00');
-        expect($start->diffInHours($end))->toEqual(24);
-        $quiz = $this->quizzes[$number - 1]->fresh();
-        expect($quiz->quizDate->equalTo($start->addDay()))->toBeTrue();
-        expect($quiz->closesAt->equalTo($end->addDay()))->toBeTrue();
-        $this->travelTo($start);
-        $this->getJson('/api/v1/academy/learning/today')->assertOk()->assertHeader('Cache-Control', 'no-store, private')->assertJsonPath('data.material.number', $number);
-    }
-    expect($this->final->fresh()->quizDate->setTimezone('Asia/Jakarta')->format('l H:i'))->toBe('Friday 17:00');
-    expect($this->final->fresh()->closesAt->setTimezone('Asia/Jakarta')->format('l H:i'))->toBe('Sunday 17:00');
 });
 
 it('uses inclusive opening and exclusive closing with only one current item and leaves history intact', function () {
@@ -117,46 +106,55 @@ it('does not promote later drafts into an unpublished material slot and respects
     $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material.id', $this->lessons[1]->id)->assertJsonPath('data.exam', null);
 });
 
-it('denies schedule changes to students and blocks moving the timetable after an attempt starts', function () {
-    $url = '/api/v1/academy/admin/cohorts/'.$this->cohort->id.'/dashboard-schedule';
-    $this->putJson($url, ['startsOn' => '2026-12-13'])->assertForbidden();
+it('saves arbitrary manual material dates and rejects invalid pairs or student edits', function () {
+    $url = '/api/v1/academy/admin/materials/'.$this->lessons[0]->id;
+    $input = ['dashboardOpensAt' => '2026-12-02T09:15', 'dashboardClosesAt' => '2026-12-04T11:30'];
+    $this->putJson($url, $input)->assertForbidden();
     Sanctum::actingAs($this->admin);
-    $this->putJson($url, ['startsOn' => '2026-12-07'])->assertUnprocessable();
+    $this->putJson($url, $input)->assertOk();
+    expect($this->lessons[0]->fresh()->dashboardOpensAt->setTimezone('Asia/Jakarta')->format('Y-m-d H:i'))->toBe('2026-12-02 09:15');
+    $this->putJson($url, ['dashboardOpensAt' => '2026-12-04T11:30', 'dashboardClosesAt' => '2026-12-02T09:15'])->assertUnprocessable();
+    $this->putJson($url, ['dashboardOpensAt' => '2026-12-04T11:30'])->assertUnprocessable();
     Sanctum::actingAs($this->student);
-    $this->travelTo(CarbonImmutable::parse('2026-12-07 16:59:59', 'Asia/Jakarta'));
-    $this->postJson('/api/v1/academy/quizzes/'.$this->quizzes[0]->id.'/attempts')->assertForbidden();
-    $this->travelTo(CarbonImmutable::parse('2026-12-07 17:00', 'Asia/Jakarta'));
-    $this->postJson('/api/v1/academy/quizzes/'.$this->quizzes[0]->id.'/attempts')->assertCreated();
+    $this->travelTo(CarbonImmutable::parse('2026-12-02 09:15', 'Asia/Jakarta'));
+    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material.id', $this->lessons[0]->id);
+    $this->travelTo(CarbonImmutable::parse('2026-12-04 11:30', 'Asia/Jakarta'));
+    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material', null);
+    $this->getJson('/api/v1/academy/materials/'.$this->lessons[0]->id)->assertOk();
     Sanctum::actingAs($this->admin);
-    $this->putJson($url, ['startsOn' => '2026-12-13'])->assertConflict();
-    $this->putJson($url, ['startsOn' => null])->assertConflict();
+    $this->putJson($url, ['isPublished' => false])->assertOk();
+    expect($this->lessons[0]->fresh()->dashboardClosesAt)->not->toBeNull();
 });
 
-it('schedules later draft exams automatically and rolls back excess daily exams', function () {
-    $this->quizzes[11]->delete();
+it('never rewrites manual exam dates even when a legacy cohort anchor exists', function () {
+    $this->cohort->dashboardStartsOn = '2026-12-06';
+    $this->cohort->save();
     Sanctum::actingAs($this->admin);
-    $input = ['chapterId' => $this->chapter->id, 'title' => 'Ujian baru', 'kind' => 'DAILY', 'passingScore' => 0,
-        'timeLimitMinutes' => 10, 'releaseDay' => 30, 'isPublished' => false, 'isActive' => false];
-    $id = $this->postJson('/api/v1/academy/teacher/quizzes', $input)->assertOk()->json('data.id');
-    $quiz = Quiz::findOrFail($id);
-    expect($quiz->quizDate->setTimezone('Asia/Jakarta')->format('Y-m-d H:i'))->toBe('2026-12-24 17:00');
-    expect($quiz->releaseDay)->toBe(12);
-    $this->postJson('/api/v1/academy/teacher/quizzes', $input)->assertUnprocessable();
-    expect(Quiz::where('kind', 'DAILY')->count())->toBe(12);
+    foreach (['DAILY', 'WEEKLY', 'FINAL'] as $kind) {
+        $input = ['chapterId' => $this->chapter->id, 'title' => 'Manual '.$kind, 'kind' => $kind, 'passingScore' => 0,
+            'timeLimitMinutes' => 90, 'releaseDay' => 1, 'isPublished' => false, 'isActive' => false,
+            'quizDate' => '2026-12-03T10:20', 'closesAt' => '2026-12-05T12:40'];
+        $id = $this->postJson('/api/v1/academy/teacher/quizzes', $input)->assertOk()->json('data.id');
+        $quiz = Quiz::findOrFail($id);
+        expect($quiz->quizDate->setTimezone('Asia/Jakarta')->format('Y-m-d H:i'))->toBe('2026-12-03 10:20');
+        expect($quiz->closesAt->setTimezone('Asia/Jakarta')->format('Y-m-d H:i'))->toBe('2026-12-05 12:40');
+        expect($quiz->timeLimitMinutes)->toBe(90);
+    }
 });
 
-it('keeps an attempted automatic deadline when the administrator unpublishes the exam', function () {
+it('selects just the latest currently open material and exam without a twelve material limit', function () {
     $this->travelTo(CarbonImmutable::parse('2026-12-07 17:00', 'Asia/Jakarta'));
-    $this->postJson('/api/v1/academy/quizzes/'.$this->quizzes[0]->id.'/attempts')->assertCreated();
-    $end = $this->quizzes[0]->fresh()->closesAt;
-    Sanctum::actingAs($this->admin);
-    $this->postJson('/api/v1/academy/teacher/quizzes/'.$this->quizzes[0]->id, [
-        'chapterId' => $this->chapter->id, 'title' => 'Ujian nonaktif', 'kind' => 'DAILY', 'passingScore' => 0,
-        'timeLimitMinutes' => 10, 'isPublished' => false, 'isActive' => false,
-    ])->assertOk();
-    expect($this->quizzes[0]->fresh()->closesAt->equalTo($end))->toBeTrue();
-    Sanctum::actingAs($this->student);
-    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.exam', null);
+    $lesson = (new Lesson)->forceFill(['chapterId' => $this->chapter->id, 'title' => 'Materi tambahan', 'slug' => 'tambahan', 'order' => 13, 'releaseDay' => 1,
+        'isPublished' => true, 'videoProvider' => 'AUDIO', 'videoUrl' => '', 'dashboardOpensAt' => now()->subMinute(), 'dashboardClosesAt' => now()->addHour()]);
+    $lesson->save();
+    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material.id', $this->lessons[1]->id);
+    $lesson->dashboardOpensAt = now();
+    $lesson->save();
+    $this->lessons[1]->dashboardOpensAt = now()->subMinute();
+    $this->lessons[1]->save();
+    $this->quizzes[1]->forceFill(['quizDate' => now()->subMinute(), 'closesAt' => now()->addHour()])->save();
+    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material.id', $lesson->id)->assertJsonPath('data.exam.id', $this->quizzes[0]->id);
+    $this->getJson('/api/v1/academy/learning/today')->assertJsonPath('data.material.number', 13);
 });
 
 it('never uses query selectors to expose another cohort or participant', function () {

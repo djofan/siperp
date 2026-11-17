@@ -504,24 +504,17 @@ tersimpan. Pendamping tidak disalin ke periode baru. Migration additive
 ### Jadwal beranda Academy
 
 GET `/api/v1/academy/learning/today`: peserta aktif, password awal sudah diganti,
-Academy aktif. Resource memuat serverNow, nextChangeAt, material nullable dan exam
-nullable; maksimal satu per jenis, start <= sekarang < end. Materi 1–12 memakai
-urutan bab dan materi (termasuk posisi draft) dari angkatan/enrollment sendiri:
-Ahad–Rabu pukul 17 WIB selama tiga pekan, masing-masing 24 jam. Tidak menampilkan
-materi mendatang atau menggantinya dengan materi lama bila slot sedang kosong.
-Ujian mengikuti opening/closing yang tersimpan, aktif dan dipublikasikan; bila
-bertumpuk dipilih opening terbaru lalu ID stabil. Ujian selesai tetap tampil
-sampai batas waktunya. DTO tidak mengandung soal/kunci jawaban, catatan, atau
-URL file privat. `no-store, private`; GET tidak menulis data bisnis. Riwayat menu
-Materi dan Ujian tidak difilter oleh masa tampil beranda.
+Academy aktif. Maksimal satu materi dan satu ujian dari angkatan/enrollment sendiri.
+Mulai inklusif, berakhir eksklusif. Jika bertumpuk dipilih mulai terbaru lalu ID.
+Materi memakai dashboardOpensAt/dashboardClosesAt manual, tanpa anchor atau batas 12.
+Ujian memakai jadwal tersimpan, aktif, dipublikasikan dan otorisasi rilis yang sama.
+Tidak menyertakan soal, jawaban, catatan atau URL file privat. no-store, private.
+Riwayat pada menu Materi/Ujian tetap ada setelah masa tampil beranda berakhir.
 
-PUT `/api/v1/academy/admin/cohorts/{id}/dashboard-schedule`: admin Academy mengirim
-startsOn (Ahad YYYY-MM-DD, atau null). Sinkronisasi atomik DAILY Senin–Kamis 17 WIB
-24 jam, tiga pekan, maksimal 12; FINAL Jumat pekan keempat 17 WIB–Ahad 17 WIB,
-maksimal satu. Ujian pekanan tetap memakai tanggal admin. Penyimpanan ujian baru
-juga mengikuti anchor ini. Tidak mengubah publikasi atau jawaban. Tanggal tidak
-boleh digeser/dihapus setelah ada attempt; waktu otomatis pada ujian yang sudah
-dikerjakan dipertahankan saat edit judul/publikasi. Null mematikan slot materi di
-beranda, tidak membatalkan tanggal ujian yang sudah disimpan. Perhitungan relatif
-empat pekan dapat melintasi bulan. Migration additive nullable
-`2026_11_17_000002_add_academy_dashboard_schedule` diperlukan sebelum deploy.
+POST/PUT admin materials menerima dashboardOpensAt/dashboardClosesAt (WIB,
+YYYY-MM-DDTHH:mm). Keduanya diisi bersamaan, berakhir harus setelah mulai; null
+keduanya menonaktifkan slot beranda. Field yang tidak dikirim dipertahankan pada edit.
+Semua tanggal ujian diisi admin, durasi tetap timeLimitMinutes integer 1–1440.
+Endpoint dashboard-schedule otomatis dihapus. Tidak ada penulisan ulang tanggal
+ujian dari anchor cohort lama. Migration baru hanya menambah dua datetime nullable
+pada zakat_academy_lessons, tanpa backfill atau perubahan data lama.

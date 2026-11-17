@@ -46,3 +46,21 @@ test("completed current exams remain visible until their deadline with a result 
   const h=harness(),html=h.render({...initial,exam:{...item,id:"q1",title:"Ujian berjalan",kind:"DAILY",completed:true}});
   assert.match(html,/Ujian berjalan/);assert.match(html,/lihat hasil ujian/);
 });
+
+
+test("exam duration edits use a single total-minute input including durations over sixty minutes", () => {
+  const context = {exports:{},require(name){
+    if(name === "../ui/FieldCompat") return {
+      FormField: ({children,label}) => React.createElement("label",null,label,children),
+      Input: props => React.createElement("input",props),
+    };
+    return require(name);
+  }};
+  vm.runInNewContext(compile("modules/academy/components/admin/ExamDurationField.tsx"),context);
+  const html = renderToStaticMarkup(React.createElement(context.exports.ExamDurationField,{initialMinutes:90}));
+  assert.match(html,/name="timeLimitMinutes"/);
+  assert.match(html,/value="90"/);
+  assert.match(html,/max="1440"/);
+  assert.equal((html.match(/<input /g) ?? []).length,1);
+  assert.doesNotMatch(html,/Jam|hours/);
+});

@@ -38,12 +38,3 @@ export async function prepareCohortChapters(id: string): Promise<ActionState> {
   revalidatePath("/admin/academy", "layout");
   redirect(await academyServerHref(`/admin/academy/program/${encodeURIComponent(result.courseId)}`));
 }
-
-
-export async function saveDashboardSchedule(cohortId: string, _: ActionState, form: FormData): Promise<ActionState> {
-  try {
-    await apiRequest(`academy/admin/cohorts/${encodeURIComponent(cohortId)}/dashboard-schedule`, { method: "PUT", body: JSON.stringify({ startsOn: form.get("startsOn") || null }) });
-  } catch (error) { return { error: error instanceof ApiError ? error.message : "Jadwal gagal disimpan." }; }
-  revalidatePath("/academy", "layout"); revalidatePath("/admin/academy", "layout");
-  return { error: "", message: "Jadwal materi dan ujian otomatis disimpan." };
-}
