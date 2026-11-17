@@ -475,3 +475,14 @@ endpoint upload documents yang sudah ada. Opsional, dapat berisi beberapa berkas
 penyerahan berwenang, Call Center, atau admin sesuai scope dan tahap pencairan.
 Bukti penyerahan serta sertifikat tetap wajib. Lampiran ikut tab Laporan penyerahan,
 tersimpan terenkripsi, dan tidak menambah persyaratan penyelesaian. Tanpa migration.
+
+### Fondasi Keuangan
+
+GET `/api/v1/keuangan/overview`: Sanctum, user aktif, module.access:keuangan,
+dan allowlist role `admin`, `finance_admin`, `treasurer`, `approver`, `operator`
+(serta Core Superadmin). Registrasi awal nonaktif; preview Superadmin mengikuti
+aturan Core. Resource berisi phase=foundation, readOnly=true, role/roleLabel,
+permissions dan counts. Hitungan pengeluaran dalam modul, tugas waiting milik
+akun sendiri, master hanya sesuai peran; hitungan terlarang null. Tidak ada
+nominal, penerima, catatan, data akun lain, saldo atau kredensial. `no-store, private`.
+Belum ada endpoint bisnis tulis/impor maupun posting Core finance.

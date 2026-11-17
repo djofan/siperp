@@ -7993,6 +7993,137 @@
           }
         }
       }
+    },
+    "/api/v1/keuangan/overview": {
+      "get": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Read-only finance foundation overview",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active Core account and Keuangan module access required. Module starts inactive; only Core superadmin can preview inactive modules. Unknown roles denied. Counts expenses across this module only; approval count is own waiting assignments only. Null counters mean no capability. No recipient, amount, notes, IDs, ledger balance or credentials. No business writes or legacy import. Cache-Control no-store, private.",
+        "responses": {
+          "200": {
+            "description": "Authorized overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "phase",
+                        "readOnly",
+                        "role",
+                        "roleLabel",
+                        "permissions",
+                        "counts"
+                      ],
+                      "properties": {
+                        "phase": {
+                          "const": "foundation"
+                        },
+                        "readOnly": {
+                          "const": true
+                        },
+                        "role": {
+                          "enum": [
+                            "superadmin",
+                            "admin",
+                            "finance_admin",
+                            "treasurer",
+                            "approver",
+                            "operator"
+                          ]
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "permissions": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "readMasters",
+                            "readApprovals",
+                            "manageAccounts"
+                          ],
+                          "properties": {
+                            "readMasters": {
+                              "type": "boolean"
+                            },
+                            "readApprovals": {
+                              "type": "boolean"
+                            },
+                            "manageAccounts": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "counts": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "expenses",
+                            "sources",
+                            "categories",
+                            "myPendingApprovals"
+                          ],
+                          "properties": {
+                            "expenses": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "sources": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "categories": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "myPendingApprovals": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "minimum": 0
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated or inactive account"
+          },
+          "403": {
+            "description": "Module inactive, no access or role denied"
+          },
+          "404": {
+            "description": "Module not registered"
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {

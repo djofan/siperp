@@ -1,0 +1,13 @@
+.workspace { max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vw, 48px); color: #163b32; }
+.workspace > a { color: #06664e; text-decoration: underline; font-size: .9rem; }
+.workspace header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin: 28px 0; }
+.workspace h1 { font-size: 2rem; font-weight: 700; margin: 4px 0 8px; }
+.workspace h2 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.workspace p { line-height: 1.7; }
+.eyebrow { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; }
+.role { background: #e4f3ed; border-radius: 20px; padding: 8px 14px; font-size: .85rem; }
+.notice { background: #f3f8ed; border: 1px solid #cddfc0; padding: 20px; border-radius: 14px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px; margin: 24px 0; }
+.cards article, .panel { padding: 22px; border: 1px solid #d1dfd9; background: white; border-radius: 14px; }
+.cards strong { font-size: 2rem; }
+@media (max-width: 540px) { .workspace header { flex-direction: column; } .cards { grid-template-columns: 1fr 1fr; } .cards article { padding: 14px; } }
