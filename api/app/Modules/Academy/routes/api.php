@@ -28,6 +28,8 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('admin/materials/{id}', [MaterialController::class, 'adminShow']);
     Route::post('admin/materials', [MaterialController::class, 'save']);
     Route::post('admin/materials/{id}/duplicate', [MaterialController::class, 'duplicate']);
+    Route::get('learning/today', [\App\Modules\Academy\Http\Controllers\TodayController::class, 'index']);
+    Route::put('admin/cohorts/{id}/dashboard-schedule', [\App\Modules\Academy\Http\Controllers\TodayController::class, 'schedule']);
     Route::get('learning/cohorts', [CohortController::class, 'index']);
     Route::post('cohorts/{id}/join', [CohortController::class, 'join']);
     Route::post('admin/material-quizzes', [MaterialController::class, 'createQuiz']);

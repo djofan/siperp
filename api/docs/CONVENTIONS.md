@@ -217,7 +217,7 @@ Penyalinan atomik dan diserialisasi pada registri modul; laporan, status, dan do
 ## Kategori santunan dan kertas bantuan
 
 `POST /api/v1/bantuan/santunan` menerima kategori rutin `widow`, `orphan`,
-`foster_child`, dan `tahfidz` (Lembaga Tahfidz). Tidak rutin tetap hanya `orphan`.
+`foster_child`, `tahfidz` (Lembaga Tahfidz), `education` (Pendidikan), dan `general` (Umum). Tidak rutin mendukung `orphan`, `tahfidz`, `education`, `general`.
 Kategori disimpan pada kolom string yang sudah ada, tanpa migration. Kontrak
 input diekspor oleh `node api/tools/export-santunan-openapi.mjs`. Template
 kertas bantuan merupakan aset statis tanpa data penerima; hasil terisi
@@ -325,7 +325,7 @@ Omission saat update mempertahankan target lama; nilai negatif/noninteger ditola
 
 `POST /api/v1/bantuan/santunan/imports`: admin/bendahara, maksimal 200 baris JSON
 `{period, volunteerId, rows:[{recipientName, category, amount}]}` setelah Excel dibaca klien.
-Kategori orphan/widow; santunan rutin berstatus pending/process. Penyalur wajib aktif.
+Kategori orphan/widow/foster_child/tahfidz/education/general; `rows[].frequency` opsional (default routine). Tidak rutin hanya orphan/tahfidz/education/general; status awal pending/process. Penyalur wajib aktif.
 Transaksi atomik dan lock modul; nama (trim, case-insensitive), kategori, periode yang sama
 ditolak 422 termasuk impor ulang. Respons 200 Resource `{data:{createdCount}}`,
 no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
@@ -333,7 +333,7 @@ no-store, private; throttle 10/menit. Baris invalid membatalkan seluruh impor.
 Impor santunan menerima `rows[].verifierName`: nama pada daftar penyalur aktif,
 trim/spasi berlebih dan kapital diabaikan. Harus cocok dengan tepat satu akun aktif
 yang memiliki role volunteer. Tidak membuat akun baru atau mencocokkan nama sebagian.
-Nama tidak dikenal/ambigu membatalkan seluruh impor (422). `volunteerId` tingkat atas
+Nama tidak dikenal/ambigu membatalkan seluruh impor (422) bila tanpa `rows[].verifierId`. UI memberi saran typo tanpa memilih otomatis; pengguna mengonfirmasi akun melalui verifierId. ID harus penyalur aktif, diperiksa kembali Laravel. Nama sumber dicatat terenkripsi pada audit. `volunteerId` tingkat atas
 tetap diterima untuk klien lama; bila nama per baris dikirim, nama itu yang digunakan.
 Template baru berisi Nama, Program, Nominal Bantuan, Nama Verifikator, dengan dropdown
 nama dari daftar aktif. Data dummy unduhan menggunakan nama dari daftar yang sama.
@@ -486,3 +486,42 @@ permissions dan counts. Hitungan pengeluaran dalam modul, tugas waiting milik
 akun sendiri, master hanya sesuai peran; hitungan terlarang null. Tidak ada
 nominal, penerima, catatan, data akun lain, saldo atau kredensial. `no-store, private`.
 Belum ada endpoint bisnis tulis/impor maupun posting Core finance.
+
+
+### Pendamping laporan santunan
+
+PUT `/api/v1/bantuan/santunan/{id}/companion`: admin/bendahara mengirim
+`{version, companionId}` (null untuk mencabut). Target verifikator/penyalur aktif,
+berbeda dari penyalur utama. Versi basi atau laporan selesai ditolak 409.
+Pendamping hanya mendapat scope baca/download/unggah/complete santunan yang dipilih,
+tetap memerlukan status transferred/process untuk laporan. Tidak boleh mencatat
+transfer, mengubah penyalur utama, atau memilih pendamping lain. Uploader/completer
+aktual dan pengubah pendamping dicatat. Pencabutan berlaku langsung, bukti tetap
+tersimpan. Pendamping tidak disalin ke periode baru. Migration additive
+`2026_11_17_000001_add_santunan_companion` diperlukan sebelum deploy kode baru.
+
+
+### Jadwal beranda Academy
+
+GET `/api/v1/academy/learning/today`: peserta aktif, password awal sudah diganti,
+Academy aktif. Resource memuat serverNow, nextChangeAt, material nullable dan exam
+nullable; maksimal satu per jenis, start <= sekarang < end. Materi 1–12 memakai
+urutan bab dan materi (termasuk posisi draft) dari angkatan/enrollment sendiri:
+Ahad–Rabu pukul 17 WIB selama tiga pekan, masing-masing 24 jam. Tidak menampilkan
+materi mendatang atau menggantinya dengan materi lama bila slot sedang kosong.
+Ujian mengikuti opening/closing yang tersimpan, aktif dan dipublikasikan; bila
+bertumpuk dipilih opening terbaru lalu ID stabil. Ujian selesai tetap tampil
+sampai batas waktunya. DTO tidak mengandung soal/kunci jawaban, catatan, atau
+URL file privat. `no-store, private`; GET tidak menulis data bisnis. Riwayat menu
+Materi dan Ujian tidak difilter oleh masa tampil beranda.
+
+PUT `/api/v1/academy/admin/cohorts/{id}/dashboard-schedule`: admin Academy mengirim
+startsOn (Ahad YYYY-MM-DD, atau null). Sinkronisasi atomik DAILY Senin–Kamis 17 WIB
+24 jam, tiga pekan, maksimal 12; FINAL Jumat pekan keempat 17 WIB–Ahad 17 WIB,
+maksimal satu. Ujian pekanan tetap memakai tanggal admin. Penyimpanan ujian baru
+juga mengikuti anchor ini. Tidak mengubah publikasi atau jawaban. Tanggal tidak
+boleh digeser/dihapus setelah ada attempt; waktu otomatis pada ujian yang sudah
+dikerjakan dipertahankan saat edit judul/publikasi. Null mematikan slot materi di
+beranda, tidak membatalkan tanggal ujian yang sudah disimpan. Perhitungan relatif
+empat pekan dapat melintasi bulan. Migration additive nullable
+`2026_11_17_000002_add_academy_dashboard_schedule` diperlukan sebelum deploy.

@@ -439,12 +439,10 @@
           "amount"
         ],
         "properties": {
-          "frequency": {
+          "recipientName": {
             "type": "string",
-            "enum": [
-              "routine",
-              "non_routine"
-            ]
+            "minLength": 1,
+            "maxLength": 191
           },
           "category": {
             "type": "string",
@@ -452,30 +450,38 @@
               "widow",
               "orphan",
               "foster_child",
-              "tahfidz"
+              "tahfidz",
+              "education",
+              "general"
             ]
           },
-          "period": {
+          "frequency": {
             "type": "string",
-            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
-          },
-          "recipientName": {
-            "type": "string",
-            "maxLength": 191
-          },
-          "volunteerId": {
-            "type": "string",
-            "maxLength": 191
+            "enum": [
+              "routine",
+              "non_routine"
+            ]
           },
           "amount": {
             "type": "integer",
             "minimum": 1,
             "maximum": 9000000000000
+          },
+          "period": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          },
+          "volunteerId": {
+            "type": "string",
+            "maxLength": 191
           }
         },
         "allOf": [
           {
             "if": {
+              "required": [
+                "frequency"
+              ],
               "properties": {
                 "frequency": {
                   "const": "non_routine"
@@ -485,7 +491,12 @@
             "then": {
               "properties": {
                 "category": {
-                  "const": "orphan"
+                  "enum": [
+                    "orphan",
+                    "tahfidz",
+                    "education",
+                    "general"
+                  ]
                 }
               }
             }
@@ -1052,6 +1063,111 @@
             ]
           }
         }
+      },
+      "AcademyToday": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "serverNow",
+          "nextChangeAt",
+          "material",
+          "exam"
+        ],
+        "properties": {
+          "serverNow": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "nextChangeAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "title",
+                  "opensAt",
+                  "closesAt",
+                  "number"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "opensAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "closesAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "number": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 12
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exam": {
+            "anyOf": [
+              {
+                "type": "object",
+                "required": [
+                  "id",
+                  "title",
+                  "opensAt",
+                  "closesAt",
+                  "kind",
+                  "completed"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "opensAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "closesAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "kind": {
+                    "enum": [
+                      "DAILY",
+                      "WEEKLY",
+                      "FINAL"
+                    ]
+                  },
+                  "completed": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -1453,13 +1569,13 @@
         "tags": [
           "Bantuan"
         ],
-        "summary": "Tambah santunan rutin atau tidak rutin",
-        "description": "Admin/bendahara. Kategori rutin: widow, orphan, foster_child, tahfidz (Lembaga Tahfidz). Tidak rutin hanya orphan. Penyalur harus aktif dan memiliki akses.",
         "security": [
           {
             "bearerAuth": []
           }
         ],
+        "summary": "Create santunan",
+        "description": "Admin/treasurer. All six categories for routine; orphan/tahfidz/education/general for non_routine. Active volunteer owner required. Does not send money.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1472,13 +1588,22 @@
         },
         "responses": {
           "201": {
-            "description": "Santunan dibuat; data memuat id, number, frequency, category, period, recipientName, volunteerId, amount, transferStatus, distributionStatus, transferredAt, completedAt, version, report, documents"
+            "description": "Success; no-store, private"
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
           },
           "403": {
-            "description": "Peran tidak diizinkan"
+            "description": "Role forbidden"
+          },
+          "404": {
+            "description": "Not assigned or missing"
+          },
+          "409": {
+            "description": "Version or state conflict"
           },
           "422": {
-            "description": "Kategori atau penyalur tidak valid"
+            "description": "Invalid input"
           }
         }
       },
@@ -1486,76 +1611,31 @@
         "tags": [
           "Bantuan"
         ],
-        "summary": "Read authorized santunan and photo pins",
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "description": "Existing role scope and filters apply. Volunteers only see assigned records. Private no-store.",
+        "summary": "List scoped santunan",
+        "description": "Admin/treasurer/chair see all. Volunteer/verifier see only owned or explicitly assigned companion rows. Filters frequency, period YYYY-MM, transferStatus, distributionStatus. Includes nullable companionId, documents and protected report; no storage paths. Read access does not grant transfer/companion management.",
         "responses": {
           "200": {
-            "description": "Authorized santunan records",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "required": [
-                          "documents"
-                        ],
-                        "properties": {
-                          "documents": {
-                            "type": "array",
-                            "items": {
-                              "$ref": "#/components/schemas/BantuanPhotoDocument"
-                            }
-                          }
-                        },
-                        "additionalProperties": true
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            "description": "Success; no-store, private"
           },
           "401": {
-            "description": "Request rejected",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Unauthenticated/inactive"
           },
           "403": {
-            "description": "Request rejected",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Role forbidden"
+          },
+          "404": {
+            "description": "Not assigned or missing"
+          },
+          "409": {
+            "description": "Version or state conflict"
           },
           "422": {
-            "description": "Request rejected",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
+            "description": "Invalid input"
           }
         }
       }
@@ -1817,143 +1897,6 @@
           },
           "422": {
             "description": "Invalid answers"
-          }
-        }
-      }
-    },
-    "/api/v1/bantuan/santunan/imports": {
-      "post": {
-        "tags": [
-          "Bantuan"
-        ],
-        "summary": "Impor santunan rutin dari Excel yang telah dibaca klien",
-        "description": "Admin/bendahara, maksimal 200 baris; atomik. Nama/program/periode yang sama ditolak, termasuk impor ulang. Nama verifikator per baris dicocokkan ke satu penyalur aktif. verifierName wajib bila volunteerId legacy tidak dikirim; jika keduanya ada, nama per baris berlaku. Nama ambigu/tidak dikenal ditolak atomik. Status awal pending/process. Dibatasi 10/menit; no-store, private.",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "required": [
-                  "period",
-                  "rows"
-                ],
-                "allOf": [
-                  {
-                    "if": {
-                      "not": {
-                        "required": [
-                          "volunteerId"
-                        ]
-                      }
-                    },
-                    "then": {
-                      "properties": {
-                        "rows": {
-                          "items": {
-                            "required": [
-                              "verifierName"
-                            ]
-                          }
-                        }
-                      }
-                    }
-                  }
-                ],
-                "properties": {
-                  "period": {
-                    "type": "string",
-                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
-                  },
-                  "volunteerId": {
-                    "type": "string",
-                    "maxLength": 191
-                  },
-                  "rows": {
-                    "type": "array",
-                    "minItems": 1,
-                    "maxItems": 200,
-                    "items": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "recipientName",
-                        "category",
-                        "amount"
-                      ],
-                      "properties": {
-                        "verifierName": {
-                          "type": "string",
-                          "maxLength": 191,
-                          "description": "Nama persis dari daftar penyalur aktif; abaikan kapital dan spasi berlebih. Nama ambigu/tidak aktif/tidak ada ditolak. Wajib bila volunteerId legacy tidak dikirim."
-                        },
-                        "recipientName": {
-                          "type": "string",
-                          "minLength": 1,
-                          "maxLength": 191
-                        },
-                        "category": {
-                          "type": "string",
-                          "enum": [
-                            "orphan",
-                            "widow"
-                          ]
-                        },
-                        "amount": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 9000000000000
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Impor berhasil",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "data"
-                  ],
-                  "properties": {
-                    "data": {
-                      "type": "object",
-                      "required": [
-                        "createdCount"
-                      ],
-                      "properties": {
-                        "createdCount": {
-                          "type": "integer",
-                          "minimum": 1,
-                          "maximum": 200
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Peran tidak diizinkan"
-          },
-          "422": {
-            "description": "Data invalid, penerima ganda, atau penyalur tidak aktif; tidak ada baris disimpan"
-          },
-          "429": {
-            "description": "Batas impor tercapai"
           }
         }
       }
@@ -4134,7 +4077,7 @@
           "Bantuan"
         ],
         "summary": "Upload private santunan evidence",
-        "description": "Assigned volunteer or module admin; only after transfer and before completion. transfer_receipt is optional and never replaces aid_paper or recipient_photo. One file per kind; encrypted storage.",
+        "description": "Assigned volunteer or module admin; only after transfer and before completion. transfer_receipt is optional and never replaces aid_paper or recipient_photo. One file per kind; encrypted storage. Admin, assigned volunteer owner or explicitly assigned active verifier/volunteer companion only. Requires transferred/process. Original volunteer unchanged; actual uploader/completer recorded. Companion cannot transfer funds or delegate.",
         "security": [
           {
             "bearerAuth": []
@@ -8121,6 +8064,384 @@
           },
           "404": {
             "description": "Module not registered"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/learning/today": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Own current dashboard material and exam",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active authenticated participant, initial password changed, Academy active and not under maintenance. Uses current profile cohort and own course enrollment; query selectors cannot select another profile. At most one material and one exam: opening inclusive, closing exclusive, latest opening wins then stable ID. Twelve materials ordered by chapter and material order including draft placeholders; 4 per week for 3 weeks, Sunday-Wednesday 17 WIB, each 24 hours. Materials require an explicitly configured cohort Sunday, published course/chapter/lesson and existing release authorization. Quizzes require publication/active flags, own enrollment, bounded valid opening/closing. Completed exams stay in current slot until closing. Never includes questions, answers, snapshots, files or private participant fields. No business writes. nextChangeAt is earliest future boundary, timestamps UTC. no-store, private. Expired content is only excluded from dashboard, not unpublished or deleted from history.",
+        "responses": {
+          "200": {
+            "description": "Current activity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AcademyToday"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module unavailable or initial password change required"
+          },
+          "404": {
+            "description": "No participant profile"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/cohorts/{id}/dashboard-schedule": {
+      "put": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Configure cohort automatic timetable",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Academy admin/Superadmin only. startsOn must be Sunday YYYY-MM-DD or null. Atomic. Configures existing and later saved DAILY exams in creation order, including drafts: Monday-Thursday 17 WIB for 3 weeks, each 24 hours; max 12. One FINAL exam Friday of week 4 17 WIB to Sunday 17 WIB. WEEKLY dates stay manual. Changes quiz_date, closes_at and release_day (daily sequence 1-12, final 1) only; never publishes content or removes history. Cannot move/disable anchor after any attempt; automatic synchronization cannot shift attempted deadlines. Null disables material dashboard slots but retains stored exam times. Four relative weeks may cross months. Migration 2026_11_17_000002_add_academy_dashboard_schedule required.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "startsOn"
+                ],
+                "properties": {
+                  "startsOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved anchor; no-store, private"
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Not Academy admin"
+          },
+          "404": {
+            "description": "Unknown cohort"
+          },
+          "409": {
+            "description": "Attempts already started"
+          },
+          "422": {
+            "description": "Invalid date or timetable capacity"
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan/imports": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Import routine and non-routine santunan",
+        "description": "Admin/treasurer, atomic, max 200, throttle 10/min. Frequency defaults routine per row. Duplicate recipient/category/frequency/period aborts batch. verifierId is explicit confirmed active volunteer; when absent verifierName must match one active volunteer ignoring case/spaces, else top-level legacy volunteerId is used. Typo suggestions are client-only and never automatic assignments. Name without ID remains strict, ambiguous names fail. Active roles rechecked server-side. Stores pending/process, logs original name encrypted.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "period",
+                  "rows"
+                ],
+                "properties": {
+                  "period": {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"
+                  },
+                  "volunteerId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "rows": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "recipientName",
+                        "category",
+                        "amount"
+                      ],
+                      "properties": {
+                        "recipientName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 191
+                        },
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "widow",
+                            "orphan",
+                            "foster_child",
+                            "tahfidz",
+                            "education",
+                            "general"
+                          ]
+                        },
+                        "frequency": {
+                          "type": "string",
+                          "enum": [
+                            "routine",
+                            "non_routine"
+                          ]
+                        },
+                        "amount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 9000000000000
+                        },
+                        "verifierName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 191
+                        },
+                        "verifierId": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 191
+                        }
+                      },
+                      "allOf": [
+                        {
+                          "if": {
+                            "required": [
+                              "frequency"
+                            ],
+                            "properties": {
+                              "frequency": {
+                                "const": "non_routine"
+                              }
+                            }
+                          },
+                          "then": {
+                            "properties": {
+                              "category": {
+                                "enum": [
+                                  "orphan",
+                                  "tahfidz",
+                                  "education",
+                                  "general"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "not": {
+                        "required": [
+                          "volunteerId"
+                        ]
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "rows": {
+                          "items": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "verifierId"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "verifierName"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "createdCount"
+                      ],
+                      "properties": {
+                        "createdCount": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 200
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Role forbidden"
+          },
+          "404": {
+            "description": "Not assigned or missing"
+          },
+          "409": {
+            "description": "Version or state conflict"
+          },
+          "422": {
+            "description": "Invalid input"
+          },
+          "429": {
+            "description": "Rate limit"
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/santunan/{id}/companion": {
+      "put": {
+        "tags": [
+          "Bantuan"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Assign or revoke a santunan reporting companion",
+        "description": "Admin/treasurer only, version required. companionId null revokes; otherwise active verifier/volunteer different from owner. Completed rows reject edits. Owner unchanged; actor audited. Revocation immediately removes former companion read/download/report scope unless another authorized role applies. Not copied into next month.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "companionId"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "companionId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success; no-store, private"
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Role forbidden"
+          },
+          "404": {
+            "description": "Not assigned or missing"
+          },
+          "409": {
+            "description": "Version or state conflict"
+          },
+          "422": {
+            "description": "Invalid input"
           }
         }
       }

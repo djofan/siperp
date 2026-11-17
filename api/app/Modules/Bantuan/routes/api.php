@@ -57,6 +57,7 @@ Route::get('santunan', [SantunanController::class, 'index']);
 Route::post('santunan/imports', [SantunanController::class, 'import'])->middleware('throttle:10,1');
 Route::post('santunan/periods', [SantunanController::class, 'nextPeriod']);
 Route::post('santunan', [SantunanController::class, 'store']);
+Route::put('santunan/{id}/companion', [SantunanController::class, 'companion']);
 Route::post('santunan/{id}/transferred', [SantunanController::class, 'transferred']);
 Route::post('santunan/{id}/documents', [SantunanController::class, 'document'])->middleware('throttle:60,1');
 Route::post('santunan/{id}/complete', [SantunanController::class, 'complete']);

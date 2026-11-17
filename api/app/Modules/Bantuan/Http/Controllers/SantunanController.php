@@ -4,18 +4,24 @@ namespace App\Modules\Bantuan\Http\Controllers;
 
 use App\Modules\Bantuan\Models\Santunan;
 use App\Modules\Bantuan\Services\Access;
+use App\Modules\Bantuan\Services\Attachment;
+use App\Modules\Bantuan\Services\PhotoLocation;
+use App\Modules\Bantuan\Services\SantunanPrograms;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SantunanController
 {
     public function index(Request $request, Access $access)
     {
-        $access->allow($request, ['treasurer', 'volunteer', 'chair']);
+        $access->allow($request, ['treasurer', 'volunteer', 'verifier', 'chair']);
         $filters = $request->validate([
             'frequency' => 'nullable|in:routine,non_routine',
             'period' => 'nullable|date_format:Y-m',
@@ -24,7 +30,7 @@ class SantunanController
         ]);
         $query = Santunan::query()->latest('period')->latest('created_at');
         if (! $access->has($request, ['admin', 'treasurer', 'chair'])) {
-            $query->where('volunteer_id', $request->user()->id);
+            $query->where(fn ($scope) => $scope->where('volunteer_id', $request->user()->id)->orWhere('companion_id', $request->user()->id));
         }
         if (! empty($filters['period'])) {
             $query->whereDate('period', $filters['period'].'-01');
@@ -43,13 +49,13 @@ class SantunanController
         $access->allow($request, ['treasurer']);
         $data = $request->validate([
             'frequency' => 'required|in:routine,non_routine',
-            'category' => ['required', Rule::in(['widow', 'orphan', 'foster_child', 'tahfidz'])],
+            'category' => ['required', Rule::in(SantunanPrograms::CATEGORIES)],
             'period' => 'required|date_format:Y-m',
             'recipientName' => 'required|string|max:191',
             'volunteerId' => 'required|string|max:191',
             'amount' => 'required|integer|min:1|max:9000000000000',
         ]);
-        abort_if($data['frequency'] === 'non_routine' && $data['category'] !== 'orphan', 422, 'Santunan tidak rutin saat ini hanya untuk anak yatim.');
+        abort_unless(SantunanPrograms::supports($data['frequency'], $data['category']), 422, 'Program tidak mendukung jenis santunan ini.');
         abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
 
         $row = new Santunan;
@@ -78,13 +84,17 @@ class SantunanController
             'period' => 'required|date_format:Y-m',
             'volunteerId' => 'sometimes|required|string|max:191',
             'rows' => 'required|array|list|min:1|max:200',
-            'rows.*' => 'required|array:recipientName,category,amount,verifierName',
+            'rows.*' => 'required|array:recipientName,category,frequency,amount,verifierName,verifierId',
+            'rows.*.frequency' => 'sometimes|required|in:routine,non_routine',
+            'rows.*.verifierId' => 'sometimes|required|string|max:191',
             'rows.*.recipientName' => 'required|string|max:191',
-            'rows.*.category' => 'required|in:orphan,widow',
-            'rows.*.verifierName' => 'required_without:volunteerId|string|max:191',
+            'rows.*.category' => ['required', Rule::in(SantunanPrograms::CATEGORIES)],
+            'rows.*.verifierName' => 'sometimes|required|string|max:191',
             'rows.*.amount' => 'required|integer|min:1|max:9000000000000',
         ]);
-        if (isset($data['volunteerId'])) abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
+        if (isset($data['volunteerId'])) {
+            abort_unless($access->assigned($data['volunteerId'], 'volunteer'), 422, 'Pilih penyalur yang aktif.');
+        }
 
         return DB::transaction(function () use ($request, $access, $data) {
             DB::table('modules')->where('slug', 'bantuan')->lockForUpdate()->firstOrFail();
@@ -95,27 +105,36 @@ class SantunanController
                 ->get(['users.id', 'users.name', 'module_access.role', 'bantuan_staff.roles']);
             $normalize = fn (string $name) => mb_strtolower(preg_replace('/\s+/u', ' ', trim($name)));
             $seen = [];
-            $existing = Santunan::where('frequency', 'routine')->whereDate('period', $data['period'].'-01')
-                ->whereIn('category', ['orphan', 'widow'])->get();
+            $existing = Santunan::whereDate('period', $data['period'].'-01')->get();
             foreach ($existing as $row) {
-                $seen[$row->category.':'.mb_strtolower(trim($row->recipient['name']))] = true;
+                $seen[$row->frequency.':'.$row->category.':'.$normalize($row->recipient['name'])] = true;
             }
             foreach ($data['rows'] as $index => $item) {
                 $volunteerId = $data['volunteerId'] ?? null;
-                if (isset($item['verifierName'])) {
+                $frequency = $item['frequency'] ?? 'routine';
+                if (! SantunanPrograms::supports($frequency, $item['category'])) {
+                    throw ValidationException::withMessages(['rows.'.$index.'.category' => 'Program tidak mendukung jenis santunan ini.']);
+                }
+                if (isset($item['verifierId'])) {
+                    abort_unless($access->assigned($item['verifierId'], 'volunteer'), 422, 'Verifikator/penyalur pilihan tidak aktif atau tidak memiliki peran Penyalur.');
+                    $volunteerId = $item['verifierId'];
+                } elseif (isset($item['verifierName'])) {
                     $matches = $people->filter(fn ($person) => in_array('volunteer', Access::expandRoles($person->role, $person->roles), true)
                         && $normalize($person->name) === $normalize($item['verifierName']));
                     if ($matches->count() !== 1) {
-                        throw \Illuminate\Validation\ValidationException::withMessages([
+                        throw ValidationException::withMessages([
                             'rows.'.$index.'.verifierName' => 'Baris data '.($index + 1).': nama verifikator tidak cocok dengan satu penyalur aktif. Pilih nama unik dari daftar.',
                         ]);
                     }
                     $volunteerId = $matches->first()->id;
                 }
+                if (! $volunteerId) {
+                    throw ValidationException::withMessages(['rows.'.$index.'.verifierName' => 'Pilih verifikator/penyalur untuk baris ini.']);
+                }
                 $name = trim($item['recipientName']);
-                $key = $item['category'].':'.mb_strtolower($name);
+                $key = $frequency.':'.$item['category'].':'.$normalize($name);
                 if ($name === '' || isset($seen[$key])) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
+                    throw ValidationException::withMessages([
                         'rows.'.$index.'.recipientName' => 'Baris data '.($index + 1).': nama kosong atau penerima sudah ada pada program dan periode ini.',
                     ]);
                 }
@@ -123,15 +142,15 @@ class SantunanController
                 $row = new Santunan;
                 $row->forceFill([
                     'id' => (string) Str::uuid(), 'number' => $this->nextNumber(),
-                    'frequency' => 'routine', 'category' => $item['category'],
+                    'frequency' => $frequency, 'category' => $item['category'],
                     'period' => $data['period'].'-01', 'recipient' => ['name' => $name],
                     'volunteer_id' => $volunteerId, 'amount' => $item['amount'],
                     'transfer_status' => 'pending', 'distribution_status' => 'process', 'version' => 1,
                 ])->save();
-                $this->event($request, $access, $row, 'created', ['source' => 'excel_import']);
+                $this->event($request, $access, $row, 'created', ['source' => 'excel_import', 'verifierName' => $item['verifierName'] ?? null, 'volunteerId' => $volunteerId]);
             }
 
-            return (new \Illuminate\Http\Resources\Json\JsonResource([
+            return (new JsonResource([
                 'createdCount' => count($data['rows']),
             ]))->response()->header('Cache-Control', 'no-store, private');
         });
@@ -141,7 +160,7 @@ class SantunanController
     {
         $access->allow($request, ['treasurer']);
         $data = $request->validate(['sourcePeriod' => 'required|date_format:Y-m']);
-        $sourceDate = \Carbon\CarbonImmutable::createFromFormat('!Y-m', $data['sourcePeriod']);
+        $sourceDate = CarbonImmutable::createFromFormat('!Y-m', $data['sourcePeriod']);
         $targetDate = $sourceDate->addMonth();
 
         return DB::transaction(function () use ($request, $access, $sourceDate, $targetDate) {
@@ -165,10 +184,42 @@ class SantunanController
                 $this->event($request, $access, $row, 'created', ['sourceId' => $source->id, 'sourcePeriod' => $sourceDate->format('Y-m')]);
             }
 
-            return (new \Illuminate\Http\Resources\Json\JsonResource([
+            return (new JsonResource([
                 'period' => $targetDate->format('Y-m'), 'createdCount' => $sources->count(),
             ]))->response()->setStatusCode(201)->header('Location', url('/api/v1/bantuan/santunan?period='.$targetDate->format('Y-m')));
         });
+    }
+
+    public function companion(Request $request, string $id, Access $access)
+    {
+        $access->allow($request, ['treasurer']);
+        abort_if(array_diff(array_keys($request->all()), ['version', 'companionId']), 422, 'Field pendamping tidak valid.');
+        $data = $request->validate(['version' => 'required|integer|min:1', 'companionId' => 'present|nullable|string|max:191']);
+
+        return DB::transaction(function () use ($request, $id, $access, $data) {
+            $row = Santunan::lockForUpdate()->findOrFail($id);
+            abort_if($row->distribution_status === 'completed', 409, 'Laporan sudah selesai; pendamping tidak dapat diubah.');
+            abort_unless($row->version === (int) $data['version'], 409, 'Data berubah. Muat ulang halaman lalu coba lagi.');
+            $person = $data['companionId'];
+            abort_if($person === $row->volunteer_id, 422, 'Penyalur utama tidak perlu ditambahkan sebagai pendamping.');
+            if ($person !== null) {
+                abort_unless($access->assigned($person, 'verifier') || $access->assigned($person, 'volunteer'), 422, 'Pilih verifikator atau penyalur aktif sebagai pendamping.');
+            }
+            $previous = $row->companion_id;
+            $row->forceFill(['companion_id' => $person, 'version' => $row->version + 1])->save();
+            $this->event($request, $access, $row, 'companion_changed', ['previousId' => $previous, 'companionId' => $person]);
+
+            return (new JsonResource($this->payload($row)))->response()->header('Cache-Control', 'no-store, private');
+        });
+    }
+
+    private function allowReport(Request $request, Access $access, Santunan $row): void
+    {
+        $roles = $row->volunteer_id === $request->user()->id ? ['volunteer'] : [];
+        if ($row->companion_id === $request->user()->id) {
+            $roles = [...$roles, 'verifier', 'volunteer'];
+        }
+        $access->allow($request, $roles);
     }
 
     public function transferred(Request $request, string $id, Access $access)
@@ -192,11 +243,14 @@ class SantunanController
     {
         $row = $this->find($request, $access, $id, true);
         abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Bukti hanya dapat diunggah setelah dana ditransfer dan sebelum laporan selesai.');
-        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => \App\Modules\Bantuan\Services\Attachment::RULES]);
-        $photoLocation = \App\Modules\Bantuan\Services\PhotoLocation::fromRequest($request);
-        $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
+        $data = $request->validate(['kind' => 'required|in:aid_paper,recipient_photo,transfer_receipt', 'file' => Attachment::RULES]);
+        $photoLocation = PhotoLocation::fromRequest($request);
+        $this->allowReport($request, $access, $row);
 
         return DB::transaction(function () use ($request, $row, $data, $access, $photoLocation) {
+            $row = $this->find($request, $access, $row->id, true);
+            $this->allowReport($request, $access, $row);
+            abort_unless($row->transfer_status === 'transferred' && $row->distribution_status === 'process', 409, 'Santunan tidak lagi menerima bukti.');
             abort_if(DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->where('kind', $data['kind'])->exists(), 422, 'Foto untuk jenis bukti ini sudah tersedia.');
             $documentId = (string) Str::uuid();
             $path = 'bantuan/santunan/'.$row->id.'/'.$documentId.'.enc';
@@ -213,7 +267,7 @@ class SantunanController
     {
         return DB::transaction(function () use ($request, $id, $access) {
             $row = $this->find($request, $access, $id, true);
-            $access->allow($request, $row->volunteer_id === $request->user()->id ? ['volunteer'] : []);
+            $this->allowReport($request, $access, $row);
             abort_unless($row->transfer_status === 'transferred', 409, 'Dana belum ditandai sudah ditransfer.');
             abort_if($row->distribution_status === 'completed', 409, 'Santunan sudah selesai dilaporkan.');
             $data = $request->validate([
@@ -241,15 +295,15 @@ class SantunanController
         $this->find($request, $access, $document->santunan_id);
         $bytes = Crypt::decryptString(Storage::disk('local')->get($document->path));
 
-        return response($bytes, 200, \App\Modules\Bantuan\Services\Attachment::headers($document->mime, $document->id));
+        return response($bytes, 200, Attachment::headers($document->mime, $document->id));
     }
 
     private function find(Request $request, Access $access, string $id, bool $lock = false): Santunan
     {
-        $access->allow($request, ['treasurer', 'volunteer', 'chair']);
+        $access->allow($request, ['treasurer', 'volunteer', 'verifier', 'chair']);
         $query = Santunan::query();
         if (! $access->has($request, ['admin', 'treasurer', 'chair'])) {
-            $query->where('volunteer_id', $request->user()->id);
+            $query->where(fn ($scope) => $scope->where('volunteer_id', $request->user()->id)->orWhere('companion_id', $request->user()->id));
         }
         $row = ($lock ? $query->lockForUpdate() : $query)->findOrFail($id);
 
@@ -259,13 +313,14 @@ class SantunanController
     private function payload(Santunan $row): array
     {
         $documents = DB::table('bantuan_santunan_documents')->where('santunan_id', $row->id)->get(['id', 'kind', 'mime', 'created_at', 'photo_location'])->map(function ($doc) {
-            $doc->location = \App\Modules\Bantuan\Services\PhotoLocation::present($doc->photo_location);
+            $doc->location = PhotoLocation::present($doc->photo_location);
             unset($doc->photo_location);
+
             return $doc;
         });
 
         return ['id' => $row->id, 'number' => $row->number, 'frequency' => $row->frequency, 'category' => $row->category,
-            'period' => $row->period->format('Y-m'), 'recipientName' => $row->recipient['name'], 'volunteerId' => $row->volunteer_id,
+            'period' => $row->period->format('Y-m'), 'recipientName' => $row->recipient['name'], 'volunteerId' => $row->volunteer_id, 'companionId' => $row->companion_id,
             'amount' => $row->amount, 'transferStatus' => $row->transfer_status, 'distributionStatus' => $row->distribution_status,
             'transferredAt' => $row->transferred_at?->toDateString(), 'report' => $row->report,
             'completedAt' => $row->completed_at?->toDateString(), 'version' => $row->version, 'documents' => $documents];
