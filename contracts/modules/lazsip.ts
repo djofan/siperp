@@ -7,6 +7,7 @@ export interface LazsipSiteContent {
 }
 
 export interface LazsipNews {
+  documentationPhotos?: DocumentationPhoto[] | null;
   id: string;
   title: string;
   content: string;
@@ -133,6 +134,7 @@ export interface LazsipPaymentFeeRef {
 }
 
 export interface LazsipBeneficiary {
+  documentationPhotos?: DocumentationPhoto[] | null;
   id: string;
   name: string;
   address: string;

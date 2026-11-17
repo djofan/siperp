@@ -531,3 +531,12 @@ Daftar ujian peserta `/api/v1/academy/learning/quizzes` mengikuti urutan pembuat
 `created_at ASC, id ASC`, sama dengan daftar admin. Nomor harian/pekanan/akhir
 mengikuti urutan tersebut per jenis. Desktop mempertahankan urutan admin; kartu
 mobile boleh mengutamakan tenggat tanpa mengubah nomor ujian.
+
+Galeri detail berita dan penyaluran LAZSIP memakai `documentationPhotos` (opsional,
+maksimal 50 foto dengan id unik, image, caption maksimal 500 karakter, isDemo).
+Admin dapat menambah, mengubah urutan/keterangan, dan menghapus referensi foto.
+Field tidak dikirim mempertahankan galeri lama; [] mengosongkannya. Galeri berita
+draft tetap privat. Foto penyaluran sengaja publik: jangan unggah KTP, rekening,
+atau dokumen privat. Foto penyerahan/sertifikat yang lama tetap terpisah.
+Deployment memerlukan migration `2026_11_17_140000_add_lazsip_news_beneficiary_galleries`;
+backup database sebelum menjalankan migration lalu build/restart aplikasi.

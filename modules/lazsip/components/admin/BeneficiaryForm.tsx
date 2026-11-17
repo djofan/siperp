@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
 import { Toggle } from "@/modules/lazsip/components/admin/Toggle";
+import type { DocumentationPhoto } from "@/contracts/modules/lazsip";
+import { DocumentationEditor, useDocumentationEditor } from "./DocumentationEditor";
 import { panelClasses } from "@/components/ui/panel";
 
 interface BeneficiaryFormValues {
@@ -59,9 +61,10 @@ export function BeneficiaryForm({
   initialValues,
 }: {
   beneficiaryId?: string;
-  initialValues?: Partial<BeneficiaryFormValues> & { isPinned?: boolean };
+  initialValues?: Partial<BeneficiaryFormValues> & { isPinned?: boolean; documentationPhotos?: DocumentationPhoto[] };
 }) {
   const router = useRouter();
+  const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!beneficiaryId;
 
   const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
@@ -90,7 +93,7 @@ export function BeneficiaryForm({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploads, setUploads] = useState<Record<string,boolean>>({});
-  const uploading = Object.values(uploads).some(Boolean);
+  const uploading = Object.values(uploads).some(Boolean) || gallery.uploading;
   function uploadState(field:string,busy:boolean){setUploads(previous=>({...previous,[field]:busy}));}
 
   const age = useMemo(() => hitungUmur(values.birthDate), [values.birthDate]);
@@ -102,6 +105,7 @@ export function BeneficiaryForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    if (gallery.photos.some(photo => !photo.image)) { setError("Lengkapi foto galeri atau hapus baris kosong."); return; }
     if (uploading) { setError("Tunggu sampai semua foto selesai diunggah."); return; }
 
     if (!isEdit && !values.photo) {
@@ -119,6 +123,7 @@ export function BeneficiaryForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...values,
+        documentationPhotos: gallery.photos,
         age: age ?? 0,
         name: values.name,
         address: values.address,
@@ -343,6 +348,7 @@ export function BeneficiaryForm({
       <LoadingButton type="submit" loading={isSubmitting} disabled={uploading} className="w-fit px-8">
         {isEdit ? "Simpan Perubahan" : "Tambah Data"}
       </LoadingButton>
+      <DocumentationEditor editor={gallery} kind="penyaluran bantuan" saving={isSubmitting}/>
     </form>
   );
 }

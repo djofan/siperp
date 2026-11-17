@@ -1,3 +1,4 @@
+import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 import { notFound } from "next/navigation";
 import { getPublishedNewsById, listPublishedNews } from "@/modules/lazsip/api/news";
 import { formatDate } from "@/modules/lazsip/components/format";
@@ -45,6 +46,8 @@ export default async function LazsipBeritaDetailPage({
             {news.content}
           </p>
         </div>
+
+        <CampaignGallery photos={news.documentationPhotos ?? []} title={news.title} kind="news"/>
 
         <div className="mt-12 border-t border-lazsip-primary-100 pt-8">
           <Button href="/lazsip/berita" variant="secondary">
