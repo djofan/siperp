@@ -28,3 +28,8 @@ export function formatCalendarParts(date: Date): { day: number; month: string } 
   const month = new Intl.DateTimeFormat("id-ID", { month: "short" }).format(date).replace(".", "").toUpperCase();
   return { day: date.getDate(), month };
 }
+
+export function formatNewsDate(newsDate: string | null | undefined, createdAt: Date): string {
+  if (!newsDate) return formatDate(createdAt);
+  return new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${newsDate}T00:00:00Z`));
+}

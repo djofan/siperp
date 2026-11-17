@@ -35,7 +35,7 @@ class ContentController
             if (! $request->route('admin')) {
                 $query->orderByDesc('is_pinned');
             }
-            $query->orderByDesc('created_at');
+            $query->orderByRaw('COALESCE(news_date, DATE(created_at)) DESC')->orderByDesc('created_at');
         } elseif ($resource === 'program-bantuan') {
             $query->orderByDesc('is_pinned')->orderByDesc('created_at');
         } elseif ($resource === 'penyaluran-bantuan') {
@@ -67,7 +67,7 @@ class ContentController
         $id = $request->route('id');
         $image = ['sometimes', 'nullable', 'string', 'max:191', 'regex:~^(?:/uploads/sip/[a-f0-9-]{36}\.(?:jpg|png|webp)|https?://[^\s]+)$~i'];
         $rules = match ($resource) {
-            'news' => ['title' => 'required|string|max:191', 'content' => 'required|string|max:1000000', 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
+            'news' => ['newsDate' => 'sometimes|nullable|date_format:Y-m-d', 'title' => 'required|string|max:191', 'content' => 'required|string|max:1000000', 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
             'program-bantuan' => ['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'slug' => ['required', 'string', 'max:191', Rule::unique('sip_program_bantuan', 'slug')->ignore($id)], 'image' => $image, 'campaignUrl' => 'sometimes|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],
             'penyaluran-bantuan' => ['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'image' => $image, 'location' => 'sometimes|nullable|string|max:191', 'date' => 'required|date'],
             'laporan' => ['title' => 'required|string|max:191', 'type' => 'required|in:bulanan,tahunan', 'periodYear' => 'required|integer|min:1900|max:9999', 'periodMonth' => 'required_if:type,bulanan|nullable|integer|min:1|max:12', 'fileUrl' => 'required|string|max:191'],

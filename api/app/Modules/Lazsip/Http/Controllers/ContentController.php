@@ -60,6 +60,8 @@ class ContentController
         }
         if ($resource === 'activities') {
             $query->orderByDesc('date');
+        } elseif ($resource === 'news') {
+            $query->orderByRaw('COALESCE(news_date, DATE(created_at)) DESC')->orderByDesc('created_at');
         } elseif ($resource === 'partners') {
             $query->orderBy('name');
         } elseif ($resource === 'payment-fees') {
@@ -91,7 +93,7 @@ class ContentController
         $title = 'required|string|max:191';
         $text = 'required|string|max:1000000';
         $rules = match ($request->route('resource')) {
-            'news' => ['title' => $title, 'content' => $text, 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
+            'news' => ['newsDate' => 'sometimes|nullable|date_format:Y-m-d', 'title' => $title, 'content' => $text, 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
             'activities' => ['title' => $title, 'description' => $text, 'image' => $image, 'date' => 'required|date', 'isPinned' => 'required|boolean'],
             'partners' => ['name' => $title, 'logo' => $image, 'url' => 'sometimes|nullable|url:http,https|max:191'],
             'programs' => ['title' => $title, 'description' => $text, 'requirements' => 'sometimes|nullable|string|max:1000000', 'image' => $image, 'category' => 'sometimes|in:umum,pendidikan,sarsip', 'type' => 'required|in:berita,daftar', 'formUrl' => 'required_if:type,daftar|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],

@@ -16,7 +16,7 @@ class SipNews extends DomainModel
 
     const UPDATED_AT = null;
 
-    protected array $fieldMap = ['documentationPhotos' => 'documentation_photos', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
+    protected array $fieldMap = ['newsDate' => 'news_date', 'documentationPhotos' => 'documentation_photos', 'isPinned' => 'is_pinned', 'createdAt' => 'created_at'];
 
     protected $casts = ['documentation_photos' => 'array', 'is_pinned' => 'boolean', 'created_at' => 'immutable_datetime'];
 

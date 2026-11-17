@@ -19,6 +19,7 @@ export interface SipProgramBantuan {
 }
 
 export interface SipNews {
+  newsDate?: string | null;
   documentationPhotos?: SipDocumentationPhoto[] | null;
   id: string;
   title: string;

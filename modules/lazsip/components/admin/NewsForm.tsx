@@ -10,6 +10,7 @@ import { DocumentationEditor, useDocumentationEditor } from "./DocumentationEdit
 import { panelClasses } from "@/components/ui/panel";
 
 interface NewsFormValues {
+  newsDate: string;
   documentationPhotos: DocumentationPhoto[];
   title: string;
   content: string;
@@ -28,6 +29,7 @@ export function NewsForm({
   const router = useRouter();
   const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!newsId;
+  const [newsDate, setNewsDate] = useState(initialValues?.newsDate ?? "");
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
@@ -55,7 +57,7 @@ export function NewsForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content, image, isPinned, status, documentationPhotos: gallery.photos }),
+      body: JSON.stringify({ newsDate: newsDate || null, title, content, image, isPinned, status, documentationPhotos: gallery.photos }),
     });
 
     if (!response.ok) {
@@ -100,6 +102,10 @@ export function NewsForm({
             />
           </div>
 
+          <label className="flex flex-col gap-2 text-sm font-medium text-foreground">Tanggal berita
+            <input type="date" value={newsDate} onChange={event=>setNewsDate(event.target.value)} className="rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"/>
+            <span className="text-xs font-normal opacity-70">Tanggal yang ditampilkan pada card dan detail berita. Jika kosong, tanggal pembuatan digunakan.</span>
+          </label>
           <ImageUploadField label="Gambar Utama" initialUrl={image} onChange={(url) => setImage(url ?? "")} required={!isEdit} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} />
         </div>
 

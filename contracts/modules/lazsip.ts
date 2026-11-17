@@ -7,6 +7,7 @@ export interface LazsipSiteContent {
 }
 
 export interface LazsipNews {
+  newsDate?: string | null;
   documentationPhotos?: DocumentationPhoto[] | null;
   id: string;
   title: string;

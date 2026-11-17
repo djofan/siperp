@@ -22,10 +22,10 @@ export async function BeritaSection() {
           pinnedItems={pinned}
           gridItems={rest}
           renderItem={(item) => (
-            <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} />
+            <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} newsDate={item.newsDate} />
           )}
           renderPinnedItem={(item) => (
-            <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} featured />
+            <NewsCard id={item.id} title={item.title} content={item.content} image={item.image} createdAt={item.createdAt} newsDate={item.newsDate} featured />
           )}
           seeAllHref="/lazsip/berita"
         />

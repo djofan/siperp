@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ImagePlaceholder } from "@/modules/lazsip/components/ui/ImagePlaceholder";
 import { PINNED_OVERLAY_STYLE } from "@/modules/lazsip/components/ui/pinnedOverlay";
 import { PinnedMark } from "@/modules/lazsip/components/ui/PinnedMark";
-import { formatDate } from "@/modules/lazsip/components/format";
+import { formatNewsDate } from "@/modules/lazsip/components/format";
 
 interface NewsCardProps {
   id: string;
@@ -10,10 +10,11 @@ interface NewsCardProps {
   content: string;
   image: string | null;
   createdAt: Date;
+  newsDate?: string | null;
   featured?: boolean;
 }
 
-export function NewsCard({ id, title, content, image, createdAt, featured = false }: NewsCardProps) {
+export function NewsCard({ id, title, content, image, createdAt, newsDate, featured = false }: NewsCardProps) {
   if (featured) {
     return (
       <Link
@@ -31,7 +32,7 @@ export function NewsCard({ id, title, content, image, createdAt, featured = fals
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3M16 3v3M3.5 9h17M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" />
             </svg>
-            {formatDate(createdAt)}
+            {formatNewsDate(newsDate, createdAt)}
           </span>
         </div>
       </Link>
@@ -49,7 +50,7 @@ export function NewsCard({ id, title, content, image, createdAt, featured = fals
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v3M16 3v3M3.5 9h17M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z" />
           </svg>
-          {formatDate(createdAt)}
+          {formatNewsDate(newsDate, createdAt)}
         </span>
         <h3 className="line-clamp-2 text-sm font-bold text-lazsip-primary-900 group-hover:text-lazsip-primary-700">
           {title}

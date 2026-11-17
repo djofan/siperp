@@ -5898,6 +5898,13 @@
                     "items": {
                       "$ref": "#/components/schemas/LazsipDocumentationPhoto"
                     }
+                  },
+                  "newsDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
                   }
                 }
               }
@@ -5958,6 +5965,13 @@
                     "items": {
                       "$ref": "#/components/schemas/LazsipDocumentationPhoto"
                     }
+                  },
+                  "newsDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
                   }
                 }
               }
@@ -8883,6 +8897,21 @@
     "timestamp": "Asia/Jakarta YYYYMMDDHHmmss",
     "credentials": "Trim surrounding whitespace from VA/API key consistently; reject internal whitespace in API key. Snapshot the normalized VA on new transactions.",
     "diagnostics": "payment:ipaymu-check validates configuration; --remote calls /api/v2/balance and discards financial values. Never prints key, VA or signature. Checkout distinguishes IPAYMU_SIGNATURE_REJECTED from IP/domain rejection; definite HTTP 4xx rejections allow retrying the same pending transaction."
+  },
+  "x-editorial-news-date": {
+    "modules": [
+      "sip",
+      "lazsip"
+    ],
+    "field": "newsDate",
+    "schema": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "behavior": "Optional editable calendar date YYYY-MM-DD for public news cards/details and chronological ordering after pin priority. Omitted on update preserves value; null uses creation date as fallback. createdAt stays unchanged. Active module content admins only. This is not scheduled publishing; status still controls visibility."
   },
   "x-sip-content-galleries": {
     "resources": [

@@ -10,6 +10,7 @@ import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButto
 import { panelClasses } from "@/components/ui/panel";
 
 interface NewsFormValues {
+  newsDate: string;
   documentationPhotos: SipDocumentationPhoto[];
   title: string;
   content: string;
@@ -28,6 +29,7 @@ export function NewsForm({
   const router = useRouter();
   const gallery = useDocumentationEditor(initialValues?.documentationPhotos ?? []);
   const isEdit = !!newsId;
+  const [newsDate, setNewsDate] = useState(initialValues?.newsDate ?? "");
   const [title, setTitle] = useState(initialValues?.title ?? "");
   const [content, setContent] = useState(initialValues?.content ?? "");
   const [image, setImage] = useState(initialValues?.image ?? "");
@@ -54,7 +56,7 @@ export function NewsForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ documentationPhotos: gallery.photos, title, content, image, isPinned, status }),
+      body: JSON.stringify({ newsDate: newsDate || null, documentationPhotos: gallery.photos, title, content, image, isPinned, status }),
     });
 
     if (!response.ok) {
@@ -72,6 +74,10 @@ export function NewsForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className={panelClasses("p-6 sm:p-8")}>
         <div className="flex flex-col gap-5">
+          <label className="flex flex-col gap-2 text-sm font-medium text-foreground">Tanggal berita
+            <input type="date" value={newsDate} onChange={event=>setNewsDate(event.target.value)} className="rounded-xl border border-border bg-surface-muted px-4 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-accent"/>
+            <span className="text-xs font-normal opacity-70">Tanggal yang ditampilkan pada card dan detail berita. Jika kosong, tanggal pembuatan digunakan.</span>
+          </label>
           <SipImageUploadField label="Gambar Utama" initialUrl={image} onUploadingChange={busy=>gallery.uploadChanged("cover",busy)} onChange={(url) => setImage(url ?? "")} required={!isEdit} />
 
           <div className="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3.5">
