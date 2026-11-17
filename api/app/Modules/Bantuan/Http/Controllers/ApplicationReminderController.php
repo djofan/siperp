@@ -28,8 +28,13 @@ class ApplicationReminderController
         ]);
         return DB::transaction(function () use ($request, $access, $input) {
             $groups = [];
+            $skipped = [];
             foreach (collect($input['applications'])->sortBy('id') as $item) {
-                $data = $this->handle($request, $item['id'], $access, true, ['status'=>$item['status']])->getData(true)['data'];
+                $data = $this->handle($request, $item['id'], $access, true, ['status'=>$item['status']], true)->getData(true)['data'];
+                if (isset($data['skipped'])) {
+                    $skipped[] = $data['skipped'];
+                    continue;
+                }
                 foreach ($data['recipients'] as $recipient) {
                     $id = $recipient['id'];
                     if (!isset($groups[$id])) $groups[$id] = ['id'=>$id, 'name'=>$recipient['name'], 'url'=>$recipient['url'] ? strtok($recipient['url'], '?') : null, 'items'=>[]];
@@ -47,15 +52,15 @@ class ApplicationReminderController
                 if ($group['url'] && !$group['copyRequired']) $group['url'] .= '?text='.$encoded;
                 unset($group['items']);
             }
-            return response()->json(['data'=>['count'=>count($input['applications']), 'recipients'=>array_values($groups)]]);
+            return response()->json(['data'=>['count'=>count($input['applications']) - count($skipped), 'skipped'=>$skipped, 'recipients'=>array_values($groups)]]);
         });
     }
 
-    private function handle(Request $request, string $id, Access $access, bool $send, ?array $validated = null)
+    private function handle(Request $request, string $id, Access $access, bool $send, ?array $validated = null, bool $skipMissingRecipient = false)
     {
         $access->allow($request, ['call_center']);
         $input = $validated ?? $request->validate(['status' => 'required|string', 'recipientIds' => 'sometimes|array|min:1|max:100', 'recipientIds.*' => 'required|string|distinct', 'note' => 'nullable|string|max:1000']);
-        return DB::transaction(function () use ($request, $id, $access, $input, $send) {
+        return DB::transaction(function () use ($request, $id, $access, $input, $send, $skipMissingRecipient) {
             $row = $access->find($request, $id, $send);
             abort_unless($row->status === $input['status'], 409, 'Tahap pengajuan sudah berubah. Muat ulang daftar terlebih dahulu.');
             abort_unless(isset(Whatsapp::TASKS[$row->status]), 409, 'Pengajuan ini tidak memiliki tugas yang perlu diingatkan.');
@@ -102,6 +107,12 @@ class ApplicationReminderController
             $selected = $input['recipientIds'] ?? $currentIds;
             abort_if(array_diff($selected, $eligible->pluck('id')->all()), 422, 'Penerima tidak terkait pengajuan ini atau sudah tidak aktif.');
             $members = $eligible->whereIn('id', $selected)->values();
+            if ($members->isEmpty() && $skipMissingRecipient) {
+                return response()->json(['data'=>['skipped'=>[
+                    'id'=>$row->id, 'number'=>$row->number, 'task'=>$task,
+                    'reason'=>'Tidak ada penerima aktif selain akun Anda pada tahap ini. Periksa penugasan dan akses petugas; pengingat tidak dikirim ke akun sendiri.',
+                ]]]);
+            }
             abort_if($members->isEmpty(), 422, 'Belum ada petugas aktif yang dapat menerima pengingat pada tahap ini.');
             // One web reminder per application stage, recipient and day; manual WhatsApp remains available.
             app(Journal::class)->notify($row, 'Call Center meminta koordinasi pengajuan. Tahap saat ini: '.$task, [], $members->pluck('id')->all(), 'manual-task:'.$row->status.':'.now()->toDateString());

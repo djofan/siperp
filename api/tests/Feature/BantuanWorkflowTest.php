@@ -1617,6 +1617,29 @@ it('groups bulk reminders by responsible recipient and rolls back stale batches'
     $this->postJson($url,['applications'=>[$items[0],$items[0]]])->assertUnprocessable();
 });
 
+it('skips unavailable bulk reminder recipients without losing valid reminders', function () {
+    $items = [];
+    foreach (['survey_assigned', 'survey_cc_review'] as $status) {
+        $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status'=>$status, 'verifier_id'=>$this->verifier->id])->save();
+        $items[] = ['id'=>$id, 'status'=>$status];
+    }
+    $url = '/api/v1/bantuan/application-reminders';
+    $this->postJson($url, ['applications'=>$items])->assertOk()
+        ->assertJsonPath('data.count', 1)->assertJsonCount(1, 'data.recipients')
+        ->assertJsonPath('data.recipients.0.id', $this->verifier->id)
+        ->assertJsonCount(1, 'data.skipped')->assertJsonPath('data.skipped.0.id', $items[1]['id']);
+    expect(DB::table('bantuan_notifications')->where('application_id', $items[0]['id'])->count())->toBe(1);
+    expect(DB::table('bantuan_notifications')->where('application_id', $items[1]['id'])->count())->toBe(0);
+    expect(DB::table('bantuan_events')->where('application_id', $items[1]['id'])->where('action', 'prepare_task_reminder')->count())->toBe(0);
+    $this->postJson($url, ['applications'=>[$items[1]]])->assertOk()
+        ->assertJsonPath('data.count', 0)->assertJsonCount(0, 'data.recipients')->assertJsonCount(1, 'data.skipped');
+    DB::table('users')->where('id', $this->verifier->id)->update(['is_active'=>false]);
+    $this->postJson($url, ['applications'=>[$items[0]]])->assertOk()
+        ->assertJsonPath('data.count', 0)->assertJsonCount(0, 'data.recipients')->assertJsonCount(1, 'data.skipped');
+    $this->postJson('/api/v1/bantuan/applications/'.$items[0]['id'].'/reminders', ['status'=>'survey_assigned'])->assertUnprocessable();
+});
+
 it('sends card reminders only to the responsible active task recipients', function (string $status, string $recipient) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     \App\Modules\Bantuan\Models\Application::findOrFail($id)->forceFill(['status'=>$status, 'verifier_id'=>$this->verifier->id, 'distribution_type'=>'verifier', 'distributor_id'=>$this->verifier->id])->save();
