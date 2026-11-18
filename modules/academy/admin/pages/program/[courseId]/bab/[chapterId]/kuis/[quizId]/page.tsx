@@ -1,3 +1,5 @@
+import { academyPage } from "@/modules/academy/api/page-data";
+import type { AcademyCohort } from "@/modules/academy/api/page-contracts";
 import { notFound } from "next/navigation";
 import { requireAcademyAdmin } from "@/modules/academy/api/admin-access";
 import { getAdminQuiz } from "@/modules/academy/api/admin-quizzes";
@@ -12,11 +14,16 @@ export default async function Page({ params, searchParams }: {
 }) {
   await requireAcademyAdmin();
   const { courseId, chapterId, quizId } = await params;
-  const quiz = await getAdminQuiz(courseId, chapterId, quizId);
+  const [quiz, course, cohorts] = await Promise.all([
+    getAdminQuiz(courseId, chapterId, quizId),
+    academyPage<{ title: string; cohortId: string | null }>(`academy/admin/courses/${encodeURIComponent(courseId)}`),
+    academyPage<AcademyCohort[]>("academy/admin/cohorts"),
+  ]);
+  const scopeLabel = cohorts.find(item => item.id === course.cohortId)?.title ?? course.title;
   if (!quiz) notFound();
   return <><AdminHeading title={quiz.title} description="Kelola pengaturan dan seluruh pertanyaan ujian." backHref="/admin/academy/kuis" />
     <SavedNotice saved={(await searchParams).tersimpan === "1"} />
-    <QuizForm key={JSON.stringify(quiz)} withQuestions questions={quiz.questions} action={saveExam.bind(null, quizId)} initial={{
+    <QuizForm scopeLabel={scopeLabel} key={JSON.stringify(quiz)} withQuestions questions={quiz.questions} action={saveExam.bind(null, quizId)} initial={{
       title: quiz.title, description: quiz.description ?? "", passingScore: quiz.passingScore, timeLimitMinutes: quiz.timeLimitMinutes,
       quizDate: quizDateInput(quiz.quizDate), isPublished: quiz.isPublished, isActive: quiz.isActive, allowRetake: quiz.allowRetake,
       kind: quiz.kind, closesAt: quizDateInput(quiz.closesAt), releaseDay: quiz.releaseDay,
