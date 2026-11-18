@@ -22,16 +22,16 @@ export function quizInput(form: FormData) {
     }
   }
   const isPublished = form.get("isPublished") === "on";
-  const rawKind = textField(form, "kind", "Jenis evaluasi", 20, false) || "DAILY";
-  if (rawKind !== "DAILY" && rawKind !== "WEEKLY" && rawKind !== "FINAL") throw new AcademyError("Jenis evaluasi tidak valid.");
+  const rawKind = textField(form, "kind", "Jenis ujian", 20, false) || "DAILY";
+  if (rawKind !== "DAILY" && rawKind !== "WEEKLY" && rawKind !== "FINAL") throw new AcademyError("Jenis ujian tidak valid.");
   const kind: "DAILY" | "WEEKLY" | "FINAL" = rawKind;
-  const rawClose = textField(form, "closesAt", "Batas evaluasi", 16, false);
+  const rawClose = textField(form, "closesAt", "Batas ujian", 16, false);
   const closesAt = rawClose ? new Date(rawClose + ":00+07:00") : null;
-  if (closesAt && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(rawClose) || !Number.isFinite(closesAt.getTime()) || quizDateInput(closesAt) !== rawClose || (quizDate && closesAt <= quizDate))) throw new AcademyError("Batas evaluasi WIB harus valid dan setelah waktu buka.");
+  if (closesAt && (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(rawClose) || !Number.isFinite(closesAt.getTime()) || quizDateInput(closesAt) !== rawClose || (quizDate && closesAt <= quizDate))) throw new AcademyError("Batas ujian WIB harus valid dan setelah waktu buka.");
   const isActive = form.get("isActive") === "on";
   if (isActive && !isPublished) throw new AcademyError("Publikasikan ujian sebelum mengaktifkannya.");
   return {
-    releaseDay: form.has("releaseDay") ? integer(form, "releaseDay", "Hari evaluasi", 1, 30) : 1,
+    releaseDay: form.has("releaseDay") ? integer(form, "releaseDay", "Hari ujian", 1, 30) : 1,
     title: textField(form, "title", "Judul"),
     description: textField(form, "description", "Deskripsi", 30000, false) || null,
     passingScore: integer(form, "passingScore", "Nilai lulus", 0, 100),

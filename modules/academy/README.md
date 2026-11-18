@@ -270,3 +270,20 @@ tidak mengirim pesan WhatsApp/email otomatis. Admin mengisi jawaban ustadz lalu
 menekan Sampaikan jawaban ke peserta. Jawaban tampil pada Tanya Ustadz milik
 peserta yang bertanya. Endpoint pengajar/jawaban yang sudah ada tetap memeriksa
 peran admin/pengajar; peserta lain tidak dapat membaca pertanyaan privat tersebut.
+
+
+## Periksa seluruh ujian sebelum aktivasi
+
+Dialog Periksa & aktifkan ujian menampilkan judul, angkatan, jenis, jumlah soal,
+durasi, jadwal WIB, deskripsi jika ada, seluruh teks pertanyaan, semua opsi/kunci
+jawaban, jenis soal/bobot, pembahasan dan media yang tersimpan. Soal inline dibaca
+dari formulir saat tombol Periksa ditekan, termasuk perubahan yang belum disimpan.
+Pengaturan/formulir dibekukan selama review; konfirmasi memakai snapshot FormData
+yang sama, bukan nilai kosong dari kontrol disabled. Kembali/Escape membatalkan
+snapshot tanpa mengaktifkan atau menyimpan ujian.
+
+Pengajar memuat seluruh soal melalui endpoint GET teacher/quizzes/{id} yang sudah
+ada (bukan view=table yang dipaginasi). Server Action hanya membaca dan menyalurkan
+field review yang diizinkan; otorisasi admin/pengajar tetap diperiksa Laravel.
+Gagal memuat soal menahan aktivasi sampai review berhasil. Kunci jawaban/media
+privat tidak ditambahkan ke endpoint peserta/publik. Tidak ada migration baru.

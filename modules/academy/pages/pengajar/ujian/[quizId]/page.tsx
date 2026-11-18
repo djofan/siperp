@@ -1,3 +1,4 @@
+import { loadQuizReviewQuestions } from "../../../../api/quiz-review";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound } from "next/navigation";
 import { academyPage } from "@/modules/academy/api/page-data";
@@ -36,7 +37,7 @@ export default async function ExamPage({ params, searchParams }: {
     <PageHeading title={quiz.title}>{cohortTitle} · {quiz.kind === "DAILY" ? quiz.chapter.title : "Semua bab"}. Kelola soal dan kunci jawaban ujian.</PageHeading>
     <details id="edit-ujian" open={editingQuiz} className="mb-6 scroll-mt-24 rounded-2xl border border-gray-100 bg-white p-5">
       <summary className="cursor-pointer font-semibold text-green-700">Pengaturan ujian</summary>
-      <div className="mt-4"><QuizForm questionCount={pagination.total} scopeLabel={`${cohortTitle} - ${quiz.chapter.title}`} action={saveTeacherQuiz.bind(null, quiz.id)}
+      <div className="mt-4"><QuizForm loadReviewQuestions={loadQuizReviewQuestions.bind(null, quiz.id)} questionCount={pagination.total} scopeLabel={`${cohortTitle} - ${quiz.chapter.title}`} action={saveTeacherQuiz.bind(null, quiz.id)}
         chapterField={<input type="hidden" name="chapterId" value={scope.chapterId}/>}
         initial={{ ...quiz, description: quiz.description ?? "", quizDate: quizDateInput(quiz.quizDate), closesAt: quizDateInput(quiz.closesAt) }}/></div>
     </details>

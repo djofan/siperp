@@ -8,7 +8,7 @@ import { QuizForm } from "../../../components/admin/QuizForm";
 import { TeacherPagination } from "../../../components/TeacherPagination";
 import { PageHeading, inputClass } from "../../../components/ui";
 
-const kinds = { DAILY: "Harian", WEEKLY: "Mingguan", FINAL: "Evaluasi akhir" };
+const kinds = { DAILY: "Harian", WEEKLY: "Pekanan", FINAL: "Ujian Akhir" };
 const date = (value: string | null) => value ? new Intl.DateTimeFormat("id-ID", {
   dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta",
 }).format(new Date(value)) : "Belum diatur";
