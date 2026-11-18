@@ -66,7 +66,7 @@ test("exam duration edits use a single total-minute input including durations ov
 });
 
 
-test("desktop exams preserve admin order and mobile urgency never renumbers cards", async () => {
+test("desktop and mobile exams preserve admin order and stable numbering", async () => {
   const quizzes = [
     {id:"first",title:"Materi Pertama",releaseDay:3,closesAt:new Date("2020-01-01"),attempts:[{isCompleted:true}]},
     {id:"second",title:"Materi Kedua",releaseDay:1,closesAt:new Date("2099-01-01"),attempts:[]},
@@ -86,8 +86,8 @@ test("desktop exams preserve admin order and mobile urgency never renumbers card
   assert.ok(desktop.indexOf("Materi Pertama") < desktop.indexOf("Materi Kedua"));
   assert.ok(desktop.indexOf("Materi Kedua") < desktop.indexOf("Materi Ketiga"));
   const mobile=html.slice(0,html.indexOf('class="hidden sm:block"'));
-  assert.ok(mobile.indexOf("Materi Ketiga") < mobile.indexOf("Materi Kedua"));
-  assert.ok(mobile.indexOf("Materi Kedua") < mobile.indexOf("Materi Pertama"));
+  assert.ok(mobile.indexOf("Materi Pertama") < mobile.indexOf("Materi Kedua"));
+  assert.ok(mobile.indexOf("Materi Kedua") < mobile.indexOf("Materi Ketiga"));
   for (const [title,number] of [["Materi Pertama",1],["Materi Kedua",2],["Materi Ketiga",3]]) {
     for (const section of [desktop,mobile]) {
       const cards=section.match(/<article[\s\S]*?<\/article>/g) ?? [];

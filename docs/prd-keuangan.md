@@ -1,10 +1,12 @@
 # Rancangan modul Keuangan SIPERP
 
-Status: pemetaan selesai; fondasi baca saja telah dibuat secara lokal.
+Status: fondasi dan workflow input/revisi pengeluaran serta approval telah dibuat secara lokal.
 Belum ada impor ke SIPERP, eksekusi migration pada database pengguna, atau deployment.
 Rincian tahap implementasi: [Fondasi Keuangan](../modules/keuangan/README.md).
-Endpoint fondasi aktif dalam kode hanya `GET /api/v1/keuangan/overview`;
-resource/alur tulis pada dokumen ini tetap berupa rancangan.
+Implementasi terbaru dan keputusan bisnis 17 November ada di `modules/keuangan/README.md`.
+Pemetaan/rancangan awal di bawah dipertahankan sebagai referensi; keputusan terbaru:
+revisi pengeluaran membentuk round baru, keputusan boleh direvisi dengan alasan,
+penolakan menutup tugas lain. Resource yang belum diimplementasikan tetap rancangan.
 Tanggal: 16 November 2026. Acuan SIPERP: checkout `cd5e82d`.
 
 Modul Keuangan akan membawa pencatatan pengeluaran dan approval dari aplikasi lama
