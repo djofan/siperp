@@ -10,6 +10,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from "./ui/sheet";
 import { cn } from "./ui/utils";
+import { AcademyLogo } from "./AcademyLogo";
 import { LogoutButton } from "./LogoutButton";
 
 export type DashboardNavGroup = { heading?: string; items: { href: string; label: string; icon?: string }[] };
@@ -56,8 +57,8 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
   const active = items.filter(item => navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) || (item.href === "/academy/peringkat" && pathname.startsWith("/academy/sertifikat/"))).sort((a, b) => b.href.length - a.href.length)[0];
   const sidebar = (compact = false) => <>
     <Link href="/academy" onClick={() => setOpen(false)} className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
-      <span className="academy-brand-icon flex size-10 items-center justify-center rounded-xl bg-emerald-600 text-white"><GraduationCap className="size-6" /></span>
-      <span><span className="block text-sm font-semibold tracking-tight text-slate-900">Insan Academy</span><span className="mt-0.5 block text-xs text-slate-500">Ruang {role.toLowerCase()}</span></span>
+      <AcademyLogo />
+      <span className="text-xs text-slate-500">Ruang<br />{role.toLowerCase()}</span>
     </Link>
     <nav aria-label={`Menu ${role.toLowerCase()}`} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
       {groups.map((group, index) => <div key={group.heading ?? index} className="space-y-1">
@@ -86,7 +87,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
     <SheetContent side="left" className="academy-theme academy-workspace academy-sidebar flex w-72 flex-col gap-0 bg-white p-0 sm:max-w-72 lg:hidden"><SheetTitle className="sr-only">Navigasi Academy</SheetTitle><SheetDescription className="sr-only">Menu ruang {role.toLowerCase()}</SheetDescription>{sidebar(mobileApp && role === "Peserta")}</SheetContent>
     <div className="flex min-w-0 flex-1 flex-col">
       <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-8 print:hidden">
-        <div className="flex min-w-0 items-center gap-3"><SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Buka menu" className="lg:hidden"><Menu /></Button></SheetTrigger><span className="hidden text-sm text-slate-400 sm:block">Academy</span><ChevronRight className="hidden size-3.5 text-slate-300 sm:block" /><span className="truncate text-sm font-medium text-slate-700">{active?.label ?? "Dashboard"}</span></div>
+        <div className="flex min-w-0 items-center gap-3"><SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Buka menu" className="lg:hidden"><Menu /></Button></SheetTrigger><AcademyLogo compact className="h-8 w-8 p-1 sm:hidden" /><span className="hidden text-sm text-slate-400 sm:block">Academy</span><ChevronRight className="hidden size-3.5 text-slate-300 sm:block" /><span className="truncate text-sm font-medium text-slate-700">{active?.label ?? "Dashboard"}</span></div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {role === "Peserta" && <Button asChild variant="ghost" size="icon"><Link href="/academy/pengingat" aria-label={`Pengingat ujian${unreadReminders ? `, ${unreadReminders} belum dibaca` : ""}`} className="relative"><Bell />{unreadReminders > 0 && <span className="absolute right-1 top-1 size-2 rounded-full bg-emerald-500" />}</Link></Button>}
           <LogoutButton compact />

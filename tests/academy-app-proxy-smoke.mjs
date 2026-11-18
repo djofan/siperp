@@ -17,7 +17,7 @@ let r=await fetch('http://127.0.0.1:3109/academy-app',{redirect:'manual'});if([3
 r=await fetch('http://127.0.0.1:3109/academy-app/login');let html=await r.text();assert.equal(r.status,200);assert(html.includes('/academy-app/manifest.webmanifest'));assert(html.includes('Insan Academy'));
 r=await fetch('http://127.0.0.1:3109/academy-app/beranda',{headers:{Cookie:'sip_session=qa-only'}});html=await r.text();assert.equal(r.status,200,html.slice(-2000));assert(html.includes('Ahlan wa sahlan, Peserta QA'));assert(html.includes('Navigasi cepat Academy'));assert(html.includes('href="/academy-app/materi"'));assert(!html.includes('href="/academy/materi"'));
 r=await fetch('http://127.0.0.1:3109/academy/masuk');assert.equal(r.status,200);html=await r.text();assert(html.includes('/academy/manifest.webmanifest'));
-r=await fetch('http://127.0.0.1:3109/academy-app/sw.js');assert.equal(r.status,200);assert((await r.text()).includes('academy-app-public-v1'));
+r=await fetch('http://127.0.0.1:3109/academy-app/sw.js');assert.equal(r.status,200);assert((await r.text()).includes('academy-app-public-v2'));
 r=await fetch('http://127.0.0.1:3109/academy-app/login?terdaftar=1');html=await r.text();assert.equal(r.status,200);assert(html.includes('Pendaftaran berhasil'));
 r=await fetch('http://127.0.0.1:3109/academy-app/beranda',{headers:{Cookie:'sip_session=qa-only',RSC:'1'}});assert.equal(r.status,200);assert(r.headers.get('content-type').includes('text/x-component'));
 console.log('PASS: TLS-terminated loopback production guest redirect, app login, authenticated shared dashboard, app navigation, web login and service worker.');

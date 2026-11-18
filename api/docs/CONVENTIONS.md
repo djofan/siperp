@@ -4,6 +4,19 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Rekap tugas Tanwir: endpoint GET `/api/v1/tanwir/admin/task-recaps`,
+`/admin/task-recaps/{id}`, dan `/admin/task-recaps/submissions/{id}` khusus admin
+Tanwir atau Superadmin. Respons `data` bersifat `private, no-store`; daftar tugas
+serta peserta memakai `meta` dengan default 25 dan maksimal 50 baris per halaman.
+Filter daftar: `q` (judul), `teacher` (pembuat tugas), `group` (kelompok tujuan),
+`type`. Filter rincian: `group` (kelompok peserta saat ini), `q` (nama/kode), `status`.
+Ringkasan rincian mengikuti kelompok sebelum filter nama/status. Peserta nonaktif
+dan setoran peserta yang sudah pindah kelompok tetap disertakan; tidak merekonstruksi
+kelompok historis karena data tersebut tidak tersimpan. Rekap tidak menulis data,
+mengubah nilai, atau membuat submission. Media memakai endpoint privat lama,
+termasuk berkas tunggal legacy dan batch; path penyimpanan tidak dikirim dalam rekap.
+Tidak ada migration untuk fitur ini.
+
 Setoran Tanwir dan Ojol mendukung `files[]` (1–10 audio/video, total maksimal 50 MiB)
 pada `POST /api/v1/{module}/submissions`. Field lama `file` tetap didukung, tetapi
 tidak boleh digabung dengan `files`. Semua berkas harus sesuai jenis tugas. Batch

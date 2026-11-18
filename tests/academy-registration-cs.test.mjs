@@ -10,6 +10,7 @@ for (const open of [true, false]) test('public registration directs to CS withou
  const mod = { exports: {} };
  const source = ts.transpileModule(fs.readFileSync('modules/academy/pages/daftar/page.tsx','utf8'), {compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
  vm.runInNewContext(source,{module:mod,exports:mod.exports,encodeURIComponent,require(id){
+    if(id.endsWith("AcademyLogo"))return {AcademyLogo:()=>null};
   if(id==='react/jsx-runtime')return require(id);
   if(id.includes('pwa/AcademyNavigation'))return {default:'a'};
   if(id.includes('pwa/server-navigation'))return {academyServerHref:async path=>path,getAcademyBasePath:async()=>'/academy'};

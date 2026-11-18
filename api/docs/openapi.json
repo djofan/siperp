@@ -1214,6 +1214,785 @@
           }
         }
       },
+      "TanwirRecapPerson": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "code",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TanwirRecapGroup": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "code",
+          "name"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TanwirRecapGroupOption": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "code",
+          "name",
+          "pic"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pic": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TanwirRecapPerson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "TanwirRecapCounts": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "participants",
+          "submitted",
+          "missing",
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "properties": {
+          "participants": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "submitted": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "missing": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "pending": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "approved": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "rejected": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "TanwirRecapMeta": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_page",
+          "last_page",
+          "total",
+          "per_page"
+        ],
+        "properties": {
+          "current_page": {
+            "type": "integer"
+          },
+          "last_page": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "per_page": {
+            "type": "integer"
+          }
+        }
+      },
+      "TanwirRecapTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "description",
+          "type",
+          "createdAt",
+          "deadline",
+          "originalDeadline",
+          "teacher",
+          "groups"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "voice_note",
+              "video",
+              "quiz"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "originalDeadline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "teacher": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TanwirRecapPerson"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TanwirRecapGroup"
+            }
+          }
+        }
+      },
+      "TanwirRecapQuestion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "order",
+          "question",
+          "optionA",
+          "optionB",
+          "optionC",
+          "optionD",
+          "correctOption"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "order": {
+            "type": "integer"
+          },
+          "question": {
+            "type": "string"
+          },
+          "optionA": {
+            "type": "string"
+          },
+          "optionB": {
+            "type": "string"
+          },
+          "optionC": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "optionD": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "correctOption": {
+            "type": "string"
+          }
+        }
+      },
+      "TanwirRecapIndex": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tasks",
+          "groups",
+          "teachers",
+          "meta"
+        ],
+        "properties": {
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "title",
+                "description",
+                "type",
+                "createdAt",
+                "deadline",
+                "originalDeadline",
+                "teacher",
+                "groups",
+                "counts"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "voice_note",
+                    "video",
+                    "quiz"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "deadline": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "originalDeadline": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "teacher": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TanwirRecapPerson"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "groups": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TanwirRecapGroup"
+                  }
+                },
+                "counts": {
+                  "$ref": "#/components/schemas/TanwirRecapCounts"
+                }
+              }
+            }
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TanwirRecapGroupOption"
+            }
+          },
+          "teachers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TanwirRecapPerson"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/TanwirRecapMeta"
+          }
+        }
+      },
+      "TanwirRecapDetail": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "task",
+          "summary",
+          "groups",
+          "meta",
+          "participants"
+        ],
+        "properties": {
+          "task": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "title",
+              "description",
+              "type",
+              "createdAt",
+              "deadline",
+              "originalDeadline",
+              "teacher",
+              "groups",
+              "questions"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "voice_note",
+                  "video",
+                  "quiz"
+                ]
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "deadline": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "originalDeadline": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "teacher": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/TanwirRecapPerson"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "groups": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TanwirRecapGroup"
+                }
+              },
+              "questions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TanwirRecapQuestion"
+                }
+              }
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TanwirRecapCounts"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TanwirRecapGroupOption"
+            }
+          },
+          "meta": {
+            "$ref": "#/components/schemas/TanwirRecapMeta"
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "code",
+                "name",
+                "active",
+                "group",
+                "currentlyAssigned",
+                "submission"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "active": {
+                  "type": "boolean"
+                },
+                "group": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TanwirRecapGroup"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "currentlyAssigned": {
+                  "type": "boolean"
+                },
+                "submission": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "status",
+                        "score",
+                        "attemptsCount",
+                        "isLate",
+                        "submittedAt"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "pending",
+                            "approved",
+                            "rejected"
+                          ]
+                        },
+                        "score": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "attemptsCount": {
+                          "type": "integer"
+                        },
+                        "isLate": {
+                          "type": "boolean"
+                        },
+                        "submittedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "TanwirRecapSubmission": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "score",
+          "attemptsCount",
+          "isLate",
+          "submittedAt",
+          "task",
+          "student",
+          "fileMime",
+          "files",
+          "answers",
+          "logs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "attemptsCount": {
+            "type": "integer"
+          },
+          "isLate": {
+            "type": "boolean"
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "task": {
+            "$ref": "#/components/schemas/TanwirRecapTask"
+          },
+          "student": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "code",
+              "name",
+              "group"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "code": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "group": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "fileMime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "index",
+                "name",
+                "mime",
+                "size"
+              ],
+              "properties": {
+                "index": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "mime": {
+                  "type": "string"
+                },
+                "size": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "questionId",
+                "selectedOption",
+                "isCorrect",
+                "question"
+              ],
+              "properties": {
+                "questionId": {
+                  "type": "string"
+                },
+                "selectedOption": {
+                  "type": "string"
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                },
+                "question": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TanwirRecapQuestion"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "logs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "status",
+                "feedback",
+                "attemptNumber",
+                "createdAt",
+                "reviewer"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                },
+                "feedback": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "attemptNumber": {
+                  "type": "integer"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "reviewer": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "user"
+                      ],
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "name"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
       "FinanceExpense": {
         "type": "object",
         "additionalProperties": false,
@@ -9536,6 +10315,278 @@
           },
           "422": {
             "description": "Invalid filter"
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/admin/task-recaps": {
+      "get": {
+        "tags": [
+          "Tanwir"
+        ],
+        "summary": "List PIC tasks and submission counts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 25
+            }
+          },
+          {
+            "name": "teacher",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "voice_note",
+                "video",
+                "quiz"
+              ]
+            }
+          }
+        ],
+        "description": "Tanwir administrator or Superadmin only. Read-only; Cache-Control private, no-store. Uses existing tasks, current group membership, submissions and review logs without writes or migrations. Historical submissions remain visible after participant transfers or changes to task audience. Current inactive participants are included. No private storage paths, credentials, or participant contact details. Media remains on the existing authorized /tanwir/files/submission/{id}?index=N route. Index group filter selects task audience; index counts cover all target groups. Detail group filter selects participants by current group; summary follows group before name/status filters.",
+        "responses": {
+          "200": {
+            "description": "Read-only private recap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TanwirRecapIndex"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated or inactive account"
+          },
+          "403": {
+            "description": "Not a Tanwir administrator"
+          },
+          "404": {
+            "description": "Module unavailable or record not found"
+          },
+          "422": {
+            "description": "Invalid filters or pagination"
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/admin/task-recaps/{id}": {
+      "get": {
+        "tags": [
+          "Tanwir"
+        ],
+        "summary": "Inspect task instructions, questions and participant results",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 25
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "missing",
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        ],
+        "description": "Tanwir administrator or Superadmin only. Read-only; Cache-Control private, no-store. Uses existing tasks, current group membership, submissions and review logs without writes or migrations. Historical submissions remain visible after participant transfers or changes to task audience. Current inactive participants are included. No private storage paths, credentials, or participant contact details. Media remains on the existing authorized /tanwir/files/submission/{id}?index=N route. Index group filter selects task audience; index counts cover all target groups. Detail group filter selects participants by current group; summary follows group before name/status filters.",
+        "responses": {
+          "200": {
+            "description": "Read-only private recap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TanwirRecapDetail"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated or inactive account"
+          },
+          "403": {
+            "description": "Not a Tanwir administrator"
+          },
+          "404": {
+            "description": "Module unavailable or record not found"
+          },
+          "422": {
+            "description": "Invalid filters or pagination"
+          }
+        }
+      }
+    },
+    "/api/v1/tanwir/admin/task-recaps/submissions/{id}": {
+      "get": {
+        "tags": [
+          "Tanwir"
+        ],
+        "summary": "Read participant media, quiz answers and correction history",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Tanwir administrator or Superadmin only. Read-only; Cache-Control private, no-store. Uses existing tasks, current group membership, submissions and review logs without writes or migrations. Historical submissions remain visible after participant transfers or changes to task audience. Current inactive participants are included. No private storage paths, credentials, or participant contact details. Media remains on the existing authorized /tanwir/files/submission/{id}?index=N route. Index group filter selects task audience; index counts cover all target groups. Detail group filter selects participants by current group; summary follows group before name/status filters.",
+        "responses": {
+          "200": {
+            "description": "Read-only private recap",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TanwirRecapSubmission"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated or inactive account"
+          },
+          "403": {
+            "description": "Not a Tanwir administrator"
+          },
+          "404": {
+            "description": "Module unavailable or record not found"
+          },
+          "422": {
+            "description": "Invalid filters or pagination"
           }
         }
       }

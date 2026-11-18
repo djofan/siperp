@@ -12,7 +12,7 @@ import "../components/dashboard.css";
 const academyMetadata: Metadata = {
   manifest: "/academy/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Academy" },
-  icons: { icon: "/academy-pwa/icon-192.png", apple: "/academy-pwa/icon-192.png" },
+  icons: { icon: "/academy-pwa/icon-192-v2.png", apple: "/academy-pwa/icon-192-v2.png" },
   title: { default: "Insan Academy | LAZSIP", template: "%s | Insan Academy" },
   description: "Belajar bersama Ustadz Irham melalui audio harian, catatan belajar, evaluasi, dan tanya jawab selama satu bulan.",
 };

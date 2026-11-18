@@ -1,10 +1,10 @@
-/* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
 
 import Link, { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "../icons";
 
+import { AcademyLogo } from "../AcademyLogo";
 import { publicNavigation } from "../public-navigation";
 
 interface NavbarProps {
@@ -31,8 +31,7 @@ export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: Navba
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         {/* Logo */}
         <Link href="/academy" className="flex items-center gap-2.5 font-semibold">
-          <img src="/academy/logo-lazsip.webp" alt="LAZSIP" className="h-7 w-7 object-contain" />
-          <span className="text-gray-900">Insan Academy</span>
+          <AcademyLogo className="h-12 w-24 p-1" />
         </Link>
 
         <nav aria-label="Navigasi utama" className="hidden items-center gap-5 text-sm font-medium text-gray-700 lg:flex">
