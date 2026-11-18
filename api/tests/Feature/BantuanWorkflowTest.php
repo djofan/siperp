@@ -2382,3 +2382,50 @@ it('requires previous aid details on final validation but permits incomplete dra
     $input['applicant']['previousAidNotes'] = 'Januari 2026: sembako senilai Rp 300.000 dari LAZSIP melalui Pak Ahmad, sekali.';
     expect($intake->validateApplicant(\Illuminate\Http\Request::create('/', 'POST', $input))['previousAidNotes'])->toBe($input['applicant']['previousAidNotes']);
 });
+
+
+it('notifies Call Center once on new submission while preserving approver recipients', function (string $source) {
+    $requester = bantuanUser('requester');
+    $surveyApprover = bantuanUser('survey_approver');
+    $secondCc = bantuanUser('call_center');
+    bantuanRoles($secondCc, ['call_center', 'approver']);
+    $input = [...bantuanInput(), 'source' => $source, 'draft' => true];
+    $id = $this->actingAs($requester, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->count())->toBe(0);
+    if ($source === 'walk_in') { bantuanDoc($id, 'ktp'); bantuanDoc($id, 'face'); }
+    $url = '/api/v1/bantuan/applications/'.$id.'/actions/submit';
+    $this->postJson($url, ['version' => 1])->assertOk()->assertJsonPath('data.status', 'review1');
+    foreach ([$this->cc, $secondCc, $this->approver, $surveyApprover] as $recipient) {
+        expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $recipient->id)->count())->toBe(1);
+    }
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->verifier->id)->count())->toBe(0);
+    $count = DB::table('bantuan_notifications')->where('application_id', $id)->count();
+    $this->postJson($url, ['version' => 1])->assertConflict();
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->count())->toBe($count);
+})->with(['online', 'walk_in']);
+
+it('notifies other Call Center accounts when Call Center submits a new application', function () {
+    $otherCc = bantuanUser('call_center');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $otherCc->id)->count())->toBe(1);
+    expect(DB::table('bantuan_notifications')->where('application_id', $id)->where('user_id', $this->cc->id)->count())->toBe(0);
+});
+
+
+it('preserves irregular income descriptions and legacy amounts for approver review', function ($income) {
+    $input = bantuanInput();
+    $input['applicant']['income'] = $income;
+    $input['applicant']['incomePeriod'] = 'hari';
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version' => 1])->assertOk();
+    expect(Application::findOrFail($id)->applicant['income'])->toBe($income);
+    $this->actingAs($this->approver, 'sanctum')->getJson('/api/v1/bantuan/applications/'.$id)
+        ->assertOk()->assertJsonPath('data.applicant.income', $income)->assertJsonPath('data.applicant.incomePeriod', 'hari');
+})->with(['50.000 sampai 60.000', 'Rp 50.000–60.000, tidak menentu', 'Tidak ada penghasilan tetap', 1000000, 0]);
+
+it('rejects missing oversized or structured income values', function ($income) {
+    $input = bantuanInput();
+    $input['applicant']['income'] = $income;
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertUnprocessable();
+})->with(['', str_repeat('x', 1001), [['min' => 50000, 'max' => 60000]], -1]);

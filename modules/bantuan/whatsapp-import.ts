@@ -155,7 +155,8 @@ export function parseWhatsappMessage(message:string):MessageImport {
       const v=key(value);const period=/^(?:per )?(?:hari|harian)$/.test(v)?"hari":/^(?:per )?(?:pekan|minggu|mingguan)$/.test(v)?"pekan":/^(?:per )?(?:bulan|bulanan)$/.test(v)?"bulan":undefined;
       if(period)a.incomePeriod=period;else result.warnings.push("Periode penghasilan belum pasti; pilih manual.");
     }else if(/^penghasilan/.test(label)){
-      const n=money(value);if(n!==undefined)a.income=n;
+      const singleAmount=/^(?:rp\.?\s*)?\d[\d.,]*\s*(?:juta|jt|ribu|rb)?\s*(?:(?:per|\/)\s*(?:hari|pekan|minggu|bulan))?$/i.test(value);
+      const n=singleAmount?money(value):undefined;a.income=n??value;
       if(/hari/i.test(value))a.incomePeriod="hari";else if(/pekan|minggu/i.test(value))a.incomePeriod="pekan";else if(/bulan/i.test(value))a.incomePeriod="bulan";
     }else if(/^berapa biaya/.test(label)){
       const n=money(value);if(n!==undefined){a.rent=n;a.rentPeriod=/tahun/i.test(value)?"tahun":"bulan";}

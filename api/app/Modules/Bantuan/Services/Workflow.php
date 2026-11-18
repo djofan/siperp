@@ -370,6 +370,8 @@ class Workflow
                 'survey_assignment', 'approved', 'completed' => ['call_center', 'approver'],
                 'fund_ready', 'fund_submitted' => ['fund_requester'], 'fund_approved' => ['treasurer'], default => [],
             };
+            // Keep Call Center informed on first submission even when approval starts immediately.
+            if ($action === 'submit' && $from === 'draft') $targets[] = 'call_center';
             if ($action === 'fund_reject') $targets[] = 'call_center';
             if (in_array($action, ['survey_decline', 'survey_revise'], true)) $targets = ['call_center'];
             // Notify the next responsible team; field staff only receive events affecting their task.
