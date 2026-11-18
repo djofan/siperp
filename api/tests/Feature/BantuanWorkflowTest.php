@@ -2359,3 +2359,26 @@ it('allows multiple optional handover supporting photos for the assigned distrib
     $docs = $this->getJson('/api/v1/bantuan/applications/'.$id)->assertOk()->json('data.documents');
     expect(collect($docs)->where('kind', 'handover_supporting')->pluck('caption')->all())->toEqualCanonicalizing(['Sudut pertama', 'Sudut kedua']);
 });
+
+
+it('requires previous aid details on final validation but permits incomplete drafts', function () {
+    $intake = app(\App\Modules\Bantuan\Services\Intake::class);
+    $input = bantuanInput();
+    $input['applicant']['previousAid'] = true;
+    foreach (['', '   '] as $notes) {
+        $input['applicant']['previousAidNotes'] = $notes;
+        try {
+            $intake->validateApplicant(\Illuminate\Http\Request::create('/', 'POST', $input));
+            $this->fail('Missing previous aid details must be rejected.');
+        } catch (\Illuminate\Validation\ValidationException $error) {
+            expect($error->errors())->toHaveKey('applicant.previousAidNotes');
+        }
+    }
+    $input['applicant']['previousAidNotes'] = '';
+    expect($intake->validateApplicant(\Illuminate\Http\Request::create('/', 'POST', $input), true)['previousAid'])->toBeTrue();
+    $input['applicant']['previousAid'] = false;
+    expect($intake->validateApplicant(\Illuminate\Http\Request::create('/', 'POST', $input))['previousAid'])->toBeFalse();
+    $input['applicant']['previousAid'] = true;
+    $input['applicant']['previousAidNotes'] = 'Januari 2026: sembako senilai Rp 300.000 dari LAZSIP melalui Pak Ahmad, sekali.';
+    expect($intake->validateApplicant(\Illuminate\Http\Request::create('/', 'POST', $input))['previousAidNotes'])->toBe($input['applicant']['previousAidNotes']);
+});

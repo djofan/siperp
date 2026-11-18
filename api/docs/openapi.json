@@ -8821,6 +8821,13 @@
     },
     "rule": "Union of granted roles. Restricted-only accounts see applications they created or are assigned to as verifier/distributor. Any all-applications role sees all applications, including rows without an amount. The ongoing view intersects this scope with active statuses. Mutation permissions and private-document access remain separately authorized."
   },
+  "x-bantuan-previous-aid": {
+    "field": "applicant.previousAidNotes",
+    "type": "string",
+    "maxLength": 5000,
+    "requiredWhen": "applicant.previousAid is true on final intake or survey validation",
+    "description": "Describe when, assistance type and amount, and provider. Drafts allow incomplete notes; false permits empty notes."
+  },
   "x-bantuan-application-notes": {
     "field": "applicant.applicationNotes",
     "type": "string",
