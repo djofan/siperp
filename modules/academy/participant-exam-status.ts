@@ -10,6 +10,6 @@ export function participantExamStatus(exam: {
       : "Anda melewatkan ujian ini. Rentang waktu pengerjaan sudah berakhir dan Anda belum mengerjakan ujian ini.",
   };
   if (!exam.isActive) return { available: false, message: "Ujian sedang dinonaktifkan oleh admin." };
-  if (!released || (exam.quizDate && exam.quizDate > now)) return { available: false, message: "Ujian belum dibuka. Silakan kembali sesuai jadwal yang ditentukan admin." };
+  if (exam.quizDate ? exam.quizDate > now : !released) return { available: false, message: "Ujian belum dibuka. Silakan kembali sesuai jadwal yang ditentukan admin." };
   return { available: true, message: "" };
 }

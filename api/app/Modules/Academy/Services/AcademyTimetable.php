@@ -9,6 +9,11 @@ class AcademyTimetable
 {
     public function examOpening(Quiz $quiz): ?CarbonImmutable
     {
+        // Explicit admin dates override the legacy cohort release-day schedule.
+        if ($quiz->quizDate) {
+            return $quiz->quizDate;
+        }
+
         $start = $quiz->chapter->course->startsAt;
         if (! $start) {
             return null;

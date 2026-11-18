@@ -6,6 +6,7 @@ use App\Modules\Academy\Models\ZakatAcademyLesson;
 use App\Modules\Academy\Models\ZakatAcademyProfile;
 use App\Modules\Academy\Models\ZakatAcademyQuiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
+use App\Modules\Academy\Services\AcademyTimetable;
 use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Academy\Services\ProgressService;
 use App\Modules\Core\Models\Module;
@@ -524,4 +525,25 @@ it('does not expose another participants review or unpublished course content', 
     $this->quiz->forceFill(['closesAt' => now()->subMinute()])->save();
     $this->profile->enrollments()->delete();
     $this->getJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/review')->assertNotFound();
+});
+
+it('reopens an unattempted exam on its edited manual schedule despite legacy cohort release gates', function () {
+    $url = '/api/v1/academy/quizzes/'.$this->quiz->id;
+    $this->quiz->forceFill(['quizDate' => now()->subDays(2), 'closesAt' => now()->subDay(), 'releaseDay' => 99])->save();
+    $course = $this->quiz->chapter->course;
+    $course->startsAt = now()->addMonth();
+    $course->save();
+    $this->postJson($url.'/attempts')->assertForbidden();
+    expect(ZakatAcademyQuizAttempt::count())->toBe(0);
+
+    $this->quiz->forceFill(['quizDate' => now()->subMinute(), 'closesAt' => now()->addDay()])->save();
+    expect(app(AcademyTimetable::class)->examOpening($this->quiz)->isPast())->toBeTrue();
+    $this->postJson($url.'/attempts')->assertCreated();
+    expect(ZakatAcademyQuizAttempt::count())->toBe(1);
+});
+
+it('keeps a manually rescheduled future exam closed until its new opening', function () {
+    $this->quiz->forceFill(['quizDate' => now()->addDay(), 'closesAt' => now()->addDays(2)])->save();
+    $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertForbidden();
+    expect(ZakatAcademyQuizAttempt::count())->toBe(0);
 });
