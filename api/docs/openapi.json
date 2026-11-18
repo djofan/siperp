@@ -2668,7 +2668,7 @@
     "/api/v1/academy/teacher/materials": {
       "post": {
         "summary": "Save teacher material with optional audio upload",
-        "description": "Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings.",
+        "description": "Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "requestBody": {
           "required": true,
           "content": {
@@ -2760,7 +2760,7 @@
       },
       "get": {
         "summary": "List teacher materials with cohort filter and server pagination",
-        "description": "Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page.",
+        "description": "Teacher/admin only. view=table returns items, chapters (selector metadata only), cohorts, page, lastPage, total and perPage=10. Without view=table the legacy chapter response is preserved. Stable ascending creation time and ID ordering. Excess pages clamp to the last page. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "view",
@@ -2903,7 +2903,7 @@
     "/api/v1/academy/teacher/materials/{id}": {
       "post": {
         "summary": "Save teacher material with optional audio upload",
-        "description": "Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings.",
+        "description": "Academy teacher/admin only. Audio and publication saved atomically. New materials append automatically within the chapter; edits preserve order. Teacher materials use releaseDay 1 (available once the course has started). Manual order/releaseDay inputs are ignored. Omitted audio preserves existing source. Maximum 50 MB. Supports MP3, WAV, OGG, M4A and browser WebM recordings. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "id",
@@ -3007,7 +3007,7 @@
     "/api/v1/academy/teacher/quizzes": {
       "get": {
         "summary": "List teacher exams with cohort filtering and pagination",
-        "description": "Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table.",
+        "description": "Teacher/admin only. view=table returns items (exam identity, cohort/chapter, type, start/close timestamps, duration, question count and status), chapters selector metadata, cohorts, page, lastPage, total, perPage=10. Legacy chapter response remains without view=table. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "view",
@@ -3075,7 +3075,7 @@
       },
       "post": {
         "summary": "Save teacher exam with daily chapter or weekly/final cohort curriculum",
-        "description": "Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply.",
+        "description": "Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "requestBody": {
           "required": true,
           "content": {
@@ -3164,7 +3164,7 @@
     "/api/v1/academy/teacher/quizzes/{id}": {
       "get": {
         "summary": "Read teacher exam editor and paginated questions",
-        "description": "Teacher/admin only: question options and keys are private. view=table limits quiz.questions to 10/page and adds cohortTitle and pagination (page,lastPage,total,perPage). Other quiz fields and scope are unchanged. Legacy request returns all questions.",
+        "description": "Teacher/admin only: question options and keys are private. view=table limits quiz.questions to 10/page and adds cohortTitle and pagination (page,lastPage,total,perPage). Other quiz fields and scope are unchanged. Legacy request returns all questions. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "id",
@@ -3242,7 +3242,7 @@
       },
       "post": {
         "summary": "Save teacher exam with daily chapter or weekly/final cohort curriculum",
-        "description": "Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply.",
+        "description": "Teacher/admin only. DAILY requires chapterId. WEEKLY/FINAL creation accepts courseId from the selected cohort curriculum without chapterId; existing clients may still send chapterId. Edits preserve existing curriculum relationship. Mismatched chapter/course rejected 422. Existing quiz validation and publication requirements apply. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "id",
@@ -3513,7 +3513,7 @@
     "/api/v1/academy/teacher/questions": {
       "get": {
         "summary": "List teacher discussions with pagination",
-        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table.",
+        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "view",
@@ -3585,7 +3585,7 @@
     "/api/v1/academy/teacher/questions/{id}": {
       "get": {
         "summary": "Read private teacher discussion detail",
-        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table.",
+        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "id",
@@ -3779,7 +3779,7 @@
     "/api/v1/academy/teacher/sessions": {
       "get": {
         "summary": "List live Q&A sessions and cohort curriculum choices for teachers",
-        "description": "Teacher/admin only. Returns courses selector metadata and sessions (items,page,pages,total), 10/page, latest start first. Meeting links remain private to managers and enrolled participants through the existing participant discussions endpoint.",
+        "description": "Teacher/admin only. Returns courses selector metadata and sessions (items,page,pages,total), 10/page, latest start first. Meeting links remain private to managers and enrolled participants through the existing participant discussions endpoint. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "page",
@@ -9125,6 +9125,417 @@
           },
           "404": {
             "description": "No participant profile"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/progress": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Participant exam progress by cohort",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cohort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "IKHWAN",
+                "AKHWAT"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          }
+        ],
+        "description": "Academy administrators and Superadmin only. Read-only, no-store/private. Counts published exams in published chapters/courses for the selected cohort; inactive/future exams remain in the published total. Includes inactive participants but excludes deleted profiles and manager accounts. Uses current Academy weights, best completed score per exam and zero for uncompleted exams. Does not finalize expired attempts or fabricate scores.",
+        "responses": {
+          "200": {
+            "description": "Private admin progress projection; no answer keys or private participant notes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cohorts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "title"
+                            ]
+                          }
+                        },
+                        "cohort": {
+                          "anyOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string"
+                                },
+                                "title": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "title"
+                              ]
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "nis": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "gender": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "IKHWAN",
+                                  "AKHWAT",
+                                  null
+                                ]
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "completedQuizzes": {
+                                "type": "integer"
+                              },
+                              "totalQuizzes": {
+                                "type": "integer"
+                              },
+                              "allCompleted": {
+                                "type": "boolean"
+                              },
+                              "score": {
+                                "type": "number"
+                              },
+                              "predicate": {
+                                "type": "string"
+                              },
+                              "finalCompleted": {
+                                "type": "boolean"
+                              },
+                              "averageScore": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "total": {
+                          "type": "integer"
+                        },
+                        "page": {
+                          "type": "integer"
+                        },
+                        "pages": {
+                          "type": "integer"
+                        },
+                        "totalQuizzes": {
+                          "type": "integer"
+                        },
+                        "fullyCompletedParticipants": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Requires Academy administrator or Superadmin"
+          },
+          "404": {
+            "description": "Cohort or membership not found"
+          },
+          "422": {
+            "description": "Invalid filter"
+          }
+        }
+      }
+    },
+    "/api/v1/academy/admin/progress/{profileId}": {
+      "get": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Participant exam completion and scores",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cohort",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "Academy administrators and Superadmin only. Read-only, no-store/private. Counts published exams in published chapters/courses for the selected cohort; inactive/future exams remain in the published total. Includes inactive participants but excludes deleted profiles and manager accounts. Uses current Academy weights, best completed score per exam and zero for uncompleted exams. Does not finalize expired attempts or fabricate scores.",
+        "responses": {
+          "200": {
+            "description": "Private admin progress projection; no answer keys or private participant notes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "cohort": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "title": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "title"
+                          ]
+                        },
+                        "person": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "nis": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "gender": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "IKHWAN",
+                                "AKHWAT",
+                                null
+                              ]
+                            },
+                            "active": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "completedQuizzes": {
+                              "type": "integer"
+                            },
+                            "totalQuizzes": {
+                              "type": "integer"
+                            },
+                            "allCompleted": {
+                              "type": "boolean"
+                            },
+                            "score": {
+                              "type": "number"
+                            },
+                            "predicate": {
+                              "type": "string"
+                            },
+                            "finalCompleted": {
+                              "type": "boolean"
+                            },
+                            "averageScore": {
+                              "type": [
+                                "number",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
+                        "quizzes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "title": {
+                                "type": "string"
+                              },
+                              "kind": {
+                                "type": "string",
+                                "enum": [
+                                  "DAILY",
+                                  "WEEKLY",
+                                  "FINAL"
+                                ]
+                              },
+                              "number": {
+                                "type": "integer"
+                              },
+                              "status": {
+                                "type": "string",
+                                "enum": [
+                                  "completed",
+                                  "expired",
+                                  "missed",
+                                  "inactive",
+                                  "upcoming",
+                                  "in_progress",
+                                  "not_started"
+                                ]
+                              },
+                              "score": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "startedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "submittedAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "opensAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "closesAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "timeLimitMinutes": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Requires Academy administrator or Superadmin"
+          },
+          "404": {
+            "description": "Cohort or membership not found"
+          },
+          "422": {
+            "description": "Invalid filter"
           }
         }
       }

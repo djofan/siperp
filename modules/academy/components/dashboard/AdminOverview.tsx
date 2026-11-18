@@ -15,6 +15,7 @@ export default async function AdminOverview() {
     { href: "materi", title: "Materi", detail: "Unggah audio dan PDF, atur urutan, serta ubah status publikasi materi.", icon: BookOpen },
     { href: "kuis", title: "Ujian", detail: "Kelola ujian harian, pekanan, dan akhir beserta soal, jawaban, serta tenggatnya.", icon: ClipboardList },
     { href: "peserta", title: "Peserta", detail: "Kelola profil, nomor peserta, kelompok, dan keikutsertaan angkatan.", icon: Users },
+    { href: "progres", title: "Progres Peserta", detail: "Periksa ujian selesai, ujian belum dikerjakan, serta nilai peserta per angkatan.", icon: ClipboardList },
     { href: "pendaftaran", title: "Pendaftaran", detail: "Daftarkan peserta satu per satu atau impor melalui Excel.", icon: CalendarDays },
     { href: "angkatan", title: "Angkatan", detail: "Siapkan angkatan dan atur pembukaan atau penutupan pendaftaran.", icon: Layers },
     { href: "sertifikat", title: "Sertifikat", detail: "Kelola sertifikat keikutsertaan setelah seluruh periode ujian berakhir.", icon: GraduationCap },

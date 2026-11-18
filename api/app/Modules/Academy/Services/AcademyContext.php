@@ -22,9 +22,8 @@ class AcademyContext
 
     public function teacher(Request $request): void
     {
-        $user = $request->user();
-        $session = app(SessionData::class)->forUser($user);
-        abort_unless($user->is_superadmin || in_array($session['moduleRoles']['academy'] ?? null, ['admin', 'teacher'], true), 403);
+        // Legacy teacher/* endpoints are compatibility aliases for administrators only.
+        $this->admin($request);
     }
 
     public function available(Request $request): void
@@ -72,7 +71,9 @@ class AcademyContext
 
         $phone = $values['cs_phone'] ?? '628111186626';
         $contacts = json_decode($values['cs_contacts'] ?? 'null', true);
-        if (! is_array($contacts) || ! $contacts) $contacts = [['name' => 'CS Academy', 'phone' => $phone]];
+        if (! is_array($contacts) || ! $contacts) {
+            $contacts = [['name' => 'CS Academy', 'phone' => $phone]];
+        }
 
         return ['csContacts' => $contacts, 'csPhone' => $phone, 'weights' => ['DAILY' => (int) ($values['daily_weight'] ?? 20), 'WEEKLY' => (int) ($values['weekly_weight'] ?? 30), 'FINAL' => (int) ($values['final_weight'] ?? 50)]];
     }

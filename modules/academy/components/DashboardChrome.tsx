@@ -27,6 +27,7 @@ function navigationIcon(href: string, icon?: string) {
   if (href.includes("angkatan")) return Layers;
   if (href.includes("pendaftaran")) return CalendarDays;
   if (href.includes("peserta")) return Users;
+  if (href.includes("/progres")) return Layers;
   if (href.includes("sertifikat")) return GraduationCap;
   if (href.includes("materi") || href.includes("program")) return BookOpen;
   if (href.includes("kuis") || href.includes("ujian")) return ClipboardList;
@@ -35,7 +36,7 @@ function navigationIcon(href: string, icon?: string) {
   return LayoutDashboard;
 }
 
-function activeNavigationHref(pathname: string, role: "Admin" | "Pengajar" | "Peserta") {
+function activeNavigationHref(pathname: string, role: "Admin" | "Peserta") {
   if (role === "Admin" && pathname.startsWith("/admin/academy/participant-edit")) return "/admin/academy/peserta";
   if (role === "Admin" && pathname.startsWith("/admin/academy/program/") && pathname.includes("/kuis/")) return "/admin/academy/kuis";
   if (role === "Admin" && pathname.startsWith("/admin/academy/program")) return "/admin/academy/materi";
@@ -44,7 +45,7 @@ function activeNavigationHref(pathname: string, role: "Admin" | "Pengajar" | "Pe
 }
 
 export function DashboardChrome({ groups, userName, role, userNumber, unreadReminders = 0, csPhone, children }: {
-  groups: DashboardNavGroup[]; userName: string; role: "Admin" | "Pengajar" | "Peserta";
+  groups: DashboardNavGroup[]; userName: string; role: "Admin" | "Peserta";
   userNumber?: string | null; unreadReminders?: number; csPhone?: string; children: ReactNode;
 }) {
   const pathname = canonicalAcademyPath(usePathname());

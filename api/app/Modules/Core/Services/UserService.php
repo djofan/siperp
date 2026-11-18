@@ -2,8 +2,8 @@
 
 namespace App\Modules\Core\Services;
 
-use App\Modules\Core\Models\User;
 use App\Modules\Core\Auth\AccountCodes;
+use App\Modules\Core\Models\User;
 use CaliCastle\Cuid;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +15,9 @@ class UserService
     {
         return DB::transaction(function () use ($input): User {
             $user = new User;
-            if (empty($input['isSuperadmin'])) $user->code = AccountCodes::next('admin');
+            if (empty($input['isSuperadmin'])) {
+                $user->code = AccountCodes::next('admin');
+            }
             $user->forceFill(['name' => trim($input['name']), 'email' => ! empty($input['email']) ? trim($input['email']) : null, 'password_hash' => Hash::make($input['password']), 'is_superadmin' => $input['isSuperadmin'] ?? false, 'is_active' => true]);
             $user->save();
             $user->refresh();
@@ -117,7 +119,7 @@ class UserService
                 }
                 $roles = config('modules.roles.'.$module?->slug) ?? match ($module?->slug) {
                     'teknisi' => ['admin', 'manager', 'technician', 'monitoring'],
-                    'academy' => ['admin', 'editor', 'teacher'],
+                    'academy' => ['admin', 'editor'],
                     'tanwir', 'ojol' => ['admin', 'guru', 'peserta'],
                     default => ['admin', 'editor'],
                 };
@@ -141,7 +143,9 @@ class UserService
                     $this->log("Akses {$user->name} ke {$name} dicabut");
                 }
             }
-            if (collect($entries)->contains(fn ($entry) => $entry['role'] === 'admin')) AccountCodes::ensureAdmin($user);
+            if (collect($entries)->contains(fn ($entry) => $entry['role'] === 'admin')) {
+                AccountCodes::ensureAdmin($user);
+            }
         });
     }
 

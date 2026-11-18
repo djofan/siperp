@@ -24,8 +24,8 @@ test('app mobile drawer keeps secondary menus while desktop and bottom bar retai
  const bottom=all.find(n=>n.props?.['aria-label']==='Navigasi cepat Academy');
  assert.deepEqual(links(bottom),['/academy/belajar','/academy/materi','/academy/kuis','/academy/akun']);
 });
-test('web and teacher drawers retain complete navigation when no participant bottom bar is shown',()=>{
- for(const [base,role] of [['/academy','Peserta'],['/academy-app','Pengajar']]){
+test('web and admin drawers retain complete navigation when no participant bottom bar is shown',()=>{
+ for(const [base,role] of [['/academy','Peserta'],['/academy-app','Admin']]){
  const all=nodes(render(base,role));const drawer=all.find(n=>n.type==='mobile-drawer');
  for(const path of ['belajar','materi','kuis','akun'])assert(links(drawer).includes('/academy/'+path));
  assert(!all.some(n=>n.props?.['aria-label']==='Navigasi cepat Academy'));
