@@ -87,7 +87,7 @@ class Intake
             'applicant.street' => 'required|string|max:500', 'applicant.rtRw' => 'nullable|string|max:30',
             'applicant.village' => 'nullable|string|max:191', 'applicant.district' => 'nullable|string|max:191', 'applicant.city' => 'nullable|string|max:191',
             'applicant.housing' => 'required|string|max:191', 'applicant.rent' => 'nullable|integer|min:0|max:9000000000000',
-            'applicant.job' => 'required|string|max:191', 'applicant.income' => 'required|integer|min:0|max:9000000000000',
+            'applicant.job' => 'required|string|max:191', 'applicant.income' => is_string($request->input('applicant.income')) ? 'required|string|max:1000' : 'required|integer|min:0|max:9000000000000',
             'applicant.incomePeriod' => 'required|in:hari,pekan,bulan', 'applicant.dependentCount' => 'required|integer|min:0|max:100',
             'applicant.dependents' => 'nullable|string|max:5000', 'applicant.phone' => ['required', 'string', 'max:30', new PhoneNumber],
             'applicant.prayer' => 'required|in:Ya,Jarang,Tidak', 'applicant.smoking' => 'required|in:Ya,Jarang,Tidak',

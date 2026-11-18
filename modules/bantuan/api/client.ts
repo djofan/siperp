@@ -33,3 +33,5 @@ export async function request<T>(path: string, init: RequestInit = {}, unwrap = 
 }
 export const money = (amount: number | null | undefined) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount ?? 0);
 export const day = (value: string) => new Date(value).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+
+export const formatIncome = (value: unknown) => typeof value === "number" ? money(value) : String(value ?? "").trim() || "Belum diisi";
