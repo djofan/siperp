@@ -98,3 +98,11 @@ test('imports sunnah knowledge separately from surrounding survey fields',()=>{
     assert.equal(r.survey.background,'Kondisi keluarga');
   }
 });
+
+
+test('preserves income ranges and irregular descriptions instead of taking the first amount', () => {
+  for (const income of ['50.000 sampai 60.000 per hari', 'Rp 50.000–60.000 per hari, tidak menentu', 'Tidak ada penghasilan tetap']) {
+    assert.equal(parse('Penghasilan: ' + income).applicant.income, income);
+  }
+  assert.equal(parse('Penghasilan: 50.000 sampai 60.000 per hari').applicant.incomePeriod, 'hari');
+});
