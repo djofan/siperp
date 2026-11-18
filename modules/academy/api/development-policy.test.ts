@@ -8,6 +8,8 @@ test("exam release respects WIB day, exact start and additional opening time", (
   assert.equal(examOpensAt(null, 1, null), null);
   const later = new Date("2026-10-09T10:00:00+07:00");
   assert.equal(examOpensAt(starts, 8, later)?.toISOString(), later.toISOString());
+  assert.equal(examOpensAt(later, 99, starts)?.toISOString(), starts.toISOString());
+  assert.equal(examOpensAt(null, 99, starts)?.toISOString(), starts.toISOString());
 });
 test("review never opens before both the current and persisted exam close", () => {
   const close = new Date("2026-10-01T10:00:00Z");
