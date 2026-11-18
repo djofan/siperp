@@ -9,7 +9,7 @@ import { publicNavigation } from "../public-navigation";
 
 interface NavbarProps {
   isLoggedIn: boolean;
-  dashboardHref?: "/academy/belajar" | "/academy/pengajar";
+  dashboardHref?: "/academy/belajar" | "/admin/academy";
 }
 
 export function Navbar({ isLoggedIn, dashboardHref = "/academy/belajar" }: NavbarProps) {

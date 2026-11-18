@@ -8,7 +8,7 @@ import { getSession } from "@/lib/auth";
 
 export const getAcademyUser = cache(async () => {
   if (!await getSession()) return null;
-  try { return await apiRequest<{ id: string; name: string; isSuperadmin: boolean; moduleAccess: { role: string }[]; academyProfile: { id: string; nis: string | null; mustChangePassword: boolean; deletedAt: null } | null; isTeacher: boolean }>("academy/viewer"); }
+  try { return await apiRequest<{ id: string; name: string; isSuperadmin: boolean; isAdmin: boolean; moduleAccess: { role: string }[]; academyProfile: { id: string; nis: string | null; mustChangePassword: boolean; deletedAt: null } | null; isTeacher: boolean }>("academy/viewer"); }
   catch (error) { if (error instanceof ApiError && [401, 403].includes(error.status)) return null; throw error; }
 });
 
@@ -37,12 +37,12 @@ export async function requireAcademyProfile() {
 
 export async function requireAcademyParticipant() {
   const user = await requireAcademyUser();
-  if (user.isTeacher || user.isSuperadmin) redirect(await academyServerHref("/academy/pengajar"));
+  if (user.isAdmin || user.isSuperadmin || user.moduleAccess.some(access => access.role === "admin")) redirect("/admin/academy");
   return user;
 }
 
 export async function requireAcademyTeacher() {
   const user = await requireAcademyUser();
-  if (!user.isSuperadmin && !user.isTeacher) redirect(await academyServerHref("/academy/belajar"));
+  if (!user.isSuperadmin && !user.moduleAccess.some(access => access.role === "admin")) redirect(await academyServerHref("/academy/belajar"));
   return user;
 }

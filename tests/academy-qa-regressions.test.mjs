@@ -63,7 +63,7 @@ test('Academy admin and superadmin reach management even during maintenance', ()
 test('Academy navigation preserves participant, teacher, first-password and guest restrictions', () => {
   assert.equal(academyLoginDestination(null, true), '/academy/masuk');
   assert.equal(academyLoginDestination(participant, true), '/academy/belajar');
-  assert.equal(academyLoginDestination({ ...participant, isTeacher: true }, true), '/academy/pengajar');
+  assert.equal(academyLoginDestination({ ...participant, isTeacher: true }, true), '/academy/belajar');
   assert.equal(academyLoginDestination(participant, false), '/academy');
   assert.equal(academyLoginDestination({ ...participant, academyProfile: { mustChangePassword: true } }, true), '/academy/akun');
   assert.equal(academyLoginDestination({ ...participant, moduleAccess: [{ role: 'editor' }] }, true), '/academy/belajar');

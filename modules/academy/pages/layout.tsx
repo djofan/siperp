@@ -25,7 +25,7 @@ export default async function AcademyLayout({ children }: { children: React.Reac
   const basePath = await getAcademyBasePath();
   const user = await getAcademyUser();
   const settings = await getLearningSettings();
-  const unread = user?.academyProfile && !user.isTeacher && !user.isSuperadmin ? (await getExamNotifications(user.academyProfile.id)).filter(item => !item.read).length : 0;
-  const certificatesAvailable = user?.academyProfile && !user.isTeacher && !user.isSuperadmin ? (await getLearningOverview(user.academyProfile.id)).some(course => course.certificateVisible) : false;
-  return <AcademyPwa basePath={basePath}><AcademyShell certificatesAvailable={certificatesAvailable} csPhone={settings.csPhone} unreadReminders={unread} user={user ? { name: user.name, nis: user.academyProfile?.nis ?? null, isTeacher: user.isTeacher, isSuperadmin: user.isSuperadmin } : null}><a href="#academy-content" className="sr-only focus:not-sr-only focus:p-4">Lewati ke konten</a>{user?.academyProfile && !user.isTeacher && !user.isSuperadmin && <ReminderRefresh />}{children}</AcademyShell></AcademyPwa>;
+  const unread = user?.academyProfile && !user.isAdmin && !user.isSuperadmin ? (await getExamNotifications(user.academyProfile.id)).filter(item => !item.read).length : 0;
+  const certificatesAvailable = user?.academyProfile && !user.isAdmin && !user.isSuperadmin ? (await getLearningOverview(user.academyProfile.id)).some(course => course.certificateVisible) : false;
+  return <AcademyPwa basePath={basePath}><AcademyShell certificatesAvailable={certificatesAvailable} csPhone={settings.csPhone} unreadReminders={unread} user={user ? { name: user.name, nis: user.academyProfile?.nis ?? null, isTeacher: user.isTeacher, isAdmin: user.isAdmin, isSuperadmin: user.isSuperadmin } : null}><a href="#academy-content" className="sr-only focus:not-sr-only focus:p-4">Lewati ke konten</a>{user?.academyProfile && !user.isAdmin && !user.isSuperadmin && <ReminderRefresh />}{children}</AcademyShell></AcademyPwa>;
 }
