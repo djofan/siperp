@@ -1,5 +1,9 @@
 # Modul Keuangan
 
+Persiapan importer lokal ditambahkan 18 November 2026: [panduan impor](../../docs/keuangan/impor-lokal.md).
+CLI mendukung dry-run, mapping akun eksplisit, transaksi atomik dan provenance/idempotensi.
+Penerapan dibatasi pada SQLite lokal terisolasi; belum ada impor pada database pengguna atau VPS.
+
 Workflow lokal diperluas pada 17 November 2026; bagian fondasi 16 November dipertahankan sebagai catatan historis. Halaman `/admin/keuangan` memakai sesi Core dan
 GET `/api/v1/keuangan/overview`. Modul didaftarkan **nonaktif** oleh migration
 `2026_11_16_000001_create_keuangan_foundation`; akun dan transaksi tidak dibuat.

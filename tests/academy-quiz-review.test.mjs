@@ -79,3 +79,18 @@ test("edit form uses current exam terminology and Save Changes without removing 
  const button=find(tree,node=>node.props?.name==="intent"&&node.props?.value==="activate");
  assert.equal(button.props.children,"Simpan Perubahan");assert.equal(typeof tree.props.onSubmit,"function");
 });
+
+
+test("participant review marks selected correct and wrong options and every unanswered question",()=>{
+ const policy=load("modules/academy/api/policy.ts");
+ const review=load("modules/academy/components/QuizReview.tsx",{"../api/policy":policy,"./QuestionMedia":media});
+ const questions=[1,2,3].map(n=>question(n));
+ const snapshot={passingScore:0,timeLimitMinutes:4,questions,responses:{q1:["a1","c1"],q2:["b2"]}};
+ const html=renderToStaticMarkup(React.createElement(review.QuizReview,{snapshot}));
+ assert.equal((html.match(/Tidak dijawab/g)||[]).length,1);
+ assert.equal((html.match(/Jawaban Anda/g)||[]).length,3);
+ assert.match(html,/bg-red-50 text-red-800/);assert.match(html,/bg-green-50 text-green-800/);
+ const missed=renderToStaticMarkup(React.createElement(review.QuizReview,{snapshot:{...snapshot,responses:{}}}));
+ assert.equal((missed.match(/Tidak dijawab/g)||[]).length,3);
+ assert.equal((missed.match(/Jawaban Anda/g)||[]).length,0);
+});
