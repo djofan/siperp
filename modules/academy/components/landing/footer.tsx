@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element -- Logo lokal dari project referensi. */
 "use client";
 import { AcademyAnchor } from "@/modules/academy/pwa/AcademyNavigation";
 
+import { AcademyLogo } from "../AcademyLogo";
 import { OrganizationContact } from "@/components/OrganizationContact";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 
@@ -13,8 +13,7 @@ export function Footer() {
           {/* Logo & tagline */}
           <div className="flex flex-col items-center gap-2 md:items-start">
             <div className="flex items-center gap-2">
-              <img src="/academy/logo-lazsip.webp" alt="LAZSIP" className="h-6 w-6 object-contain" />
-              <span className="font-semibold text-gray-900">Insan Academy</span>
+              <AcademyLogo className="h-24 w-36 p-3" />
             </div>
             <p className="text-xs text-gray-400">Belajar bersama Ustadz Irham</p>
           </div>

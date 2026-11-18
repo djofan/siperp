@@ -15,7 +15,7 @@ test('material list and editors highlight Materi instead of Dashboard', async ()
     const source = ts.transpileModule(readFileSync(file, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
     }).outputText;
-    vm.runInNewContext(source, { exports, require: id => Object.hasOwn(overrides, id) ? overrides[id] : require(id) });
+    vm.runInNewContext(source, { exports, require: id => id.endsWith("AcademyLogo") ? {AcademyLogo:"academy-logo"} : Object.hasOwn(overrides, id) ? overrides[id] : require(id) });
     return exports;
   }
   const Layout = compile('modules/academy/admin/pages/layout.tsx', {
@@ -88,6 +88,7 @@ test('registration retains all non-secret fields after an action error and allow
   vm.runInNewContext(source, {
     exports,
     require(id) {
+      if(id.endsWith("AcademyLogo")) return {AcademyLogo:"academy-logo"};
       if (id === '../api/actions') return { registerParticipant: action };
       if (id === './ActionForm') return { ActionForm: 'form' };
       if (id === './ui') return { inputClass: '' };

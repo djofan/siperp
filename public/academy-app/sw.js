@@ -1,8 +1,8 @@
 /* Only public installation assets are cached. API, authenticated HTML,
    audio, questions, answers and mutation requests always use the network. */
-const CACHE = "academy-app-public-v1";
+const CACHE = "academy-app-public-v2";
 const OFFLINE = "/academy-app/offline.html";
-const PUBLIC_FILES = [OFFLINE, "/academy-pwa/icon-192.png", "/academy-pwa/icon-512.png", "/academy-pwa/icon-maskable.png"];
+const PUBLIC_FILES = [OFFLINE, "/academy-pwa/icon-192-v2.png", "/academy-pwa/icon-512-v2.png", "/academy-pwa/icon-maskable-v2.png"];
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PUBLIC_FILES)));

@@ -1,7 +1,7 @@
 import { requireAcademyAdmin } from "@/modules/academy/api/admin-access";
 import { AcademyAdminShellChrome } from "@/modules/academy/components/admin/AcademyAdminShellChrome";
 import "@/modules/academy/components/dashboard.css";
-export const metadata = { title: "Admin Academy", robots: { index: false, follow: false } };
+export const metadata = { icons: { icon: "/academy-pwa/icon-192-v2.png", apple: "/academy-pwa/icon-192-v2.png" }, title: "Admin Academy", robots: { index: false, follow: false } };
 export default async function Layout({ children }: { children: React.ReactNode }) {
   const user = await requireAcademyAdmin();
   const items = [{ href: "/admin/academy", label: "Dashboard" }, { href: "/admin/academy/pendaftaran", label: "Pendaftaran" }, { href: "/admin/academy/peserta", label: "Peserta" }, { href: "/admin/academy/progres", label: "Progres Peserta" }, { href: "/admin/academy/materi", label: "Materi" }, { href: "/admin/academy/kuis", label: "Ujian" }, { href: "/admin/academy/pertanyaan", label: "Tanya Ustadz" }, { href: "/admin/academy/sertifikat", label: "Sertifikat" }, { href: "/admin/academy/angkatan", label: "Angkatan" }, { href: "/admin/academy/pengaturan", label: "Pengaturan" }];
