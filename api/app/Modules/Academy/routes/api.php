@@ -8,8 +8,10 @@ use App\Modules\Academy\Http\Controllers\IntakeController;
 use App\Modules\Academy\Http\Controllers\LearningController;
 use App\Modules\Academy\Http\Controllers\MaterialController;
 use App\Modules\Academy\Http\Controllers\PageDataController;
+use App\Modules\Academy\Http\Controllers\ParticipantImportController;
 use App\Modules\Academy\Http\Controllers\QuizController;
 use App\Modules\Academy\Http\Controllers\TeacherController;
+use App\Modules\Academy\Http\Controllers\TodayController;
 use App\Modules\Core\Http\Controllers\ParticipantController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,7 +30,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('admin/materials/{id}', [MaterialController::class, 'adminShow']);
     Route::post('admin/materials', [MaterialController::class, 'save']);
     Route::post('admin/materials/{id}/duplicate', [MaterialController::class, 'duplicate']);
-    Route::get('learning/today', [\App\Modules\Academy\Http\Controllers\TodayController::class, 'index']);
+    Route::get('learning/today', [TodayController::class, 'index']);
     Route::get('learning/cohorts', [CohortController::class, 'index']);
     Route::post('cohorts/{id}/join', [CohortController::class, 'join']);
     Route::post('admin/material-quizzes', [MaterialController::class, 'createQuiz']);
@@ -47,7 +49,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
     Route::get('admin/intake', [$pages, 'intake']);
-    Route::post('admin/participant-imports', [App\Modules\Academy\Http\Controllers\ParticipantImportController::class, 'store']);
+    Route::post('admin/participant-imports', [ParticipantImportController::class, 'store']);
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);
     Route::post('admin/cohorts', [$intake, 'cohort']);
@@ -90,6 +92,7 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::put('lessons/{id}/audio', [LearningController::class, 'audio']);
     Route::post('courses/{courseId}/sessions', [LearningController::class, 'session']);
     Route::post('notifications/read', [LearningController::class, 'reminder']);
+    Route::get('quizzes/{quizId}/review', [QuizController::class, 'review']);
     Route::post('quizzes/{quizId}/attempts', [QuizController::class, 'start']);
     Route::put('attempts/{id}', [QuizController::class, 'update']);
     Route::get('quizzes/{quizId}/attempts/{id}', [QuizController::class, 'show']);

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Academy\Http\Controllers;
 
+use App\Modules\Academy\Models\AcademyCohort;
 use App\Modules\Academy\Models\ZakatAcademyQuiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
 use App\Modules\Academy\Services\AcademyContext;
@@ -65,7 +66,9 @@ class QuizController
             // Lock a stable parent to serialize the first attempt as well as retakes.
             $profile->newQuery()->where('id', $profile->id)->lockForUpdate()->firstOrFail();
             $cohortId = ZakatAcademyQuiz::findOrFail($quizId)->chapter->course->cohortId;
-            if ($cohortId) \App\Modules\Academy\Models\AcademyCohort::whereKey($cohortId)->lockForUpdate()->firstOrFail();
+            if ($cohortId) {
+                AcademyCohort::whereKey($cohortId)->lockForUpdate()->firstOrFail();
+            }
             ZakatAcademyQuiz::where('id', $quizId)->lockForUpdate()->firstOrFail();
             $quiz = $this->context->quiz($quizId, $profile->id);
             abort_unless($this->context->released($quiz->chapter->course->startsAt, $quiz->releaseDay) && $quiz->isActive && (! $quiz->quizDate || ! $quiz->quizDate->isFuture()) && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Ujian belum dibuka atau sudah ditutup.');
@@ -130,6 +133,28 @@ class QuizController
         }, 3);
 
         return response()->json(['data' => $result]);
+    }
+
+    public function review(Request $request, string $quizId)
+    {
+        $profile = $this->context->profile($request);
+        $quiz = $this->context->quiz($quizId, $profile->id);
+        $attempt = ZakatAcademyQuizAttempt::where('quiz_id', $quizId)->where('profile_id', $profile->id)->orderByDesc('attempt_number')->first();
+        if ($attempt) {
+            if (! $attempt->isCompleted && $this->deadline($attempt)->isFuture()) {
+                return response()->json(['data' => null])->header('Cache-Control', 'no-store, private');
+            }
+            $snapshot = $attempt->answers;
+        } else {
+            // A missed exam may be reviewed only after its access window closes.
+            if (! $quiz->closesAt || $quiz->closesAt->isFuture()) {
+                return response()->json(['data' => null])->header('Cache-Control', 'no-store, private');
+            }
+            $snapshot = ['kind' => $quiz->kind, 'passingScore' => $quiz->passingScore, 'timeLimitMinutes' => $quiz->timeLimitMinutes, 'closesAt' => $quiz->closesAt->toISOString(), 'questions' => $quiz->questions->toArray(), 'responses' => new \stdClass];
+        }
+
+        return response()->json(['data' => ['snapshot' => $snapshot, 'attempted' => $attempt !== null, 'completed' => $attempt?->isCompleted ?? false]])
+            ->header('Cache-Control', 'no-store, private');
     }
 
     public function show(Request $request, string $quizId, string $id)

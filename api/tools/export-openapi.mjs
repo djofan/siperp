@@ -6,6 +6,12 @@ import { applyAcademyTodayContract } from './academy-today-contract.mjs';
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
 const document = JSON.parse(readFileSync(new URL('../docs/openapi.base.json', import.meta.url), 'utf8'));
+document.paths['/api/v1/academy/quizzes/{quizId}/review'] = {get: {
+  tags:['Academy'],summary:'Review own completed, expired or missed exam',security:[{bearerAuth:[]}],
+  description:'Requires an Academy participant enrolled in the published course, chapter and exam. Returns data null while an existing attempt is still usable, or before closesAt when no attempt exists. Otherwise returns snapshot (questions, answer keys, explanations, responses), attempted and completed. Existing attempts use their immutable snapshot and original deadline; missed exams use current questions with empty responses. Read-only: never creates attempts, changes scores or marks attendance. Private no-store response.',
+  parameters:[{name:'quizId',in:'path',required:true,schema:{type:'string'}}],
+  responses:{200:{description:'data is null or an object with snapshot, attempted and completed'},401:{description:'Unauthenticated'},403:{description:'Participant access denied'},404:{description:'Published enrolled exam not found'}},
+}};
 document.paths['/api/v1/academy/admin/curriculum/stats'] = {get: {
   tags:['Academy'],summary:'Admin Academy dashboard counters',security:[{bearerAuth:[]}],
   description:'Admin only. cohorts counts all cohorts; participants counts nondeleted profiles linked to active Core accounts; lessons and exams count all materials and exams, including drafts. Legacy courses, published and chapters counters remain for compatibility.',

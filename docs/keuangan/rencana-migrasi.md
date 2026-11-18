@@ -2,6 +2,11 @@
 
 Status: rencana lokal. Tidak ada perintah deployment/import yang dijalankan pada VPS.
 
+Pembaruan 18 November 2026: persiapan parser snapshot, audit sumber dan importer
+CLI lokal tersedia di [panduan impor lokal](impor-lokal.md). Tahap penulisan hanya
+diuji dengan fixture sintetis pada SQLite memory. Mapping akun nyata dan cutover
+belum diterapkan. Rencana di bawah tetap menjadi kriteria perluasan berikutnya.
+
 ## Tahap 1 Pemetaan dan kontrak
 
 Pemetaan fitur, 25 izin, 15 tabel, batas Core Finance dan pengecualian data sudah
