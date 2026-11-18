@@ -31,7 +31,7 @@ import { isRentedHousing, surveyApplicantKeys } from "../survey-applicant";
 import { dependentErrors } from "../dependents";
 
 export type Values = AidValues;
-export type Field = { key: string; label: string; type?: string; options?: string[]; wide?: boolean; optional?: boolean; hint?: string };
+export type Field = { key: string; label: string; type?: string; options?: string[]; wide?: boolean; optional?: boolean; hint?: string; placeholder?: string };
 export const applicantFields: Field[] = [
   {key:"name",label:"Nama lengkap"}, {key:"nik",label:"NIK",type:"nik",hint:"16 digit. Pengajuan sebelumnya akan ditandai, bukan diblokir."},
   {key:"birthPlace",label:"Tempat lahir"}, {key:"birthDate",label:"Tanggal lahir",type:"date"},
@@ -45,7 +45,7 @@ export const applicantFields: Field[] = [
   {key:"income",label:"Penghasilan (Rp)",type:"number"}, {key:"incomePeriod",label:"Periode penghasilan",options:["hari","pekan","bulan"]},
   {key:"dependentCount",label:"Jumlah tanggungan",type:"number"}, {key:"dependents",label:"Rincian tanggungan",optional:true,hint:"Isi nama, hubungan, umur, dan status setiap tanggungan."},
   {key:"prayer",label:"Sholat 5 waktu",options:["Ya","Jarang","Tidak"]}, {key:"smoking",label:"Merokok",options:["Ya","Jarang","Tidak"]},
-  {key:"previousAid",label:"Pernah menerima bantuan?",type:"boolean"}, {key:"previousAidNotes",label:"Keterangan bantuan sebelumnya",optional:true},
+  {key:"previousAid",label:"Pernah menerima bantuan?",type:"boolean"}, {key:"previousAidNotes",label:"Detail bantuan sebelumnya",type:"textarea",wide:true,optional:true,hint:"Jika Ya, wajib jelaskan kapan (bulan/tahun), jenis bantuan dan nominal/jumlah, serta siapa atau lembaga pemberinya. Sebutkan frekuensi jika rutin; jika ada yang tidak diketahui, jelaskan.",placeholder:"Contoh: Januari 2026, bantuan sembako senilai Rp 300.000 dari LAZSIP melalui Pak Ahmad, diterima satu kali."},
   {key:"publicationConsent",label:"Bersedia dipublikasi?",type:"boolean",hint:"Hanya mencatat persetujuan. Modul ini tidak mempublikasikan data."},
   {key:"hasSktm",label:"Sudah punya SKTM?",type:"boolean"},
   {key:"willingSktm",label:"Bersedia mengurus SKTM?",type:"boolean"},
@@ -99,7 +99,7 @@ export function validateFields(fields:Field[],values:Values):Record<string,strin
     if(["rent","rentPeriod"].includes(f.key)&&!isRentedHousing(values.housing))continue;
     if(f.key==="willingSktm"&&values.hasSktm!==false)continue;
     const value=values[f.key];
-    if((!f.optional||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&(value===undefined||value===null||value===""))errors[f.key]=["Kolom ini wajib diisi."];
+    if((!f.optional||f.key==="previousAidNotes"&&values.previousAid===true||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&(value===undefined||value===null||typeof value==="string"&&value.trim()===""))errors[f.key]=["Kolom ini wajib diisi."];
     else if(f.key==="rent"&&isRentedHousing(values.housing)&&Number(value)<=0)errors[f.key]=["Isi biaya kontrak/sewa lebih dari Rp 0."];
     else if(f.type==="nik"&&!/^[0-9]{16}$/.test(String(value??"")))errors[f.key]=["NIK harus terdiri dari 16 digit angka."];
     else if(f.type==="tel"&&value!==undefined&&value!==null&&value!==""&&!isValidPhone(value))errors[f.key]=["Nomor telepon harus berisi 8–15 angka. Gunakan 08…, 021…, atau +62…. Format spasi, tanda hubung, dan kurung kode area diperbolehkan."];
@@ -123,10 +123,10 @@ export function Fields({fields,values,set,prefix="",required=true,errors={},orig
     const birth=String(values.birthDate??""),date=new Date(birth);
     const age=birth?today.getFullYear()-date.getFullYear()-(today.getMonth()<date.getMonth()||today.getMonth()===date.getMonth()&&today.getDate()<date.getDate()?1:0):null;
     return <div className={`${s.field} ${f.wide||f.key==="dependents"?s.wide:""} ${changed?s.changedField:""}`} key={id}>
-      <label htmlFor={segmented?id+"-0":id}>{f.label}{required&&(!f.optional||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&<em> *</em>}{changed&&<span className={s.changedLabel}>Diubah</span>}</label>
+      <label htmlFor={segmented?id+"-0":id}>{f.label}{required&&(!f.optional||f.key==="previousAidNotes"&&values.previousAid===true||["rent","rentPeriod"].includes(f.key)&&isRentedHousing(values.housing))&&<em> *</em>}{changed&&<span className={s.changedLabel}>Diubah</span>}</label>
       {f.key==="dependents"?<DependentsEditor value={values.dependents} errors={errors} onChange={rows=>{set("dependents",rows);set("dependentCount",rows.length);}}/>:segmented?<div className={s.segmented} role="radiogroup" aria-label={f.label}>{options.map((o,i)=><button key={o} id={id+"-"+i} type="button" role="radio" aria-checked={String(values[f.key])===o} onClick={()=>{set(f.key,f.type==="boolean"?o==="true":o);if(f.key==="hasSktm")set("willingSktm","");blur(f.key);}}>{o==="true"?"Ya":o==="false"?f.key==="hasSktm"?"Belum":"Tidak":o}</button>)}</div>:
       f.options?<select id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,e.target.value)}><option value="">Pilih…</option>{options.map(o=><option key={o} value={o}>{o.replaceAll("_"," ")}</option>)}</select>:
-      f.type==="textarea"?<textarea id={id} className={s.input} name={id} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} maxLength={10000} onChange={e=>set(f.key,e.target.value)}/>:
+      f.type==="textarea"?<textarea id={id} className={s.input} name={id} placeholder={f.placeholder} aria-required={required&&(!f.optional||f.key==="previousAidNotes"&&values.previousAid===true)} value={String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} maxLength={f.key==="previousAidNotes"?5000:10000} onChange={e=>set(f.key,e.target.value)}/>:
       <div className={rupiah?s.moneyInput:undefined}>{rupiah&&<span>Rp</span>}<input id={id} className={s.input} name={id} type={rupiah||f.type==="nik"?"text":f.type??"text"} inputMode={rupiah||f.type==="nik"||f.type==="number"?"numeric":undefined} maxLength={f.type==="nik"?16:f.type==="tel"?30:1000} max={f.type==="date"?today.toLocaleDateString("en-CA"):undefined} min={f.type==="number"?0:undefined} value={rupiah&&values[f.key]!==undefined&&values[f.key]!==""?Number(values[f.key]).toLocaleString("id-ID"):String(values[f.key]??"")} aria-invalid={!!error} onBlur={()=>blur(f.key)} onChange={e=>set(f.key,rupiah?e.target.value.replace(/[^0-9]/g,"")?Number(e.target.value.replace(/[^0-9]/g,"")):"":f.type==="number"?e.target.value===""?"":Number(e.target.value):e.target.value)}/></div>}
       {error?<small role="alert" className={s.fieldError}>{fieldMessage(error)}</small>:f.key==="birthDate"&&age!==null&&age>=0?<small>Usia {age} tahun</small>:f.hint&&<small>{f.hint}</small>}
     </div>;

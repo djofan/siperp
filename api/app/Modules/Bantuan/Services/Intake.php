@@ -91,7 +91,7 @@ class Intake
             'applicant.incomePeriod' => 'required|in:hari,pekan,bulan', 'applicant.dependentCount' => 'required|integer|min:0|max:100',
             'applicant.dependents' => 'nullable|string|max:5000', 'applicant.phone' => ['required', 'string', 'max:30', new PhoneNumber],
             'applicant.prayer' => 'required|in:Ya,Jarang,Tidak', 'applicant.smoking' => 'required|in:Ya,Jarang,Tidak',
-            'applicant.previousAid' => 'required|boolean', 'applicant.previousAidNotes' => 'nullable|string|max:5000',
+            'applicant.previousAid' => 'required|boolean', 'applicant.previousAidNotes' => (!$draft && $request->boolean('applicant.previousAid') ? 'required' : 'nullable').'|string|max:5000',
             'applicant.publicationConsent' => 'required|boolean', 'applicant.hasSktm' => 'required|boolean',
             'applicant.willingSktm' => $request->input('applicant.hasSktm') === false || $request->input('applicant.hasSktm') === 0 || $request->input('applicant.hasSktm') === '0'
                 ? 'required|boolean' : 'exclude',
@@ -128,6 +128,7 @@ class Intake
         }
 
         return $request->validate($rules, [
+            'applicant.previousAidNotes.required' => 'Jelaskan kapan menerima bantuan, jenis dan nominal/jumlah bantuan, serta siapa atau lembaga pemberinya.',
             'applicant.dependents.present' => 'Rinci setiap tanggungan sesuai jumlah yang diisi.',
             'applicant.dependents.array' => 'Lengkapi daftar tanggungan per orang, bukan hanya jumlahnya.',
             'applicant.dependents.size' => 'Jumlah rincian tanggungan harus sesuai jumlah tanggungan.',
