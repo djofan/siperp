@@ -2,6 +2,11 @@ import "server-only";
 import { apiRequest, ApiError } from "@/lib/api";
 import type * as Domain from "@/contracts/modules/shared";
 import { quizDeadline } from "./policy";
+import type { QuizSnapshot } from "./policy";
+
+export async function getQuizReview(quizId: string) {
+    return apiRequest<{ snapshot: QuizSnapshot; attempted: boolean; completed: boolean } | null>(`academy/quizzes/${encodeURIComponent(quizId)}/review`);
+}
 export function remainingQuizSeconds(startedAt: Date, minutes: number, closesAt?: string | null) {
     return Math.ceil((quizDeadline(startedAt, minutes, closesAt) - Date.now()) / 1000);
 }
