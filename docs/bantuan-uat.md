@@ -32,8 +32,9 @@ sama, tombol salin menerapkan data penerima/rekening ke pengajuan terpilih denga
 tersebut; bukti transfer tidak disalin otomatis. Nominal mengikuti persetujuan dan tidak dapat
 diubah dari form ini.
 
-Bukti transfer opsional untuk pengajuan perorangan, wajib untuk **Pengajuan lainnya**.
-Sesudah memeriksa ringkasan, centang konfirmasi dan klik **Simpan pencairan**. Ini mencatat
+Semua isian Bendahara opsional, termasuk bukti transfer pada **Pengajuan lainnya**.
+Tanggal yang tidak diisi memakai hari ini; nominal tetap mengikuti persetujuan.
+Sesudah memeriksa ringkasan, klik **Simpan pencairan**. Ini mencatat
 transfer yang sudah dilakukan, bukan mengirim uang. Status menjadi `disbursed` dan penyalur
 menerima notifikasi sesuai alur yang berlaku; laporan penyerahan tetap tahap terpisah.
 

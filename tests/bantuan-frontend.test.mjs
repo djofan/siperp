@@ -20,7 +20,7 @@ test("returning applicants can be searched and reused without copying old workfl
 test("transfer proof is optional and uploaded within the disbursement form",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
-  assert.match(actions,/kind:"transfer",minimum:row.intakeType==="other"\?1:0/);
+  assert.match(actions,/kind:"transfer",minimum:0/);
   assert.match(actions,/key==="disburse"&&!transferPhotosReady/);
   assert.doesNotMatch(actions,/Unggah bukti transfer terlebih dahulu pada bagian dokumen/);
   assert.match(workspace,/Bukti transfer \(opsional\)/);
