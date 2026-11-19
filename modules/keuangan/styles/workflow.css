@@ -39,10 +39,29 @@
 .finance-print footer { border-top:1px solid #aaa; padding-top:16px; margin-top:32px; font-size:11px; }
 .finance-print li { margin:10px 0; }
 @media print {
-  @page { size:A4; margin:15mm; }
+  @page finance-document {
+    size:A4;
+    margin:15mm;
+    @top-left { content:""; }
+    @top-center { content:""; }
+    @top-right { content:""; }
+    @bottom-left {
+      content:"https://erp.lazsip.or.id/admin/keuangan/pengeluaran";
+      font-family:Arial,sans-serif;
+      font-size:8pt;
+      color:#555;
+    }
+    @bottom-center { content:""; }
+    @bottom-right {
+      content:counter(page) " / " counter(pages);
+      font-family:Arial,sans-serif;
+      font-size:8pt;
+      color:#555;
+    }
+  }
   .finance-workspace > a,.finance-workspace > header,.finance-workspace > nav,.finance-print-toolbar { display:none !important; }
   .finance-workspace { max-width:none; padding:0 !important; margin:0 !important; background:#fff !important; color:#111 !important; }
-  .finance-print { max-width:none; padding:0; border:0; box-shadow:none; }
+  .finance-print { page:finance-document; max-width:none; padding:0; border:0; box-shadow:none; }
   .finance-print .finance-grid { grid-template-columns:1fr 1fr; gap:16px; }
   .finance-print .finance-status { background:none; color:#111; border:1px solid #aaa; }
   .finance-print header { break-inside:avoid; }
