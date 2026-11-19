@@ -12,9 +12,9 @@ export const academyManifest: MetadataRoute.Manifest = {
   background_color: "#f8fafc",
   theme_color: "#047857",
   icons: [
-    { src: "/academy-pwa/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-    { src: "/academy-pwa/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-    { src: "/academy-pwa/icon-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    { src: "/academy-pwa/icon-192-v2.png", sizes: "192x192", type: "image/png", purpose: "any" },
+    { src: "/academy-pwa/icon-512-v2.png", sizes: "512x512", type: "image/png", purpose: "any" },
+    { src: "/academy-pwa/icon-maskable-v2.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
   ],
   shortcuts: [
     { name: "Materi belajar", url: "/academy/materi" },

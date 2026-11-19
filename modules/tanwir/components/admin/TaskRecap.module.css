@@ -1,0 +1,27 @@
+.page { display: grid; gap: 24px; }
+.heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:start; gap:16px; }
+.heading h1 { margin:0; }
+.muted { color:var(--color-tanwir-muted, #5c6660); font-size:14px; line-height:1.7; }
+.filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; padding:20px; background:var(--color-tanwir-surface, #fff); border-radius:12px; }
+.filters label { display:grid; gap:8px; font-size:13px; font-weight:500; }
+.actions { display:flex; align-items:end; gap:16px; flex-wrap:wrap; }
+.table { overflow-x:auto; background:var(--color-tanwir-surface, #fff); border-radius:12px; }
+.table table { width:100%; border-collapse:collapse; font-size:14px; text-align:left; }
+.table th { white-space:nowrap; background:var(--color-surface-muted, #f4f3ee); font-weight:500; color:var(--color-tanwir-muted, #5c6660); }
+.table th,.table td { padding:16px; border-bottom:1px solid var(--color-tanwir-line, #eeeee8); vertical-align:top; }
+.table td:first-child { min-width:180px; }
+.table td:last-child a { white-space:nowrap; }
+.link { color:var(--color-tanwir-success, #1f4d43); font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+.stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.pagination { display:flex; flex-wrap:wrap; align-items:center; gap:20px; justify-content:space-between; font-size:14px; }
+.empty { padding:32px; text-align:center; color:var(--color-tanwir-muted, #5c6660); }
+.split { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr); gap:24px; }
+.details { padding:20px; background:var(--color-tanwir-surface, #fff); border-radius:12px; }
+.details summary { cursor:pointer; font-weight:600; }
+@media(max-width:640px) { .stats { grid-template-columns:repeat(2,minmax(0,1fr)); } .split { grid-template-columns:minmax(0,1fr); } .filters { padding:16px; } }
+
+/* Older app primitives have light surface rules; keep this admin report on the existing admin theme. */
+:global(.tanwir-admin) .page :global(.module-card),
+:global(.tanwir-admin) .page :global(.module-stat) { background:var(--color-tanwir-surface); color:var(--color-tanwir-ink); }
+:global(.tanwir-admin) .page :global(.module-stat) > p { color:var(--color-tanwir-muted); }
+:global(.tanwir-admin) .page :global(.module-stat) > p:nth-child(2) { color:var(--color-tanwir-ink); }

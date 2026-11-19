@@ -6,6 +6,7 @@ use App\Modules\Academy\Models\AcademyCohort;
 use App\Modules\Academy\Models\ZakatAcademyQuiz;
 use App\Modules\Academy\Models\ZakatAcademyQuizAttempt;
 use App\Modules\Academy\Services\AcademyContext;
+use App\Modules\Academy\Services\AcademyTimetable;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,7 +72,8 @@ class QuizController
             }
             ZakatAcademyQuiz::where('id', $quizId)->lockForUpdate()->firstOrFail();
             $quiz = $this->context->quiz($quizId, $profile->id);
-            abort_unless($this->context->released($quiz->chapter->course->startsAt, $quiz->releaseDay) && $quiz->isActive && (! $quiz->quizDate || ! $quiz->quizDate->isFuture()) && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Ujian belum dibuka atau sudah ditutup.');
+            $opensAt = app(AcademyTimetable::class)->examOpening($quiz);
+            abort_unless($opensAt && ! $opensAt->isFuture() && $quiz->isActive && (! $quiz->closesAt || $quiz->closesAt->isFuture()), 403, 'Ujian belum dibuka atau sudah ditutup.');
             abort_if(! $quiz->questions->count() || $quiz->questions->contains(fn ($q) => $q->type === 'MULTIPLE' ? ! $q->options->contains('isCorrect', true) : $q->options->where('isCorrect', true)->count() !== 1), 422, 'Soal ujian belum siap.');
             $latest = ZakatAcademyQuizAttempt::where('profile_id', $profile->id)->where('quiz_id', $quizId)->orderByDesc('attempt_number')->lockForUpdate()->first();
             if ($latest && ! $latest->isCompleted) {

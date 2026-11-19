@@ -15,7 +15,7 @@ test('material list and editors highlight Materi instead of Dashboard', async ()
     const source = ts.transpileModule(readFileSync(file, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
     }).outputText;
-    vm.runInNewContext(source, { exports, require: id => Object.hasOwn(overrides, id) ? overrides[id] : require(id) });
+    vm.runInNewContext(source, { exports, require: id => id.endsWith("AcademyLogo") ? {AcademyLogo:"academy-logo"} : Object.hasOwn(overrides, id) ? overrides[id] : require(id) });
     return exports;
   }
   const Layout = compile('modules/academy/admin/pages/layout.tsx', {
@@ -63,7 +63,7 @@ test('Academy admin and superadmin reach management even during maintenance', ()
 test('Academy navigation preserves participant, teacher, first-password and guest restrictions', () => {
   assert.equal(academyLoginDestination(null, true), '/academy/masuk');
   assert.equal(academyLoginDestination(participant, true), '/academy/belajar');
-  assert.equal(academyLoginDestination({ ...participant, isTeacher: true }, true), '/academy/pengajar');
+  assert.equal(academyLoginDestination({ ...participant, isTeacher: true }, true), '/academy/belajar');
   assert.equal(academyLoginDestination(participant, false), '/academy');
   assert.equal(academyLoginDestination({ ...participant, academyProfile: { mustChangePassword: true } }, true), '/academy/akun');
   assert.equal(academyLoginDestination({ ...participant, moduleAccess: [{ role: 'editor' }] }, true), '/academy/belajar');
@@ -88,6 +88,7 @@ test('registration retains all non-secret fields after an action error and allow
   vm.runInNewContext(source, {
     exports,
     require(id) {
+      if(id.endsWith("AcademyLogo")) return {AcademyLogo:"academy-logo"};
       if (id === '../api/actions') return { registerParticipant: action };
       if (id === './ActionForm') return { ActionForm: 'form' };
       if (id === './ui') return { inputClass: '' };

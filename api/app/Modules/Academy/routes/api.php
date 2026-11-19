@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Academy\Http\Controllers\AdminProgressController;
 use App\Modules\Academy\Http\Controllers\CohortController;
 use App\Modules\Academy\Http\Controllers\CourseController;
 use App\Modules\Academy\Http\Controllers\CurriculumController;
@@ -49,6 +50,8 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function () {
     Route::get('learning/material/{courseId}', [$pages, 'material']);
     Route::get('learning/lessons/{courseSlug}/{lessonSlug}', [$pages, 'lesson']);
     Route::get('admin/intake', [$pages, 'intake']);
+    Route::get('admin/progress', [AdminProgressController::class, 'index']);
+    Route::get('admin/progress/{profileId}', [AdminProgressController::class, 'show']);
     Route::post('admin/participant-imports', [ParticipantImportController::class, 'store']);
     Route::get('admin/people/{id}', [$pages, 'person']);
     Route::get('admin/cohorts', [$pages, 'cohorts']);

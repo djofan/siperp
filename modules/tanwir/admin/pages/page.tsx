@@ -30,6 +30,7 @@ export default async function TanwirAdminDashboard({searchParams}:{searchParams:
         { label: "Total tugas", value: summary.tasks, detail: "Tugas dari seluruh guru", icon: "tasks" },
       ]} />
       <div className="tanwir-dashboard-links flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-tanwir-muted">
+        <Link href="/admin/tanwir/rekap-tugas" className="hover:text-tanwir-primary">Rekap tugas & hasil peserta</Link>
         <Link href="/admin/tanwir/kelompok" className="hover:text-tanwir-primary">{summary.groups} kelompok pembinaan</Link>
         <Link href="/admin/tanwir/tugas" className="hover:text-tanwir-primary">{summary.pending} setoran menunggu review</Link>
       </div>

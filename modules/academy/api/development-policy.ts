@@ -1,7 +1,8 @@
 export function examOpensAt(startsAt: Date | null, releaseDay: number, quizDate: Date | null) {
+  if (quizDate) return quizDate;
   if (!startsAt) return null;
   const day = 86400_000, offset = 7 * 3600_000;
-  return new Date(Math.max(startsAt.getTime(), Math.floor((startsAt.getTime() + offset) / day) * day - offset + (releaseDay - 1) * day, quizDate?.getTime() ?? 0));
+  return new Date(Math.max(startsAt.getTime(), Math.floor((startsAt.getTime() + offset) / day) * day - offset + (releaseDay - 1) * day));
 }
 export function reviewAvailable(closesAt: Date | null, snapshotClosesAt?: string | null, now = new Date()) {
   if (!closesAt) return false;

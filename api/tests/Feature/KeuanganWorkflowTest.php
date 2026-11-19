@@ -25,7 +25,7 @@ beforeEach(function () {
     DB::table('modules')->where('slug', 'keuangan')->update(['is_active' => true]);
     $this->manager = financeActor('finance_admin');
     $this->operator = financeActor('operator');
-    $this->first = financeActor('approver');
+    $this->first = financeActor('treasurer');
     $this->second = financeActor('treasurer');
     Sanctum::actingAs($this->manager);
     $this->source = $this->postJson('/api/v1/keuangan/masters/sources', financeKey(['name' => 'Dana QA']))->assertCreated()->json('data.id');

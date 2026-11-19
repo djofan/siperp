@@ -17,5 +17,15 @@ test("manual date changes, upcoming and inactive exams have distinct states", ()
   assert.equal(participantExamStatus(reopened, true, false, now).available, true);
   assert.match(participantExamStatus({ ...reopened, isActive: false }, true, false, now).message, /dinonaktifkan/);
   assert.match(participantExamStatus({ ...reopened, quizDate: reopened.closesAt }, true, false, now).message, /belum dibuka/);
-  assert.equal(participantExamStatus(reopened, false, false, now).available, false);
+  assert.equal(participantExamStatus(reopened, false, false, now).available, true);
+  assert.equal(participantExamStatus({ ...reopened, quizDate: null }, false, false, now).available, false);
+});
+
+
+test("manual opening overrides cohort start and legacy release days", async () => {
+  const { examOpensAt } = await import("../modules/academy/api/development-policy.ts");
+  const futureCohort = new Date("2026-12-01T10:00:00Z");
+  assert.equal(examOpensAt(futureCohort, 99, exam.quizDate), exam.quizDate);
+  assert.equal(examOpensAt(null, 99, exam.quizDate), exam.quizDate);
+  assert.equal(examOpensAt(null, 1, null), null);
 });

@@ -146,3 +146,7 @@
 .academy-theme .academy-metric-icon { background: var(--academy-lime); color: var(--academy-green); }
 
 @media (max-width: 480px) { .academy-theme.academy-auth > main { padding: 1.5rem; } }
+
+/* Original Insan Academy artwork keeps its green/gold colors on every surface. */
+.academy-logo { background: #fff; line-height: 0; }
+.academy-logo img { object-fit: contain; filter: none; }

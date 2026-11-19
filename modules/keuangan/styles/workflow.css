@@ -29,3 +29,21 @@
 .finance-history {display:grid;gap:20px;list-style:none;padding:0}.finance-history li {border-left:3px solid #b6d3c3;padding-left:15px}.finance-history p {font-size:.9rem}.finance-history details {margin:10px 0}.finance-history pre {white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f7f5;padding:12px;border-radius:8px;font-size:.8rem}
 .finance-rule {border-top:1px solid #d1dfd9;padding:16px 0}.finance-rule summary {cursor:pointer;font-weight:600;min-height:44px}
 @media(max-width:640px){.finance-grid{grid-template-columns:1fr}.finance-title{align-items:flex-start}.finance-menu a{flex:1 1 42%;text-align:center}.finance-panel,.finance-form{padding:16px}.finance-search{align-items:stretch;flex-direction:column}.finance-workspace button,.finance-button{width:100%}}
+
+.finance-print-toolbar { display:flex; justify-content:space-between; gap:20px; margin:20px 0; }
+.finance-print { background:#fff; color:#111; padding:32px; border:1px solid #d1dfd9; max-width:210mm; margin:auto; }
+.finance-print > header { display:block; border-bottom:2px solid #222; padding-bottom:16px; margin-bottom:24px; }
+.finance-print > header h1 { font-size:24px; color:#111; }
+.finance-print section { margin:24px 0; break-inside:avoid; }
+.finance-print h2 { font-size:16px; font-weight:600; margin-bottom:8px; }
+.finance-print footer { border-top:1px solid #aaa; padding-top:16px; margin-top:32px; font-size:11px; }
+.finance-print li { margin:10px 0; }
+@media print {
+  @page { size:A4; margin:15mm; }
+  .finance-workspace > a,.finance-workspace > header,.finance-workspace > nav,.finance-print-toolbar { display:none !important; }
+  .finance-workspace { max-width:none; padding:0 !important; margin:0 !important; background:#fff !important; color:#111 !important; }
+  .finance-print { max-width:none; padding:0; border:0; box-shadow:none; }
+  .finance-print .finance-grid { grid-template-columns:1fr 1fr; gap:16px; }
+  .finance-print .finance-status { background:none; color:#111; border:1px solid #aaa; }
+  .finance-print header { break-inside:avoid; }
+}

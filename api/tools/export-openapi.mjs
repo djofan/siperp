@@ -1,7 +1,10 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { applySantunanContract } from './santunan-contract.mjs';
 import { applyKeuanganContract } from './keuangan-contract.mjs';
+import { applyKeuanganApplicationContract } from './keuangan-application-contract.mjs';
 import { applyAcademyTodayContract } from './academy-today-contract.mjs';
+import { applyAcademyProgressContract } from './academy-progress-contract.mjs';
+import { applyTanwirTaskRecapContract } from './tanwir-task-recap-contract.mjs';
 
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
@@ -544,8 +547,11 @@ document.paths['/api/v1/keuangan/overview'] = { get: {
 }};
 
 applyAcademyTodayContract(document);
+applyAcademyProgressContract(document);
+applyTanwirTaskRecapContract(document);
 applySantunanContract(document);
 applyKeuanganContract(document);
+applyKeuanganApplicationContract(document);
 
 document.paths['/api/v1/bantuan/disbursements'] = {post: {
   tags: ['Bantuan'], summary: 'Record mass disbursement to separate recipients', security: [{bearerAuth: []}],

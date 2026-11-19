@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AcademyLogo } from "@/modules/academy/components/AcademyLogo";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { listAccessibleModules, listModules } from "@/modules/core/modules";
@@ -32,7 +33,7 @@ export default async function ModuleLauncherPage() {
                 className={panelClasses("group flex min-h-52 flex-col gap-5 rounded-3xl p-6 transition-colors hover:bg-white/[0.07] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent")}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="relative flex h-11 w-11 items-center justify-center rounded-2xl bg-white/5 text-foreground/70">
-                    <LayersIcon className="h-5 w-5" />
+                    {module.slug === "academy" ? <AcademyLogo compact className="h-11 w-11" /> : <LayersIcon className="h-5 w-5" />}
                     <span className={cn("absolute bottom-1 right-1 h-2 w-2 rounded-full", color.dot)} />
                   </span>
                   <span className={cn("rounded-full px-3 py-1 text-[10px] font-medium", module.isActive ? "bg-emerald-400/10 text-emerald-300" : "bg-amber-400/10 text-amber-300")}>

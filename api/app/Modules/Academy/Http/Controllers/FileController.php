@@ -25,7 +25,7 @@ class FileController
     {
         $this->context->available($request);
         $session = app(SessionData::class)->forUser($request->user());
-        $isTeacher = $request->user()->is_superadmin || in_array($session['moduleRoles']['academy'] ?? null, ['admin', 'teacher'], true);
+        $isTeacher = $request->user()->is_superadmin || ($session['moduleRoles']['academy'] ?? null) === 'admin';
         if ($isTeacher) {
             return Lesson::findOrFail($id);
         }
@@ -134,7 +134,7 @@ class FileController
         $this->context->available($request);
         $question = Question::with('quiz')->findOrFail($id);
         $session = app(SessionData::class)->forUser($request->user());
-        $manager = $request->user()->is_superadmin || in_array($session['moduleRoles']['academy'] ?? null, ['admin', 'teacher'], true);
+        $manager = $request->user()->is_superadmin || ($session['moduleRoles']['academy'] ?? null) === 'admin';
         if (! $manager) {
             $profile = $this->context->profile($request);
             $this->context->quiz($question->quizId, $profile->id);
@@ -153,7 +153,7 @@ class FileController
         $data = $request->validate(['lessonId' => 'required|string', 'position' => 'required|numeric|min:0|max:86400', 'source' => 'required|string|max:2048']);
         $profile = $this->context->profile($request);
         $session = app(SessionData::class)->forUser($request->user());
-        abort_if($request->user()->is_superadmin || in_array($session['moduleRoles']['academy'] ?? null, ['admin', 'teacher'], true), 403);
+        abort_if($request->user()->is_superadmin || ($session['moduleRoles']['academy'] ?? null) === 'admin', 403);
         $lesson = $this->context->lesson($data['lessonId'], $profile->id);
         abort_unless($lesson->videoUrl === $data['source'], 403);
         DB::transaction(function () use ($profile, $lesson, $data) {

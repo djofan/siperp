@@ -32,7 +32,7 @@ export default async function TanwirTaskMonitorPage({ searchParams }: { searchPa
 
   return (
     <div>
-      <PageHeader title="Monitor tugas" description="Semua tugas lintas guru. Ingatkan guru lewat WhatsApp bila ada setoran yang menunggu koreksi." />
+      <PageHeader title="Monitor tugas" description="Semua tugas lintas guru. Ingatkan guru lewat WhatsApp bila ada setoran yang menunggu koreksi." actions={<Link href="/admin/tanwir/rekap-tugas" className="rounded-xl bg-tanwir-primary px-4 py-2 text-sm text-white">Lihat rekap & hasil tugas</Link>} />
       <div className="mb-5"><DirectorySummary items={[
         { label: "Total tugas", value: all.length, detail: "Lintas guru dan kelompok", icon: "tasks" },
         { label: "Kuis", value: all.filter(task => task.type === "quiz").length, detail: "Penilaian kuis otomatis", icon: "quiz" },
