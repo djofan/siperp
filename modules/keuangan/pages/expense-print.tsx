@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getKeuanganOverview } from "../api/overview";
 import { getExpense } from "../api/workflow";
 import { PrintButton } from "../components/PrintButton";
 import { ApplicationFields } from "../components/ApplicationFields";
@@ -6,6 +8,8 @@ import { Status, rupiah, date } from "../components/ui";
 
 export const metadata = { title: "Cetak Pengajuan Keuangan", robots: { index: false, follow: false } };
 export default async function ExpensePrint({ params }: { params: Promise<{ id: string }> }) {
+  const overview = await getKeuanganOverview();
+  if (overview.role === "treasurer") notFound();
   const e = await getExpense((await params).id);
   return <><div className="finance-print-toolbar"><Link href={`/admin/keuangan/pengeluaran/${e.id}`}>← Kembali ke pengajuan</Link><PrintButton /></div>
     <article className="finance-print"><header><p>SOLIDARITAS INSAN PEDULI</p><h1>Pengajuan Keuangan</h1><p>Referensi: {e.id} · Revisi {e.revision}</p><Status value={e.status} /></header>
