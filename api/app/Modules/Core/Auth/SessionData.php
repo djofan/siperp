@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Auth;
 
 use App\Modules\Core\Models\User;
+use App\Support\ModuleSessions;
 use Illuminate\Support\Facades\DB;
 
 class SessionData
@@ -13,12 +14,15 @@ class SessionData
             ->where('module_access.user_id', $user->id)->where('modules.is_active', true)
             ->get(['modules.slug', 'module_access.role']);
 
+        $financeOnly = $access->count() === 1 && $access->first()->slug === 'keuangan'
+            && in_array($access->first()->role, ['admin', 'finance_admin', 'treasurer', 'operator'], true);
+
         return [
             'userId' => $user->id, 'name' => $user->name, 'code' => $user->code,
             'isSuperadmin' => $user->is_superadmin,
             'moduleSlugs' => $access->pluck('slug')->all(),
             'moduleRoles' => $access->pluck('role', 'slug')->all(),
-            'panelRedirect' => ! $user->is_superadmin ? app(\App\Support\ModuleSessions::class)->preferredPanel($access->all()) : null,
+            'panelRedirect' => ! $user->is_superadmin ? ($financeOnly ? '/admin/keuangan' : app(ModuleSessions::class)->preferredPanel($access->all())) : null,
         ];
     }
 }

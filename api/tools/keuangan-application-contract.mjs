@@ -14,7 +14,7 @@ export function applyKeuanganApplicationContract(document) {
   const options=document.paths['/api/v1/keuangan/expense-options'].get;
   const optionData=options.responses[200].content['application/json'].schema.properties.data;
   optionData.properties.programs={type:'array',items:person};optionData.properties.treasurers={type:'array',items:person};optionData.required.push('programs','treasurers');
-  options.description='Expense writers only. Fixed active categories: Cash Advance, Kegiatan Sosial, Operasional, Lain-lain. Fixed active sources: Kas Infaq, Kas Amil, Kas Riba. Programs use the editable program master initialized from legacy category/program labels. Treasury choices include active Keuangan treasurer accounts only, excluding the requester.';
+  options.description='Expense writers only. Fixed active categories: Cash Advance, Kegiatan Sosial, Operasional, Lain-lain. Fixed active sources: Kas Infaq, Kas Amil, Kas Riba, Kas Zakat. Programs use the editable program master initialized from legacy category/program labels. Treasury choices include active Keuangan treasurer accounts only, excluding the requester.';
   const settings=document.paths['/api/v1/keuangan/settings'].get;
   const settingData=settings.responses[200].content['application/json'].schema.properties.data;
   settingData.properties.programs=programs;settingData.required.push('programs');

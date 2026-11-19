@@ -10,5 +10,6 @@ export default async function DashboardHomePage(){
   if(!session)redirect("/admin/login");
   const [registered,totalUsers]=await Promise.all([listModules(),session.isSuperadmin?countUsers():Promise.resolve(null)]);
   const modules=registered.filter(module=>module.isActive&&(session.isSuperadmin||session.moduleSlugs.includes(module.slug)));
+  if (!session.isSuperadmin && session.panelRedirect === "/admin/keuangan") redirect("/admin/keuangan");
   return <><CoreDashboard name={session.name} isSuperadmin={session.isSuperadmin} modules={modules} totalModules={registered.length} totalUsers={totalUsers} managedModules={modules.filter(module=>session.moduleRoles?.[module.slug]==="admin").length}/>{modules.filter(m=>["tanwir","ojol"].includes(m.slug)&&(session.isSuperadmin||session.moduleRoles?.[m.slug]==="admin")).map(m=><LearningDashboardReport key={m.slug} module={m.slug as "tanwir"|"ojol"}/>)}</>;
 }
