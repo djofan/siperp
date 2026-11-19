@@ -13,15 +13,15 @@ class DisbursementController
     {
         $access->allow($request, ['treasurer']);
         $input = $request->validate([
-            'transferDate' => 'required|date|before_or_equal:today',
+            'transferDate' => 'nullable|date|before_or_equal:today',
             'items' => 'required|array|min:1|max:50',
             'items.*.id' => 'required|uuid|distinct:ignore_case',
             'items.*.version' => 'required|integer|min:1',
-            'items.*.transferAmount' => 'required|integer|min:1',
-            'items.*.bank' => 'required|string|max:191',
-            'items.*.account' => 'required|string|max:191',
-            'items.*.recipientName' => 'required|string|max:191',
-            'items.*.recipientRelationship' => 'required|string|max:191',
+            'items.*.transferAmount' => 'nullable|integer|min:1',
+            'items.*.bank' => 'nullable|string|max:191',
+            'items.*.account' => 'nullable|string|max:191',
+            'items.*.recipientName' => 'nullable|string|max:191',
+            'items.*.recipientRelationship' => 'nullable|string|max:191',
         ]);
 
         $results = DB::transaction(function () use ($request, $input, $access, $workflow) {
@@ -32,7 +32,7 @@ class DisbursementController
             foreach ($items as $item) {
                 // Cloning preserves the authenticated user resolver and module attributes.
                 $copy = clone $request;
-                $copy->replace([...$item, 'transferDate' => $input['transferDate']]);
+                $copy->replace([...$item, 'transferDate' => $input['transferDate'] ?? null]);
                 $row = $workflow->perform($copy, $item['id'], 'disburse');
                 $results[] = ['id' => $row->id, 'status' => $row->status, 'version' => $row->version];
             }
