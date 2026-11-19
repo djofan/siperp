@@ -6810,20 +6810,54 @@
                     "type": "integer"
                   },
                   "transferDate": {
-                    "type": "string",
-                    "format": "date"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "description": "Optional; absent/null/blank defaults to today. Cannot be later than today."
                   },
                   "transferAmount": {
-                    "type": "integer"
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "description": "Optional; absent/null/blank defaults to approved amount. Supplied amount must equal approved amount."
                   },
                   "account": {
-                    "type": "string"
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
                   },
                   "reason": {
                     "type": "string"
                   },
                   "reference": {
                     "type": "string"
+                  },
+                  "bank": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  },
+                  "recipientName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  },
+                  "recipientRelationship": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
                   }
                 }
               }
@@ -12698,6 +12732,354 @@
           }
         }
       }
+    },
+    "/api/v1/bantuan/applications/{id}/actions/disburse": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Record an application disbursement",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "All disbursement report fields and transfer proof are optional for every intake. Missing, null or blank transferDate defaults to today; a supplied date cannot be later than today. Missing, null or blank transferAmount defaults to the approved amount; supplied amounts must be positive integers equal to the approved amount. account, bank, recipientName and recipientRelationship are nullable strings up to 191 characters. Provided recipient metadata is encrypted; effective date and amount are audited. Available fresh evidence is consumed normally. Role, status, version and financial guards remain enforced. Handover report and evidence requirements remain unchanged. Treasurer, module admin or Superadmin; fund_approved only. Does not transfer money or complete handover.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "transferDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "description": "Optional; absent/null/blank defaults to today. Cannot be later than today."
+                  },
+                  "transferAmount": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 1,
+                    "description": "Optional; absent/null/blank defaults to approved amount. Supplied amount must equal approved amount."
+                  },
+                  "account": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  },
+                  "bank": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  },
+                  "recipientName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  },
+                  "recipientRelationship": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 191
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Application with disbursed status and incremented version; private no-store"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/disbursements": {
+      "post": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "Record mass disbursement to separate recipients",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Treasurer, module admin or Superadmin only. Records transfers already performed; does not transfer money. One atomic transaction locks applications in stable ID order and performs the normal disburse workflow for every row. Different distributors, banks and accounts are allowed. Every application must be fund_approved with its current version and transferAmount equal to its approved amount. Recipient metadata and transferDate are stored encrypted and audited for ordinary and other intake. All report fields and transfer proof are optional for ordinary and other intake. Absent/null/blank date defaults to today and amount defaults to the approved amount. Supplied dates cannot be future; supplied amounts must be positive integers equal to the approved amount. Recipient fields are nullable strings of at most 191 characters. Workflow consumes available proof and notifies each assigned distributor. Any missing record, stale version, invalid supplied amount/date/recipient or invalid status rolls back applications, evidence usage, events and notifications. Legacy batch endpoint is unchanged. Private no-store response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "items"
+                ],
+                "properties": {
+                  "transferDate": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date",
+                    "description": "Optional actual transfer date, no later than today; absent/null/blank defaults to today"
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "description": "Distinct application IDs (case insensitive)",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "id",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "transferAmount": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "minimum": 1,
+                          "description": "Optional; absent/null/blank defaults to approved amount. Supplied value must equal approved amount."
+                        },
+                        "bank": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        },
+                        "account": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        },
+                        "recipientName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        },
+                        "recipientRelationship": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All disbursements recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "count",
+                        "items"
+                      ],
+                      "properties": {
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 50
+                        },
+                        "items": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 50,
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "status",
+                              "version"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "status": {
+                                "enum": [
+                                  "disbursed"
+                                ]
+                              },
+                              "version": {
+                                "type": "integer",
+                                "minimum": 2
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "x-core-account-access-policy": {
@@ -12905,7 +13287,7 @@
     "discriminator": "applicant.intakeType=other",
     "description": "Custom requests always use source online and program Lainnya. Applicant identity fields name/nik/street/phone represent the reporter, not a fictitious individual beneficiary. Required reporterRelationship, otherCategory (Proposal, Sedekah air bersih, Renovasi rumah, Lainnya), customTitle, problem, customBudget. applicationNotes and multiple captioned supporting photos are optional. Drafts require name and 16-digit nik; other fields may be incomplete. Legacy new/returning intake remains unchanged.",
     "workflow": "submit -> screening (Call Center) -> screen_pass -> review2 (Approver/chair amount approval) -> approved -> assign_distributor (Call Center selects verifier/volunteer) -> fund_ready -> fund_submitted -> fund_approved -> disburse -> disbursed -> handover -> completed. No survey. Call Center may record handover via manual-processes on behalf of the assigned distributor. Existing role, independent approval, funding group and optimistic version guards apply.",
-    "transfer": "For other intake, disburse additionally requires bank, recipientName, recipientRelationship and a new unused transfer evidence photo, alongside transferDate, transferAmount equal to approved amount, and account. Atomic recording stores encrypted recipient details and transfer date; completion requires the assigned distributor handover report and normal evidence. Missing fields/evidence rolls back all changes. Bulk verifier disbursement cannot bypass these checks."
+    "transfer": "All disbursement report fields and transfer proof are optional for every intake. Missing, null or blank transferDate defaults to today; a supplied date cannot be later than today. Missing, null or blank transferAmount defaults to the approved amount; supplied amounts must be positive integers equal to the approved amount. account, bank, recipientName and recipientRelationship are nullable strings up to 191 characters. Provided recipient metadata is encrypted; effective date and amount are audited. Available fresh evidence is consumed normally. Role, status, version and financial guards remain enforced. Handover report and evidence requirements remain unchanged."
   },
   "x-bantuan-survey-household": {
     "survey": {

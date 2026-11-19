@@ -430,8 +430,13 @@ fund_ready -> pengajuan dana -> fund_approved -> disburse -> disbursed -> handov
 Survei tidak berlaku. Transfer belum menyelesaikan pengajuan. Laporan dan bukti penyerahan
 diisi penyalur yang ditugaskan, atau dicatat Call Center melalui manual-processes dengan
 identitas pelaksana asli dan identitas pencatat terpisah. Jenis ini tidak dapat diganti setelah diproses.
-Disburse memerlukan tanggal, nominal sesuai persetujuan, account, bank, recipientName,
-recipientRelationship, serta bukti transfer baru. Data penerima disimpan terenkripsi dalam
+Seluruh detail laporan disburse opsional untuk semua intake, termasuk other: tanggal,
+nominal, account, bank, recipientName, recipientRelationship, dan bukti transfer.
+Tanggal absen/null/kosong memakai hari ini; jika diisi harus tanggal valid tidak di masa depan.
+Nominal absen/null/kosong memakai nominal disetujui; jika diisi harus integer positif
+yang sama dengan nominal disetujui. Metadata penerima nullable string maksimal 191 karakter,
+disimpan saat field dikirim. Bukti transfer baru yang tersedia tetap dikonsumsi.
+Tanggal/nominal efektif tetap diaudit. Role, status, versi, dan bukti handover tetap berlaku. Data penerima disimpan terenkripsi dalam
 manual_process.transferRecipient; dicatat oleh akun autentikasi pada audit. Tidak memerlukan
 migration. Aksi `other_report` setelah completed menerima version dan handover.date/notes;
 Call Center/Bendahara/admin dapat melengkapi laporan serta foto supporting kemudian tanpa

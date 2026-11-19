@@ -275,25 +275,25 @@ class Workflow
                 $row->fund_reference = $request->validate(['reference' => 'nullable|string|max:191'])['reference'] ?? null;
             }
             if ($action === 'disburse') {
-                $transfer = $request->validate(['transferDate' => 'required|date|before_or_equal:today', 'transferAmount' => 'required|integer|min:1', 'account' => 'required|string|max:191']);
+                $transfer = $request->validate([
+                    'transferDate' => 'nullable|date|before_or_equal:today',
+                    'transferAmount' => 'nullable|integer|min:1',
+                    'account' => 'nullable|string|max:191',
+                    'bank' => 'nullable|string|max:191',
+                    'recipientName' => 'nullable|string|max:191',
+                    'recipientRelationship' => 'nullable|string|max:191',
+                ]);
+                $transfer['transferDate'] ??= now()->toDateString();
+                $transfer['transferAmount'] ??= $row->amount;
                 abort_unless((int) $transfer['transferAmount'] === $row->amount, 422, 'Nominal pencairan harus sama dengan nominal ditetapkan.');
-                if ($other) $this->requiredDocuments($row, ['transfer' => 1], unused: true);
                 if (DB::table('bantuan_documents')->where('application_id', $row->id)->where('kind', 'transfer')->whereNull('deleted_at')->whereNull('used_at')->exists()) {
                     $this->consumeEvidence($row, 'transfer');
                 }
                 $row->disbursed_at = $transfer['transferDate'];
-                if ($other) {
-                    $recipient = $request->validate([
-                        'bank' => 'required|string|max:191',
-                        'recipientName' => 'required|string|max:191',
-                        'recipientRelationship' => 'required|string|max:191',
-                    ]);
-                    $this->requiredDocuments($row, ['transfer' => 1]);
+                if ($request->hasAny(['account', 'bank', 'recipientName', 'recipientRelationship'])) {
                     $meta = $row->manual_process ?? [];
-                    $meta['transferRecipient'] = [...$recipient, ...$transfer];
+                    $meta['transferRecipient'] = $transfer;
                     $row->manual_process = $meta;
-                    // Transfer to the assigned distributor is not a completed handover.
-                    $next = 'disbursed';
                 }
             }
             if ($action === 'other_report') {
