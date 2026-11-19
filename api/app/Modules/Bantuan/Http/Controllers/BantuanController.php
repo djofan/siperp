@@ -145,7 +145,7 @@ class BantuanController
             ->where('active_application_id', $row->id)->first(['bantuan_funding_requests.id', 'bantuan_funding_requests.number']);
         return response()->json(['data' => [...$this->summary($row), 'applicant' => $applicant, 'fundingRequest' => $funding,
             'surveyDeadline' => app(\App\Modules\Bantuan\Services\Reminders::class)->surveyDeadline($row),
-              'manualProcess' => $sensitive ? $row->manual_process : (($row->applicant['intakeType'] ?? null) === 'other' && $access->has($request, ['treasurer'])
+              'manualProcess' => $sensitive ? $row->manual_process : ($access->has($request, ['treasurer'])
                   ? ['transferRecipient' => $row->manual_process['transferRecipient'] ?? null] : null),
               'surveyLocation' => $sensitive ? $row->survey_location : null,
             'bypassReason' => $row->bypass_reason, 'survey' => $sensitive ? $row->survey : null, 'handover' => $row->handover,

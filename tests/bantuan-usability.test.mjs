@@ -222,16 +222,16 @@ test("Dashboard links stay within the current role's routes",()=>{
   }
 });
 
-test("card and table views show the same application and preserve batch eligibility",()=>{
+test("card and table views retain completed records without disbursement checkboxes",()=>{
   const {ApplicationList}=load("modules/bantuan/components/ApplicationList.tsx");
   const record={id:"application-one",number:"BNT-TEST-001",name:"Pemohon Contoh",program:"Kesehatan",source:"online",region:"Bandung",status:"completed",amount:3500000,verifierId:"verifier-one",distributorId:"verifier-one",distributionType:"verifier",createdAt:"2026-10-28T08:00:00Z"};
   const props={page:{data:[record],current_page:1,last_page:1,total:1,per_page:12},staff:[{id:"verifier-one",name:"Petugas Survei"}],selected:{},onSelect(){},selectable:true,canSelect:()=>false,refreshing:false,number:1,onPageChange(){},perPage:"12",onPerPageChange(){}};
   for(const view of ["cards","table"]){
     const html=renderToStaticMarkup(React.createElement(ApplicationList,{...props,view,viewer:viewer("call_center")}));
     for(const label of ["Pemohon Contoh","BNT-TEST-001","Kesehatan","Online / WhatsApp","Petugas Survei","Selesai","3.500.000"])assert.ok(html.includes(label),view+": "+label);
-    assert.match(html,/<input[^>]*type="checkbox"[^>]*disabled/);
+    assert.doesNotMatch(html,/<input[^>]*type="checkbox"/);
     assert.match(html,/Menampilkan 1–1 dari 1 pengajuan/);
-    assert.match(html,/href="\/admin\/bantuan\/pengajuan\/application-one\?from=pengajuan"/);
+    assert.match(html,/href="\/admin\/bantuan\/pengajuan\/application-one\?from=pengajuan&amp;action=report"/);
     assert.equal(html.includes("<table"),view==="table");
     assert.equal(html.includes("<article"),view==="cards");
   }
@@ -289,4 +289,21 @@ test("report heading uses readable dates and staff names instead of query codes"
  assert.match(text,/Suparta/);assert.doesNotMatch(text,/staff-123|dateField=|page=|completed/);
  assert.match(reportFilterDescription(defaultFilters),/semua tanggal/);
  assert.match(reportFilterDescription({...defaultFilters,to:"2026-11-30"}),/sampai 30 November 2026/);
+});
+
+
+test("mass disbursement checklist is limited to authorized roles and ready applications",()=>{
+  const {BulkDisbursement}=load("modules/bantuan/components/BulkDisbursement.tsx");
+  const ready={id:"ready",number:"BNT-READY",name:"Siap cair",program:"Kesehatan",source:"online",status:"fund_approved",amount:1000000,distributorId:"field",distributionType:"verifier",createdAt:"2026-11-19T00:00:00Z"};
+  const completed={...ready,id:"done",number:"BNT-DONE",name:"Sudah selesai",status:"completed"};
+  const props={selectionKey:"page-1",page:{data:[ready,completed],current_page:1,last_page:1,total:2,per_page:12},staff:[],view:"cards",refreshing:false,number:1,onPageChange(){},perPage:"12",onPerPageChange(){},onSaved(){}};
+  for(const role of ["call_center","verifier","fund_requester","treasurer","admin"]){
+    const html=renderToStaticMarkup(React.createElement(BulkDisbursement,{...props,viewer:viewer(role)}));
+    const allowed=["treasurer","admin"].includes(role);
+    assert.equal(html.includes("Catat pencairan sekaligus"),allowed,role);
+    assert.equal(html.includes("Pilih pencairan Siap cair"),allowed,role);
+    assert.ok(!html.includes("Pilih pencairan Sudah selesai"),role);
+    assert.ok(html.includes("Sudah selesai"),role);
+    if(allowed)assert.match(html,/Pilih semua di halaman ini \(1\)/);
+  }
 });

@@ -497,7 +497,7 @@ document['x-bantuan-other-intake'] = {
   discriminator:'applicant.intakeType=other',
   description:'Custom requests always use source online and program Lainnya. Applicant identity fields name/nik/street/phone represent the reporter, not a fictitious individual beneficiary. Required reporterRelationship, otherCategory (Proposal, Sedekah air bersih, Renovasi rumah, Lainnya), customTitle, problem, customBudget. applicationNotes and multiple captioned supporting photos are optional. Drafts require name and 16-digit nik; other fields may be incomplete. Legacy new/returning intake remains unchanged.',
   workflow:'submit -> screening (Call Center) -> screen_pass -> review2 (Approver/chair amount approval) -> approved -> assign_distributor (Call Center selects verifier/volunteer) -> fund_ready -> fund_submitted -> fund_approved -> disburse -> disbursed -> handover -> completed. No survey. Call Center may record handover via manual-processes on behalf of the assigned distributor. Existing role, independent approval, funding group and optimistic version guards apply.',
-  transfer:'For other intake, disburse additionally requires bank, recipientName, recipientRelationship and a new unused transfer evidence photo, alongside transferDate, transferAmount equal to approved amount, and account. Atomic recording stores encrypted recipient details and transfer date; completion requires the assigned distributor handover report and normal evidence. Missing fields/evidence rolls back all changes. Bulk verifier disbursement cannot bypass these checks.',
+  transfer:'All disbursement report fields and transfer proof are optional for every intake. Missing, null or blank transferDate defaults to today; a supplied date cannot be later than today. Missing, null or blank transferAmount defaults to the approved amount; supplied amounts must be positive integers equal to the approved amount. account, bank, recipientName and recipientRelationship are nullable strings up to 191 characters. Provided recipient metadata is encrypted; effective date and amount are audited. Available fresh evidence is consumed normally. Role, status, version and financial guards remain enforced. Handover report and evidence requirements remain unchanged.',
 };
 document.paths['/api/v1/bantuan/applications/{id}/actions/other_report']={post:{tags:['Bantuan'],summary:'Add an optional report after direct custom-request transfer',description:'Only completed other intake. Call Center, treasurer or module admin. Preserves completion status/date and amount; updates report with audit trail. Supporting photos can be appended privately at completed stage by these roles.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version','handover'],properties:{version:{type:'integer',minimum:1},handover:{type:'object',required:['date','notes'],properties:{date:{type:'string',format:'date'},notes:{type:'string',maxLength:5000}}}}})},responses:{200:{description:'Completed application with optional report'},403:error,404:error,409:error,422:error}}};
 document['x-bantuan-survey-household'] = {
@@ -552,6 +552,34 @@ applyTanwirTaskRecapContract(document);
 applySantunanContract(document);
 applyKeuanganContract(document);
 applyKeuanganApplicationContract(document);
+
+const disbursementReportProperties = {
+  transferDate: {type:['string','null'],format:'date',description:'Optional; absent/null/blank defaults to today. Cannot be later than today.'},
+  transferAmount: {type:['integer','null'],minimum:1,description:'Optional; absent/null/blank defaults to approved amount. Supplied amount must equal approved amount.'},
+  ...Object.fromEntries(['account','bank','recipientName','recipientRelationship'].map(name => [name,{type:['string','null'],maxLength:191}])),
+};
+document.paths['/api/v1/bantuan/applications/{id}/actions/disburse'] = {post: {
+  tags:['Bantuan'],summary:'Record an application disbursement',security:[{bearerAuth:[]}],
+  description:document['x-bantuan-other-intake'].transfer + ' Treasurer, module admin or Superadmin; fund_approved only. Does not transfer money or complete handover.',
+  parameters:[{name:'id',in:'path',required:true,schema:{type:'string',format:'uuid'}}],
+  requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1},...disbursementReportProperties}})},
+  responses:{200:{description:'Application with disbursed status and incremented version; private no-store'},401:error,403:error,404:error,409:error,422:error},
+}};
+Object.assign(document.paths['/api/v1/bantuan/applications/{id}/manual-processes'].post.requestBody.content['application/json'].schema.properties, disbursementReportProperties);
+document.paths['/api/v1/bantuan/disbursements'] = {post: {
+  tags: ['Bantuan'], summary: 'Record mass disbursement to separate recipients', security: [{bearerAuth: []}],
+  description: 'Treasurer, module admin or Superadmin only. Records transfers already performed; does not transfer money. One atomic transaction locks applications in stable ID order and performs the normal disburse workflow for every row. Different distributors, banks and accounts are allowed. Every application must be fund_approved with its current version and transferAmount equal to its approved amount. Recipient metadata and transferDate are stored encrypted and audited for ordinary and other intake. All report fields and transfer proof are optional for ordinary and other intake. Absent/null/blank date defaults to today and amount defaults to the approved amount. Supplied dates cannot be future; supplied amounts must be positive integers equal to the approved amount. Recipient fields are nullable strings of at most 191 characters. Workflow consumes available proof and notifies each assigned distributor. Any missing record, stale version, invalid supplied amount/date/recipient or invalid status rolls back applications, evidence usage, events and notifications. Legacy batch endpoint is unchanged. Private no-store response.',
+  requestBody: {required: true, content: json({type: 'object', required: ['items'], properties: {
+    transferDate: {type: ['string','null'], format: 'date', description: 'Optional actual transfer date, no later than today; absent/null/blank defaults to today'},
+    items: {type: 'array', minItems: 1, maxItems: 50, description: 'Distinct application IDs (case insensitive)', items: {
+      type: 'object', required: ['id','version'], properties: {
+        id: {type:'string',format:'uuid'}, version: {type:'integer',minimum:1}, transferAmount: {type:['integer','null'],minimum:1,description:'Optional; absent/null/blank defaults to approved amount. Supplied value must equal approved amount.'},
+        ...Object.fromEntries(['bank','account','recipientName','recipientRelationship'].map(name => [name,{type:['string','null'],maxLength:191}])),
+      },
+    }},
+  }})},
+  responses: {200: {description: 'All disbursements recorded', content: json({type:'object',required:['data'],properties:{data:{type:'object',required:['count','items'],properties:{count:{type:'integer',minimum:1,maximum:50},items:{type:'array',minItems:1,maxItems:50,items:{type:'object',required:['id','status','version'],properties:{id:{type:'string',format:'uuid'},status:{enum:['disbursed']},version:{type:'integer',minimum:2}}}}}}}})},401:error,403:error,404:error,409:error,422:error},
+}};
 
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);

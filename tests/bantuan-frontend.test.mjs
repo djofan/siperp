@@ -20,7 +20,7 @@ test("returning applicants can be searched and reused without copying old workfl
 test("transfer proof is optional and uploaded within the disbursement form",()=>{
   const actions=readFileSync("modules/bantuan/components/ActionPanel.tsx","utf8");
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
-  assert.match(actions,/kind:"transfer",minimum:row.intakeType==="other"\?1:0/);
+  assert.match(actions,/kind:"transfer",minimum:0/);
   assert.match(actions,/key==="disburse"&&!transferPhotosReady/);
   assert.doesNotMatch(actions,/Unggah bukti transfer terlebih dahulu pada bagian dokumen/);
   assert.match(workspace,/Bukti transfer \(opsional\)/);
@@ -234,8 +234,8 @@ test("light Bantuan shell shares card and table presentation while keeping actio
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const listing=readFileSync("modules/bantuan/components/ApplicationList.tsx","utf8");
   const css=readFileSync("modules/bantuan/components/Workspace.module.css","utf8");
-  assert.match(workspace,/<ApplicationList /);
-  assert.match(listing,/className=\{shared.stickyAction\}/);
+  assert.match(workspace,/<BulkDisbursement /);
+  assert.match(listing,/shared.stickyAction/);
   assert.match(workspace,/aria-label="Langkah berikutnya"/);
   assert.match(workspace,/navigation\(viewer\)/);
   assert.match(css,/\.table \.stickyAction\{position:sticky;right:0/);
