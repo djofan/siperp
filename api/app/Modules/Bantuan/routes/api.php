@@ -32,6 +32,7 @@ Route::post('applications', [C::class, 'store']);
 Route::post('duplicate-check', [C::class, 'duplicate']);
 Route::post('applicants/search', [C::class, 'searchApplicants'])->middleware('throttle:60,1');
 Route::post('batch', [C::class, 'batch']);
+Route::post('disbursements', \App\Modules\Bantuan\Http\Controllers\DisbursementController::class);
 Route::post('application-reminders', [\App\Modules\Bantuan\Http\Controllers\ApplicationReminderController::class, 'bulk'])->middleware('throttle:10,1');
 Route::get('applications/{id}', [C::class, 'show']);
 Route::post('applications/{id}/locations', [SurveyLocationController::class, 'search'])->middleware('throttle:20,1');

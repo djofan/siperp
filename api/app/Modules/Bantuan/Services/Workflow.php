@@ -282,13 +282,14 @@ class Workflow
                     $this->consumeEvidence($row, 'transfer');
                 }
                 $row->disbursed_at = $transfer['transferDate'];
-                if ($other) {
+                if ($other || $request->hasAny(['bank', 'recipientName', 'recipientRelationship'])) {
                     $recipient = $request->validate([
                         'bank' => 'required|string|max:191',
                         'recipientName' => 'required|string|max:191',
                         'recipientRelationship' => 'required|string|max:191',
                     ]);
-                    $this->requiredDocuments($row, ['transfer' => 1]);
+                    if ($other) $this->requiredDocuments($row, ['transfer' => 1]);
+                    $transfer = [...$transfer, ...$recipient];
                     $meta = $row->manual_process ?? [];
                     $meta['transferRecipient'] = [...$recipient, ...$transfer];
                     $row->manual_process = $meta;

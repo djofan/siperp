@@ -2429,3 +2429,83 @@ it('rejects missing oversized or structured income values', function ($income) {
     $input['applicant']['income'] = $income;
     $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', $input)->assertUnprocessable();
 })->with(['', str_repeat('x', 1001), [['min' => 50000, 'max' => 60000]], -1]);
+
+function bantuanDisbursementItems($test): array
+{
+    $items = [];
+    foreach ([$test->verifier, bantuanUser('volunteer')] as $index => $distributor) {
+        $id = $test->actingAs($test->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+        Application::findOrFail($id)->forceFill(['status' => 'fund_approved', 'amount' => 1000000,
+            'distribution_type' => 'verifier', 'distributor_id' => $distributor->id])->save();
+        $items[] = ['id' => $id, 'version' => 1, 'transferAmount' => 1000000, 'bank' => 'Bank '.$index,
+            'account' => '00123'.$index, 'recipientName' => $distributor->name, 'recipientRelationship' => 'Penyalur '.$index];
+    }
+    return collect($items)->sortBy('id')->values()->all();
+}
+
+it('records mass disbursements for different recipients with dates audit and notifications', function (string $role) {
+    $items = bantuanDisbursementItems($this);
+    $date = now()->subDay()->toDateString();
+    $actor = $role === 'admin' ? bantuanUser('admin') : $this->treasurer;
+    $this->actingAs($actor, 'sanctum')->postJson('/api/v1/bantuan/disbursements', ['transferDate' => $date, 'items' => array_reverse($items)])
+        ->assertOk()->assertJsonPath('data.count', 2)->assertJsonCount(2, 'data.items');
+    foreach ($items as $item) {
+        $row = Application::findOrFail($item['id']);
+        expect($row->status)->toBe('disbursed')->and($row->version)->toBe(2)->and($row->disbursed_at->toDateString())->toBe($date);
+        $expected = array_diff_key($item, array_flip(['id', 'version'])) + ['transferDate' => $date];
+        expect($row->manual_process['transferRecipient'])->toEqual($expected);
+        $event = DB::table('bantuan_events')->where('application_id', $row->id)->where('action', 'disburse')->first();
+        expect($event->actor_id)->toBe($actor->id)->and($event->actor_role)->toBe($role)
+            ->and(json_decode(Crypt::decryptString($event->details), true)['transfer'])->toEqual($expected);
+        $this->assertDatabaseHas('bantuan_notifications', ['application_id' => $row->id, 'user_id' => $row->distributor_id]);
+        $this->getJson('/api/v1/bantuan/applications/'.$row->id)->assertOk()->assertJsonPath('data.manualProcess.transferRecipient.account', $item['account']);
+    }
+})->with(['treasurer', 'admin']);
+
+it('rolls back every mass disbursement on invalid state amount version role or proof', function (string $failure, int $status) {
+    $items = bantuanDisbursementItems($this);
+    $last = $items[1]['id'];
+    if ($failure === 'stale') $items[1]['version'] = 2;
+    if ($failure === 'amount') $items[1]['transferAmount'] = 999;
+    if ($failure === 'status') Application::findOrFail($last)->forceFill(['status' => 'fund_submitted'])->save();
+    if (in_array($failure, ['proof', 'used_proof'], true)) {
+        $row = Application::findOrFail($last);
+        $row->forceFill(['applicant' => [...$row->applicant, 'intakeType' => 'other']])->save();
+        if ($failure === 'used_proof') {
+            $doc = bantuanDoc($last, 'transfer');
+            DB::table('bantuan_documents')->where('id', $doc)->update(['used_at' => now()]);
+        }
+    }
+    $proof = bantuanDoc($items[0]['id'], 'transfer');
+    $events = DB::table('bantuan_events')->count();
+    $notifications = DB::table('bantuan_notifications')->count();
+    $this->actingAs($failure === 'role' ? $this->cc : $this->treasurer, 'sanctum')
+        ->postJson('/api/v1/bantuan/disbursements', ['transferDate' => now()->toDateString(), 'items' => $items])->assertStatus($status);
+    foreach ($items as $item) {
+        $row = Application::findOrFail($item['id']);
+        expect($row->version)->toBe(1)->and($row->disbursed_at)->toBeNull()->and($row->manual_process['transferRecipient'] ?? null)->toBeNull();
+    }
+    expect(DB::table('bantuan_events')->count())->toBe($events)->and(DB::table('bantuan_notifications')->count())->toBe($notifications)
+        ->and(DB::table('bantuan_documents')->where('id', $proof)->value('used_at'))->toBeNull();
+})->with([['stale',409], ['amount',422], ['status',409], ['role',403], ['proof',422], ['used_proof',422]]);
+
+it('requires fresh proof for other mass disbursements and consumes it on success', function () {
+    $items = bantuanDisbursementItems($this);
+    $row = Application::findOrFail($items[1]['id']);
+    $row->forceFill(['applicant' => [...$row->applicant, 'intakeType' => 'other']])->save();
+    $doc = bantuanDoc($row->id, 'transfer');
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/disbursements', ['transferDate' => now()->toDateString(), 'items' => $items])->assertOk();
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('used_at'))->not->toBeNull();
+    expect($row->fresh()->status)->toBe('disbursed')->and($row->fresh()->manual_process['transferRecipient']['bank'])->toBe($items[1]['bank']);
+});
+
+it('validates all mass disbursement recipients and batch bounds before writing', function (string $invalid) {
+    $items = bantuanDisbursementItems($this);
+    if ($invalid === 'empty') $items = [];
+    elseif ($invalid === 'duplicate') $items[1]['id'] = strtoupper($items[0]['id']);
+    elseif ($invalid === 'limit') $items = array_fill(0, 51, $items[0]);
+    else $items[1][$invalid] = ' ';
+    $events = DB::table('bantuan_events')->count();
+    $this->actingAs($this->treasurer, 'sanctum')->postJson('/api/v1/bantuan/disbursements', ['transferDate' => now()->toDateString(), 'items' => $items])->assertUnprocessable();
+    expect(DB::table('bantuan_events')->count())->toBe($events);
+})->with(['empty', 'duplicate', 'limit', 'bank', 'account', 'recipientName', 'recipientRelationship']);

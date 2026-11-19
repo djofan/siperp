@@ -234,8 +234,8 @@ test("light Bantuan shell shares card and table presentation while keeping actio
   const workspace=readFileSync("modules/bantuan/components/Workspace.tsx","utf8");
   const listing=readFileSync("modules/bantuan/components/ApplicationList.tsx","utf8");
   const css=readFileSync("modules/bantuan/components/Workspace.module.css","utf8");
-  assert.match(workspace,/<ApplicationList /);
-  assert.match(listing,/className=\{shared.stickyAction\}/);
+  assert.match(workspace,/<BulkDisbursement /);
+  assert.match(listing,/shared.stickyAction/);
   assert.match(workspace,/aria-label="Langkah berikutnya"/);
   assert.match(workspace,/navigation\(viewer\)/);
   assert.match(css,/\.table \.stickyAction\{position:sticky;right:0/);

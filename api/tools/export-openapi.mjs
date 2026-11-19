@@ -547,6 +547,21 @@ applyAcademyTodayContract(document);
 applySantunanContract(document);
 applyKeuanganContract(document);
 
+document.paths['/api/v1/bantuan/disbursements'] = {post: {
+  tags: ['Bantuan'], summary: 'Record mass disbursement to separate recipients', security: [{bearerAuth: []}],
+  description: 'Treasurer, module admin or Superadmin only. Records transfers already performed; does not transfer money. One atomic transaction locks applications in stable ID order and performs the normal disburse workflow for every row. Different distributors, banks and accounts are allowed. Every application must be fund_approved with its current version and transferAmount equal to its approved amount. Recipient metadata and transferDate are stored encrypted and audited for ordinary and other intake. Upload proof beforehand through the existing documents endpoint: optional for ordinary intake, mandatory fresh unused transfer proof for other intake. Workflow consumes available proof and notifies each assigned distributor. Any missing record, stale version, invalid amount/status/recipient or missing mandatory proof rolls back applications, evidence usage, events and notifications. Legacy batch endpoint is unchanged. Private no-store response.',
+  requestBody: {required: true, content: json({type: 'object', required: ['transferDate', 'items'], properties: {
+    transferDate: {type: 'string', format: 'date', description: 'Actual transfer date, no later than today'},
+    items: {type: 'array', minItems: 1, maxItems: 50, description: 'Distinct application IDs (case insensitive)', items: {
+      type: 'object', required: ['id','version','transferAmount','bank','account','recipientName','recipientRelationship'], properties: {
+        id: {type:'string',format:'uuid'}, version: {type:'integer',minimum:1}, transferAmount: {type:'integer',minimum:1},
+        ...Object.fromEntries(['bank','account','recipientName','recipientRelationship'].map(name => [name,{type:'string',minLength:1,maxLength:191}])),
+      },
+    }},
+  }})},
+  responses: {200: {description: 'All disbursements recorded', content: json({type:'object',required:['data'],properties:{data:{type:'object',required:['count','items'],properties:{count:{type:'integer',minimum:1,maximum:50},items:{type:'array',minItems:1,maxItems:50,items:{type:'object',required:['id','status','version'],properties:{id:{type:'string',format:'uuid'},status:{enum:['disbursed']},version:{type:'integer',minimum:2}}}}}}}})},401:error,403:error,404:error,409:error,422:error},
+}};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
