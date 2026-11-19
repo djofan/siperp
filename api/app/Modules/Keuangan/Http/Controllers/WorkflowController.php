@@ -114,7 +114,7 @@ class WorkflowController
             }
             if (! empty($data['programId'])) {
                 abort_unless(DB::table('keuangan_programs')->where('id', $data['programId'])->whereNull('archived_at')->exists(), 422, 'Pilih jenis program yang aktif.');
-                $sources = ['kas infaq', 'kas amil', 'kas riba'];
+                $sources = ['kas infaq', 'kas amil', 'kas riba', 'kas zakat'];
                 $categories = ['cash advance', 'kegiatan sosial', 'operasional', 'lain-lain'];
                 foreach (['sourceId' => ['sources', $sources], 'categoryId' => ['categories', $categories]] as $field => [$table, $names]) {
                     abort_unless(in_array(mb_strtolower(trim(DB::table('keuangan_'.$table)->where('id', $data[$field])->value('name'))), $names, true), 422, 'Pilih sumber dana/kategori pengajuan yang tersedia.');
@@ -176,7 +176,7 @@ class WorkflowController
         $masters = fn ($kind, $names) => DB::table('keuangan_'.$kind)->whereNull('archived_at')->whereIn(DB::raw('LOWER(TRIM(name))'), $names)->orderBy('id')->get(['id', 'name'])->unique(fn ($item) => mb_strtolower(trim($item->name)))->sortBy(fn ($item) => array_search(mb_strtolower(trim($item->name)), $names, true))->values();
 
         return $this->data([
-            'sources' => $masters('sources', ['kas infaq', 'kas amil', 'kas riba']),
+            'sources' => $masters('sources', ['kas infaq', 'kas amil', 'kas riba', 'kas zakat']),
             'categories' => $masters('categories', ['cash advance', 'kegiatan sosial', 'operasional', 'lain-lain']),
             'programs' => DB::table('keuangan_programs')->whereNull('archived_at')->orderBy('name')->get(['id', 'name']),
             'treasurers' => $this->workflow->eligible()->where('users.id', '!=', $r->user()->id)->get(),

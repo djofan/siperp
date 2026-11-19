@@ -11,7 +11,7 @@ arsip lama secara massal dan tidak dapat mengalihkan pengajuan yang sudah dituga
 
 
 Dikerjakan di lokal. Formulir memakai empat kategori (Cash Advance, Kegiatan Sosial,
-Operasional, Lain-lain), tiga sumber (Kas Infaq, Kas Amil, Kas Riba), program,
+Operasional, Lain-lain), empat sumber (Kas Infaq, Kas Amil, Kas Riba, Kas Zakat), program,
 deskripsi, nominal rupiah integer, penerima/identitas opsional, tanggal pengajuan,
 dan Bendahara SIP yang dipilih. Program dimulai dari label kategori/program lama,
 dengan referensi transaksi lama tetap dipertahankan; admin dapat menambah program.

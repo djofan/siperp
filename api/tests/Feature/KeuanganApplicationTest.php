@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Core\Auth\SessionData;
 use App\Modules\Core\Services\UserService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ beforeEach(function () {
 
 it('provides fixed category fund choices editable programs and only active treasury choices', function () {
     $options = $this->getJson('/api/v1/keuangan/expense-options')->assertOk()->json('data');
-    expect(array_column($options['sources'], 'name'))->toEqualCanonicalizing(['Kas Infaq', 'Kas Amil', 'Kas Riba']);
+    expect(array_column($options['sources'], 'name'))->toEqualCanonicalizing(['Kas Infaq', 'Kas Amil', 'Kas Riba', 'Kas Zakat']);
     expect(array_column($options['categories'], 'name'))->toEqualCanonicalizing(['Cash Advance', 'Kegiatan Sosial', 'Operasional', 'Lain-lain']);
     expect(array_column($options['treasurers'], 'id'))->toBe([$this->treasury->id]);
     expect(array_column($options['programs'], 'name'))->toContain('Pendidikan QA');
@@ -166,4 +167,29 @@ it('blocks assigning decided expenses or assigning to an ineligible account with
     expect(DB::table('keuangan_approvals')->where('expense_id', $old)->count())->toBe(0);
     Sanctum::actingAs($this->treasury);
     $this->postJson('/api/v1/keuangan/expenses/'.$old.'/approval-requests', $input)->assertForbidden();
+});
+
+it('accepts Kas Zakat and keeps its seed idempotent', function () {
+    $source = DB::table('keuangan_sources')->where('name', 'Kas Zakat')->first();
+    $migration = require database_path('migrations/2026_11_19_000003_add_keuangan_zakat_source.php');
+    $migration->up();
+    expect(DB::table('keuangan_sources')->where('name', 'Kas Zakat')->count())->toBe(1);
+    $this->postJson('/api/v1/keuangan/expenses', array_replace($this->input, ['sourceId' => $source->id]))
+        ->assertCreated();
+});
+
+it('lands dedicated finance accounts in finance while retaining the module selector for shared accounts', function () {
+    $sessions = app(SessionData::class);
+    foreach ([$this->admin, $this->treasury, $this->operator] as $user) {
+        expect($sessions->forUser($user)['panelRedirect'])->toBe('/admin/keuangan');
+    }
+    expect($sessions->forUser($this->retired)['panelRedirect'])->not->toBe('/admin/keuangan');
+    $this->admin->is_superadmin = true;
+    expect($sessions->forUser($this->admin)['panelRedirect'])->toBeNull();
+    $this->admin->is_superadmin = false;
+    DB::table('modules')->insert(['id' => 'module-shared-qa', 'slug' => 'shared-qa', 'name' => 'Shared QA', 'is_active' => true]);
+    DB::table('module_access')->insert(['id' => (string) Str::uuid(), 'user_id' => $this->admin->id, 'module_id' => 'module-shared-qa', 'role' => 'admin']);
+    expect($sessions->forUser($this->admin)['panelRedirect'])->not->toBe('/admin/keuangan');
+    DB::table('modules')->where('slug', 'keuangan')->update(['is_active' => false]);
+    expect($sessions->forUser($this->treasury)['panelRedirect'])->not->toBe('/admin/keuangan');
 });
