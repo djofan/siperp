@@ -2009,7 +2009,14 @@
           "revision",
           "origin",
           "createdAt",
-          "status"
+          "status",
+          "programId",
+          "program",
+          "requestedOn",
+          "recipientIdentity",
+          "treasurerId",
+          "treasurer",
+          "createdBy"
         ],
         "properties": {
           "id": {
@@ -2065,6 +2072,49 @@
               "approved",
               "rejected"
             ]
+          },
+          "programId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "program": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestedOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "recipientIdentity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "treasurerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "treasurer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
@@ -2087,7 +2137,15 @@
           "status",
           "approvals",
           "history",
-          "decisionHistory"
+          "decisionHistory",
+          "programId",
+          "program",
+          "requestedOn",
+          "recipientIdentity",
+          "treasurerId",
+          "treasurer",
+          "createdBy",
+          "signoffs"
         ],
         "properties": {
           "id": {
@@ -2298,6 +2356,75 @@
                 },
                 "changes": {
                   "type": "object"
+                }
+              }
+            }
+          },
+          "programId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "program": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requestedOn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "recipientIdentity": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "treasurerId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "treasurer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "signoffs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "decision",
+                "closed"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "decision": {
+                  "enum": [
+                    "waiting",
+                    "approved",
+                    "rejected"
+                  ]
+                },
+                "closed": {
+                  "type": "boolean"
                 }
               }
             }
@@ -9718,7 +9845,6 @@
                             "admin",
                             "finance_admin",
                             "treasurer",
-                            "approver",
                             "operator"
                           ]
                         },
@@ -10980,7 +11106,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/operator/Superadmin only. Active source/category. Inclusive nominal rule selects active eligible approvers in parallel; overlapping/misconfigured rule aborts atomically. No matching rule records unassigned, never approved. Creator and immutable event recorded.",
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/operator/Superadmin only. Active source/category. Inclusive nominal rule selects active eligible approvers in parallel; overlapping/misconfigured rule aborts atomically. No matching rule records unassigned, never approved. Creator and immutable event recorded. Modern applications supply programId, requestedOn and treasurerId together. Program must be active and source/category must be one of the fixed choices; assigned user must be an active treasury account other than the requester. This direct treasury assignment is independent of nominal rules. A modern revision cannot remove these fields. Recipient name/identity optional. Legacy clients without all three new fields retain nominal-rule compatibility, but only treasury accounts are eligible. All new fields enter revision audit. No transfer of money.",
         "parameters": [],
         "responses": {
           "201": {
@@ -11052,7 +11178,6 @@
                   "requestId",
                   "sourceId",
                   "categoryId",
-                  "recipient",
                   "description",
                   "amount"
                 ],
@@ -11070,8 +11195,10 @@
                     "maxLength": 191
                   },
                   "recipient": {
-                    "type": "string",
-                    "minLength": 1,
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "maxLength": 255
                   },
                   "description": {
@@ -11083,6 +11210,32 @@
                     "type": "string",
                     "pattern": "^[1-9][0-9]{0,15}$",
                     "description": "Exact whole rupiah as decimal text. Native write maximum 9000000000000000; no floating point."
+                  },
+                  "programId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "requestedOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "recipientIdentity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  },
+                  "treasurerId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -11102,7 +11255,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Authenticated, active account with recognized module role; no-store, private. All expense readers; operator receives empty approval/history arrays. Other roles read explicit approval summaries and new expense audit. Historical revisions retained.",
+        "description": "Authenticated, active account with recognized module role; no-store, private. All expense readers; operator receives empty approval/history arrays. Other roles read explicit approval summaries and new expense audit. Historical revisions retained. All authorized Keuangan roles receive minimal current-revision signoffs (name, decision, closed) for printing. Operator still receives no audit details or approval notes. Waiting assignments closed by chair-role retirement are excluded from the derived expense status; prior approved/rejected decisions remain unchanged.",
         "parameters": [
           {
             "name": "id",
@@ -11164,7 +11317,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Same writers. Version required. Every change creates new revision, closes old tasks, retains all decisions/events and snapshots, creates new approval round from current rules. Native and legacy records may be revised; origin/provenance unchanged.",
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Same writers. Version required. Every change creates new revision, closes old tasks, retains all decisions/events and snapshots, creates new approval round from current rules. Native and legacy records may be revised; origin/provenance unchanged. Modern applications supply programId, requestedOn and treasurerId together. Program must be active and source/category must be one of the fixed choices; assigned user must be an active treasury account other than the requester. This direct treasury assignment is independent of nominal rules. A modern revision cannot remove these fields. Recipient name/identity optional. Legacy clients without all three new fields retain nominal-rule compatibility, but only treasury accounts are eligible. All new fields enter revision audit. No transfer of money.",
         "parameters": [
           {
             "name": "id",
@@ -11246,7 +11399,6 @@
                   "requestId",
                   "sourceId",
                   "categoryId",
-                  "recipient",
                   "description",
                   "amount",
                   "version",
@@ -11266,8 +11418,10 @@
                     "maxLength": 191
                   },
                   "recipient": {
-                    "type": "string",
-                    "minLength": 1,
+                    "type": [
+                      "string",
+                      "null"
+                    ],
                     "maxLength": 255
                   },
                   "description": {
@@ -11288,6 +11442,32 @@
                     "type": "string",
                     "minLength": 10,
                     "maxLength": 2000
+                  },
+                  "programId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "requestedOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date"
+                  },
+                  "recipientIdentity": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  },
+                  "treasurerId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -11307,7 +11487,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Authenticated, active account with recognized module role; no-store, private. Expense writers only, including operator; no master management privilege granted.",
+        "description": "Expense writers only. Fixed active categories: Cash Advance, Kegiatan Sosial, Operasional, Lain-lain. Fixed active sources: Kas Infaq, Kas Amil, Kas Riba. Programs use the editable program master initialized from legacy category/program labels. Treasury choices include active Keuangan treasurer accounts only, excluding the requester.",
         "parameters": [],
         "responses": {
           "200": {
@@ -11326,7 +11506,9 @@
                       "additionalProperties": false,
                       "required": [
                         "sources",
-                        "categories"
+                        "categories",
+                        "programs",
+                        "treasurers"
                       ],
                       "properties": {
                         "sources": {
@@ -11362,6 +11544,42 @@
                               "id": {
                                 "type": "string",
                                 "maxLength": 191
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "programs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "treasurers": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
                               },
                               "name": {
                                 "type": "string"
@@ -11408,7 +11626,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Authenticated, active account with recognized module role; no-store, private. admin/finance_admin/treasurer/Superadmin read. Approver candidates are active Keuangan members with admin/finance_admin/treasurer/approver roles, minimal id/name only.",
+        "description": "Master readers only; program master plus historical sources/categories/rules retained. Approver candidates are Bendahara SIP (treasurer) only. New application forms select treasury explicitly rather than nominal rules.",
         "parameters": [],
         "responses": {
           "200": {
@@ -11429,7 +11647,8 @@
                         "sources",
                         "categories",
                         "approvers",
-                        "rules"
+                        "rules",
+                        "programs"
                       ],
                       "properties": {
                         "sources": {
@@ -11504,6 +11723,28 @@
                           "type": "array",
                           "items": {
                             "$ref": "#/components/schemas/FinanceRule"
+                          }
+                        },
+                        "programs": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "id",
+                              "name",
+                              "archived"
+                            ],
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "archived": {
+                                "type": "boolean"
+                              }
+                            }
                           }
                         }
                       }
@@ -12127,7 +12368,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Assigned actor with approval capability only. Reject note >=10 trimmed characters. Revisions need reason >=10 trimmed characters. Version/expense revision/closed checks. Rejection closes others still waiting. Revising the rejection to approval reopens only tasks closed by rejection when no other rejection remains. All prior decisions append to audit; no old event overwritten.",
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. Assigned actor with approval capability only. Reject note >=10 trimmed characters. Revisions need reason >=10 trimmed characters. Version/expense revision/closed checks. Rejection closes others still waiting. Revising the rejection to approval reopens only tasks closed by rejection when no other rejection remains. All prior decisions append to audit; no old event overwritten. Only the treasurer role can decide, including revisions. Admins, finance admins and Superadmin cannot substitute for treasury. The requester cannot decide their own application. Retired chair accounts cannot access the module; identity and prior financial history remain retained.",
         "parameters": [
           {
             "name": "id",
@@ -12239,6 +12480,216 @@
                       "string",
                       "null"
                     ],
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/masters/programs": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Add program name",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Active module/account and per-operation role required; Core role rechecked under module-row lock. Strict fields. requestId UUID is mandatory, scoped to actor; same operation/body replays original result, conflicting reuse 409. Atomic writes and append-only audit. no-store, private. No payments or ledger changes. admin/finance_admin/Superadmin only; trimmed, case-insensitive duplicate name rejected.",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "name"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/keuangan/expenses/{id}/approval-requests": {
+      "post": {
+        "tags": [
+          "Keuangan"
+        ],
+        "summary": "Request treasury approval for an existing unassigned expense",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Expense writers only; active module/account, optimistic version and actor-scoped idempotency UUID required. Only an unassigned, non-archived expense is eligible. Creates a new revision and waiting task for the selected active treasury account, excluding sender and original creator. Preserves all original financial facts, original creation timestamp, origin and history. Does not approve or pay. Waiting/approved/rejected expenses cannot be rerouted through this endpoint. Atomic append-only expense and approval events; private no-store response.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 191
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "data"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "revision",
+                        "version"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 191
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "version": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive user"
+          },
+          "403": {
+            "description": "Module/capability denied"
+          },
+          "404": {
+            "description": "Not found or not owned"
+          },
+          "409": {
+            "description": "Stale version, closed task or conflicting idempotency key"
+          },
+          "422": {
+            "description": "Validation or configuration invalid"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requestId",
+                  "version",
+                  "treasurerId",
+                  "reason"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "treasurerId": {
+                    "type": "string",
+                    "maxLength": 191
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 10,
                     "maxLength": 2000
                   }
                 }

@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { applySantunanContract } from './santunan-contract.mjs';
 import { applyKeuanganContract } from './keuangan-contract.mjs';
+import { applyKeuanganApplicationContract } from './keuangan-application-contract.mjs';
 import { applyAcademyTodayContract } from './academy-today-contract.mjs';
 import { applyAcademyProgressContract } from './academy-progress-contract.mjs';
 import { applyTanwirTaskRecapContract } from './tanwir-task-recap-contract.mjs';
@@ -550,6 +551,7 @@ applyAcademyProgressContract(document);
 applyTanwirTaskRecapContract(document);
 applySantunanContract(document);
 applyKeuanganContract(document);
+applyKeuanganApplicationContract(document);
 
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);

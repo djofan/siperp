@@ -1,3 +1,47 @@
+# Perubahan pengajuan — 19 November 2026
+
+Nominal pada formulir otomatis dikelompokkan menjadi `4.000.000`, tetapi field
+`amount` yang dikirim ke API tetap `4000000` sebagai string tanpa float. Nilai paste
+berdesimal/format ambigu ditolak, bukan ditafsirkan ulang. Nominal asli tidak diubah.
+Pengajuan lama yang belum ditugaskan dapat dikirim secara eksplisit ke Bendahara
+melalui `POST expenses/{id}/approval-requests` (version, requestId, treasurerId,
+reason). Permintaan membentuk revisi baru tanpa mengubah fakta keuangan lama;
+penugasan tetap menunggu sampai Bendahara memutuskan. Tidak otomatis memproses
+arsip lama secara massal dan tidak dapat mengalihkan pengajuan yang sudah ditugaskan.
+
+
+Dikerjakan di lokal. Formulir memakai empat kategori (Cash Advance, Kegiatan Sosial,
+Operasional, Lain-lain), tiga sumber (Kas Infaq, Kas Amil, Kas Riba), program,
+deskripsi, nominal rupiah integer, penerima/identitas opsional, tanggal pengajuan,
+dan Bendahara SIP yang dipilih. Program dimulai dari label kategori/program lama,
+dengan referensi transaksi lama tetap dipertahankan; admin dapat menambah program.
+Tanggal pengajuan lama yang tidak diketahui tetap kosong, bukan tanggal perkiraan.
+
+Hanya role `treasurer` yang dapat menyetujui atau merevisi keputusan. Admin Keuangan,
+admin modul, dan Superadmin tidak dapat menggantikan keputusan Bendahara. Pengaju
+tidak dapat menyetujui sendiri. Pengajuan baru memakai penugasan Bendahara eksplisit;
+revisi mempertahankan audit dan meminta approval baru. API klien lama tanpa kelompok
+field program/tanggal/Bendahara masih mendukung aturan nominal, dengan eligibility
+hanya Bendahara; tidak ada aturan berarti belum disetujui, bukan approval otomatis.
+Pengajuan modern tidak dapat diturunkan ke mode lama melalui revisi.
+
+Cetak per pengajuan: `/admin/keuangan/pengeluaran/{id}/cetak`, tersedia bagi semua
+role Keuangan yang masih aktif. Dokumen mengikuti revisi terkini dan status sebenarnya;
+ringkasan nama/keputusan penandatangan boleh dibaca seluruh role Keuangan untuk arsip,
+sementara operator tetap tidak memperoleh detail catatan/audit approval.
+
+Migration `2026_11_19_000001_add_keuangan_application_fields` menambah master program,
+kolom nullable, menghubungkan program dari label lama tanpa mengubah sumber/kategori,
+nominal, tanggal pencatatan, keputusan, atau identitas transaksi lama, serta menyiapkan
+opsi kategori/sumber. Migration `2026_11_19_000002_retire_keuangan_chair_access`
+mencabut akses role `approver` (Ketua), menutup penugasan menunggu dan menonaktifkan
+aturan yang melibatkannya, serta mempertahankan semua keputusan/riwayat. Akun yang
+punya akses modul lain tetap aktif. Tidak menghapus akun Core atau transaksi.
+Review dan backup tetap diperlukan sebelum menjalankan migration di VPS.
+Rollback tidak menghapus data tambahan atau mengaktifkan ulang akses yang dihentikan.
+
+---
+
 # Modul Keuangan
 
 Persiapan importer lokal ditambahkan 18 November 2026: [panduan impor](../../docs/keuangan/impor-lokal.md).

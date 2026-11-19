@@ -4,6 +4,27 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Pengajuan lama tanpa penugasan dapat dikirim ke Bendahara melalui POST
+`/api/v1/keuangan/expenses/{id}/approval-requests`, berisi UUID `requestId`,
+`version`, `treasurerId`, dan `reason` minimal 10 karakter. Khusus penulis pengeluaran;
+Bendahara bukan pengirim/pembuat asli. Permintaan menciptakan revisi baru dan tugas
+waiting dengan audit, mempertahankan nominal dan fakta keuangan asli. Konflik versi
+atau pengajuan yang sudah ditugaskan/berkeputusan ditolak 409. Tidak memberi
+persetujuan otomatis. Formulir memformat `4.000.000` tetapi API `amount` tetap string
+rupiah utuh `4000000`; tidak menerima titik/koma pada kontrak nilai uang.
+
+Pengajuan Keuangan modern menyertakan `programId`, `requestedOn` (YYYY-MM-DD),
+dan `treasurerId` bersama pada POST/PUT expenses. `recipient` dan `recipientIdentity`
+opsional. Kategori/sumber dibatasi pilihan formulir; hanya akun `treasurer` aktif
+selain pengaju yang dapat ditugaskan. Hanya Bendahara SIP dapat POST decisions,
+termasuk revisi keputusan. Role Ketua (`approver`) dihentikan, riwayat tetap tersimpan.
+Detail expenses menyertakan `signoffs` minimal (nama, keputusan, ditutup) untuk cetak
+oleh seluruh role aktif; catatan/audit tetap dibatasi seperti sebelumnya. Rekaman
+legacy tidak diberi tanggal pengajuan buatan. Klien legacy tanpa ketiga field baru
+masih dapat memakai aturan nominal; eligibility approver tetap hanya Bendahara.
+Migration terkait: `2026_11_19_000001_add_keuangan_application_fields` dan
+`2026_11_19_000002_retire_keuangan_chair_access` (review dan backup sebelum VPS).
+
 Rekap tugas Tanwir: endpoint GET `/api/v1/tanwir/admin/task-recaps`,
 `/admin/task-recaps/{id}`, dan `/admin/task-recaps/submissions/{id}` khusus admin
 Tanwir atau Superadmin. Respons `data` bersifat `private, no-store`; daftar tugas

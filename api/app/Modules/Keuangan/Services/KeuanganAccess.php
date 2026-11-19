@@ -9,8 +9,7 @@ class KeuanganAccess
 {
     public const ROLES = [
         'finance_admin' => 'Admin Keuangan',
-        'treasurer' => 'Bendahara',
-        'approver' => 'Ketua / approver',
+        'treasurer' => 'Bendahara SIP',
         'operator' => 'Admin Operasional',
     ];
 

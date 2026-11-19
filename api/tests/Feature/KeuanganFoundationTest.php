@@ -25,7 +25,7 @@ it('registers an inactive module and empty isolated schema without granting acco
     expect(DB::table('module_access')->where('module_id', 'module-keuangan')->count())->toBe(0);
     foreach (['sources', 'categories', 'expenses', 'approval_rules', 'rule_approvers', 'approvals', 'approval_events'] as $name) {
         expect(Schema::hasTable('keuangan_'.$name))->toBeTrue();
-        expect(DB::table('keuangan_'.$name)->count())->toBe(0);
+        expect(DB::table('keuangan_'.$name)->count())->toBe($name === 'sources' ? 3 : ($name === 'categories' ? 4 : 0));
     }
     expect(DB::table('core_expenses')->count())->toBe(0);
 });
@@ -56,7 +56,7 @@ it('limits overview metadata according to Core role', function (string $role, bo
         ->assertJsonPath('data.readOnly', false)->assertJsonPath('data.role', $role)
         ->assertJsonPath('data.permissions.readMasters', $masters)
         ->assertJsonPath('data.permissions.manageAccounts', $manage)
-        ->assertJsonPath('data.counts.sources', $masters ? 0 : null)
+        ->assertJsonPath('data.counts.sources', $masters ? 3 : null)
         ->assertJsonPath('data.counts.myPendingApprovals', $approvals ? 0 : null);
     $schema = json_decode(file_get_contents(base_path('docs/openapi.json')), true)['paths']['/api/v1/keuangan/overview']['get']['responses']['200']['content']['application/json']['schema']['properties']['data'];
     $data = $this->getJson('/api/v1/keuangan/overview')->assertOk()->json('data');
@@ -69,7 +69,7 @@ it('limits overview metadata according to Core role', function (string $role, bo
     expect(in_array('keuangan', array_column($managed, 'slug'), true))->toBe($manage);
 })->with([
     ['admin', true, true, true], ['finance_admin', true, true, false],
-    ['treasurer', true, true, false], ['approver', false, true, false], ['operator', false, false, false],
+    ['treasurer', true, true, false], ['operator', false, false, false],
 ]);
 
 it('allows Core superadmin to preview while inactive without promoting module administrators', function () {
@@ -80,8 +80,8 @@ it('allows Core superadmin to preview while inactive without promoting module ad
 
 it('counts only assigned waiting approvals and does not disclose private rows or change Core finance', function () {
     DB::table('modules')->where('slug', 'keuangan')->update(['is_active' => true]);
-    $actor = keuanganActor('approver');
-    $other = keuanganActor('approver');
+    $actor = keuanganActor('treasurer');
+    $other = keuanganActor('treasurer');
     DB::table('keuangan_sources')->insert(['id' => 'source', 'name' => 'Private source']);
     DB::table('keuangan_categories')->insert(['id' => 'category', 'name' => 'Private category']);
     DB::table('keuangan_expenses')->insert(['id' => 'expense', 'source_id' => 'source', 'category_id' => 'category', 'recipient' => 'Private recipient', 'description' => 'Private note', 'amount' => '9007199254740993', 'origin' => 'legacy']);
