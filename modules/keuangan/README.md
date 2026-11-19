@@ -1,3 +1,12 @@
+# Format cetak
+
+Dokumen Keuangan memakai judul Pengajuan Kas Keuangan, referensi tanpa nomor
+revisi, dan bagian Persetujuan. Named page `finance-document` menjaga aturan
+cetak tetap pada dokumen ini. Margin boxes mengganti header/footer otomatis
+browser dengan header kosong, tautan pendek sampai `/admin/keuangan/pengeluaran`,
+dan nomor halaman. Format ini diuji di Chrome dengan header/footer browser aktif.
+Data tanggal pengajuan, nominal, keputusan, referensi, dan arsip tetap dipertahankan.
+
 # Tampilan Keuangan
 
 Ruang kerja memakai tema krem `#f6e9d9` dan hijau `#043222`, navigasi responsif,

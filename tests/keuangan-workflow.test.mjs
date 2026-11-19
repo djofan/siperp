@@ -59,7 +59,7 @@ test("print document preserves exact amounts actual status and unknown legacy da
  const fields=load("modules/keuangan/components/ApplicationFields.tsx");
  const Page=load("modules/keuangan/pages/expense-print.tsx",{"next/navigation":{notFound:()=>{throw new Error("not found");}},"../api/overview":{getKeuanganOverview:async()=>({role:"finance_admin"})},"../api/workflow":{getExpense:async()=>({...expense,requestedOn:null,status:"waiting",createdBy:null,signoffs:[{name:"Bendahara QA",decision:"waiting",closed:false}]})},"../components/PrintButton":{PrintButton:()=>React.createElement("button",null,"Cetak / Simpan PDF")},"../components/ApplicationFields":fields,"../components/ui":UI});
  const html=renderToStaticMarkup(await Page.default({params:Promise.resolve({id:"expense"})}));
- assert.match(html,/Bendahara QA/);assert.match(html,/Belum tercatat \(data lama\)/);assert.match(html,/Pengajuan Keuangan/);assert.match(html,/9\.007\.199\.254\.740\.993/);assert(!html.includes('method="post"'));
+ assert.match(html,/Bendahara QA/);assert.match(html,/Belum tercatat \(data lama\)/);assert.match(html,/Pengajuan Kas Keuangan/);assert.doesNotMatch(html,/Revisi 4|Revisi 2|Persetujuan revisi ini|Cetak Pengajuan Keuangan/);assert.match(html,/9\.007\.199\.254\.740\.993/);assert(!html.includes('method="post"'));
  assert.equal(fields.applicationDate("2026-11-19").includes("Kamis"),true);
  const css=readFileSync("modules/keuangan/styles/workflow.css","utf8");assert.match(css,/@media print/);assert.match(css,/finance-print-toolbar/);assert.match(css,/size:A4/);
 });
