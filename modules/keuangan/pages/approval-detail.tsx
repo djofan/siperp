@@ -1,12 +1,34 @@
 import { ApplicationFields } from "../components/ApplicationFields";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { CheckCheck, ArrowLeft, ShieldCheck } from "lucide-react";
 import { getApproval } from "../api/workflow";
 import { getKeuanganOverview } from "../api/overview";
 import { FinanceForm } from "../components/FinanceForm";
 import { Status, rupiah, FinanceHistoryPanel } from "../components/ui";
 export default async function ApprovalDetail({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{saved?:string}>}) {
-  const {id}=await params;const [a,overview,q]=await Promise.all([getApproval(id),getKeuanganOverview(),searchParams]);
-  const current=a.revision===a.expense.revision;const editable=a.canDecide&&!overview.readOnly;
-  return <><Link href="/admin/keuangan/approval">← Approval Saya</Link><Link className="finance-button" href={`/admin/keuangan/pengeluaran/${a.expense.id}/cetak`}>Cetak pengajuan</Link><h2>{a.decision==="waiting"?"Keputusan approval":"Revisi keputusan"}</h2>{q.saved&&<p role="status" className="finance-success">Keputusan berhasil disimpan.</p>}<section className="finance-panel"><h2>{a.expense.recipient}</h2><strong className="finance-amount">{rupiah(a.expense.amount)}</strong><p>{a.expense.source} · {a.expense.category} · Revisi {a.revision}</p>{!current?<p>Ini penugasan revisi lama. Rincian dan nominal di atas adalah pengeluaran saat ini. Gunakan riwayat pengeluaran untuk rincian revisi sebelumnya.</p>:null}<ApplicationFields expense={a.expense}/><p className="finance-text">{a.expense.description}</p><Status value={a.decision}/><Link className="finance-detail-link" href={`/admin/keuangan/pengeluaran/${a.expense.id}`}>Lihat pengeluaran &amp; riwayat →</Link></section>{!editable?<p className="finance-warning">Tugas ini ditutup, ada penolakan approver lain, berasal dari revisi lama, atau modul sedang nonaktif. Tidak dapat memberi keputusan.</p>:<FinanceForm kind="decision" id={id} requestId={randomUUID()} label={a.decision==="waiting"?"Simpan keputusan":"Simpan revisi keputusan"}><input type="hidden" name="version" value={a.version}/><label>Keputusan<select name="decision" defaultValue={a.decision==="waiting"?"":a.decision} required><option value="" disabled>Pilih keputusan</option><option value="approved">Setujui</option><option value="rejected">Tolak</option></select></label><label>Catatan (wajib minimal 10 karakter jika menolak)<textarea name="note" defaultValue={a.note??""} rows={3} maxLength={2000}/></label>{a.decision!=="waiting"&&<label>Alasan revisi keputusan<textarea name="reason" minLength={10} maxLength={2000} rows={3} required/></label>}<p>Penolakan menutup tugas approver lain yang masih menunggu. Jika penolakan direvisi menjadi persetujuan, tugas yang ditutup karena penolakan dibuka kembali. Keputusan dan revisinya tetap tercatat pada riwayat.</p></FinanceForm>}<FinanceHistoryPanel items={a.history}/></>;
+  const {id}=await params;
+  const [a,overview,q]=await Promise.all([getApproval(id),getKeuanganOverview(),searchParams]);
+  const current=a.revision===a.expense.revision;
+  const editable=a.canDecide&&!overview.readOnly;
+  const treasury=overview.role==="treasurer";
+  return <>
+    <Link className="finance-back-link" href="/admin/keuangan/approval"><ArrowLeft size={16}/> Kembali ke Approval Saya</Link>
+    <div className="finance-title"><div><p className="finance-kicker">PERSETUJUAN PENGAJUAN</p><h1>{a.decision==="waiting"?"Periksa pengajuan dana":"Keputusan pengajuan"}</h1><p>Periksa rincian pengajuan sebelum menyimpan keputusan Anda.</p></div><Status value={a.decision}/></div>
+    {q.saved&&<p role="status" className="finance-success">Keputusan berhasil disimpan.</p>}
+    <div className="finance-approval-layout"><section className="finance-panel finance-approval-summary"><div className="finance-amount-summary"><span className="finance-icon-tile"><ShieldCheck size={24}/></span><div><small>Nominal pengajuan</small><strong>{rupiah(a.expense.amount)}</strong></div></div>
+      <h2>Rincian pengajuan</h2><ApplicationFields expense={a.expense}/><div className="finance-description-box"><h3>Deskripsi pengajuan</h3><p className="finance-text">{a.expense.description || "Tidak tercatat"}</p></div>
+      {!current&&<p className="finance-warning">Pengajuan sudah diperbarui. Tugas ini berasal dari revisi sebelumnya dan tidak dapat diputuskan.</p>}
+      {!treasury&&<div className="finance-actions"><Link href={`/admin/keuangan/pengeluaran/${a.expense.id}`}>Lihat pengajuan &amp; riwayat</Link><Link className="finance-button-secondary" href={`/admin/keuangan/pengeluaran/${a.expense.id}/cetak`}>Cetak pengajuan</Link></div>}
+    </section>
+    <section className="finance-decision-panel"><div className="finance-decision-heading"><span className="finance-icon-tile"><CheckCheck size={24}/></span><div><p className="finance-kicker">TINDAK LANJUT</p><h2>{a.decision==="waiting"?"Berikan keputusan":"Revisi keputusan"}</h2></div></div>
+      {!editable?<div className="finance-panel"><p>Keputusan tidak dapat diubah pada tugas ini. Penugasan sudah ditutup, ada penolakan lain, berasal dari revisi sebelumnya, atau modul sedang nonaktif.</p></div>:<FinanceForm kind="decision" id={id} requestId={randomUUID()} label={a.decision==="waiting"?"Simpan keputusan":"Simpan revisi keputusan"}>
+        <input type="hidden" name="version" value={a.version}/><label>Keputusan Anda<select name="decision" defaultValue={a.decision==="waiting"?"":a.decision} required><option value="" disabled>Pilih keputusan</option><option value="approved">Setujui pengajuan</option><option value="rejected">Tolak pengajuan</option></select></label>
+        <label>Catatan<textarea name="note" defaultValue={a.note??""} rows={4} maxLength={2000} placeholder="Tuliskan alasan atau catatan untuk Admin Keuangan"/><small>Jika menolak, isi alasan minimal 10 karakter.</small></label>
+        {a.decision!=="waiting"&&<label>Alasan revisi keputusan<textarea name="reason" minLength={10} maxLength={2000} rows={3} required placeholder="Jelaskan alasan perubahan keputusan"/></label>}
+        <p className="finance-decision-note">Keputusan dan perubahannya tersimpan dalam riwayat. Persetujuan ini bukan bukti pembayaran.</p>
+      </FinanceForm>}
+    </section></div>
+    {!treasury&&<FinanceHistoryPanel items={a.history}/>}
+  </>;
 }

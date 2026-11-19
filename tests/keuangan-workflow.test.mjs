@@ -57,7 +57,7 @@ test("application action retains chosen program date treasury and recipient iden
 
 test("print document preserves exact amounts actual status and unknown legacy dates without write privileges",async()=>{
  const fields=load("modules/keuangan/components/ApplicationFields.tsx");
- const Page=load("modules/keuangan/pages/expense-print.tsx",{"../api/workflow":{getExpense:async()=>({...expense,requestedOn:null,status:"waiting",createdBy:null,signoffs:[{name:"Bendahara QA",decision:"waiting",closed:false}]})},"../components/PrintButton":{PrintButton:()=>React.createElement("button",null,"Cetak / Simpan PDF")},"../components/ApplicationFields":fields,"../components/ui":UI});
+ const Page=load("modules/keuangan/pages/expense-print.tsx",{"next/navigation":{notFound:()=>{throw new Error("not found");}},"../api/overview":{getKeuanganOverview:async()=>({role:"finance_admin"})},"../api/workflow":{getExpense:async()=>({...expense,requestedOn:null,status:"waiting",createdBy:null,signoffs:[{name:"Bendahara QA",decision:"waiting",closed:false}]})},"../components/PrintButton":{PrintButton:()=>React.createElement("button",null,"Cetak / Simpan PDF")},"../components/ApplicationFields":fields,"../components/ui":UI});
  const html=renderToStaticMarkup(await Page.default({params:Promise.resolve({id:"expense"})}));
  assert.match(html,/Bendahara QA/);assert.match(html,/Belum tercatat \(data lama\)/);assert.match(html,/Pengajuan Keuangan/);assert.match(html,/9\.007\.199\.254\.740\.993/);assert(!html.includes('method="post"'));
  assert.equal(fields.applicationDate("2026-11-19").includes("Kamis"),true);
@@ -68,4 +68,17 @@ test("print document preserves exact amounts actual status and unknown legacy da
 test("sending an unassigned expense creates an approval request without submitting changed money or a forged decision",async()=>{
  const h=actionHarness();await assert.rejects(()=>h.actions.saveFinance("approval-request","old-expense",{error:""},form({requestId:"key",version:1,treasurerId:"treasury",reason:"Pengajuan lama ke Bendahara",amount:"999",decision:"approved"})),/redirect/);
  assert.equal(h.calls[0].path,"keuangan/expenses/old-expense/approval-requests");assert.equal(h.calls[0].body.version,"1");assert.equal(h.calls[0].body.treasurerId,"treasury");assert.equal(h.calls[0].body.amount,undefined);assert.equal(h.calls[0].body.decision,undefined);assert.deepEqual(h.redirects,["/admin/keuangan/pengeluaran/saved?saved=1"]);
+});
+
+
+test("treasury cannot open print documents or see printing and history actions on a decision",async()=>{
+ let fetched=false;
+ const Print=load("modules/keuangan/pages/expense-print.tsx",{"next/navigation":{notFound:()=>{throw new Error("not found");}},"../api/overview":{getKeuanganOverview:async()=>({role:"treasurer"})},"../api/workflow":{getExpense:async()=>{fetched=true;return expense;}},"../components/PrintButton":{PrintButton:()=>null},"../components/ApplicationFields":{ApplicationFields:()=>null},"../components/ui":UI});
+ await assert.rejects(()=>Print.default({params:Promise.resolve({id:"expense"})}),/not found/);
+ assert.equal(fetched,false);
+ const Page=load("modules/keuangan/pages/approval-detail.tsx",{"../api/overview":{getKeuanganOverview:async()=>({role:"treasurer",readOnly:false})},"../api/workflow":{getApproval:async()=>({id:"task",version:2,revision:2,decision:"waiting",canDecide:true,expense,history:[]})},"../components/FinanceForm":Form,"../components/ui":UI,"../components/ApplicationFields":{ApplicationFields:()=>null}});
+ const html=renderToStaticMarkup(await Page.default({params:Promise.resolve({id:"task"}),searchParams:Promise.resolve({})}));
+ assert.doesNotMatch(html,/Cetak pengajuan|Lihat pengajuan &amp; riwayat|<h2>Riwayat/);
+ assert.match(html,/Simpan keputusan/);
+ assert.match(html,/name="decision"/);
 });
