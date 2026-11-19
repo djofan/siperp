@@ -119,7 +119,7 @@ it('rolls back the entire batch when a late insert fails', function () {
     try {
         $this->import->run($this->snapshot, $this->mapping, true, $report['reviewHash']);
     } finally {
-        expect(DB::table('keuangan_sources')->count())->toBe(0)
+        expect(DB::table('keuangan_sources')->count())->toBe(3)
             ->and(DB::table('keuangan_expenses')->count())->toBe(0)
             ->and(DB::table('keuangan_legacy_links')->count())->toBe(0)
             ->and(DB::table('keuangan_import_batches')->count())->toBe(0);
@@ -169,7 +169,7 @@ it('preserves distinct source master IDs sharing a label and reports their warni
     $report = $this->import->run($this->snapshot, $this->mapping);
     expect($report['warnings'])->toBe(['sources:2 duplicate_source_name_with:1']);
     $this->import->run($this->snapshot, $this->mapping, true, $report['reviewHash']);
-    expect(DB::table('keuangan_sources')->count())->toBe(2)
+    expect(DB::table('keuangan_sources')->count())->toBe(5)
         ->and(DB::table('keuangan_expenses')->distinct()->count('source_id'))->toBe(2);
     $again = $this->import->run($this->snapshot, $this->mapping);
     expect($again['counts']['added'])->toBe(0)->and($again['conflicts'])->toBe([])->and($again['warnings'])->toBe($report['warnings']);

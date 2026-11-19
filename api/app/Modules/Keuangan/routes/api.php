@@ -10,6 +10,7 @@ Route::middleware(['auth:sanctum', 'user.active', 'module.access:keuangan'])->gr
     Route::post('expenses', [WorkflowController::class, 'saveExpense'])->middleware('throttle:30,1');
     Route::get('expenses/{id}', [WorkflowController::class, 'expense']);
     Route::put('expenses/{id}', [WorkflowController::class, 'saveExpense'])->middleware('throttle:30,1');
+    Route::post('expenses/{id}/approval-requests', [WorkflowController::class, 'requestApproval'])->middleware('throttle:30,1');
     Route::get('expense-options', [WorkflowController::class, 'options']);
     Route::get('settings', [WorkflowController::class, 'settings']);
     Route::post('masters/{kind}', [WorkflowController::class, 'master'])->middleware('throttle:30,1');

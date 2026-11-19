@@ -8,13 +8,13 @@ use Illuminate\Support\Str;
 
 class FinanceWorkflow
 {
-    public const APPROVER_ROLES = ['admin', 'finance_admin', 'treasurer', 'approver'];
+    public const APPROVER_ROLES = ['treasurer'];
 
     public function eligible()
     {
         return DB::table('users')->join('module_access', 'users.id', '=', 'module_access.user_id')
             ->join('modules', 'modules.id', '=', 'module_access.module_id')->where('modules.slug', 'keuangan')
-            ->where('users.is_active', true)->whereIn('module_access.role', self::APPROVER_ROLES)
+            ->where('users.is_active', true)->where('users.is_superadmin', false)->whereIn('module_access.role', self::APPROVER_ROLES)
             ->select('users.id', 'users.name')->distinct()->orderBy('users.name')->orderBy('users.id');
     }
 
@@ -45,6 +45,13 @@ class FinanceWorkflow
 
     public function assign(object $expense): void
     {
+        if ($expense->treasurer_id) {
+            $eligible = $this->eligible()->where('users.id', $expense->treasurer_id)->where('users.id', '!=', $expense->created_by)->get();
+            abort_unless($eligible->count() === 1, 422, 'Pilih akun Bendahara SIP aktif yang berbeda dari pembuat pengajuan.');
+            $this->assignUsers($expense, $eligible->pluck('id'), json_encode(['mode' => 'treasurer', 'approvers' => $eligible->all()], JSON_THROW_ON_ERROR));
+
+            return;
+        }
         $rules = DB::table('keuangan_approval_rules')->where('active', true)->where('min_amount', '<=', $expense->amount)->where('max_amount', '>=', $expense->amount)->lockForUpdate()->get();
         abort_if($rules->count() > 1, 409, 'Aturan approval tumpang tindih. Perbaiki pengaturan.');
         if ($rules->isEmpty()) {
@@ -55,6 +62,11 @@ class FinanceWorkflow
         $eligible = $this->eligible()->whereIn('users.id', $ids)->get();
         abort_unless($ids->isNotEmpty() && $eligible->count() === $ids->count(), 422, 'Aturan memiliki approver tidak aktif/tidak berizin. Perbaiki aturan dahulu.');
         $snapshot = json_encode(['ruleId' => $rule->id, 'version' => $rule->version, 'minAmount' => (string) $rule->min_amount, 'maxAmount' => (string) $rule->max_amount, 'approvers' => $eligible->map(fn ($u) => ['id' => $u->id, 'name' => $u->name])->all()], JSON_THROW_ON_ERROR);
+        $this->assignUsers($expense, $ids, $snapshot);
+    }
+
+    private function assignUsers(object $expense, $ids, string $snapshot): void
+    {
         foreach ($ids as $id) {
             $approval = (string) Str::uuid();
             DB::table('keuangan_approvals')->insert(['id' => $approval, 'expense_id' => $expense->id, 'assigned_user_id' => $id, 'revision' => $expense->revision, 'decision' => 'waiting', 'rule_snapshot' => $snapshot, 'version' => 1, 'created_at' => now()->utc(), 'updated_at' => now()->utc()]);
