@@ -32,7 +32,10 @@ it('returns readable service errors and rejects invalid email', function () {
     config(['payment.resend.key' => null, 'payment.resend.from' => null, 'cache.default' => 'array']);
     Http::fake();
     $url = '/api/v1/lazsip/transactions/history';
-    $this->postJson($url, ['action' => 'email', 'email' => 'valid@example.org'])->assertStatus(503)->assertJsonPath('error.message', 'Layanan email belum dikonfigurasi. Silakan hubungi admin.');
+    $response = $this->postJson($url, ['action' => 'email', 'email' => 'valid@example.org'])->assertStatus(503)
+        ->assertJsonPath('error.message', fn (string $message) => str_starts_with($message, 'Layanan email belum dikonfigurasi. Silakan hubungi admin.'))
+        ->assertJsonPath('error.diagnosticCode', 'SERVICE_UNAVAILABLE');
+    $response->assertJsonPath('error.requestId', $response->headers->get('X-Request-ID'));
     $this->postJson($url, ['action' => 'email', 'email' => 'invalid'])->assertStatus(422);
     Http::assertNothingSent();
 });

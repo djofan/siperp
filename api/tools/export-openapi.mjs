@@ -508,6 +508,37 @@ for (const [path, statuses] of [
    operation.description = (operation.description ?? '') + ' Table view supports q and status filters before pagination; existing authorization and privacy boundaries apply.';
  }
 }
+
+// LAZSIP affiliate accounts use Core identities and cookies, never operational module access.
+const affiliateFields = {
+ name:{type:'string',minLength:2,maxLength:100}, email:{type:'string',format:'email',maxLength:191},
+ phone:{type:'string',pattern:'^\\+?[0-9]{8,15}$',maxLength:30},
+};
+const affiliatePassword = {type:'string',minLength:12,maxLength:72,writeOnly:true,description:'Maximum 72 UTF-8 bytes; confirmed by password_confirmation.'};
+const affiliateDataSchema = {type:'object',additionalProperties:false,required:['id','name','email','phone','isActive','joinedAt','referralCode','referralPath','features'],properties:{
+ id:{type:'string'},name:{type:'string'},email:{type:'string',format:'email'},phone:{type:['string','null']},isActive:{type:'boolean'},joinedAt:{type:'string',format:'date-time'},referralCode:{type:['string','null'],pattern:'^[a-f0-9]{20}$'},referralPath:{type:['string','null'],pattern:'^/lazsip/r/[a-f0-9]{20}$'},
+ features:{type:'object',additionalProperties:false,required:['referralTracking','commissions','withdrawals'],properties:{referralTracking:{type:'boolean',const:false},commissions:{type:'boolean',const:false},withdrawals:{type:'boolean',const:false}}},
+}};
+document.components.schemas.LazsipAffiliate = affiliateDataSchema;
+const affiliateReply = {description:'Own affiliate profile only. Cache-Control: no-store, private. No tokens, passwords, donor details, financial balances or role grants in the body.',headers:{'Cache-Control':{schema:{type:'string',const:'no-store, private'}}},content:json({type:'object',additionalProperties:false,required:['data'],properties:{data:{$ref:'#/components/schemas/LazsipAffiliate'}}})};
+document.paths['/api/v1/lazsip/affiliate/registrations'] = {post:{
+ tags:['LAZSIP'],summary:'Register and immediately sign in as an affiliate',
+ description:'Public when LAZSIP is available. 5 requests/minute per IP. Creates an active Core User with automatically generated AccountCodes identity and an active affiliate profile atomically; no admin approval, module_access, role or superadmin privilege. Existing email (case insensitive) returns 422 and must use the same email and ERP password on the affiliate sessions endpoint. Sets the standard HttpOnly, SameSite=Lax sip_session cookie with Core browser token policy. No commission, referral attribution or payouts are created.',
+ requestBody:{required:true,content:json({type:'object',required:['name','email','phone','password','password_confirmation'],properties:{...affiliateFields,password:affiliatePassword,password_confirmation:{...affiliatePassword}}})},
+ responses:{201:{...affiliateReply,headers:{...affiliateReply.headers,Location:{schema:{type:'string'},description:'URI of affiliate/me'},'Set-Cookie':{schema:{type:'string'},description:'Opaque HttpOnly session cookie. Secure on HTTPS deployment.'}}},403:error,404:error,422:error,429:error}
+}};
+document.paths['/api/v1/lazsip/affiliate/sessions'] = {post:{
+ tags:['LAZSIP'],summary:'Sign in or join affiliate membership with an existing Core account',
+ description:'Uses module-specific email validation and a limiter of 5 attempts per normalized lowercase email and IP per minute. Verifies the existing Core user password hash and issues sessions through Core TokenIssuer. ERP login elsewhere continues to use account codes. Active ERP accounts may join automatically without changing existing module permissions. A suspended affiliate remains suspended (403); incorrect, unknown or inactive Core credentials return 401. Public module availability applies. Sets sip_session HttpOnly cookie, never a token in the response. Remember follows Core cookie/token policy.',
+ requestBody:{required:true,content:json({type:'object',required:['email','password'],properties:{email:{type:'string',format:'email',maxLength:191},password:{type:'string',maxLength:72,writeOnly:true},remember:{type:'boolean'}}})},
+ responses:{200:affiliateReply,401:error,403:error,404:error,422:error,429:error}
+}};
+document.paths['/api/v1/lazsip/affiliate/me'] = {
+ get:{tags:['LAZSIP'],summary:'Read own active affiliate profile',security:[{bearerAuth:[]}],description:'Core authentication plus active user/affiliate and public module availability. Always scopes by authenticated user; no supplied ownership identifier is accepted. Reads never create membership.',responses:{200:affiliateReply,401:error,403:error,404:error}},
+ put:{tags:['LAZSIP'],summary:'Replace own affiliate contact profile',security:[{bearerAuth:[]}],description:'Full replacement of name, email and phone only. Name/email update the shared Core account. Code, ownership, roles and status are server controlled. Conflicting email rejects the complete update atomically. 10 requests/minute; no-store, private.',requestBody:{required:true,content:json({type:'object',required:['name','email','phone'],properties:affiliateFields})},responses:{200:affiliateReply,401:error,403:error,404:error,422:error,429:error}}
+};
+
+document.paths['/api/v1/lazsip/affiliate/referrals/{code}'] = {get:{tags:['LAZSIP'],summary:'Resolve an active affiliate referral link',description:'Public metadata only: returns the same random code, never affiliate identity/contact. Requires active LAZSIP, affiliate and Core account. Invalid/inactive codes return 404. Read only; does not record visits, attribute payments or create commissions. Rate limited to 60/minute/IP. no-store.',parameters:[{name:'code',in:'path',required:true,schema:{type:'string',pattern:'^[a-f0-9]{20}$'}}],responses:{200:{description:'Active public code',headers:{'Cache-Control':{schema:{type:'string',const:'no-store, private'}}},content:json({type:'object',required:['data'],additionalProperties:false,properties:{data:{type:'object',additionalProperties:false,required:['referralCode'],properties:{referralCode:{type:'string',pattern:'^[a-f0-9]{20}$'}}}}})},404:error,429:error}}};
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {
