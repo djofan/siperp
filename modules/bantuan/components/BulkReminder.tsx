@@ -12,10 +12,11 @@ export function BulkReminder({rows,viewer,refreshing}:{rows:AidApplication[];vie
   const [busy,setBusy]=useState(false),[error,setError]=useState("");
   const [result,setResult]=useState<Result|null>(null),[copied,setCopied]=useState("");
   const eligible=rows.filter(row=>reminderTargets[row.status]);
+  const targets=eligible.slice(0,100);
   if(!hasAnyRole(viewer,["admin","call_center"])||!eligible.length)return null;
   async function prepare(){
     setBusy(true);setError("");setResult(null);
-    try{setResult(await request<Result>("application-reminders",{method:"POST",body:JSON.stringify({applications:eligible.map(row=>({id:row.id,status:row.status}))})}));}
+    try{setResult(await request<Result>("application-reminders",{method:"POST",body:JSON.stringify({applications:targets.map(row=>({id:row.id,status:row.status}))})}));}
     catch(e){setError(e instanceof Error?e.message:"Pengingat belum berhasil disiapkan.");}
     finally{setBusy(false);}
   }
@@ -24,8 +25,8 @@ export function BulkReminder({rows,viewer,refreshing}:{rows:AidApplication[];vie
     catch{setError("Tidak dapat menyalin otomatis. Pilih dan salin teks pesan di bawah.");}
   }
   return <section className={`${s.root} ${s.bulk}`} aria-label="Pengingat sekaligus">
-    <div className={s.bulkHeader}><div><strong>Ingatkan petugas sekaligus</strong><p>{eligible.length} pengajuan aktif pada halaman ini. Satu pesan per petugas sesuai tugasnya.</p></div><button className={s.trigger} type="button" disabled={busy||refreshing} onClick={prepare}><BellRing size={16}/>{busy?"Menyiapkan…":`Siapkan ${eligible.length} pengingat`}</button></div>
-    <small>Notifikasi lonceng dibuat saat disiapkan. Pesan WhatsApp Anda periksa dan kirim sendiri. Gunakan filter untuk menentukan tahap yang ingin diingatkan.</small>
+    <div className={s.bulkHeader}><div><strong>Ingatkan petugas sekaligus</strong><p>{eligible.length} pengajuan aktif pada halaman ini. Satu pesan per petugas sesuai tugasnya.</p></div><button className={s.trigger} type="button" disabled={busy||refreshing} onClick={prepare}><BellRing size={16}/>{busy?"Menyiapkan…":`Siapkan ${targets.length} pengingat`}</button></div>
+    {eligible.length>100&&<p>Maksimal 100 pengajuan teratas per proses. Untuk sisanya, pilih 100 per halaman lalu lanjutkan ke halaman berikutnya.</p>}<small>Notifikasi lonceng dibuat saat disiapkan. Pesan WhatsApp Anda periksa dan kirim sendiri. Gunakan filter untuk menentukan tahap yang ingin diingatkan.</small>
     {error&&<p role="alert" className={s.error}>{error}</p>}
     {result&&<div className={s.result}><p role="status">{result.count>0?`${result.count} pengajuan dikelompokkan untuk ${result.recipients.length} petugas. Pengingat lonceng tahap yang sama tidak digandakan dalam sehari.`:"Belum ada pengingat yang dibuat. Periksa pengajuan yang dilewati di bawah."}</p>
       {!!result.skipped?.length&&<details open><summary>{result.skipped.length} pengajuan dilewati — lihat alasannya</summary><ul>{result.skipped.map(item=><li key={item.id}><strong>{item.number} · {item.task}</strong><p>{item.reason}</p></li>)}</ul></details>}

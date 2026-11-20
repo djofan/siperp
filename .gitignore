@@ -62,3 +62,5 @@ academy-dev*.local.log
 # Private legacy finance import snapshots, mappings and reports
 /.keuangan-import/
 /tools/keuangan/__pycache__/
+/tools/rapat/__pycache__/
+/.tmp-uat/

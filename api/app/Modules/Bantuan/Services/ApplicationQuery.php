@@ -23,7 +23,7 @@ class ApplicationQuery
             'amountMin' => 'nullable|integer|min:0|max:999999999999',
             'amountMax' => ['nullable', 'integer', 'min:0', 'max:999999999999', ...($request->filled('amountMin') ? ['gte:amountMin'] : [])],
             'surveyOverdue' => 'nullable|boolean', 'overdue' => 'nullable|boolean', 'sort' => 'nullable|in:newest,oldest,updated,amount_high,amount_low,name',
-            'page' => 'nullable|integer|min:1', 'perPage' => 'nullable|integer|in:12,20,24,48', 'summary' => 'nullable|boolean',
+            'page' => 'nullable|integer|min:1', 'perPage' => 'nullable|integer|min:1|max:500', 'summary' => 'nullable|boolean',
         ]);
     }
 

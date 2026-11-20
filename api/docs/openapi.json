@@ -2704,6 +2704,1995 @@
             }
           }
         }
+      },
+      "RapatInstitution": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "heading": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "name",
+          "heading",
+          "address"
+        ]
+      },
+      "RapatMinutes": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 50000
+          },
+          "discussion": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 500
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 10000
+            },
+            "maxItems": 500
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "task": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "assignee": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "dueDate": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "done"
+                  ]
+                }
+              },
+              "required": [
+                "task",
+                "assignee",
+                "dueDate",
+                "status"
+              ]
+            },
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "summary",
+          "discussion",
+          "decisions",
+          "actions"
+        ]
+      },
+      "RapatMedia": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer",
+            "maximum": 20971520
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "transcribed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mime",
+          "size",
+          "sequence",
+          "transcribed"
+        ]
+      },
+      "RapatMeetingSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "meetingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "dinas",
+              "berita_acara",
+              "guru",
+              "supervisi",
+              "organisasi"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mediaCount": {
+            "type": "integer"
+          },
+          "actionCount": {
+            "type": "integer"
+          },
+          "workflowStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "finalized"
+            ]
+          },
+          "finalizedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "participantCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "decisionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "doneActionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overdueActionCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "meetingDate",
+          "location",
+          "template",
+          "status",
+          "archivedAt",
+          "createdBy",
+          "version",
+          "updatedAt",
+          "mediaCount",
+          "actionCount",
+          "workflowStatus",
+          "finalizedAt",
+          "createdAt",
+          "participantCount",
+          "decisionCount",
+          "doneActionCount",
+          "overdueActionCount"
+        ]
+      },
+      "RapatMeeting": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "meetingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 1000
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "dinas",
+              "berita_acara",
+              "guru",
+              "supervisi",
+              "organisasi"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mediaCount": {
+            "type": "integer"
+          },
+          "actionCount": {
+            "type": "integer"
+          },
+          "startTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "endTime": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+          },
+          "agenda": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20000
+          },
+          "chair": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "notetaker": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 255
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "position": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "attendance": {
+                  "type": "string",
+                  "enum": [
+                    "present",
+                    "absent",
+                    "excused"
+                  ],
+                  "default": "present"
+                }
+              },
+              "required": [
+                "name",
+                "position",
+                "attendance"
+              ]
+            },
+            "maxItems": 500
+          },
+          "institution": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "heading": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "address": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "name",
+              "heading",
+              "address"
+            ]
+          },
+          "transcript": {
+            "type": "string",
+            "maxLength": 200000
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "start": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "text": {
+                  "type": "string"
+                },
+                "speaker": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "text",
+                "speaker"
+              ]
+            }
+          },
+          "minutes": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "summary": {
+                "type": "string",
+                "maxLength": 50000
+              },
+              "discussion": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "maxItems": 500
+              },
+              "decisions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "maxItems": 500
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "task": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    },
+                    "assignee": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "dueDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "done"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "task",
+                    "assignee",
+                    "dueDate",
+                    "status"
+                  ]
+                },
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "summary",
+              "discussion",
+              "decisions",
+              "actions"
+            ]
+          },
+          "media": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "mime": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer",
+                  "maximum": 20971520
+                },
+                "sequence": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 500
+                },
+                "transcribed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "mime",
+                "size",
+                "sequence",
+                "transcribed"
+              ]
+            }
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "workflowStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "finalized"
+            ]
+          },
+          "finalizedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "participantCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "decisionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "doneActionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overdueActionCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "historyAvailable": {
+            "const": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "meetingDate",
+          "location",
+          "template",
+          "status",
+          "archivedAt",
+          "createdBy",
+          "version",
+          "updatedAt",
+          "mediaCount",
+          "actionCount",
+          "participants",
+          "institution",
+          "transcript",
+          "segments",
+          "minutes",
+          "media",
+          "error",
+          "workflowStatus",
+          "finalizedAt",
+          "createdAt",
+          "participantCount",
+          "decisionCount",
+          "doneActionCount",
+          "overdueActionCount",
+          "historyAvailable"
+        ]
+      },
+      "RapatSettings": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "institution": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 1000
+              },
+              "heading": {
+                "type": "string",
+                "maxLength": 2000
+              },
+              "address": {
+                "type": "string",
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "name",
+              "heading",
+              "address"
+            ]
+          },
+          "participants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "position": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 255
+                },
+                "attendance": {
+                  "type": "string",
+                  "enum": [
+                    "present",
+                    "absent",
+                    "excused"
+                  ],
+                  "default": "present"
+                }
+              },
+              "required": [
+                "name",
+                "position",
+                "attendance"
+              ]
+            },
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "institution",
+          "participants"
+        ]
+      },
+      "RapatHistoryEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "finalize",
+              "reopen",
+              "task_status",
+              "ai_generate",
+              "archive",
+              "attachment_added",
+              "attachment_removed"
+            ]
+          },
+          "actor": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changedFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                      },
+                      "meetingDate": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "startTime": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                      },
+                      "endTime": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                      },
+                      "location": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1000
+                      },
+                      "agenda": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 20000
+                      },
+                      "chair": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 255
+                      },
+                      "notetaker": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 255
+                      },
+                      "template": {
+                        "type": "string",
+                        "enum": [
+                          "dinas",
+                          "berita_acara",
+                          "guru",
+                          "supervisi",
+                          "organisasi"
+                        ]
+                      },
+                      "participants": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 255
+                            },
+                            "position": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "attendance": {
+                              "type": "string",
+                              "enum": [
+                                "present",
+                                "absent",
+                                "excused"
+                              ],
+                              "default": "present"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "position",
+                            "attendance"
+                          ]
+                        },
+                        "maxItems": 500
+                      },
+                      "institution": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "heading": {
+                            "type": "string",
+                            "maxLength": 2000
+                          },
+                          "address": {
+                            "type": "string",
+                            "maxLength": 2000
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "heading",
+                          "address"
+                        ]
+                      },
+                      "minutes": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "summary": {
+                            "type": "string",
+                            "maxLength": 50000
+                          },
+                          "discussion": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 10000
+                            },
+                            "maxItems": 500
+                          },
+                          "decisions": {
+                            "type": "array",
+                            "items": {
+                              "type": "string",
+                              "maxLength": 10000
+                            },
+                            "maxItems": 500
+                          },
+                          "actions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "properties": {
+                                "task": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 2000
+                                },
+                                "assignee": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 255
+                                },
+                                "dueDate": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date"
+                                },
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "done"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "task",
+                                "assignee",
+                                "dueDate",
+                                "status"
+                              ]
+                            },
+                            "maxItems": 500
+                          }
+                        },
+                        "required": [
+                          "summary",
+                          "discussion",
+                          "decisions",
+                          "actions"
+                        ]
+                      },
+                      "transcript": {
+                        "type": "string",
+                        "maxLength": 200000
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "meetingDate",
+                      "startTime",
+                      "endTime",
+                      "location",
+                      "agenda",
+                      "chair",
+                      "notetaker",
+                      "template",
+                      "participants",
+                      "institution",
+                      "minutes",
+                      "transcript"
+                    ]
+                  },
+                  "minutes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 50000
+                      },
+                      "discussion": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "decisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "task": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2000
+                            },
+                            "assignee": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "dueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "done"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "task",
+                            "assignee",
+                            "dueDate",
+                            "status"
+                          ]
+                        },
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "summary",
+                      "discussion",
+                      "decisions",
+                      "actions"
+                    ]
+                  },
+                  "workflowStatus": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "finalized"
+                    ]
+                  },
+                  "finalizedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  },
+                  "transcript": {
+                    "type": "string"
+                  },
+                  "segments": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "start": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "end": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "text": {
+                          "type": "string"
+                        },
+                        "speaker": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "start",
+                        "end",
+                        "text",
+                        "speaker"
+                      ]
+                    }
+                  },
+                  "archivedAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "metadata",
+                  "minutes",
+                  "workflowStatus",
+                  "finalizedAt",
+                  "transcript",
+                  "segments",
+                  "archivedAt"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "after": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "metadata": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "meetingDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "endTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "location": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "agenda": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 20000
+                  },
+                  "chair": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "notetaker": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "template": {
+                    "type": "string",
+                    "enum": [
+                      "dinas",
+                      "berita_acara",
+                      "guru",
+                      "supervisi",
+                      "organisasi"
+                    ]
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "position": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "attendance": {
+                          "type": "string",
+                          "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                          ],
+                          "default": "present"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "position",
+                        "attendance"
+                      ]
+                    },
+                    "maxItems": 500
+                  },
+                  "institution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "heading": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "address": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "heading",
+                      "address"
+                    ]
+                  },
+                  "minutes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 50000
+                      },
+                      "discussion": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "decisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "task": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2000
+                            },
+                            "assignee": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "dueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "done"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "task",
+                            "assignee",
+                            "dueDate",
+                            "status"
+                          ]
+                        },
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "summary",
+                      "discussion",
+                      "decisions",
+                      "actions"
+                    ]
+                  },
+                  "transcript": {
+                    "type": "string",
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "title",
+                  "meetingDate",
+                  "startTime",
+                  "endTime",
+                  "location",
+                  "agenda",
+                  "chair",
+                  "notetaker",
+                  "template",
+                  "participants",
+                  "institution",
+                  "minutes",
+                  "transcript"
+                ]
+              },
+              "minutes": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 50000
+                  },
+                  "discussion": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 10000
+                    },
+                    "maxItems": 500
+                  },
+                  "decisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 10000
+                    },
+                    "maxItems": 500
+                  },
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "task": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000
+                        },
+                        "assignee": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "dueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "open",
+                            "done"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "task",
+                        "assignee",
+                        "dueDate",
+                        "status"
+                      ]
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "summary",
+                  "discussion",
+                  "decisions",
+                  "actions"
+                ]
+              },
+              "workflowStatus": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "finalized"
+                ]
+              },
+              "finalizedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              },
+              "transcript": {
+                "type": "string"
+              },
+              "segments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "start": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "end": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "text": {
+                      "type": "string"
+                    },
+                    "speaker": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "start",
+                    "end",
+                    "text",
+                    "speaker"
+                  ]
+                }
+              },
+              "archivedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "metadata",
+              "minutes",
+              "workflowStatus",
+              "finalizedAt",
+              "transcript",
+              "segments",
+              "archivedAt"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "action",
+          "actor",
+          "createdAt",
+          "changedFields",
+          "reason",
+          "before",
+          "after"
+        ]
+      },
+      "RapatHistorySnapshot": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "metadata": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 255
+              },
+              "meetingDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "startTime": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "endTime": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+              },
+              "location": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 1000
+              },
+              "agenda": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 20000
+              },
+              "chair": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "notetaker": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 255
+              },
+              "template": {
+                "type": "string",
+                "enum": [
+                  "dinas",
+                  "berita_acara",
+                  "guru",
+                  "supervisi",
+                  "organisasi"
+                ]
+              },
+              "participants": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "position": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "attendance": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "excused"
+                      ],
+                      "default": "present"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "position",
+                    "attendance"
+                  ]
+                },
+                "maxItems": 500
+              },
+              "institution": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "heading": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "name",
+                  "heading",
+                  "address"
+                ]
+              },
+              "minutes": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 50000
+                  },
+                  "discussion": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 10000
+                    },
+                    "maxItems": 500
+                  },
+                  "decisions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 10000
+                    },
+                    "maxItems": 500
+                  },
+                  "actions": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "task": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 2000
+                        },
+                        "assignee": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "dueDate": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "open",
+                            "done"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "task",
+                        "assignee",
+                        "dueDate",
+                        "status"
+                      ]
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "summary",
+                  "discussion",
+                  "decisions",
+                  "actions"
+                ]
+              },
+              "transcript": {
+                "type": "string",
+                "maxLength": 200000
+              }
+            },
+            "required": [
+              "title",
+              "meetingDate",
+              "startTime",
+              "endTime",
+              "location",
+              "agenda",
+              "chair",
+              "notetaker",
+              "template",
+              "participants",
+              "institution",
+              "minutes",
+              "transcript"
+            ]
+          },
+          "minutes": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "summary": {
+                "type": "string",
+                "maxLength": 50000
+              },
+              "discussion": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "maxItems": 500
+              },
+              "decisions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 10000
+                },
+                "maxItems": 500
+              },
+              "actions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "task": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000
+                    },
+                    "assignee": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "maxLength": 255
+                    },
+                    "dueDate": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "open",
+                        "done"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "task",
+                    "assignee",
+                    "dueDate",
+                    "status"
+                  ]
+                },
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "summary",
+              "discussion",
+              "decisions",
+              "actions"
+            ]
+          },
+          "workflowStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "finalized"
+            ]
+          },
+          "finalizedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "transcript": {
+            "type": "string"
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "start": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "text": {
+                  "type": "string"
+                },
+                "speaker": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "text",
+                "speaker"
+              ]
+            }
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "metadata",
+          "minutes",
+          "workflowStatus",
+          "finalizedAt",
+          "transcript",
+          "segments",
+          "archivedAt"
+        ]
+      },
+      "RapatTask": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "meetingId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "meetingTitle": {
+            "type": "string"
+          },
+          "meetingDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "index": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "task": {
+            "type": "string"
+          },
+          "assignee": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dueDate": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "done"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "workflowStatus": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "finalized"
+            ]
+          },
+          "archivedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "meetingId",
+          "meetingTitle",
+          "meetingDate",
+          "index",
+          "task",
+          "assignee",
+          "dueDate",
+          "status",
+          "version",
+          "canEdit",
+          "workflowStatus",
+          "archivedAt"
+        ]
+      },
+      "RapatAttachment": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mime",
+          "size",
+          "createdAt"
+        ]
       }
     }
   },
@@ -12733,6 +14722,2419 @@
         }
       }
     },
+    "/api/v1/rapat/viewer": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Current Rapat viewer and local AI readiness",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Reads cached readiness only, defaults configured=false; never starts Python or calls HTTP. Fetch ai/status only when opening AI settings/panel.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "admin",
+                            "secretary",
+                            "viewer"
+                          ]
+                        },
+                        "canManage": {
+                          "type": "boolean"
+                        },
+                        "ai": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "provider": {
+                              "const": "local"
+                            },
+                            "configured": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "provider",
+                            "configured"
+                          ]
+                        },
+                        "templates": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "enum": [
+                                  "dinas",
+                                  "berita_acara",
+                                  "guru",
+                                  "supervisi",
+                                  "organisasi"
+                                ]
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "name"
+                            ]
+                          }
+                        },
+                        "institution": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "maxLength": 1000
+                            },
+                            "heading": {
+                              "type": "string",
+                              "maxLength": 2000
+                            },
+                            "address": {
+                              "type": "string",
+                              "maxLength": 2000
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "heading",
+                            "address"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "role",
+                        "canManage",
+                        "ai",
+                        "templates",
+                        "institution"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "List authorized meetings",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Search decrypts only authorized rows after filters; maximum 5000 candidate meetings, otherwise 422 requests a narrower date range. Searches title, agenda, transcript and minutes. Stats use the entire authorized filtered set before pagination; all scans bound to 5000 authorized candidates. Workflow filter independent of AI status. Overdue uses Asia/Jakarta calendar, excludes due today and done tasks.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "processing",
+                "ready",
+                "failed"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1"
+              ],
+              "default": "0"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "workflowStatus",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "finalized"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RapatMeetingSummary"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currentPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "lastPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "perPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "stats": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "total": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "draft": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "finalized": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "openActions": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "overdueActions": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "total",
+                            "draft",
+                            "finalized",
+                            "openActions",
+                            "overdueActions"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "currentPage",
+                        "lastPage",
+                        "perPage",
+                        "stats"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Create a meeting",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Optional manual minutes/transcript are saved directly on create; no AI probe, audio or later PUT is needed. Creates draft workflow and a genuine creation revision. Existing legacy records are not backfilled.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "meetingDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "endTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "location": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "agenda": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 20000
+                  },
+                  "chair": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "notetaker": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "template": {
+                    "type": "string",
+                    "enum": [
+                      "dinas",
+                      "berita_acara",
+                      "guru",
+                      "supervisi",
+                      "organisasi"
+                    ]
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "position": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "attendance": {
+                          "type": "string",
+                          "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                          ],
+                          "default": "present"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "position"
+                      ]
+                    },
+                    "maxItems": 500
+                  },
+                  "institution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "heading": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "address": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "heading",
+                      "address"
+                    ]
+                  },
+                  "minutes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 50000
+                      },
+                      "discussion": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "decisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "task": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2000
+                            },
+                            "assignee": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "dueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "done"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "task",
+                            "assignee",
+                            "dueDate",
+                            "status"
+                          ]
+                        },
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "summary",
+                      "discussion",
+                      "decisions",
+                      "actions"
+                    ]
+                  },
+                  "transcript": {
+                    "type": "string",
+                    "maxLength": 200000
+                  }
+                },
+                "required": [
+                  "title",
+                  "meetingDate",
+                  "template",
+                  "participants",
+                  "institution"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Read private meeting detail",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Correct meeting metadata transcript or minutes",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Partial metadata updates by explicit v1 contract. Omitted fields retained. Transcript corrections clear segments; manual content retained until explicit generation. Processing/archived meetings cannot be changed. Finalized workflow locks this operation until explicit reopen. Timestamp segments retained when submitted transcript is unchanged; clear only for actual transcript text corrections.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "title": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "meetingDate": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "startTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "endTime": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  },
+                  "location": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  },
+                  "agenda": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 20000
+                  },
+                  "chair": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "notetaker": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 255
+                  },
+                  "template": {
+                    "type": "string",
+                    "enum": [
+                      "dinas",
+                      "berita_acara",
+                      "guru",
+                      "supervisi",
+                      "organisasi"
+                    ]
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "position": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "attendance": {
+                          "type": "string",
+                          "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                          ],
+                          "default": "present"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "position"
+                      ]
+                    },
+                    "maxItems": 500
+                  },
+                  "institution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "heading": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "address": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "heading",
+                      "address"
+                    ]
+                  },
+                  "transcript": {
+                    "type": "string",
+                    "maxLength": 200000
+                  },
+                  "minutes": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "summary": {
+                        "type": "string",
+                        "maxLength": 50000
+                      },
+                      "discussion": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "decisions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 10000
+                        },
+                        "maxItems": 500
+                      },
+                      "actions": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "properties": {
+                            "task": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 2000
+                            },
+                            "assignee": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 255
+                            },
+                            "dueDate": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "done"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "task",
+                            "assignee",
+                            "dueDate",
+                            "status"
+                          ]
+                        },
+                        "maxItems": 500
+                      }
+                    },
+                    "required": [
+                      "summary",
+                      "discussion",
+                      "decisions",
+                      "actions"
+                    ]
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/media": {
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Upload an encrypted audio part",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Maximum 20 MiB each, 500 active parts. Server MIME and extension must match WAV, MP3, M4A/MP4, OGG, WebM or FLAC. clientId UUID scoped to meeting; exact content/sequence replay returns same media; conflicting or deleted key reuse 409. Sequence unique among active parts. Re-fetch detail for current version.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMedia"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "clientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "sequence": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500
+                  }
+                },
+                "required": [
+                  "file",
+                  "clientId",
+                  "sequence"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/media/{id}": {
+      "delete": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Soft-delete private audio",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Finalized workflow locks this operation until explicit reopen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Play private audio",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decrypted audio, private no-store; no storage path",
+            "content": {
+              "audio/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/generate": {
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Queue explicit local generation or retry",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires configured local engines and nonempty transcript or audio. Dedicated durable rapat connection/table rapat_jobs, queue rapat, timeout 3600, tries 1. Token and atomic processing claim reject stale/duplicate work; Successful audio transcripts are reused on failed retries only when model and decoding-pipeline revisions match. An explicit regeneration from ready with useTranscript=false retranscribes all audio; changing the model invalidates prior cached transcripts. Audio without usable speech fails safely without generating minutes. Generic safe errors; no raw model output errors. Manual minutes replaced only after successful explicit generation. Finalized workflow locks this operation until explicit reopen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "useTranscript": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "version",
+                  "useTranscript"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/archive": {
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Archive or restore a meeting",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "version",
+                  "archived"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/settings": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Administrator institution and participant defaults",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Admin only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatSettings"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Administrator institution and participant defaults",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Admin only.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatSettings"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "institution": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "heading": {
+                        "type": "string",
+                        "maxLength": 2000
+                      },
+                      "address": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "heading",
+                      "address"
+                    ]
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 255
+                        },
+                        "position": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 255
+                        },
+                        "attendance": {
+                          "type": "string",
+                          "enum": [
+                            "present",
+                            "absent",
+                            "excused"
+                          ],
+                          "default": "present"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "position"
+                      ]
+                    },
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "institution",
+                  "participants"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/docx": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Export private OOXML minutes",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Real escaped OOXML with institution, metadata, attendance, minutes, actions and signature lines. Requires PHP ZIP; 503 if unavailable. Manual export requires no AI; labels DRAF/FINAL, finalization date in Asia/Jakarta WIB, participant attendance Hadir/Tidak hadir/Izin, explicit unrecorded-section placeholders; plaintext XML escaped.",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/ai/status": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Explicitly probe optional local AI readiness",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. All authorized readers. Bounded health probe cached 30 seconds. Manual endpoints never require this probe.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "provider": {
+                          "const": "local"
+                        },
+                        "configured": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "provider",
+                        "configured"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/history": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Read immutable encrypted meeting revisions",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Same meeting read scope, 20 revisions per page ordered by version descending. No fabricated legacy history; before=null on genuine create. Actor id=null/name=AI lokal for completed AI job; never attributes AI edits to meeting creator. Snapshots include full metadata/minutes plus transcript/segments and lifecycle state, encrypted at rest. No tokens or storage paths.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RapatHistoryEntry"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currentPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "lastPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "perPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "currentPage",
+                        "lastPage",
+                        "perPage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/finalize": {
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Finalize or explicitly reopen manual minutes",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Writer scope, optimistic lock. Finalizing requires at least one summary/discussion/decision entry containing 10 letters/digits, and each action must have a nonblank assignee (422 minutes.actions.N.assignee); deadline optional. Reopening requires a trimmed reason of 10�2000 characters. No AI dependency. Finalized locks metadata/minutes/transcript/media/attachments/generation; archive/restore and dedicated task status are still allowed. Processing and archived records cannot finalize/reopen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "finalized": {
+                    "type": "boolean"
+                  },
+                  "reason": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "version",
+                  "finalized"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/actions/{index}": {
+      "put": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Set a task status with an audited version lock",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Zero-based index in current minutes.actions. Same admin/own secretary writer policy, including finalized AND archived records; processing disallowed. Entire meeting version must match before resolving index, so stale/reordered lists return409. Only status changes; content remains frozen. Creates encrypted history.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "done"
+                    ]
+                  }
+                },
+                "required": [
+                  "version",
+                  "status"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/tasks": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "List scoped actions across active and archived meetings",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Includes archived and active by default (archived=all); 0 excludes archived, 1 archived only. q matches meeting title/task/assignee, assignee case-insensitive substring. from/to inclusive task dueDate, excluding no-deadline tasks when used. Overdue means open with dueDate strictly before today in Asia/Jakarta. Ordered meetingDate descending, meeting ID, then task index. Bounded encrypted scan of at most5000 authorized meetings. canEdit false for viewers/processing; finalized and archived statuses remain editable by owner/admin.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "open",
+                "done",
+                "overdue",
+                "all"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "assignee",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "workflowStatus",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "finalized"
+              ]
+            }
+          },
+          {
+            "name": "archived",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "0",
+                "1",
+                "all"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "default": 1
+            }
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RapatTask"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "currentPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "lastPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "perPage": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "currentPage",
+                        "lastPage",
+                        "perPage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/meetings/{id}/attachments": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "List private supporting documents",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RapatAttachment"
+                      }
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Upload an encrypted supporting document",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Writer scope and meeting version; finalized/processing/archived disallowed. Maximum 10 MiB per nonempty file, 50 active documents per meeting. PDF, JPG/JPEG, PNG, WEBP, TXT, CSV, DOCX, XLSX, PPTX only; server MIME/extension and OOXML container validation reject malformed and macro content. Private encrypted storage; MIME and extension validated. Re-fetch meeting version. Attachment metadata changes audited. No private paths returned.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatAttachment"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "file",
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rapat/attachments/{id}": {
+      "get": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Download an authorized supporting document",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private document download, no-store, nosniff, never HTML inline",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Remove a supporting document with audited version",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Writer scope; finalized/processing/archived disallowed. Re-fetch meeting version.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/bantuan/applications/{id}/actions/disburse": {
       "post": {
         "tags": [
@@ -13077,6 +17479,55 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/bantuan/applications": {
+      "get": {
+        "tags": [
+          "Bantuan"
+        ],
+        "summary": "List authorized aid applications with configurable pagination",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Existing role, assignment, search, stage and detailed filters remain enforced. perPage accepts any integer from 1 to 500, including custom sizes; default 20. Page-size changes do not widen access or affect bulk-action limits. Private no-store response. The data array can contain fewer than per_page records on the last page.",
+        "parameters": [
+          {
+            "name": "perPage",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 20
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized data array and current_page, last_page, total, per_page pagination metadata"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "422": {
+            "description": "Invalid filters or page size outside 1–500"
           }
         }
       }

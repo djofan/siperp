@@ -53,3 +53,9 @@
 }
 
 .selectionCheck{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:#287746;cursor:pointer}.selectableIdentity{display:flex;align-items:center;gap:10px;min-width:0}.selectableIdentity>a{min-width:0;overflow:hidden;text-overflow:ellipsis}.selectionCheck:focus-visible{outline:2px solid #287746;outline-offset:3px}
+.pageSizeControl{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.pageControls .pageSizeControl label{width:auto;margin:0;white-space:nowrap}
+.pageSizeControl input{width:82px;height:36px;border:1px solid #d6e2cd;border-radius:8px;background:#fff;color:#36582b;padding:5px 8px;font:inherit}
+.pageSizeControl small{font-size:10px;color:#69815c}
+.pageControls .pageSizeError{flex-basis:100%;color:#a62c24;font-size:11px}
+@media(max-width:760px){.pageSizeControl{width:100%;justify-content:flex-start}.pageControls .pageSizeControl button{flex:none}.pageSizeControl input{width:76px}}

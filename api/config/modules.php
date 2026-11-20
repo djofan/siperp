@@ -7,6 +7,7 @@ use App\Modules\Keuangan\Providers\KeuanganServiceProvider;
 use App\Modules\Lazsip\Providers\LazsipServiceProvider;
 use App\Modules\Ojol\Providers\OjolServiceProvider;
 use App\Modules\Payment\Providers\PaymentServiceProvider;
+use App\Modules\Rapat\Providers\RapatServiceProvider;
 use App\Modules\Sarsip\Providers\SarsipServiceProvider;
 use App\Modules\Sip\Providers\SipServiceProvider;
 use App\Modules\Tanwir\Providers\TanwirServiceProvider;
@@ -24,4 +25,5 @@ return ['providers' => [
     OjolServiceProvider::class,
     TeknisiServiceProvider::class,
     BantuanServiceProvider::class,
+    RapatServiceProvider::class,
 ]];
