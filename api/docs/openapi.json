@@ -16492,7 +16492,7 @@
           "Rapat"
         ],
         "summary": "Finalize or explicitly reopen manual minutes",
-        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Writer scope, optimistic lock. Finalizing requires at least one summary/discussion/decision entry containing 10 letters/digits, and each action must have a nonblank assignee (422 minutes.actions.N.assignee); deadline optional. Reopening requires a trimmed reason of 10�2000 characters. No AI dependency. Finalized locks metadata/minutes/transcript/media/attachments/generation; archive/restore and dedicated task status are still allowed. Processing and archived records cannot finalize/reopen.",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Writer scope, optimistic lock. Finalizing requires at least one summary/discussion/decision entry containing 10 letters/digits, and each action must have a nonblank assignee (422 minutes.actions.N.assignee); deadline optional. Reopening requires a trimmed reason of 10–2000 characters. No AI dependency. Finalized locks metadata/minutes/transcript/media/attachments/generation; archive/restore and dedicated task status are still allowed. Processing and archived records cannot finalize/reopen.",
         "security": [
           {
             "bearerAuth": []
