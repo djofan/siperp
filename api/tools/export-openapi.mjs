@@ -592,6 +592,34 @@ document.paths['/api/v1/bantuan/applications'].get = {
   responses:{200:{description:'Authorized data array and current_page, last_page, total, per_page pagination metadata'},401:{description:'Authentication required'},403:{description:'Module access denied'},422:{description:'Invalid filters or page size outside 1–500'}},
 };
 
+const articleInput = {type:'object',required:['title','content','status'],properties:{
+  title:{type:'string',minLength:1,maxLength:191},content:{type:'string',minLength:1,maxLength:1000000,description:'Plain text with safe Markdown headings, lists, quotations and HTTP(S) links; raw HTML is never executed.'},
+  author:{type:['string','null'],maxLength:191},source:{type:['string','null'],maxLength:10000},
+  category:{type:['string','null'],enum:['zakat','qurban','infak_sedekah','lainnya',null]},status:{type:'string',enum:['draft','published']},
+}};
+document.components.schemas.LazsipArticleInput = articleInput;
+document.components.schemas.LazsipArticle = {...articleInput,required:['id','title','content','status','createdAt'],properties:{...articleInput.properties,id:{type:'string'},createdAt:{type:'string',format:'date-time'}}};
+for (const admin of [false,true]) {
+  for (const detail of [false,true]) {
+    const path = `/api/v1/lazsip/${admin?'admin/':''}articles${detail?'/{id}':''}`;
+    document.paths[path] = {get:{tags:['Lazsip'],summary:`Read ${admin?'editorial':'published'} articles${detail?' detail':''}`,security:admin?[{bearerAuth:[]}]:[],
+      description:admin?'Requires active LAZSIP module access, following existing content management permissions. Includes drafts.':'Only published articles are visible. Draft detail returns 404. Card excerpt is derived from content; no cover image required.',
+      parameters:detail?[{name:'id',in:'path',required:true,schema:{type:'string'}}]:[{name:'page',in:'query',schema:{type:'integer',minimum:1}},{name:'per_page',in:'query',schema:{type:'integer',minimum:1,maximum:100,default:100}}],
+      responses:{200:{description:detail?'Article in data envelope':'Paginated articles with current_page, last_page, total and per_page'},404:{description:'Article not found or unpublished'},...(admin?{401:{description:'Authentication required'},403:{description:'Module access denied'}}:{})},
+    }};
+  }
+}
+for (const [method,detail] of [['post',false],['put',true],['delete',true]]) {
+  const path=`/api/v1/lazsip/articles${detail?'/{id}':''}`;
+  document.paths[path]??={};
+  document.paths[path][method]={tags:['Lazsip'],summary:`${method==='post'?'Create':method==='put'?'Update':'Delete'} article`,security:[{bearerAuth:[]}],
+    description:'Same active LAZSIP content management permissions as news. Optional author/source/category may be null; omission preserves existing values on update. Only title, content and status are required.',
+    parameters:detail?[{name:'id',in:'path',required:true,schema:{type:'string'}}]:[],
+    ...(method==='delete'?{}:{requestBody:{required:true,content:{'application/json':{schema:{$ref:'#/components/schemas/LazsipArticleInput'}}}}}),
+    responses:{[method==='post'?201:200]:{description:method==='post'?'Created article, id, ok and Location header':'Success'},401:{description:'Authentication required'},403:{description:'Module access denied'},404:{description:'Not found'},422:{description:'Invalid fields'}},
+  };
+}
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

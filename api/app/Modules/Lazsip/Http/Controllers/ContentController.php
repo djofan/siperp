@@ -3,6 +3,7 @@
 namespace App\Modules\Lazsip\Http\Controllers;
 
 use App\Modules\Lazsip\Models\LazsipActivity;
+use App\Modules\Lazsip\Models\LazsipArticle;
 use App\Modules\Lazsip\Models\LazsipBeneficiary;
 use App\Modules\Lazsip\Models\LazsipNews;
 use App\Modules\Lazsip\Models\LazsipPartner;
@@ -16,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 class ContentController
 {
-    private const MODELS = ['news' => LazsipNews::class, 'programs' => LazsipProgram::class, 'partners' => LazsipPartner::class, 'activities' => LazsipActivity::class, 'beneficiaries' => LazsipBeneficiary::class, 'payment-fees' => LazsipPaymentFeeRef::class];
+    private const MODELS = ['articles' => LazsipArticle::class, 'news' => LazsipNews::class, 'programs' => LazsipProgram::class, 'partners' => LazsipPartner::class, 'activities' => LazsipActivity::class, 'beneficiaries' => LazsipBeneficiary::class, 'payment-fees' => LazsipPaymentFeeRef::class];
 
     private const PUBLIC_CARD = ['id', 'name', 'age', 'amount_received', 'aid_type', 'photo', 'is_pinned', 'verifier_area', 'verifier_name'];
 
@@ -27,7 +28,7 @@ class ContentController
         $resource = $request->route('resource');
         $model = self::MODELS[$resource] ?? abort(404);
         $query = $model::query();
-        if ($resource === 'news' && ! $request->route('admin')) {
+        if (in_array($resource, ['news', 'articles'], true) && ! $request->route('admin')) {
             $query->where('status', 'published');
         }
         if ($resource === 'programs') {
@@ -93,6 +94,7 @@ class ContentController
         $title = 'required|string|max:191';
         $text = 'required|string|max:1000000';
         $rules = match ($request->route('resource')) {
+            'articles' => ['title' => $title, 'content' => $text, 'author' => 'sometimes|nullable|string|max:191', 'source' => 'sometimes|nullable|string|max:10000', 'category' => 'sometimes|nullable|in:zakat,qurban,infak_sedekah,lainnya', 'status' => 'required|in:draft,published'],
             'news' => ['newsDate' => 'sometimes|nullable|date_format:Y-m-d', 'title' => $title, 'content' => $text, 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
             'activities' => ['title' => $title, 'description' => $text, 'image' => $image, 'date' => 'required|date', 'isPinned' => 'required|boolean'],
             'partners' => ['name' => $title, 'logo' => $image, 'url' => 'sometimes|nullable|url:http,https|max:191'],

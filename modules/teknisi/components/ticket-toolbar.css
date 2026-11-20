@@ -1,0 +1,79 @@
+/* Ticket filters only; keep the existing central/operator palettes. */
+.tech-workspace .tech-service-list>form.tech-ticket-filters {
+  gap:8px;flex-wrap:wrap;padding:10px;margin-bottom:20px;
+  background:#ffffff03;border:1px solid #ffffff0a;border-radius:14px;
+}
+.tech-workspace .tech-ticket-filters .tech-ticket-search {
+  position:relative;display:flex;align-items:center;flex:1 1 260px;min-width:180px;
+  margin:0;color:var(--foreground);font-weight:400;
+}
+.tech-workspace .tech-ticket-search>svg {
+  position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  opacity:.5;pointer-events:none;z-index:1;
+}
+.tech-workspace .tech-service-list .tech-ticket-search>input[type=search] {
+  width:100%;max-width:none;min-width:0;height:42px;min-height:42px;
+  padding:10px 14px 10px 39px;border:1px solid var(--tech-field-border);
+  background:var(--tech-field-background);border-radius:9px;
+  color:var(--foreground);font-size:12px;font-weight:400;
+}
+.tech-workspace .tech-service-list .tech-ticket-search>input::placeholder {color:var(--foreground);opacity:.48}
+.tech-workspace .tech-service-list>form.tech-ticket-filters>select {
+  height:42px;min-height:42px;max-width:190px;border-radius:9px;font-size:12px;
+}
+.tech-workspace .tech-service-list>form.tech-ticket-filters .tech-filter-submit {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  flex:0 0 auto;min-height:42px;padding:10px 17px;border:1px solid transparent;
+  border-radius:9px;background:var(--accent);color:var(--background);
+  font-size:12px;font-weight:650;white-space:nowrap;
+}
+.tech-workspace .tech-service-list>form.tech-ticket-filters .tech-filter-reset {
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  flex:0 0 auto;min-height:42px;margin:0;padding:10px 12px;
+  border:1px solid #ffffff10;border-radius:9px;background:transparent;
+  color:var(--foreground);font-size:12px;font-weight:500;white-space:nowrap;
+}
+.tech-workspace .tech-service-list>form.tech-ticket-filters .tech-filter-reset:hover {background:#ffffff08}
+.tech-workspace .tech-service-list>.tech-list-controls {margin-bottom:20px;align-self:start;padding:10px 0}
+.tech-workspace .tech-service-list .tech-view-switch {
+  display:flex;gap:4px;padding:4px;border:1px solid #ffffff10;background:#ffffff04;border-radius:11px;
+}
+.tech-workspace .tech-service-list .tech-view-switch button {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  min-height:34px;padding:8px 12px;border-radius:7px;font-size:12px;
+  color:var(--foreground);opacity:.6;white-space:nowrap;
+}
+.tech-workspace .tech-service-list .tech-view-switch button[aria-pressed=true] {
+  background:var(--accent-soft);color:var(--accent);opacity:1;
+  box-shadow:0 1px 5px #00000012;
+}
+.tech-workspace .tech-service-list .tech-view-switch button:focus-visible,
+.tech-workspace .tech-service-list .tech-ticket-filters :focus-visible {outline:2px solid var(--accent);outline-offset:3px}
+.tech-workspace .tech-service-list .tech-ticket-search>input[type=search] {
+  transition:border-color .16s ease,background-color .16s ease;
+}
+.tech-workspace .tech-service-list .tech-ticket-search>input[type=search]:hover {
+  border-color:color-mix(in srgb,var(--foreground) 22%,var(--tech-field-border));
+}
+.tech-workspace .tech-service-list .tech-ticket-search>input[type=search]:focus,
+.tech-workspace .tech-service-list .tech-ticket-search>input[type=search]:focus-visible {
+  outline:none;box-shadow:none;
+  border-color:color-mix(in srgb,var(--accent) 45%,var(--tech-field-border));
+  background:color-mix(in srgb,var(--tech-field-background) 97%,var(--foreground));
+}
+@media(prefers-reduced-motion:reduce){
+  .tech-workspace .tech-service-list .tech-ticket-search>input[type=search] {transition:none}
+}
+@media(max-width:1100px){
+  .tech-workspace .tech-service-list {grid-template-columns:minmax(0,1fr)}
+  .tech-workspace .tech-service-list>.tech-list-controls {justify-self:end;margin-top:-9px;padding:0;margin-bottom:16px}
+}
+@media(max-width:600px){
+  .tech-workspace .tech-service-list>form.tech-ticket-filters {padding:10px;gap:8px;margin-bottom:14px}
+  .tech-workspace .tech-ticket-filters .tech-ticket-search {flex-basis:100%;min-width:0}
+  .tech-workspace .tech-service-list .tech-ticket-search>input[type=search] {font-size:16px}
+  .tech-workspace .tech-service-list>form.tech-ticket-filters>select {flex:1 1 130px;max-width:none;min-width:0;font-size:16px}
+  .tech-workspace .tech-service-list>form.tech-ticket-filters .tech-filter-submit,
+  .tech-workspace .tech-service-list>form.tech-ticket-filters .tech-filter-reset {min-height:42px}
+  .tech-workspace .tech-service-list>.tech-list-controls {margin-top:0}
+}

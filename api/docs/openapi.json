@@ -4693,6 +4693,125 @@
           "size",
           "createdAt"
         ]
+      },
+      "LazsipArticleInput": {
+        "type": "object",
+        "required": [
+          "title",
+          "content",
+          "status"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000000,
+            "description": "Plain text with safe Markdown headings, lists, quotations and HTTP(S) links; raw HTML is never executed."
+          },
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "zakat",
+              "qurban",
+              "infak_sedekah",
+              "lainnya",
+              null
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          }
+        }
+      },
+      "LazsipArticle": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "content",
+          "status",
+          "createdAt"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 191
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000000,
+            "description": "Plain text with safe Markdown headings, lists, quotations and HTTP(S) links; raw HTML is never executed."
+          },
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 191
+          },
+          "source": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 10000
+          },
+          "category": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "zakat",
+              "qurban",
+              "infak_sedekah",
+              "lainnya",
+              null
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
       }
     }
   },
@@ -17528,6 +17647,286 @@
           },
           "422": {
             "description": "Invalid filters or page size outside 1–500"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/articles": {
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read published articles",
+        "security": [],
+        "description": "Only published articles are visible. Draft detail returns 404. Card excerpt is derived from content; no cover image required.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated articles with current_page, last_page, total and per_page"
+          },
+          "404": {
+            "description": "Article not found or unpublished"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Create article",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Same active LAZSIP content management permissions as news. Optional author/source/category may be null; omission preserves existing values on update. Only title, content and status are required.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LazsipArticleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created article, id, ok and Location header"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/articles/{id}": {
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read published articles detail",
+        "security": [],
+        "description": "Only published articles are visible. Draft detail returns 404. Card excerpt is derived from content; no cover image required.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Article in data envelope"
+          },
+          "404": {
+            "description": "Article not found or unpublished"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Update article",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Same active LAZSIP content management permissions as news. Optional author/source/category may be null; omission preserves existing values on update. Only title, content and status are required.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LazsipArticleInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Delete article",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Same active LAZSIP content management permissions as news. Optional author/source/category may be null; omission preserves existing values on update. Only title, content and status are required.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Invalid fields"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/admin/articles": {
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read editorial articles",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP module access, following existing content management permissions. Includes drafts.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated articles with current_page, last_page, total and per_page"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "404": {
+            "description": "Article not found or unpublished"
+          }
+        }
+      }
+    },
+    "/api/v1/lazsip/admin/articles/{id}": {
+      "get": {
+        "tags": [
+          "Lazsip"
+        ],
+        "summary": "Read editorial articles detail",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "description": "Requires active LAZSIP module access, following existing content management permissions. Includes drafts.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Article in data envelope"
+          },
+          "401": {
+            "description": "Authentication required"
+          },
+          "403": {
+            "description": "Module access denied"
+          },
+          "404": {
+            "description": "Article not found or unpublished"
           }
         }
       }

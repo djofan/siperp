@@ -11,6 +11,7 @@ import "./service-list.css";
 import "./service-card.css";
 import "./central-theme.css";
 import "./operator-theme.css";
+import "./ticket-toolbar.css";
 import styles from "./WorkspaceIdentity.module.css";
 import { selectedServiceMenu } from "../api/workflow";
 import { LayoutDashboard, Wrench, Clock3, CircleCheck, PackageCheck, CircleX, ChartNoAxesCombined, Store, UsersRound, UserRound, ListFilter, ChevronRight } from "lucide-react";
