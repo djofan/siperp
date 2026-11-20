@@ -26,7 +26,7 @@ Route::middleware('module.public:lazsip')->group(function (): void {
     Route::get('checkout-methods', [ContentController::class, 'checkoutMethods']);
     Route::get('files/{filename}', [UploadController::class, 'show']);
     Route::post('programs/{id}/apply', [ContentController::class, 'apply'])->middleware('throttle:checkout');
-    foreach (['news', 'programs', 'partners', 'activities', 'beneficiaries', 'payment-fees'] as $resource) {
+    foreach (['articles', 'news', 'programs', 'partners', 'activities', 'beneficiaries', 'payment-fees'] as $resource) {
         Route::get($resource, [ContentController::class, 'index'])->defaults('resource', $resource);
         Route::get($resource.'/{id}', [ContentController::class, 'show'])->defaults('resource', $resource);
     }
@@ -54,7 +54,7 @@ Route::middleware(['auth:sanctum', 'user.active', 'module.access:lazsip'])->grou
     Route::put('programs/{id}/registration', [ContentController::class, 'registration']);
     Route::put('site-content/{key}', [ContentController::class, 'updateSiteContent']);
     Route::post('upload', [UploadController::class, 'store']);
-    foreach (['news', 'programs', 'partners', 'activities', 'beneficiaries', 'payment-fees'] as $resource) {
+    foreach (['articles', 'news', 'programs', 'partners', 'activities', 'beneficiaries', 'payment-fees'] as $resource) {
         Route::get('admin/'.$resource, [ContentController::class, 'index'])->defaults('resource', $resource)->defaults('admin', true);
         Route::get('admin/'.$resource.'/{id}', [ContentController::class, 'show'])->defaults('resource', $resource)->defaults('admin', true);
         Route::post($resource, [ContentController::class, 'store'])->defaults('resource', $resource)->defaults('admin', true);

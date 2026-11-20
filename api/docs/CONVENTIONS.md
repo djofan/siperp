@@ -1,5 +1,18 @@
 # Konvensi REST API Siperp
 
+Artikel LAZSIP terpisah dari berita: GET `/api/v1/lazsip/articles` dan
+`/articles/{id}` hanya menampilkan status `published`; draft mengembalikan 404.
+Admin membaca `/api/v1/lazsip/admin/articles[/{id}]` serta POST/PUT/DELETE
+`/api/v1/lazsip/articles[/{id}]` dengan akses LAZSIP aktif seperti pengelolaan berita.
+Field wajib: `title` (191), `content` (1.000.000), `status` (`draft`/`published`).
+Field opsional: `author` (191), `source` (10.000), `category`
+(`zakat`, `qurban`, `infak_sedekah`, `lainnya`). Null mengosongkan field opsional;
+omisi pada update mempertahankan nilai. Isi memakai teks/Markdown terbatas tanpa
+eksekusi HTML. Daftar terurut terbaru, pagination `page` dan `per_page` 1–100.
+Migration baru: `2026_11_20_000004_create_lazsip_articles`; review dan backup sebelum
+production. Section `#artikel` terletak sesudah Program Pemberdayaan; admin ada
+di `/admin/lazsip/artikel`. Penulis ditampilkan di detail, sumber di akhir artikel.
+
 Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Maturity Level 2: URI mengidentifikasi resource, metode HTTP menyatakan operasi, dan status HTTP menyatakan hasil. HATEOAS penuh tidak diwajibkan. Kontrak v1 yang aktif ada pada `openapi.json`; `openapi.example.json` adalah kontrak demonstrasi khusus test dan tidak boleh dianggap endpoint production.
 
 ## Resource, routing, dan versioning

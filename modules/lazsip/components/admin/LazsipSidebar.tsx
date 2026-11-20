@@ -17,6 +17,7 @@ export const LAZSIP_NAV_ITEMS = [
   { href: "/admin/lazsip/pendaftar", label: "Pendaftar" },
   { href: "/admin/lazsip/penyaluran-bantuan", label: "Penyaluran Bantuan" },
   { href: "/admin/lazsip/berita", label: "Berita" },
+  { href: "/admin/lazsip/artikel", label: "Artikel & Panduan" },
   { href: "/admin/lazsip/mitra", label: "Mitra" },
   { href: "/admin/lazsip/konten", label: "Konten Umum" },
 ];

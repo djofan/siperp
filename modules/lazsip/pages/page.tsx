@@ -7,6 +7,7 @@ import { MitraMarquee } from "@/modules/lazsip/components/sections/MitraMarquee"
 import { PenyaluranBantuanSection } from "@/modules/lazsip/components/sections/PenyaluranBantuanSection";
 import { DonasiSection } from "@/modules/lazsip/components/sections/DonasiSection";
 import { BeritaSection } from "@/modules/lazsip/components/sections/BeritaSection";
+import { ArtikelSection } from "@/modules/lazsip/components/sections/ArtikelSection";
 import { ProgramSection } from "@/modules/lazsip/components/sections/ProgramSection";
 import { TentangSection } from "@/modules/lazsip/components/sections/TentangSection";
 import { TransparansiSection } from "@/modules/lazsip/components/sections/TransparansiSection";
@@ -33,6 +34,7 @@ export default async function LazsipHomePage() {
         description="Program pemberdayaan ekonomi dan sosial bagi masyarakat dampingan LAZSIP."
         seeAllHref="/lazsip/program"
       />
+      <ArtikelSection />
       <TentangSection />
       <TransparansiSection />
     </>
