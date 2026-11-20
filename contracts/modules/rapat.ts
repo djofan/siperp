@@ -1,0 +1,17 @@
+export type Institution = { name: string; heading: string; address: string };
+export type Participant = { name: string; position: string; attendance?: 'present' | 'absent' | 'excused' };
+export type Viewer = { id: string; name: string; role: 'admin' | 'secretary' | 'viewer'; canManage: boolean; ai: { provider: 'local'; configured: boolean }; templates: { id: string; name: string }[]; institution: Institution };
+export type Minutes = { summary: string; discussion: string[]; decisions: string[]; actions: { task: string; assignee: string; dueDate: string | null; status: 'open' | 'done' }[] };
+export type MeetingInput = { title: string; meetingDate: string; startTime: string; endTime: string; location: string; agenda: string; chair: string; notetaker: string; template: 'dinas' | 'berita_acara' | 'guru' | 'supervisi' | 'organisasi'; participants: Participant[]; institution: Institution };
+export type MeetingSummary = { id: string; title: string; meetingDate: string; location: string; template: string; status: 'draft' | 'processing' | 'ready' | 'failed'; workflowStatus: 'draft' | 'finalized'; finalizedAt: string | null; archivedAt: string | null; createdBy: string; createdAt: string; version: number; updatedAt: string; mediaCount: number; actionCount: number; participantCount: number; decisionCount: number; doneActionCount: number; overdueActionCount: number };
+export type Meeting = Omit<MeetingSummary, 'template'> & MeetingInput & { transcript: string; segments: { start: number; end: number; text: string; speaker: string | null }[]; minutes: Minutes; media: { id: string; name: string; mime: string; size: number; sequence: number; transcribed: boolean }[]; error: string | null };
+export type Pagination = { total: number; currentPage: number; lastPage: number; perPage: number };
+export type MeetingStats = { total: number; draft: number; finalized: number; openActions: number; overdueActions: number };
+export type MeetingList = { data: MeetingSummary[]; meta: Pagination & { stats: MeetingStats } };
+export type TaskRow = { meetingId: string; meetingTitle: string; meetingDate: string; index: number; task: string; assignee: string | null; dueDate: string | null; status: 'open' | 'done'; version: number; canEdit: boolean; workflowStatus: 'draft' | 'finalized'; archivedAt?: string | null };
+export type TaskList = { data: TaskRow[]; meta: Pagination };
+export type RevisionSnapshot = { metadata: Partial<MeetingInput>; minutes: Minutes; workflowStatus: 'draft' | 'finalized'; finalizedAt: string | null };
+export type Revision = { id: string; version: number; action: string; actor: { id: string | null; name: string }; createdAt: string; changedFields: string[]; reason: string | null; before: RevisionSnapshot | null; after: RevisionSnapshot };
+export type HistoryList = { data: Revision[]; meta: Pagination };
+export type Attachment = { id: string; name: string; mime: string; size: number; createdAt: string };
+export type Settings = { institution: Institution; participants: Participant[] };

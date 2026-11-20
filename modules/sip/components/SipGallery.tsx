@@ -2,12 +2,15 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
+import { Maximize2 } from "lucide-react";
+import { PhotoLightbox } from "@/components/ui/PhotoLightbox";
 import styles from "./SipGallery.module.css";
 
 export function SipGallery({photos,title,kind="campaign"}:{photos:SipDocumentationPhoto[];title:string;kind?:"campaign"|"activity"|"program"|"news"}){
   const strip=useRef<HTMLDivElement>(null);
   const id=useId();
   const [page,setPage]=useState(0);
+  const [selectedPhoto,setSelectedPhoto]=useState<number|null>(null);
   const pageCount=Math.ceil(photos.length/2);
   const active=Math.min(page,Math.max(0,pageCount-1));
   const syncPage=useCallback(()=>{
@@ -33,11 +36,12 @@ export function SipGallery({photos,title,kind="campaign"}:{photos:SipDocumentati
       <div className={styles.navigation}><span className={styles.hint}>Geser untuk melihat lainnya</span><div className={styles.controls}><button type="button" disabled={active===0} aria-label="Foto sebelumnya" onClick={()=>scroll(-1)}>←</button><button type="button" disabled={active===pageCount-1} aria-label="Foto berikutnya" onClick={()=>scroll(1)}>→</button></div></div>
     </header>
     <div ref={strip} className={styles.strip} onScroll={syncPage} tabIndex={0} aria-label={`Galeri foto ${category}, geser kiri atau kanan`} onKeyDown={event=>{if(event.target!==event.currentTarget)return;if(event.key==="ArrowRight"||event.key==="ArrowLeft"){event.preventDefault();scroll(event.key==="ArrowRight"?1:-1);}}}>
-      {photos.map((photo,index)=><figure className={styles.card} key={photo.id}><div className={styles.photo}>
+      {photos.map((photo,index)=><figure className={styles.card} key={photo.id}><button type="button" className={styles.photo} aria-label={`Lihat foto ${index+1}: ${photo.caption||title}`} onClick={()=>setSelectedPhoto(index)}>
         {/* eslint-disable-next-line @next/next/no-img-element -- media dari upload admin */}
         <img src={photo.image} alt={photo.caption||`Dokumentasi ${title}`} loading="lazy" draggable={false}/>{photo.isDemo&&<span className={styles.demo}>Contoh dokumentasi</span>}
-      </div><figcaption><span>{String(index+1).padStart(2,"0")}</span><p>{photo.caption||`Dokumentasi ${category}`}{photo.isDemo&&<small>Foto dummy untuk pratinjau, bukan dokumentasi asli {category} ini.</small>}</p></figcaption></figure>)}
+      <span className={styles.expand} aria-hidden="true"><Maximize2 size={15}/></span></button><figcaption><span>{String(index+1).padStart(2,"0")}</span><p>{photo.caption||`Dokumentasi ${category}`}{photo.isDemo&&<small>Foto dummy untuk pratinjau, bukan dokumentasi asli {category} ini.</small>}</p></figcaption></figure>)}
     </div>
     {pageCount>1&&<nav className={styles.dots} aria-label="Pilih halaman galeri">{Array.from({length:pageCount},(_,index)=><button key={index} type="button" aria-label={`Tampilkan foto ${index*2+1} sampai ${Math.min(index*2+2,photos.length)}`} aria-current={active===index?"page":undefined} onClick={()=>goToPage(index)}><span aria-hidden="true"/></button>)}</nav>}
+    <PhotoLightbox photos={photos} title={title} index={selectedPhoto} onChange={setSelectedPhoto} onClose={()=>setSelectedPhoto(null)}/>
   </section>;
 }

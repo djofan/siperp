@@ -32,3 +32,5 @@
   .headingTitle { gap: 6px; }
 }
 @media (max-width: 359px) { .fullGrid { grid-template-columns: minmax(0, 1fr); } }
+
+.photo{display:block;width:100%;padding:0;border:0;cursor:zoom-in;text-align:inherit}.photo:focus-visible{outline:2px solid currentColor;outline-offset:3px}.photo .expand{display:grid;place-items:center;position:absolute;right:10px;bottom:10px;width:30px;height:30px;border-radius:50%;background:#ffffffed;color:#343b32;pointer-events:none}

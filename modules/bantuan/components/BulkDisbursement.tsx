@@ -26,20 +26,21 @@ function sameDistributor(a: AidApplication, b: AidApplication) {
 export function BulkDisbursement({ selectionKey, onSaved, ...props }: Props) {
   const { page, viewer, refreshing } = props;
   const eligible = page.data.filter(row => row.status === "fund_approved");
+  const batchEligible = eligible.slice(0, 50);
   const allowed = hasAnyRole(viewer, ["admin", "treasurer"]) && eligible.length > 0;
   const [selection, setSelection] = useState<{ key: string; ids: Record<string, boolean> }>({ key: "", ids: {} });
   const selected = selection.key === selectionKey ? selection.ids : {};
   const chosen = eligible.filter(row => selected[row.id]);
   const [rows, setRows] = useState<AidApplication[] | null>(null);
   const [success, setSuccess] = useState("");
-  function select(id: string, checked: boolean) { setSelection({ key: selectionKey, ids: { ...selected, [id]: checked } }); }
+  function select(id: string, checked: boolean) { if (checked && !selected[id] && chosen.length >= 50) return; setSelection({ key: selectionKey, ids: { ...selected, [id]: checked } }); }
   return <>
     {allowed && !rows && <section className={s.toolbar} aria-label="Pencairan sekaligus">
-      <div className={s.intro}><span className={s.icon}><Wallet size={21}/></span><div><h3>Catat pencairan sekaligus</h3><p>Centang pengajuan yang sudah ditransfer, lalu simpan dalam satu form.</p></div></div>
-      <div className={s.controls}><label><input type="checkbox" checked={chosen.length === eligible.length} disabled={refreshing} onChange={event => setSelection({ key: selectionKey, ids: Object.fromEntries(eligible.map(row => [row.id, event.target.checked])) })}/>Pilih semua di halaman ini ({eligible.length})</label><span>{chosen.length} dipilih · {money(chosen.reduce((sum, row) => sum + (row.amount ?? 0), 0))}</span><button className={s.primary} type="button" disabled={!chosen.length || refreshing} onClick={() => { setSuccess(""); setRows([...chosen]); }}><CheckCheck size={17}/>Tandai sudah dicairkan</button></div>
+      <div className={s.intro}><span className={s.icon}><Wallet size={21}/></span><div><h3>Catat pencairan sekaligus</h3><p>Centang pengajuan yang sudah ditransfer, lalu simpan dalam satu form. Maksimal 50 pengajuan per pencatatan.</p></div></div>
+      <div className={s.controls}><label><input type="checkbox" checked={batchEligible.every(row => selected[row.id])} disabled={refreshing} onChange={event => setSelection({ key: selectionKey, ids: event.target.checked ? Object.fromEntries(batchEligible.map(row => [row.id, true])) : {} })}/>{eligible.length > 50 ? `Pilih 50 teratas (dari ${eligible.length})` : `Pilih semua di halaman ini (${eligible.length})`}</label><span>{chosen.length} dipilih · {money(chosen.reduce((sum, row) => sum + (row.amount ?? 0), 0))}</span><button className={s.primary} type="button" disabled={!chosen.length || refreshing} onClick={() => { setSuccess(""); setRows([...chosen]); }}><CheckCheck size={17}/>Tandai sudah dicairkan</button></div>
     </section>}
     {success && <p className={s.success} role="status">{success}</p>}
-    {!rows && <ApplicationList {...props} selection={allowed ? { ids: selected, onChange: select } : undefined}/>}
+    {!rows && <ApplicationList {...props} selection={allowed ? { ids: selected, onChange: select, limit: 50 } : undefined}/>}
     {rows && <TransferForm rows={rows} staff={props.staff} onClose={() => setRows(null)} onReload={() => { setRows(null); setSelection({ key: "", ids: {} }); onSaved(); }} onSaved={() => { setSuccess(`${rows.length} pengajuan sudah dicatat dicairkan. Dana siap disalurkan; penyalur menerima notifikasi sesuai penugasannya.`); setRows(null); setSelection({ key: "", ids: {} }); onSaved(); }}/>}
   </>;
 }

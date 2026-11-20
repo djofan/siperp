@@ -18,3 +18,5 @@
 .hint{font-size:11px;color:#8c9b7d}
 .controls button{width:34px;height:34px}
 @media(max-width:640px){.gallery .heading{gap:10px;margin-bottom:14px}.gallery .heading h2{font-size:18px}.headingTitle{gap:7px}.gallery .headingTitle .count{font-size:10px;padding:3px 7px}.hint{display:none}.navigation{gap:0}.controls button{width:30px;height:30px}}
+
+.photo{display:block;width:100%;padding:0;border:0;cursor:zoom-in;text-align:inherit}.photo:focus-visible{outline:2px solid currentColor;outline-offset:3px}.photo .expand{display:grid;place-items:center;position:absolute;right:10px;bottom:10px;width:30px;height:30px;border-radius:50%;background:#ffffffed;color:#343b32;pointer-events:none}

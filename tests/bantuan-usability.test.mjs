@@ -307,3 +307,33 @@ test("mass disbursement checklist is limited to authorized roles and ready appli
     if(allowed)assert.match(html,/Pilih semua di halaman ini \(1\)/);
   }
 });
+
+test("application page sizes support 100 and custom values with bounded validation",()=>{
+  const {parsePageSize,validateFilters,defaultFilters,applicationParams}=load("modules/bantuan/list-filters.ts");
+  for(const value of ["1","12","100","137","200","500"," 137 "])assert.equal(parsePageSize(value),Number(value));
+  for(const value of ["","0","-1","501","1.5","1e2","abc"])assert.equal(parsePageSize(value),null,value);
+  assert.equal(validateFilters({...defaultFilters,perPage:"137"}),"");
+  assert.match(validateFilters({...defaultFilters,perPage:"501"}),/500/);
+  assert.equal(applicationParams(viewer("admin"),"pengajuan",{...defaultFilters,perPage:"137"}).get("perPage"),"137");
+  const {PageSizeControl}=load("modules/bantuan/components/PageSizeControl.tsx");
+  const html=renderToStaticMarkup(React.createElement(PageSizeControl,{value:"137",disabled:false,onChange(){}}));
+  assert.match(html,/value="100"/);assert.match(html,/value="500"/);
+  assert.match(html,/Jumlah pengajuan khusus per halaman/);assert.match(html,/value="137"/);
+  assert.match(html,/Terapkan jumlah/);
+});
+
+test("large application pages keep bulk disbursement and reminder requests within existing limits",()=>{
+  const {BulkDisbursement}=load("modules/bantuan/components/BulkDisbursement.tsx");
+  const {ApplicationList}=load("modules/bantuan/components/ApplicationList.tsx");
+  const rows=Array.from({length:101},(_,i)=>({id:`aid-${i}`,number:`BNT-${i}`,name:`Pemohon ${i}`,program:"Kesehatan",source:"online",status:"fund_approved",amount:1000000,distributionType:"verifier",distributorId:"field",createdAt:"2026-11-20T00:00:00Z"}));
+  const props={viewer:viewer("admin"),selectionKey:"large-page",page:{data:rows,current_page:1,last_page:1,total:101,per_page:200},staff:[],view:"table",refreshing:false,number:1,onPageChange(){},perPage:"200",onPerPageChange(){},onSaved(){}};
+  const bulk=renderToStaticMarkup(React.createElement(BulkDisbursement,props));assert.match(bulk,/Pilih 50 teratas \(dari 101\)/);
+  const selected=Object.fromEntries(rows.slice(0,50).map(row=>[row.id,true]));
+  const html=renderToStaticMarkup(React.createElement(ApplicationList,{...props,selection:{ids:selected,onChange(){},limit:50}}));
+  const input=(name)=>html.match(new RegExp(`<input[^>]*aria-label="${name}"[^>]*>`))?.[0]??"";
+  assert.match(input("Pilih pencairan Pemohon 50, BNT-50"),/disabled/);
+  assert.doesNotMatch(input("Pilih pencairan Pemohon 0, BNT-0"),/disabled/);
+  const {BulkReminder}=load("modules/bantuan/components/BulkReminder.tsx");
+  const reminder=renderToStaticMarkup(React.createElement(BulkReminder,{rows:rows.map(r=>({...r,status:"survey_assigned"})),viewer:viewer("admin"),refreshing:false}));
+  assert.match(reminder,/Siapkan 100 pengingat/);assert.match(reminder,/Maksimal 100 pengajuan teratas/);
+});

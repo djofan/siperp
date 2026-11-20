@@ -8,9 +8,17 @@ export const sortLabels:Record<string,string>={newest:"Pengajuan terbaru",oldest
 export const defaultFilters={search:"",status:"",program:"",source:"",region:"",from:"",to:"",dateField:"created",verifierId:"",distributorId:"",createdBy:"",amountMin:"",amountMax:"",amountState:"",distributionType:"",surveyOverdue:"",overdue:"",sort:"newest",perPage:"12"};
 export type ListFilters=typeof defaultFilters;
 export type FilterKey=keyof ListFilters;
+export const pageSizeOptions=[12,24,48,50,100,200,500];
+export const maximumPageSize=500;
+export function parsePageSize(value:string):number|null {
+  if(!/^\d+$/.test(value.trim()))return null;
+  const size=Number(value);
+  return Number.isInteger(size)&&size>=1&&size<=maximumPageSize?size:null;
+}
 export const advancedKeys:FilterKey[]=["source","region","from","to","dateField","verifierId","distributorId","createdBy","amountMin","amountMax","amountState","distributionType","overdue","surveyOverdue"];
 
 export function validateFilters(filters:ListFilters):string {
+  if(parsePageSize(filters.perPage)===null)return `Jumlah per halaman harus bilangan bulat antara 1 dan ${maximumPageSize}.`;
   if(filters.from&&filters.to&&filters.from>filters.to)return "Tanggal akhir harus sama dengan atau setelah tanggal awal.";
   for(const key of ["amountMin","amountMax"] as const){
     if(filters[key]&&(!/^\d+$/.test(filters[key])||Number(filters[key])>999999999999))return "Nominal harus berupa rupiah bulat antara 0 dan 999.999.999.999.";

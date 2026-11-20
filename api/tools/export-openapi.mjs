@@ -5,6 +5,7 @@ import { applyKeuanganApplicationContract } from './keuangan-application-contrac
 import { applyAcademyTodayContract } from './academy-today-contract.mjs';
 import { applyAcademyProgressContract } from './academy-progress-contract.mjs';
 import { applyTanwirTaskRecapContract } from './tanwir-task-recap-contract.mjs';
+import { applyRapatContract } from './rapat-contract.mjs';
 
 // Preserve the existing partial Core/Academy contract as the baseline. Module
 // additions live here; openapi.json is generated, never edited by hand.
@@ -553,6 +554,7 @@ applyTanwirTaskRecapContract(document);
 applySantunanContract(document);
 applyKeuanganContract(document);
 applyKeuanganApplicationContract(document);
+applyRapatContract(document);
 
 const disbursementReportProperties = {
   transferDate: {type:['string','null'],format:'date',description:'Optional; absent/null/blank defaults to today. Cannot be later than today.'},
@@ -581,6 +583,14 @@ document.paths['/api/v1/bantuan/disbursements'] = {post: {
   }})},
   responses: {200: {description: 'All disbursements recorded', content: json({type:'object',required:['data'],properties:{data:{type:'object',required:['count','items'],properties:{count:{type:'integer',minimum:1,maximum:50},items:{type:'array',minItems:1,maxItems:50,items:{type:'object',required:['id','status','version'],properties:{id:{type:'string',format:'uuid'},status:{enum:['disbursed']},version:{type:'integer',minimum:2}}}}}}}})},401:error,403:error,404:error,409:error,422:error},
 }};
+
+document.paths['/api/v1/bantuan/applications'] ??= {};
+document.paths['/api/v1/bantuan/applications'].get = {
+  tags:['Bantuan'], summary:'List authorized aid applications with configurable pagination', security:[{bearerAuth:[]}],
+  description:'Existing role, assignment, search, stage and detailed filters remain enforced. perPage accepts any integer from 1 to 500, including custom sizes; default 20. Page-size changes do not widen access or affect bulk-action limits. Private no-store response. The data array can contain fewer than per_page records on the last page.',
+  parameters:[{name:'perPage',in:'query',schema:{type:'integer',minimum:1,maximum:500,default:20}},{name:'page',in:'query',schema:{type:'integer',minimum:1,default:1}}],
+  responses:{200:{description:'Authorized data array and current_page, last_page, total, per_page pagination metadata'},401:{description:'Authentication required'},403:{description:'Module access denied'},422:{description:'Invalid filters or page size outside 1–500'}},
+};
 
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);

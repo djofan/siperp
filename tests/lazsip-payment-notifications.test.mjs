@@ -17,6 +17,7 @@ function harness(file, overrides={}) {
     if(id.includes("feeCalculation"))return {calculateFee:m=>m?.feeAmount??0};
     if(id.includes("uniqueCode"))return {applyUniqueCode:n=>n};
     if(id.includes("donorIdentity"))return {};
+    if(id==="@/modules/payment/components/GatewayHandoff")return {GatewayHandoff:()=>null};
     return require(id);
   }};
   vm.runInNewContext(ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,context);

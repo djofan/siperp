@@ -2556,3 +2556,23 @@ it('allows other disbursement with only previously consumed transfer evidence', 
     ])->assertOk()->assertJsonPath('data.count', 1);
     expect(DB::table('bantuan_documents')->where('id', $doc)->value('used_at'))->toBe($used);
 });
+
+it('accepts large and custom application page sizes while enforcing bounded pagination', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $original = Application::findOrFail($id);
+    for ($i = 0; $i < 12; $i++) {
+        $copy = $original->replicate();
+        $copy->forceFill(['id' => (string) Str::uuid(), 'number' => 'BNT-PAGE-'.$i])->save();
+    }
+    foreach ([100, 137, 500] as $size) {
+        $this->getJson('/api/v1/bantuan/applications?perPage='.$size)->assertOk()
+            ->assertJsonPath('per_page', $size)->assertJsonPath('total', 13)->assertJsonCount(13, 'data');
+    }
+    $first = $this->getJson('/api/v1/bantuan/applications?perPage=7&page=1')->assertOk()->assertJsonCount(7, 'data')->assertJsonPath('last_page', 2)->json('data');
+    $second = $this->getJson('/api/v1/bantuan/applications?perPage=7&page=2')->assertOk()->assertJsonCount(6, 'data')->json('data');
+    expect(array_intersect(array_column($first, 'id'), array_column($second, 'id')))->toBe([]);
+    foreach (['0', '501', '-1', '1.5', 'abc'] as $size) {
+        $this->getJson('/api/v1/bantuan/applications?perPage='.$size)->assertUnprocessable();
+    }
+    $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/applications?perPage=500')->assertOk()->assertJsonCount(0, 'data');
+});

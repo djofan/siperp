@@ -30,6 +30,14 @@ return [
     */
 
     'connections' => [
+        'rapat' => [
+            'driver' => 'database',
+            'table' => 'rapat_jobs',
+            'queue' => 'rapat',
+            'retry_after' => 3900,
+            'after_commit' => true,
+        ],
+
         // Durable and asynchronous even if the rest of the app uses QUEUE_CONNECTION=sync.
         'payment' => [
             'driver' => 'database',
