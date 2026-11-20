@@ -25,7 +25,7 @@ it('registers an inactive module and empty isolated schema without granting acco
     expect(DB::table('module_access')->where('module_id', 'module-keuangan')->count())->toBe(0);
     foreach (['sources', 'categories', 'expenses', 'approval_rules', 'rule_approvers', 'approvals', 'approval_events'] as $name) {
         expect(Schema::hasTable('keuangan_'.$name))->toBeTrue();
-        expect(DB::table('keuangan_'.$name)->count())->toBe($name === 'sources' ? 3 : ($name === 'categories' ? 4 : 0));
+        expect(DB::table('keuangan_'.$name)->count())->toBe($name === 'sources' ? 4 : ($name === 'categories' ? 4 : 0));
     }
     expect(DB::table('core_expenses')->count())->toBe(0);
 });
@@ -56,7 +56,7 @@ it('limits overview metadata according to Core role', function (string $role, bo
         ->assertJsonPath('data.readOnly', false)->assertJsonPath('data.role', $role)
         ->assertJsonPath('data.permissions.readMasters', $masters)
         ->assertJsonPath('data.permissions.manageAccounts', $manage)
-        ->assertJsonPath('data.counts.sources', $masters ? 3 : null)
+        ->assertJsonPath('data.counts.sources', $masters ? 4 : null)
         ->assertJsonPath('data.counts.myPendingApprovals', $approvals ? 0 : null);
     $schema = json_decode(file_get_contents(base_path('docs/openapi.json')), true)['paths']['/api/v1/keuangan/overview']['get']['responses']['200']['content']['application/json']['schema']['properties']['data'];
     $data = $this->getJson('/api/v1/keuangan/overview')->assertOk()->json('data');

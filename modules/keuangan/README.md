@@ -1,3 +1,27 @@
+# Format cetak
+
+Dokumen Keuangan memakai judul Pengajuan Kas Keuangan, referensi tanpa nomor
+revisi, dan bagian Persetujuan. Named page `finance-document` menjaga aturan
+cetak tetap pada dokumen ini. Margin boxes mengganti header/footer otomatis
+browser dengan header kosong, tautan pendek sampai `/admin/keuangan/pengeluaran`,
+dan nomor halaman. Format ini diuji di Chrome dengan header/footer browser aktif.
+Data tanggal pengajuan, nominal, keputusan, referensi, dan arsip tetap dipertahankan.
+
+# Tampilan Keuangan
+
+Ruang kerja memakai tema krem `#f6e9d9` dan hijau `#043222`, navigasi responsif,
+ringkasan, pengajuan terbaru, dan lonceng ringkasan approval milik akun. Dashboard
+serta daftar approval memperbarui ringkasan setiap 60 detik saat tab terlihat;
+halaman formulir tidak direfresh berkala agar pengisian tidak terganggu.
+Lonceng ini merupakan ringkasan tugas saat ini, bukan penanda pesan belum dibaca.
+
+Tampilan Bendahara berfokus pada rincian dan formulir keputusan. Tautan cetak
+pengajuan disembunyikan dan route dokumen cetak menolak role `treasurer` sebelum
+mengambil detail. Admin Keuangan dan role lain yang berhak masih dapat mencetak.
+Panel penugasan/revisi approval di detail pengajuan dihapus dari tampilan;
+data keputusan dan audit tetap dipertahankan. Halaman keputusan Bendahara tidak
+menampilkan tautan pengeluaran/riwayat maupun panel riwayat.
+
 # Perubahan pengajuan — 19 November 2026
 
 Nominal pada formulir otomatis dikelompokkan menjadi `4.000.000`, tetapi field
@@ -11,7 +35,7 @@ arsip lama secara massal dan tidak dapat mengalihkan pengajuan yang sudah dituga
 
 
 Dikerjakan di lokal. Formulir memakai empat kategori (Cash Advance, Kegiatan Sosial,
-Operasional, Lain-lain), tiga sumber (Kas Infaq, Kas Amil, Kas Riba), program,
+Operasional, Lain-lain), empat sumber (Kas Infaq, Kas Amil, Kas Riba, Kas Zakat), program,
 deskripsi, nominal rupiah integer, penerima/identitas opsional, tanggal pengajuan,
 dan Bendahara SIP yang dipilih. Program dimulai dari label kategori/program lama,
 dengan referensi transaksi lama tetap dipertahankan; admin dapat menambah program.

@@ -13510,7 +13510,7 @@
             "bearerAuth": []
           }
         ],
-        "description": "Expense writers only. Fixed active categories: Cash Advance, Kegiatan Sosial, Operasional, Lain-lain. Fixed active sources: Kas Infaq, Kas Amil, Kas Riba. Programs use the editable program master initialized from legacy category/program labels. Treasury choices include active Keuangan treasurer accounts only, excluding the requester.",
+        "description": "Expense writers only. Fixed active categories: Cash Advance, Kegiatan Sosial, Operasional, Lain-lain. Fixed active sources: Kas Infaq, Kas Amil, Kas Riba, Kas Zakat. Programs use the editable program master initialized from legacy category/program labels. Treasury choices include active Keuangan treasurer accounts only, excluding the requester.",
         "parameters": [],
         "responses": {
           "200": {
@@ -17732,6 +17732,7 @@
     "listing": "Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.",
     "access": "Existing private file endpoint and enrollment/release checks remain unchanged."
   },
+  "x-core-finance-panel-redirect": "Login and auth/me return panelRedirect /admin/keuangan for non-superadmin accounts whose only active module access is Keuangan with role admin, finance_admin, treasurer or operator. Disabled modules and retired roles do not receive this redirect. Shared accounts and superadmins retain the existing landing behavior.",
   "x-bantuan-verifier-intake-edit": "Verifiers may correct applications they created during draft, needs_data, screening, review1, survey_assignment, survey_assigned and bypass_review. Existing source restrictions, authorization, completeness and optimistic locking apply. Other users and approved applications are not unlocked.",
   "x-bantuan-other-intake": {
     "discriminator": "applicant.intakeType=other",

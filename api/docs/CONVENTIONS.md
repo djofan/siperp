@@ -4,6 +4,12 @@ Dokumen ini wajib menjadi acuan semua modul Laravel. Target adalah Richardson Ma
 
 ## Resource, routing, dan versioning
 
+Sumber dana Keuangan mencakup Kas Zakat, ditambahkan melalui migration
+`2026_11_19_000003_add_keuangan_zakat_source` tanpa mengubah transaksi lama.
+Sesi akun non-superadmin dengan satu akses aktif Keuangan dan role aktif
+mengembalikan `panelRedirect: /admin/keuangan`; akun multi-modul tetap memakai
+alur pemilihan modul.
+
 Pengajuan lama tanpa penugasan dapat dikirim ke Bendahara melalui POST
 `/api/v1/keuangan/expenses/{id}/approval-requests`, berisi UUID `requestId`,
 `version`, `treasurerId`, dan `reason` minimal 10 karakter. Khusus penulis pengeluaran;

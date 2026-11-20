@@ -10,7 +10,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
       {canWrite && <FinanceForm kind="programs" requestId={randomUUID()} label="Tambah jenis program"><label>Nama program<input name="name" required maxLength={255} /></label></FinanceForm>}
     </section>
     <div className="finance-grid"><section className="finance-panel"><h2>Kategori pengajuan</h2><ul>{["Cash Advance", "Kegiatan Sosial", "Operasional", "Lain-lain"].map(name => <li key={name}>{name}</li>)}</ul></section>
-      <section className="finance-panel"><h2>Sumber dana</h2><ul>{["Kas Infaq", "Kas Amil", "Kas Riba"].map(name => <li key={name}>{name}</li>)}</ul></section></div>
+      <section className="finance-panel"><h2>Sumber dana</h2><ul>{["Kas Infaq", "Kas Amil", "Kas Riba", "Kas Zakat"].map(name => <li key={name}>{name}</li>)}</ul></section></div>
     <section className="finance-panel"><h2>Pihak yang menyetujui</h2><p>Hanya akun Bendahara SIP aktif yang dapat menerima penugasan dan menyetujui pengajuan.</p>{data.approvers.length ? <ul>{data.approvers.map(a => <li key={a.id}>Bendahara SIP · {a.name}</li>)}</ul> : <p>Belum ada akun Bendahara SIP aktif. Atur akses akun melalui Core.</p>}</section>
   </>;
 }
