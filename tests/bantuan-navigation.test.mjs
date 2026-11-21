@@ -16,6 +16,24 @@ vm.runInNewContext(compiled,sandbox);
 const {navigation,sidebarNavigation,canViewRoute,defaultListStates,processMenus,processInfo}=sandbox.exports;
 const roles=["admin","requester","call_center","approver","chair","verifier","fund_requester","treasurer"];
 
+test("volunteer and mixed field roles retain assigned handovers in personal work counts",()=>{
+  const {isWorkItem,queueCount}=loadSource("modules/bantuan/workspace-guide.ts",{"./permissions":permissions});
+  for(const assignedRoles of [["volunteer"],["verifier","volunteer"],["volunteer","verifier"]]){
+    const viewer={role:assignedRoles[0],roles:assignedRoles,canBypass:false};
+    const item=navigation(viewer).find(item=>item.key==="penyaluran");
+    assert.deepEqual(Array.from(item.states),["disbursed"]);
+    assert.equal(item.task,"distribution");
+    assert.equal(isWorkItem(viewer,item),true);
+    const dashboard={byStatus:{disbursed:9},taskCounts:{distribution:{disbursed:2},survey:{}}};
+    assert.equal(queueCount(viewer,dashboard,item),2);
+    const personal=navigation(viewer).filter(item=>item.states?.length&&isWorkItem(viewer,item));
+    assert.equal(personal.reduce((total,item)=>total+(queueCount(viewer,dashboard,item)??0),0),2);
+    assert.equal(queueCount(viewer,{...dashboard,taskCounts:{...dashboard.taskCounts,distribution:{}}},item),0);
+    for(const key of ["pencairan","tim","pengaturan"])
+      assert.equal(canViewRoute(viewer,[key]),false);
+  }
+});
+
 test("mustahiq navigation uses the role union and denies field-only accounts",()=>{
   for(const roles of [["verifier"],["volunteer"],["verifier","volunteer"],["verifier","call_center"],["volunteer","treasurer"],["admin"],["requester"]]){
     const viewer={role:roles[0],roles,canBypass:false};

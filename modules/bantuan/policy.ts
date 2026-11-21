@@ -56,7 +56,7 @@ function singleNavigation(viewer:Pick<BantuanViewer,"role"|"canBypass">):NavEntr
     {key:"pengajuan-dana",label:"Pengajuan dana",icon:"wallet",group:"Umum",description:"Pantau kelompok pengajuan dana dan hasilnya."},
     ...processMenus.filter(item=>item.key!=="survei").map(item=>({...item,task:undefined,description:`Pantau ${item.label.toLowerCase()}. Akses baca saja.`})),
   ];
-  if(viewer.role==="volunteer")return [{key:"proses",label:"Pekerjaan saya",icon:"inbox",group:"Umum"},{key:"penyaluran",label:"Siap diserahkan",icon:"hand",group:"Umum"},{key:"santunan",label:"Santunan saya",icon:"hand",group:"Umum"}];
+  if(viewer.role==="volunteer")return [{key:"proses",label:"Pekerjaan saya",icon:"inbox",group:"Umum"},{...processMenus.find(item=>item.key==="penyaluran")!,group:"Umum"},{key:"santunan",label:"Santunan saya",icon:"hand",group:"Umum"}];
   const items:NavEntry[]=[
     {key:"",label:"Dashboard",icon:"layout",group:"Umum"},
     {key:"pengajuan",label:viewer.role==="requester"?"Pengajuan saya":"Semua pengajuan",icon:"files",group:"Umum"},

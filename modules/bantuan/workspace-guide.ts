@@ -6,6 +6,7 @@ const tasks: Record<string, string[]> = {
   requester: ["perlu-dilengkapi", "draft"],
   call_center: ["perlu-dilengkapi", "draft", "screening", "penugasan-survei", "review-survei-cc", "penugasan-penyalur"],
   verifier: ["perlu-dilengkapi", "draft", "survei", "penyaluran"],
+  volunteer: ["penyaluran"],
   survey_approver: ["review-tahap-1"],
   approver: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
   chair: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
