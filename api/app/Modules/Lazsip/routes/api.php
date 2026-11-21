@@ -1,7 +1,9 @@
 <?php
 
+use App\Modules\Lazsip\Http\Controllers\AffiliateController;
 use App\Modules\Lazsip\Http\Controllers\CampaignController;
 use App\Modules\Lazsip\Http\Controllers\ContentController;
+use App\Modules\Lazsip\Http\Controllers\DeleteTestTransactionController;
 use App\Modules\Lazsip\Http\Controllers\FinanceController;
 use App\Modules\Lazsip\Http\Controllers\HistoryController;
 use App\Modules\Lazsip\Http\Controllers\UploadController;
@@ -9,6 +11,14 @@ use App\Modules\Lazsip\Http\Controllers\ZakatController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('module.public:lazsip')->group(function (): void {
+    Route::get('affiliate/referrals/{code}', [AffiliateController::class, 'referral'])->where('code', '[a-f0-9]{20}')->middleware('throttle:payment-status');
+    Route::post('affiliate/registrations', [AffiliateController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('affiliate/sessions', [AffiliateController::class, 'login'])->middleware('throttle:affiliate-login');
+    Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
+        Route::get('affiliate/me', [AffiliateController::class, 'show']);
+        Route::put('affiliate/me', [AffiliateController::class, 'update'])->middleware('throttle:10,1');
+    });
+
     Route::get('gold-price', [ZakatController::class, 'quote']);
     Route::get('zakat/settings', [ZakatController::class, 'settings']);
     Route::post('zakat/calculate', [ZakatController::class, 'maal'])->middleware('throttle:payment-status');
@@ -36,7 +46,7 @@ Route::middleware(['auth:sanctum', 'user.active', 'module.access:lazsip'])->grou
     Route::get('donors/{id}', [HistoryController::class, 'donor']);
     Route::get('donors/{id}/history', [HistoryController::class, 'donorHistory']);
     Route::get('dashboard', [FinanceController::class, 'dashboard']);
-    Route::delete('admin/transactions/{source}/{id}', \App\Modules\Lazsip\Http\Controllers\DeleteTestTransactionController::class)->middleware('throttle:10,1');
+    Route::delete('admin/transactions/{source}/{id}', DeleteTestTransactionController::class)->middleware('throttle:10,1');
     foreach (['donations', 'zakat'] as $source) {
         Route::get('admin/'.$source.'/legacy', [FinanceController::class, 'legacyPayments'])->defaults('source', $source);
         Route::get('admin/'.$source.'/payments', [FinanceController::class, 'paymentRows'])->defaults('source', $source);

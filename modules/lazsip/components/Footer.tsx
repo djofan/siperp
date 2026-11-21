@@ -72,7 +72,7 @@ export function Footer({
             </p>
             <p className="mt-1 text-sm text-white/60">Setiap donasi dan zakat Anda tersalurkan tepat sasaran.</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
             <Link
               href="/lazsip/zakat"
               className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-lazsip-primary-900 transition-colors hover:bg-lazsip-primary-50"
@@ -85,6 +85,7 @@ export function Footer({
             >
               Donasi Sekarang
             </Link>
+            <Link href="/lazsip/affiliator/daftar" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">Jadi Affiliator</Link>
           </div>
         </div>
       </div>

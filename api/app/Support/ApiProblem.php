@@ -45,6 +45,7 @@ class ApiProblem
         if ($error instanceof DecryptException) return [500, 'ENCRYPTION_DATA_UNREADABLE', 'Data tersimpan tidak dapat dibaca. Admin perlu memeriksa konfigurasi enkripsi server; jangan mengganti APP_KEY untuk mencoba memperbaikinya.'];
         if ($error instanceof HttpExceptionInterface && $error->getMessage() === 'Request origin is not allowed.') return [403, 'ORIGIN_NOT_ALLOWED', 'Domain website belum diizinkan oleh konfigurasi API. Minta admin menyesuaikan origin frontend pada server.'];
         if ($error instanceof HttpExceptionInterface && $error->getMessage() === 'Account is inactive.') return [401, 'ACCOUNT_INACTIVE', 'Akun ini sedang nonaktif. Hubungi admin untuk memeriksa status akun.'];
+        if ($error instanceof HttpExceptionInterface && $error->getStatusCode() === 401 && $error->getMessage() === 'Email atau password salah.') return [401, 'LOGIN_INVALID_CREDENTIALS', 'Email atau password salah. Periksa kembali email dan password Anda.'];
         if ($error instanceof HttpExceptionInterface && $error->getStatusCode() === 401 && $error->getMessage() === 'Kode akun atau password salah.') return [401, 'LOGIN_INVALID_CREDENTIALS', 'Kode akun atau password salah. Periksa kembali kode akun dan password Anda.'];
         $status = $error instanceof ValidationException ? 422 : ($error instanceof AuthenticationException ? 401 : ($error instanceof HttpExceptionInterface ? $error->getStatusCode() : 500));
         $defaults = [
