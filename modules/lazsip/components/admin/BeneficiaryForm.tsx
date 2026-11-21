@@ -1,4 +1,5 @@
 "use client";
+import { describeApiProblem } from "@/lib/api-problem";
 
 import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -144,7 +145,7 @@ export function BeneficiaryForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan data.");
+      setError(describeApiProblem(data, response.status, "Gagal menyimpan data."));
       setIsSubmitting(false);
       return;
     }

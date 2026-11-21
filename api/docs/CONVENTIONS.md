@@ -1,5 +1,13 @@
 # Konvensi REST API Siperp
 
+Audit antrean Bantuan: GET `/api/v1/bantuan/dashboard` menambahkan `santunanTasks`
+berisi `transfer_pending` (Admin/Bendahara) dan `handover_pending` (Admin atau penyalur/
+pendamping sesuai penugasan dan peran). Santunan selesai tidak dihitung; tugas lama
+tetap dihitung tanpa batas usia. Counter santunan khusus pekerjaan tidak mengikuti
+filter periode statistik. Badge dan daftar aplikasi berbagi cakupan `task=survey`
+atau `task=distribution`, termasuk akun Relawan dan multi-peran. Counter yang tidak
+tersedia/gagal dimuat harus ditampilkan sebagai belum diketahui, bukan 0.
+
 Artikel LAZSIP terpisah dari berita: GET `/api/v1/lazsip/articles` dan
 `/articles/{id}` hanya menampilkan status `published`; draft mengembalikan 404.
 Admin membaca `/api/v1/lazsip/admin/articles[/{id}]` serta POST/PUT/DELETE

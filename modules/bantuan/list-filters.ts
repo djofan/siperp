@@ -1,6 +1,7 @@
 import { bantuanStatuses } from "@/contracts/modules/bantuan";
 import { defaultListStates, processInfo } from "./policy";
-import { hasRole, type RoleViewer } from "./permissions";
+import { type RoleViewer } from "./permissions";
+import { taskScope } from "./task-scope";
 
 export const sourceLabels:Record<string,string>={online:"Online / WhatsApp",walk_in:"Datang ke kantor",bypass:"Pengajuan langsung"};
 export const dateLabels:Record<string,string>={created:"Tanggal pengajuan",updated:"Terakhir diperbarui",disbursed:"Tanggal pencairan",completed:"Tanggal selesai"};
@@ -33,7 +34,7 @@ export function applicationParams(viewer:RoleViewer,tab:string,filters:ListFilte
   if(tab==="berjalan")params.set("view","ongoing");
   for(const [key,value] of Object.entries(filters))if(value.trim())params.set(key,value.trim());
   const states=defaultListStates(viewer,tab);if(states.length)params.set("states",states.join(","));
-  const task=processInfo(tab)?.task;if(hasRole(viewer,"verifier")&&!hasRole(viewer,"admin")&&task&&(task!=="distribution"||!hasRole(viewer,"treasurer")))params.set("task",task);
+  const task=taskScope(viewer,processInfo(tab)?.task);if(task)params.set("task",task);
   return params;
 }
 

@@ -67,6 +67,7 @@ export interface AidDetail extends AidApplication {
 }
 export interface AidPage { data: AidApplication[]; current_page: number; last_page: number; total: number; per_page?:number; filterOptions?:{programs:string[];regions:string[]}; summary?:Pick<AidDashboard,"total"|"byStatus"|"approvedAmount"|"disbursedAmount"|"completedAmount"|"overdue">|null }
 export interface AidDashboard {
+  santunanTasks?: Record<string,number>;
   personal?:{created:number;surveyed:number;distributed:number;distributedAmount:number};
   taskCounts?: { survey: Record<string, number>; distribution: Record<string, number> };
   total: number; byStatus: Record<string, number>; byProgram: Record<string, number>; bySource: Record<string, number>;

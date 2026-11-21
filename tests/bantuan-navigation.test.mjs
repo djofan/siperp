@@ -11,10 +11,29 @@ const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarge
 const loadSource=(file,imports={})=>{const context={exports:{},require:id=>imports[id]};vm.runInNewContext(ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText,context);return context.exports;};
 const contracts=loadSource("contracts/modules/bantuan.ts");
 const permissions=loadSource("modules/bantuan/permissions.ts",{"@/contracts/modules/bantuan":contracts});
+const scope=loadSource("modules/bantuan/task-scope.ts",{"./permissions":permissions});
 const sandbox={exports:{},require:id=>id==="./permissions"?permissions:null};
 vm.runInNewContext(compiled,sandbox);
 const {navigation,sidebarNavigation,canViewRoute,defaultListStates,processMenus,processInfo}=sandbox.exports;
 const roles=["admin","requester","call_center","approver","chair","verifier","fund_requester","treasurer"];
+
+test("volunteer and mixed field roles retain assigned handovers in personal work counts",()=>{
+  const {isWorkItem,queueCount}=loadSource("modules/bantuan/workspace-guide.ts",{"./permissions":permissions,"./task-scope":loadSource("modules/bantuan/task-scope.ts",{"./permissions":permissions})});
+  for(const assignedRoles of [["volunteer"],["verifier","volunteer"],["volunteer","verifier"]]){
+    const viewer={role:assignedRoles[0],roles:assignedRoles,canBypass:false};
+    const item=navigation(viewer).find(item=>item.key==="penyaluran");
+    assert.deepEqual(Array.from(item.states),["disbursed"]);
+    assert.equal(item.task,"distribution");
+    assert.equal(isWorkItem(viewer,item),true);
+    const dashboard={byStatus:{disbursed:9},taskCounts:{distribution:{disbursed:2},survey:{}}};
+    assert.equal(queueCount(viewer,dashboard,item),2);
+    const personal=navigation(viewer).filter(item=>item.states?.length&&isWorkItem(viewer,item));
+    assert.equal(personal.reduce((total,item)=>total+(queueCount(viewer,dashboard,item)??0),0),2);
+    assert.equal(queueCount(viewer,{...dashboard,taskCounts:{...dashboard.taskCounts,distribution:{}}},item),0);
+    for(const key of ["pencairan","tim","pengaturan"])
+      assert.equal(canViewRoute(viewer,[key]),false);
+  }
+});
 
 test("mustahiq navigation uses the role union and denies field-only accounts",()=>{
   for(const roles of [["verifier"],["volunteer"],["verifier","volunteer"],["verifier","call_center"],["volunteer","treasurer"],["admin"],["requester"]]){
