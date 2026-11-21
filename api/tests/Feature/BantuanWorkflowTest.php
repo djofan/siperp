@@ -15,6 +15,39 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+it('work audit keeps overdue assigned handovers in matching dashboard and list scopes', function () {
+    $other = bantuanUser('verifier');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => 'disbursed', 'distribution_type' => 'verifier', 'distributor_id' => $this->verifier->id, 'disbursed_at' => now()->subDays(35)])->save();
+    $second = $this->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($second)->forceFill(['status' => 'disbursed', 'distribution_type' => 'verifier', 'distributor_id' => $other->id])->save();
+    bantuanRoles($this->verifier, ['verifier', 'volunteer', 'treasurer']);
+    $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.taskCounts.distribution.disbursed', 1);
+    $this->getJson('/api/v1/bantuan/applications?states=disbursed&task=distribution')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $id);
+    Application::findOrFail($id)->forceFill(['status' => 'completed'])->save();
+    $this->getJson('/api/v1/bantuan/applications?states=disbursed&task=distribution')->assertOk()->assertJsonCount(0, 'data');
+});
+
+it('work audit counts pending santunan transfers and only authorized handover assignments', function () {
+    $volunteer = bantuanUser('volunteer');
+    $other = bantuanUser('volunteer');
+    $create = function (string $owner, ?string $companion, string $transfer, string $distribution = 'process') {
+        return (new \App\Modules\Bantuan\Models\Santunan)->forceFill([
+            'id' => (string) Str::uuid(), 'number' => 'SNT-'.Str::uuid(), 'frequency' => 'routine', 'category' => 'general', 'period' => '2025-01-01', 'recipient' => ['name' => 'Penerima pengujian'],
+            'volunteer_id' => $owner, 'companion_id' => $companion, 'amount' => 100000,
+            'transfer_status' => $transfer, 'distribution_status' => $distribution,
+        ])->save();
+    };
+    $create($volunteer->id, null, 'pending');
+    $create($volunteer->id, $this->verifier->id, 'transferred');
+    $create($other->id, null, 'transferred');
+    $create($volunteer->id, $this->verifier->id, 'transferred', 'completed');
+    $this->actingAs($volunteer, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.santunanTasks.transfer_pending', 0)->assertJsonPath('data.santunanTasks.handover_pending', 1);
+    $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.santunanTasks.handover_pending', 1);
+    $this->actingAs($this->treasurer, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.santunanTasks.transfer_pending', 1)->assertJsonPath('data.santunanTasks.handover_pending', 0);
+    $this->actingAs($this->cc, 'sanctum')->getJson('/api/v1/bantuan/dashboard')->assertOk()->assertJsonPath('data.santunanTasks.transfer_pending', 0)->assertJsonPath('data.santunanTasks.handover_pending', 0);
+});
+
 function bantuanSurvey(): array
 {
     return ['date' => now()->toDateString(), 'sunnahKnowledge' => 'Sudah mulai', 'hasSktm' => false, 'sktmExplanation' => 'Sedang mengurus',

@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { LoadingButton } from "@/modules/lazsip/components/admin/LoadingButton";
 import { panelClasses } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
+import { describeApiProblem } from "@/lib/api-problem";
 
 interface HistoryEntry {
   id: string;
@@ -55,16 +56,18 @@ export function CampaignHistoryPanel({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if(isSubmitting)return;
     setError(null);
 
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) {
-      setError("Nominal harus lebih dari 0.");
+    if (!Number.isSafeInteger(value) || value <= 0 || value > 2147483647) {
+      setError("Nominal harus berupa rupiah bulat antara 1 dan 2.147.483.647.");
       return;
     }
 
     setIsSubmitting(true);
 
+    try {
     const response =
       direction === "tambah"
         ? await fetch(`/api/lazsip/campaigns/${campaignId}/offline-donation`, {
@@ -78,16 +81,20 @@ export function CampaignHistoryPanel({
             body: JSON.stringify({ amount: -value, note: note.trim() }),
           });
 
-    setIsSubmitting(false);
-
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan.");
+      const message=describeApiProblem(data,response.status,"Gagal menyimpan pencatatan manual.");
+      setError(response.status>=500?`${message} Periksa riwayat dan saldo sebelum mencoba lagi agar pencatatan tidak ganda.`:message);
       return;
     }
 
     resetForm();
     router.refresh();
+    } catch {
+      setError("Koneksi terputus. Periksa riwayat dan saldo sebelum mencoba lagi agar pencatatan tidak ganda.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -188,7 +195,7 @@ export function CampaignHistoryPanel({
             />
           )}
 
-          {error && <p className="break-words text-xs text-red-600">{error}</p>}
+          {error && <p role="alert" className="break-words text-xs text-red-600">{error}</p>}
           <LoadingButton type="submit" loading={isSubmitting} className="w-full sm:w-auto">
             Simpan
           </LoadingButton>

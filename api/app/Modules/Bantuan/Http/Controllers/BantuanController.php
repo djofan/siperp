@@ -300,6 +300,7 @@ class BantuanController
         $days = $this->settings()['distributionDays'];
 
         return response()->json(['data' => [
+            'santunanTasks' => $this->santunanTasks($request, $access),
             'personal' => [
                 'created' => (clone $q)->where('created_by', $request->user()->id)->count(),
                 'surveyed' => DB::table('bantuan_events')->where('actor_id', $request->user()->id)->where('action', 'survey_submit')->whereIn('application_id', (clone $q)->select('bantuan_applications.id'))->distinct()->count('application_id'),
@@ -319,6 +320,29 @@ class BantuanController
             'overdue' => (clone $q)->where('status', 'disbursed')->where('disbursed_at', '<', now()->subDays($days))->count(),
             'tickets' => (clone $q)->where('status', 'fund_approved')->selectRaw('distributor_id, distribution_type, COUNT(*) as total, SUM(amount) as amount')->groupBy('distributor_id', 'distribution_type')->get(),
         ]]);
+    }
+
+    private function santunanTasks(Request $request, Access $access): array
+    {
+        $open = DB::table('bantuan_santunan')->where('distribution_status', 'process');
+        $transfer = $access->has($request, ['admin', 'treasurer'])
+            ? (clone $open)->where('transfer_status', 'pending')->count() : 0;
+        $handover = 0;
+        if ($access->has($request, ['admin', 'volunteer', 'verifier'])) {
+            $query = (clone $open)->where('transfer_status', 'transferred');
+            if (! $access->has($request, ['admin'])) {
+                $query->where(function ($assigned) use ($request, $access) {
+                    $assigned->whereRaw('1 = 0');
+                    if ($access->has($request, ['volunteer'])) {
+                        $assigned->orWhere('volunteer_id', $request->user()->id);
+                    }
+                    $assigned->orWhere('companion_id', $request->user()->id);
+                });
+            }
+            $handover = $query->count();
+        }
+
+        return ['transfer_pending' => $transfer, 'handover_pending' => $handover];
     }
 
     public function notifications(Request $request)

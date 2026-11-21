@@ -33,7 +33,7 @@ const {navigation,canViewRoute}=load("modules/bantuan/policy.ts");
 const {ProcessHub}=load("modules/bantuan/components/ProcessHub.tsx");
 const {LoadingState}=load("modules/bantuan/components/LoadingState.tsx");
 const viewer=role=>({id:"test",name:"Petugas",role,canBypass:true,settings:{programs:["Kebutuhan Pokok"],regions:[],housing:[],distributionDays:7,minimumSurveyPhotos:5}});
-const stats={total:5,byStatus:{draft:1,survey_assigned:3,completed:1},byProgram:{},bySource:{},approvedAmount:0,disbursedAmount:0,completedAmount:0,overdue:0,tickets:[],taskCounts:{survey:{survey_assigned:1},distribution:{}}};
+const stats={santunanTasks:{},total:5,byStatus:{draft:1,survey_assigned:3,completed:1},byProgram:{},bySource:{},approvedAmount:0,disbursedAmount:0,completedAmount:0,overdue:0,tickets:[],taskCounts:{survey:{survey_assigned:1},distribution:{}}};
 
 test("multiple roles expose their combined menus, work and actions without granting management or self approval",()=>{
   const who={...viewer("requester"),roles:["requester","verifier","fund_requester"]};
@@ -262,7 +262,7 @@ test("sidebar uses a few informative primary menus while work counts include hid
   assert.match(html,/Cari dan pantau pengajuan sesuai akses Anda/);
   assert.match(html,/Prioritas sesuai tugas Anda/);
   const workLink=html.match(/<a[^>]*href="\/admin\/bantuan\/proses"[\s\S]*?<\/a>/)?.[0];
-  assert.match(workLink,/aria-label="10 pengajuan"/);
+  assert.match(workLink,/aria-label="10 tugas"/);
   const destinations=[...html.matchAll(/href="([^"]+)"/g)].map(match=>match[1]);
   assert.equal(new Set(destinations).size,destinations.length);
   assert.ok(destinations.includes("/admin/bantuan/berjalan"));

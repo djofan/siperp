@@ -1,4 +1,5 @@
 "use client";
+import { describeApiProblem } from "@/lib/api-problem";
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -62,7 +63,7 @@ export function NewsForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan berita.");
+      setError(describeApiProblem(data, response.status, "Gagal menyimpan berita."));
       setIsSubmitting(false);
       return;
     }

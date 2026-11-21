@@ -1,4 +1,5 @@
 "use client";
+import { describeApiProblem } from "@/lib/api-problem";
 
 import { useState, type FormEvent } from "react";
 
@@ -24,7 +25,7 @@ export function ApplyForm({ programId }: { programId: string }) {
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal mengirim pendaftaran.");
+      setError(describeApiProblem(data, response.status, "Gagal mengirim pendaftaran."));
       return;
     }
 

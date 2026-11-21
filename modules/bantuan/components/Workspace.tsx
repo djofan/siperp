@@ -1,4 +1,5 @@
 "use client";
+import { readWorkSignals } from "../api/work-signals";
 import { HandoverReport } from "./HandoverReport";
 import { AdminCorrection } from "./AdminCorrection";
 import { attachmentAccept } from "../attachments";
@@ -61,6 +62,11 @@ export function Workspace({ route, initialViewer, mobileApp=false }: { route: st
   const isNew=tab==="pengajuan"&&["baru","langsung"].includes(applicationId);
   const [viewer,setViewer]=useState<BantuanViewer|null>(initialViewer??null),[staff,setStaff]=useState<BantuanStaff[]>([]);
   const [dashboard,setDashboard]=useState<AidDashboard|null>(null),[pageData,setPage]=useState<AidPage|null>(null),[detail,setDetail]=useState<AidDetail|null>(null);
+  const [workFailed,setWorkFailed]=useState(false);
+  const [signalRevision,setSignalRevision]=useState(0);
+  const signalFingerprint=useRef("");
+  const workSignalVersion=useRef(0);
+  const listSignalRevision=applicationId?0:signalRevision;
   const [notifications,setNotifications]=useState<AidNotification[]>([]),[showNotifications,setShowNotifications]=useState(false),[mobile,setMobile]=useState(false);
   const [loading,setLoading]=useState(true),[error,setError]=useState("");
   const [filterState,setFilterState]=useState({tab,filters:{...defaultFilters}}),[pageState,setPageState]=useState({tab,number:1});
@@ -110,8 +116,9 @@ export function Workspace({ route, initialViewer, mobileApp=false }: { route: st
   const finishBatch=useCallback(()=>{setBatchSuccess(false);reload();},[reload]);
   useEffect(()=>{
     let live=true;const controller=new AbortController();
+    const signalVersion=++workSignalVersion.current;
     void Promise.all([request<BantuanViewer>("viewer",{signal:controller.signal}),request<BantuanStaff[]>("staff",{signal:controller.signal}),request<AidDashboard>("dashboard",{signal:controller.signal}),request<AidNotification[]>("notifications",{signal:controller.signal})])
-      .then(([who,people,stats,notes])=>{if(live){setViewer(who);setStaff(people);setDashboard(stats);setNotifications(notes);}})
+      .then(([who,people,stats,notes])=>{if(live){setViewer(who);setStaff(people);if(signalVersion===workSignalVersion.current){setDashboard(stats);setWorkFailed(false);signalFingerprint.current=JSON.stringify([stats.byStatus,stats.taskCounts,stats.santunanTasks]);}setNotifications(notes);}})
       .catch(err=>{if(live)setError(err instanceof Error?err.message:"Data tidak dapat dimuat.");})
       .finally(()=>{if(live)setLoading(false);});
     return()=>{live=false;controller.abort();};
@@ -130,22 +137,23 @@ export function Workspace({ route, initialViewer, mobileApp=false }: { route: st
         .catch(err=>{if(live)setError(err instanceof Error?err.message:"Daftar pengajuan belum dapat dimuat.");});
     }
     return()=>{live=false;controller.abort();};
-  },[viewerId,viewerRole,viewerRoles,tab,applicationId,isNew,number,serializedFilters,revision,listKey]);
+  },[viewerId,viewerRole,viewerRoles,tab,applicationId,isNew,number,serializedFilters,revision,listKey,listSignalRevision]);
   useEffect(()=>{
     if(!viewerId)return;
     let live=true,pending=false;
     const controller=new AbortController();
-    async function refreshNotifications(){
+    async function refreshWorkSignals(){
       if(pending||document.visibilityState!=="visible")return;
       pending=true;
-      try{const notes=await request<AidNotification[]>("notifications",{signal:controller.signal});if(live)setNotifications(notes);}catch{/* Keep the last inbox while offline. */}finally{pending=false;}
+      const signalVersion=++workSignalVersion.current;
+      try{const result=await readWorkSignals(controller.signal);if(live&&signalVersion===workSignalVersion.current){if(result.dashboard){const fingerprint=JSON.stringify([result.dashboard.byStatus,result.dashboard.taskCounts,result.dashboard.santunanTasks]);if(signalFingerprint.current&&signalFingerprint.current!==fingerprint)setSignalRevision(value=>value+1);signalFingerprint.current=fingerprint;}setDashboard(result.dashboard);setWorkFailed(result.failed);if(result.notifications)setNotifications(result.notifications);}}finally{pending=false;}
     }
-    void refreshNotifications();
-    const timer=window.setInterval(()=>void refreshNotifications(),15000);
-    const onFocus=()=>void refreshNotifications();
+    void refreshWorkSignals();
+    const timer=window.setInterval(()=>void refreshWorkSignals(),15000);
+    const onFocus=()=>void refreshWorkSignals();
     window.addEventListener("focus",onFocus);document.addEventListener("visibilitychange",onFocus);
     return()=>{live=false;controller.abort();window.clearInterval(timer);window.removeEventListener("focus",onFocus);document.removeEventListener("visibilitychange",onFocus);};
-  },[viewerId,showNotifications]);
+  },[viewerId,showNotifications,revision]);
   const [markingAll,setMarkingAll]=useState(false);
   async function markAllRead(){
     if(markingAll)return;
@@ -200,15 +208,16 @@ export function Workspace({ route, initialViewer, mobileApp=false }: { route: st
     {showNotifications&&<section className={s.popover}><div className={s.cardHeader} style={{padding:"0 0 14px"}}><h2>Notifikasi</h2><button type="button" className={s.link} disabled={markingAll||!notifications.some(n=>!n.read_at)} onClick={()=>void markAllRead()}>{markingAll?"Menandai…":"Tandai semua dibaca"}</button><button className={s.link} onClick={()=>setShowNotifications(false)}>Tutup</button></div>{notifications.length?notifications.map(n=><button key={n.id} className={s.notification} onClick={()=>markRead(n)} style={{fontWeight:n.read_at?400:600}}>{n.message}<small>{day(n.created_at)}</small></button>):<p className={s.tiny}>Belum ada notifikasi baru.</p>}</section>}
     <main className={s.main}>{mobileApp&&viewer&&<PwaPushControl viewerId={viewer.id} showControls={tab==="akun"||tab==="notifikasi"}/>}
     {error&&<div className={`${s.notice} ${s.error}`} role="alert"><span>{error}</span><button aria-label="Tutup pesan" onClick={()=>setError("")}>×</button></div>}
+    {workFailed&&<div className={`${s.notice} ${s.error}`} role="alert"><span>Jumlah pekerjaan belum dapat diperbarui. Jangan anggap tugas Anda kosong; periksa koneksi atau buka daftar tugas.</span><button type="button" onClick={reload}>Coba lagi</button></div>}
       {!viewer?loading?<LoadingState variant="detail" label="Menyiapkan ruang kerja…"/>:<div className={s.empty}><p>Akses modul belum tersedia. Pastikan Anda mendapat izin dari superadmin.</p><Link className={s.button} href="/admin">Kembali ke platform</Link></div>:
       tab==="notifikasi"&&mobileApp?<PwaNotifications viewer={viewer} onRead={reload} refreshKey={revision}/>:tab==="akun"?<section className={s.accountSettings}>{mobileApp&&<section className={s.pwaAccount} aria-label="Informasi akun"><span className={s.avatar}>{viewer.name.slice(0,2).toUpperCase()}</span><div><h2>{viewer.name}</h2><p>Kode akun: <strong>{viewer.code}</strong></p><p>{roleLabel(viewer)}</p></div><button type="button" className={s.button} disabled={loggingOut} onClick={()=>void logout()}><Icon name="logout"/>{loggingOut?"Sedang keluar…":"Keluar akun"}</button></section>}<div className={s.heading}><div><h1>Pengaturan akun</h1><p>Kelola keamanan akun Anda.</p></div></div>{canManageOwnPasswordInModule(viewer)?<ChangePassword initiallyOpen/>:<div><p>Pengaturan akun dikelola melalui dashboard platform sesuai hak akses Anda.</p><a className={s.button} href="/admin/pengaturan-akun">Buka pengaturan akun platform</a></div>}{mobileApp&&<p>Pasang aplikasi melalui menu browser → Tambahkan ke layar utama. Menu lainnya tersedia melalui tombol navigasi di kiri atas.</p>}</section>:
       tab==="pengajuan-dana"?<FundingRequests viewer={viewer} onChanged={reload}/>:
       isNew?canCreate?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} direct={applicationId==="langsung"}/>:<div className={s.empty}>Peran ini tidak dapat membuat pengajuan.</div>:
       isDetail?!detail&&!error?<LoadingState variant="detail" label="Memuat detail pengajuan…"/>:detail?isEdit?<IntakeForm viewer={intakeViewer(viewer,applicationId==="langsung"||detail?.source==="bypass")} initial={detail}/>:<Detail origin={origin} key={`${detail.id}:${detail.status}`} row={detail} viewer={viewer} staff={staff} reload={reload}/>:<div className={s.empty}><h3>Pengajuan belum dapat dimuat</h3><button type="button" className={s.button} onClick={reload}>Coba lagi</button></div>:
-      tab===""?<Dashboard viewer={viewer} dashboard={dashboard} failed={!!error} onRetry={reload}/>:
+      tab===""?<Dashboard viewer={viewer} dashboard={dashboard} failed={!!error||workFailed} onRetry={reload}/>:
       tab==="mustahiq"?<Mustahiq key={key} id={route[1]}/>:
       menuGroups.some(group=>group.key===tab)?<MenuGroup view={tab} viewer={viewer} dashboard={dashboard}/>:
-      tab==="proses"?<ProcessHub viewer={viewer} dashboard={dashboard} failed={!!error} onRetry={reload}/>:
+      tab==="proses"?<ProcessHub viewer={viewer} dashboard={dashboard} failed={!!error||workFailed} onRetry={reload}/>:
       tab==="santunan"?<Santunan viewer={viewer} staff={staff}/>:
       ["tim","pengaturan","audit"].includes(tab)?<Management tab={tab} viewer={viewer} staff={staff} reload={reload} loading={loading}/>:
       <><div className={s.heading}><div>{queue&&<Link className={s.backLink} href="/admin/bantuan/proses"><Icon name="back"/>Semua proses</Link>}<div className={s.eyebrow}>{tab?"OPERASIONAL BANTUAN":"SELAMAT DATANG KEMBALI"}</div><h1>{tab?listTitle[tab]??"Pengajuan bantuan":`Ringkasan bantuan`}</h1><p>{queue?.description??(tab==="dana"?"Penanda manual dari web pengajuan dana. Tidak ada transfer otomatis.":tab==="pencairan"?"Pantau dana siap cair dan bukti penyerahan yang belum lengkap.":"Pantau setiap tahap, pastikan bantuan sampai kepada yang membutuhkan.")}</p></div><div className={s.actions}>{tab==="laporan"&&hasAnyRole(viewer,["admin","call_center"])&&<ReportExport query={applicationParams(viewer,tab,filters)} description={reportFilterDescription(filters,Object.fromEntries([...staff.map(person=>[person.id,person.name]),[viewer.id,viewer.name]]))}/>}{tab==="laporan"&&hasAnyRole(viewer,["admin","approver","chair","fund_requester","treasurer"])&&<a className={`${s.button} ${s.secondary}`} href={`/api/bantuan/export?${applicationParams(viewer,tab,filters)}`}>↓ Ekspor hasil filter</a>}{canCreate&&<Link className={s.button} href={newHref}><Icon name="plus"/>Pengajuan baru</Link>}</div></div>

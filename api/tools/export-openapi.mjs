@@ -620,6 +620,8 @@ for (const [method,detail] of [['post',false],['put',true],['delete',true]]) {
   };
 }
 
+document.paths['/api/v1/bantuan/dashboard']={get:{tags:['Bantuan'],summary:'Read authorized aid statistics and current task counts',security:[{bearerAuth:[]}],description:'Application byStatus and taskCounts.survey/distribution retain existing access and assignment scopes. Additive santunanTasks counts transfer_pending for Admin/Treasurer, and handover_pending only for Admin or the assigned primary Volunteer/eligible companion. Completed santunan excluded; no age limit. These task counters are not period-filtered financial summaries. Consumers must treat missing task counter objects or failed reads as unknown, never zero. UI refreshes work counts alongside notifications every 15 seconds while visible, and on focus/visibility return.',responses:{200:{description:'Data envelope with existing dashboard fields and santunanTasks',content:{'application/json':{schema:{type:'object',properties:{data:{type:'object',properties:{santunanTasks:{type:'object',required:['transfer_pending','handover_pending'],properties:{transfer_pending:{type:'integer',minimum:0},handover_pending:{type:'integer',minimum:0}}}}}}}}}},401:{description:'Authentication required'},403:{description:'Module access denied'}}}};
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

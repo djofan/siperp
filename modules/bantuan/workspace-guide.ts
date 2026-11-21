@@ -1,27 +1,31 @@
 import type { AidDashboard, BantuanViewer } from "@/contracts/modules/bantuan";
 import type { NavEntry } from "./policy";
-import { rolesOf, hasRole, type RoleViewer } from "./permissions";
+import { rolesOf, type RoleViewer } from "./permissions";
+import { taskScope } from "./task-scope";
 
 const tasks: Record<string, string[]> = {
   requester: ["perlu-dilengkapi", "draft"],
   call_center: ["perlu-dilengkapi", "draft", "screening", "penugasan-survei", "review-survei-cc", "penugasan-penyalur"],
-  verifier: ["perlu-dilengkapi", "draft", "survei", "penyaluran"],
-  volunteer: ["penyaluran"],
+  verifier: ["perlu-dilengkapi", "draft", "survei", "penyaluran", "santunan"],
+  volunteer: ["penyaluran", "santunan"],
   survey_approver: ["review-tahap-1"],
   approver: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
   chair: ["review-tahap-1", "review-langsung", "review-tahap-2", "review-ulang"],
   fund_requester: ["dana-siap", "dana-diajukan"],
-  treasurer: ["pencairan", "penyaluran", "gagal-salur"],
+  treasurer: ["pencairan", "penyaluran", "gagal-salur", "santunan"],
 };
 export function isWorkItem(role: string | RoleViewer, item: NavEntry): boolean {
   if(typeof role!=="string")return rolesOf(role).some(value=>isWorkItem(value,item));
-  return role === "admin" ? !item.group.includes("Arsip") : (tasks[role] ?? []).includes(item.key);
+  return role === "admin" ? !item.group.includes("Arsip") && item.key!=="monitor-survei" : (tasks[role] ?? []).includes(item.key);
 }
 export function queueCount(viewer: BantuanViewer, dashboard: AidDashboard | null, item: NavEntry): number | null {
   if (!dashboard) return null;
-  const assigned = !hasRole(viewer,"admin") && (item.task==="distribution"||hasRole(viewer,"verifier"));
-  const counts = assigned && item.task ? dashboard.taskCounts?.[item.task] : dashboard.byStatus;
-  return counts ? (item.states ?? []).reduce((sum, state) => sum + Number(counts[state] ?? 0), 0) : null;
+  const scope = taskScope(viewer,item.task);
+  const counts = item.source==="santunan"?dashboard.santunanTasks:scope ? dashboard.taskCounts?.[scope] : dashboard.byStatus;
+  if(!counts||!item.states?.length)return null;
+  const values=item.states.map(state=>counts[state]??0);
+  return values.every(value=>typeof value==="number"&&Number.isFinite(value)&&value>=0)
+    ?values.reduce((sum,value)=>sum+value,0):null;
 }
 export const taskCopy: Record<string, { title: string; action: string; description: string }> = {
   draft: { title:"Lanjutkan pengajuan yang belum dikirim", action:"Lengkapi draft", description:"Isian tersimpan sebagai draft. Lengkapi data dan foto, lalu kirim untuk diproses." },

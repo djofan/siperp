@@ -1,4 +1,5 @@
 "use client";
+import { describeApiProblem } from "@/lib/api-problem";
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -37,7 +38,7 @@ export function PartnerForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(data?.error ?? "Gagal menyimpan mitra.");
+      setError(describeApiProblem(data, response.status, "Gagal menyimpan mitra."));
       setIsSubmitting(false);
       return;
     }

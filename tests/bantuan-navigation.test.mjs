@@ -11,13 +11,14 @@ const compiled=ts.transpileModule(source,{compilerOptions:{target:ts.ScriptTarge
 const loadSource=(file,imports={})=>{const context={exports:{},require:id=>imports[id]};vm.runInNewContext(ts.transpileModule(readFileSync(file,"utf8"),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.CommonJS}}).outputText,context);return context.exports;};
 const contracts=loadSource("contracts/modules/bantuan.ts");
 const permissions=loadSource("modules/bantuan/permissions.ts",{"@/contracts/modules/bantuan":contracts});
+const scope=loadSource("modules/bantuan/task-scope.ts",{"./permissions":permissions});
 const sandbox={exports:{},require:id=>id==="./permissions"?permissions:null};
 vm.runInNewContext(compiled,sandbox);
 const {navigation,sidebarNavigation,canViewRoute,defaultListStates,processMenus,processInfo}=sandbox.exports;
 const roles=["admin","requester","call_center","approver","chair","verifier","fund_requester","treasurer"];
 
 test("volunteer and mixed field roles retain assigned handovers in personal work counts",()=>{
-  const {isWorkItem,queueCount}=loadSource("modules/bantuan/workspace-guide.ts",{"./permissions":permissions});
+  const {isWorkItem,queueCount}=loadSource("modules/bantuan/workspace-guide.ts",{"./permissions":permissions,"./task-scope":loadSource("modules/bantuan/task-scope.ts",{"./permissions":permissions})});
   for(const assignedRoles of [["volunteer"],["verifier","volunteer"],["volunteer","verifier"]]){
     const viewer={role:assignedRoles[0],roles:assignedRoles,canBypass:false};
     const item=navigation(viewer).find(item=>item.key==="penyaluran");
