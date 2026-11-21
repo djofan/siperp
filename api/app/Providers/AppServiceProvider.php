@@ -44,6 +44,12 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by(hash('sha256', $normalized.'|'.$request->ip()));
         });
+        RateLimiter::for('affiliate-login', function (Request $request): Limit {
+            $email = $request->input('email');
+            $normalized = is_string($email) ? strtolower(trim($email)) : '';
+
+            return Limit::perMinute(5)->by('affiliate:'.hash('sha256', $normalized.'|'.$request->ip()));
+        });
         RateLimiter::for('checkout', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('payment-status', fn (Request $request) => Limit::perMinute(60)->by($request->ip()));
     }

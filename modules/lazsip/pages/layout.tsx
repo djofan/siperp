@@ -1,4 +1,5 @@
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { PublicFrame } from "@/modules/lazsip/components/PublicFrame";
 import { Navbar } from "@/modules/lazsip/components/Navbar";
 import { Footer } from "@/modules/lazsip/components/Footer";
 import { FloatingWhatsApp } from "@/modules/lazsip/components/FloatingWhatsApp";
@@ -40,14 +41,11 @@ export default async function LazsipPublicLayout({
     <div
       className={`${plusJakartaSans.variable} lazsip-public flex min-h-screen flex-1 flex-col bg-lazsip-cream font-[family-name:var(--font-lazsip-sans)] text-lazsip-ink`}
     >
-      <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer
+      <PublicFrame navbar={<Navbar />} footer={<Footer
         kontak={kontak ?? {}}
         legalitas={legalitasItems}
         whatsapp={whatsapp}
-      />
-      <FloatingWhatsApp number={whatsapp} />
+      />} floating={<FloatingWhatsApp number={whatsapp} />}>{children}</PublicFrame>
     </div>
   );
 }

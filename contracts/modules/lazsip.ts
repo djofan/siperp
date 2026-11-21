@@ -161,3 +161,10 @@ export interface LazsipBeneficiary {
   isPinned: boolean;
   createdAt: Date;
 }
+
+/** Own affiliate account only; financial capabilities remain explicitly unavailable. */
+export interface LazsipAffiliate {
+  id: string; name: string; email: string; phone: string | null;
+  isActive: boolean; joinedAt: Date; referralCode: string | null; referralPath: string | null;
+  features: { referralTracking: false; commissions: false; withdrawals: false };
+}
