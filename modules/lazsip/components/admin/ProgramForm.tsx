@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ImageUploadField } from "@/modules/lazsip/components/admin/ImageUploadField";
@@ -79,7 +81,7 @@ export function ProgramForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(typeof data?.error==="string"?data.error:data?.error?.message??"Gagal menyimpan program.");
+      setError(describeApiProblem(data, 0, "Gagal menyimpan program."));
       setIsSubmitting(false);
       return;
     }

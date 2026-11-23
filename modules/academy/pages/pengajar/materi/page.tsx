@@ -26,7 +26,7 @@ export default async function MaterialsPage({ searchParams }: {
     ...(cohort ? { cohort } : {}), page: String(target), ...(edit ? { edit } : {}),
   })}`;
   const fields = (lesson?: AcademyTeacherMaterial) => <>
-    <label className="block text-sm">Judul materi<input name="title" required maxLength={191} defaultValue={lesson?.title} className={inputClass}/></label>
+    <label className="block text-sm"><span>Judul materi<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="title" required maxLength={191} defaultValue={lesson?.title} className={inputClass}/></label>
     <label className="block text-sm">Teks materi<textarea name="contentSummary" maxLength={30000} rows={8} defaultValue={lesson?.contentSummary ?? ""} className={inputClass} placeholder="Tulis materi yang dapat dibaca peserta..."/></label>
     <TeacherAudioField existingUrl={lesson?.videoUrl ?? ""}/>
 

@@ -12,8 +12,8 @@ export default async function AskPage() {
     <Link href="/academy/tanya-jawab" className="mb-5 inline-block text-sm text-green-700 underline">Kembali ke pertanyaan saya</Link>
     <PageHeading title="Ajukan pertanyaan">Pilih angkatan / program dan tuliskan pertanyaan. Setelah terkirim, Anda kembali ke tabel.</PageHeading>
     {!enrollments.length ? <p className="rounded-xl bg-amber-50 p-4 text-sm">Ikuti angkatan / program terlebih dahulu untuk bertanya.</p> : <section className="rounded-2xl border border-gray-200 bg-white p-5"><ActionForm action={askParticipantQuestion} label="Kirim pertanyaan & kembali">
-      <label className="block text-sm">Angkatan / Program<select name="courseId" required className={inputClass} defaultValue=""><option value="" disabled>Pilih angkatan / program</option>{enrollments.map(({ course }) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label>
-      <label className="block text-sm">Pertanyaan<textarea name="question" minLength={10} maxLength={3000} required rows={8} className={inputClass}/></label>
+      <label className="block text-sm"><span>Angkatan / Program<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><select name="courseId" required className={inputClass} defaultValue=""><option value="" disabled>Pilih angkatan / program</option>{enrollments.map(({ course }) => <option key={course.id} value={course.id}>{course.title}</option>)}</select></label>
+      <label className="block text-sm"><span>Pertanyaan<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><textarea name="question" minLength={10} maxLength={3000} required rows={8} className={inputClass}/></label>
       <p className="text-xs text-gray-500">Minimal 10, maksimal 3.000 karakter. Pertanyaan hanya terlihat oleh Anda dan pengelola.</p>
     </ActionForm></section>}
   </div>;

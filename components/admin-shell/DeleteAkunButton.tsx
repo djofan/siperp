@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -21,7 +23,7 @@ export function DeleteAkunButton({ userId, userName }: { userId: string; userNam
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Gagal menghapus akun.");
+      setError(describeApiProblem(data, 0, "Gagal menghapus akun."));
       setIsDeleting(false);
       return;
     }

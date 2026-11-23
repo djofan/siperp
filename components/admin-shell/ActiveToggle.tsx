@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Switch } from "@/components/ui/Switch";
@@ -34,7 +36,7 @@ export function ActiveToggle({
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         setIsActive(previous);
-        setError((data?.error?.message ?? data?.error) ?? "Gagal mengubah status.");
+        setError(describeApiProblem(data, 0, "Gagal mengubah status."));
         return;
       }
 

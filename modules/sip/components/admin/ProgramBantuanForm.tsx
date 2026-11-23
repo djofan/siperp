@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
 import { DocumentationEditor, useDocumentationEditor } from "./SipDocumentationEditor";
 import { useRouter } from "next/navigation";
@@ -68,7 +70,7 @@ export function ProgramBantuanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan program.");
+      setError(describeApiProblem(data, 0, "Gagal menyimpan program."));
       setIsSubmitting(false);
       return;
     }

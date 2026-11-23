@@ -2609,3 +2609,42 @@ it('accepts large and custom application page sizes while enforcing bounded pagi
     }
     $this->actingAs($this->verifier, 'sanctum')->getJson('/api/v1/bantuan/applications?perPage=500')->assertOk()->assertJsonCount(0, 'data');
 });
+
+
+it('lets stage-one decision makers correct and reconsider a rejected intake with an audit trail', function (string $role) {
+    $actor = bantuanUser($role);
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version'=>1])->assertOk();
+    $this->actingAs($actor, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_reject', ['version'=>2,'reason'=>'Informasi awal belum sesuai.'])->assertOk();
+    $doc = bantuanDoc($id, 'supporting');
+    $input = bantuanInput(); $input['applicant']['problem'] = 'Kebutuhan biaya pengobatan telah diperiksa kembali.';
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input,'version'=>3])->assertOk()->assertJsonPath('data.status','rejected_t1');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>4])->assertUnprocessable();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>4,'reason'=>'Data sudah dikoreksi dan perlu ditinjau ulang.'])->assertOk()->assertJsonPath('data.status','review1');
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input,'version'=>4])->assertConflict();
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...$input,'version'=>5])->assertOk();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version'=>6])->assertOk()->assertJsonPath('data.status','survey_assignment');
+    expect(Application::findOrFail($id)->applicant['problem'])->toBe($input['applicant']['problem']);
+    expect(DB::table('bantuan_documents')->where('id',$doc)->exists())->toBeTrue();
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','reopen')->exists())->toBeTrue();
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','review1_reject')->exists())->toBeTrue();
+})->with(['approver','chair','survey_approver']);
+
+it('restricts rejected stage-one correction and reconsideration to independent authorized decision makers', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>'rejected_t1']);
+    foreach (['observer','verifier','requester','treasurer','fund_requester'] as $role) {
+        $response = $this->actingAs(bantuanUser($role), 'sanctum')->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(),'version'=>1]);
+        expect($response->status())->toBeIn([403,404]);
+        $response = $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka kembali.']);
+        expect($response->status())->toBeIn([403,404]);
+    }
+    $actor = bantuanUser('survey_approver');
+    Application::whereKey($id)->update(['created_by'=>$actor->id]);
+    $this->actingAs($actor, 'sanctum')->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(),'version'=>1])->assertForbidden();
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka milik sendiri.'])->assertForbidden();
+    Application::whereKey($id)->update(['created_by'=>$this->cc->id,'status'=>'rejected_t2']);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka tahap dua.'])->assertForbidden();
+    $this->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(),'version'=>1])->assertForbidden();
+    expect(Application::findOrFail($id)->version)->toBe(1);
+});

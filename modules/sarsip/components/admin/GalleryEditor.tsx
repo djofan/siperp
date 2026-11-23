@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { formatNumericText } from "@/lib/number-format";
 
 import Image from "next/image";
@@ -18,7 +20,7 @@ export function GalleryEditor({ value, onChange, disabled, onUploadingChange }: 
         const form = new FormData(); form.append("file", file);
         const response = await fetch("/api/sarsip/upload", { method: "POST", body: form });
         const data = await response.json();
-        if (!response.ok || typeof data.url !== "string") throw new Error(data.error?.message ?? "Gagal mengunggah foto galeri. Foto yang berhasil tetap tersimpan dalam form.");
+        if (!response.ok || typeof data.url !== "string") throw new Error(describeApiProblem(data, 0, "Gagal mengunggah foto galeri. Foto yang berhasil tetap tersimpan dalam form."));
         next.push({ id: crypto.randomUUID(), image: data.url, caption: "" });
         onChange([...next]);
       }

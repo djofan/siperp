@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useState, type FormEvent, type SVGProps } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -104,7 +106,7 @@ export function LoginForm() {
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Kode akun atau password salah.");
+      setError(describeApiProblem(data, 0, "Kode akun atau password salah."));
       return;
     }
 

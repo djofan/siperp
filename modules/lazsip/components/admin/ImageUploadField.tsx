@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { formatNumericText } from "@/lib/number-format";
 
 
@@ -50,7 +52,7 @@ export function ImageUploadField({
       const response = await fetch("/api/lazsip/upload", { method: "POST", body: formData });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.url) {
-        throw new Error(typeof data?.error === "string" ? data.error : data?.error?.message ?? "Gagal mengunggah gambar.");
+        throw new Error(describeApiProblem(data, 0, "Gagal mengunggah gambar."));
       }
       setPreview(data.url);
       onChange(data.url);

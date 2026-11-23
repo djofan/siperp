@@ -1,3 +1,4 @@
+import { describeApiProblem } from "@/lib/api-problem";
 export class RequestError extends Error {
   constructor(message: string, public readonly status: number, public readonly fields: Record<string, string[]> = {}) { super(message); this.name = 'RequestError'; }
 }
@@ -12,7 +13,7 @@ export async function request<T>(path: string, init: RequestInit = {}, unwrap = 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const fields = body?.errors ?? body?.error?.details ?? {};
-    const message = response.status === 409 ? 'Data telah berubah. Salin perubahan Anda lalu muat ulang rapat sebelum mencoba lagi.' : response.status === 401 ? 'Sesi berakhir. Masuk kembali untuk melanjutkan; tulisan Anda tetap ada di halaman ini.' : response.status === 403 ? 'Akun Anda belum memiliki izin untuk tindakan ini. Hubungi pengelola rapat.' : response.status === 404 ? 'Catatan atau berkas tidak ditemukan, atau tidak tersedia untuk akun Anda.' : Object.keys(fields).length ? 'Periksa isian berikut sebelum melanjutkan.' : body?.error?.message || body?.message || 'Permintaan belum berhasil. Periksa koneksi lalu coba lagi.';
+    const message = response.status === 409 ? 'Data telah berubah. Salin perubahan Anda lalu muat ulang rapat sebelum mencoba lagi.' : response.status === 401 ? 'Sesi berakhir. Masuk kembali untuk melanjutkan; tulisan Anda tetap ada di halaman ini.' : response.status === 403 ? 'Akun Anda belum memiliki izin untuk tindakan ini. Hubungi pengelola rapat.' : response.status === 404 ? 'Catatan atau berkas tidak ditemukan, atau tidak tersedia untuk akun Anda.' : describeApiProblem(body,response.status,'Permintaan belum berhasil. Periksa koneksi lalu coba lagi.');
     throw new RequestError(message, response.status, fields);
   }
   if (!body) throw new RequestError('Respons belum dapat dibaca. Periksa kembali data rapat sebelum mengulangi tindakan.', 502);

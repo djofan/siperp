@@ -72,7 +72,7 @@ export function TrackingPopup({children="Cek status servis",className,autoFromLi
       <div className={styles.body}>
       <p className={styles.description} id={`${id}-description`}>{ticket?"Informasi terbaru dari outlet tempat Anda menitipkan perangkat.":"Masukkan kode dari outlet untuk melihat status dan riwayat pengerjaan. Tidak perlu login."}</p>
       <form ref={form} onSubmit={submit} className={styles.form} hidden={!!ticket}>
-        <label htmlFor={`${id}-code`}>Kode pelacakan</label>
+        <label htmlFor={`${id}-code`}>Kode pelacakan<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></label>
         <input ref={codeInput} name="kode" id={`${id}-code`} disabled={pending} required maxLength={2048} autoComplete="off" autoCapitalize="none" spellCheck={false} placeholder="Tempel kode atau tautan dari outlet" aria-invalid={!!error} aria-describedby={error?`${id}-error`:undefined}/>
         <button disabled={pending} type="submit">{pending?"Mengecek progres…":"Lihat status servis"}<span aria-hidden="true">→</span></button>
       </form>

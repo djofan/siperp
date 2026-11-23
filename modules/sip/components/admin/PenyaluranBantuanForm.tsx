@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
 import { DocumentationEditor, useDocumentationEditor } from "./SipDocumentationEditor";
 import { useRouter } from "next/navigation";
@@ -58,7 +60,7 @@ export function PenyaluranBantuanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan data penyaluran bantuan.");
+      setError(describeApiProblem(data, 0, "Gagal menyimpan data penyaluran bantuan."));
       setIsSubmitting(false);
       return;
     }

@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/modules/tanwir/components/icons";
@@ -25,7 +27,7 @@ export function LoginForm() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {
-        setError((body?.error?.message ?? body?.error) ?? "Tidak dapat masuk.");
+        setError(describeApiProblem(body, 0, "Tidak dapat masuk."));
         return;
       }
       router.replace(body?.redirectTo ?? "/tanwir");
