@@ -5,12 +5,12 @@ function MitraBadge({ name, logo }: { name: string; logo: string | null }) {
     // mr-3 (bukan gap di container) supaya lebar "setengah track" pas presisi dengan titik
     // translateX(-50%) — kalau pakai gap, ada satu gap ekstra di titik sambungan loop yang
     // bikin animasinya "kepotong"/nyentak kecil tiap kali putaran mengulang.
-    <span className="mr-3 flex shrink-0 items-center gap-3 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-base font-semibold text-white/90 sm:gap-4 sm:px-8 sm:py-4 sm:text-lg">
+    <span className="mr-3 flex shrink-0 items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white/90 sm:gap-3 sm:px-6 sm:py-3 sm:text-base">
       {logo ? (
         // eslint-disable-next-line @next/next/no-img-element -- URL gambar bebas dari admin
-        <img src={logo} alt={name} className="h-9 w-9 shrink-0 rounded-full object-contain sm:h-11 sm:w-11" />
+        <img src={logo} alt={name} className="h-8 w-8 shrink-0 rounded-full object-contain sm:h-9 sm:w-9" />
       ) : (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-7 w-7 shrink-0 text-lazsip-secondary-300 sm:h-9 sm:w-9">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6 shrink-0 text-lazsip-secondary-300 sm:h-7 sm:w-7">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
