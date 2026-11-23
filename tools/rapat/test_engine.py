@@ -61,6 +61,8 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(result['segments'][0]['speaker'], None)
             self.assertEqual(result['text'], 'Rapat dimulai.')
             self.assertEqual(constructor.call_args.kwargs['compute_type'], 'int8')
+            self.assertEqual(constructor.call_args.kwargs['cpu_threads'], 2)
+            self.assertEqual(constructor.call_args.kwargs['num_workers'], 1)
             self.assertTrue(constructor.call_args.kwargs['local_files_only'])
             options = model.transcribe.call_args.kwargs
             self.assertEqual(options['language'], 'id')
@@ -71,7 +73,7 @@ class EngineTests(unittest.TestCase):
             self.assertFalse(options['condition_on_previous_text'])
             self.assertEqual(options['hallucination_silence_threshold'], 2)
 
-    def test_default_full_large_and_turbo_cache_variants(self):
+    def test_default_small_and_explicit_large_and_turbo_cache_variants(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_MODEL_DIR=root):
             with patch.dict(os.environ, RAPAT_WHISPER_MODEL='large-v3-turbo'):
                 path = e.model_path()
@@ -89,8 +91,17 @@ class EngineTests(unittest.TestCase):
                 self.assertFalse(e.model_ready())
             with patch.dict(os.environ):
                 os.environ.pop('RAPAT_WHISPER_MODEL', None)
+                self.assertEqual(e.model_path().name, 'small')
+                self.assertEqual(e.MODEL_REPOS[e.model_path().name], 'Systran/faster-whisper-small')
+                path = e.model_path()
+                path.mkdir()
+                for name in e.MODEL_FILES:
+                    (path / name).write_bytes(b'file')
+                self.assertFalse(e.model_ready())
+                (path / 'vocabulary.txt').write_bytes(b'vocabulary')
+                self.assertTrue(e.model_ready())
+            with patch.dict(os.environ, RAPAT_WHISPER_MODEL='large-v3'):
                 self.assertEqual(e.model_path().name, 'large-v3')
-                self.assertEqual(e.MODEL_REPOS[e.model_path().name], 'Systran/faster-whisper-large-v3')
 
     def test_setup_canonical_repo_and_optional_assets(self):
         import importlib.util

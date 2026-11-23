@@ -16,22 +16,31 @@ $env:RAPAT_MODEL_DIR = Join-Path (Get-Location) '.tmp-uat/rapat-models'
 
 Setup mengambil `config.json`, `tokenizer.json`, `model.bin`, serta file yang ada
 di repo dari `preprocessor_config.json`, `vocabulary.json`, dan `vocabulary.txt`.
-Default transkripsi `large-v3` penuh memakai `Systran/faster-whisper-large-v3`,
-dipilih untuk memprioritaskan akurasi dibanding waktu inferensi. Ini bukan klaim
-model terbaik untuk semua rekaman: bahasa, aksen, kebisingan, mikrofon, dan
-pengucapan memengaruhi hasil. Model penuh membutuhkan RAM serta waktu CPU lebih
-besar daripada turbo/base; ukur pada mesin target sebelum menetapkan timeout.
-Opsi `large-v3-turbo` tetap didukung dan memakai repo kanonis
-`dropbox-dash/faster-whisper-large-v3-turbo` (tujuan redirect repo
-`mobiuslabsgmbh/faster-whisper-large-v3-turbo` pada registry faster-whisper terpasang).
-Kesiapan membutuhkan ketiga file inti dan salah satu vocabulary JSON/TXT yang
-tidak kosong; large-v3 penuh dan turbo juga membutuhkan `preprocessor_config.json` untuk konfigurasi
-fitur audio. Model lama dapat tidak menyediakan file preprocessor tersebut.
-Ganti `RAPAT_WHISPER_MODEL` sebelum setup bila memerlukan ukuran lain; `base`
-masih didukung secara eksplisit, tanpa fallback otomatis. Turbo membutuhkan RAM
-dan waktu CPU lebih besar; ukur pada mesin target. Venv dan cache
-adalah artefak lokal `.tmp-uat/`; jangan commit atau publikasikan direktori ini.
-Tidak diperlukan instalasi FFmpeg atau Torch terpisah.
+Default transkripsi adalah Whisper `small` multilingual dari
+`Systran/faster-whisper-small`, CPU `int8`, dua thread dan satu worker per proses.
+Pilihan ini mengurangi beban dibanding large-v3 untuk server dengan kapasitas
+terbatas. Dua thread bukan jaminan kapasitas VPS mencukupi; ukur RAM tersedia,
+swap, durasi proses, dan respons web pada server target. Batasi antrean agar hanya
+satu transkripsi berjalan sekaligus; `num_workers=1` tidak membatasi jumlah proses
+Laravel yang dapat berjalan bersamaan. Model small tetap memerlukan pemeriksaan
+manusia, terutama nama, angka, dan istilah Arab.
+
+`RAPAT_WHISPER_MODEL` yang diisi eksplisit tetap mengalahkan default. Model
+`base`, `large-v3`, dan `large-v3-turbo` tetap didukung tanpa fallback otomatis.
+Turbo memakai repo kanonis `dropbox-dash/faster-whisper-large-v3-turbo`.
+Kesiapan membutuhkan file inti dan salah satu vocabulary JSON/TXT yang tidak
+kosong; large-v3 penuh dan turbo juga memerlukan `preprocessor_config.json`.
+Setup mengunduh model yang dipilih secara eksplisit, sedangkan runtime tetap
+lokal/offline dan tidak mengunduh model. PyAV dipatok ke 16.1.0 yang diuji dengan
+faster-whisper 1.2.1; PyAV 19 menghapus argumen decoder yang masih dipakai versi ini.
+Venv, model, rekaman, dan hasil eksperimen adalah artefak lokal `.tmp-uat/`;
+jangan commit atau publikasikan direktori ini.
+
+Jika instalasi lama memakai `RAPAT_WHISPER_MODEL=large-v3`, ubah menjadi `small`
+dan unduh checkpoint small dengan setup sebelum memuat ulang konfigurasi Laravel
+serta worker pada saat deployment yang diizinkan. Mengganti default kode tidak
+menimpa environment eksplisit atau menyediakan model di VPS. Transkrip tersimpan
+tetap dipertahankan; pemrosesan ulang menggunakan revisi cache sesuai model aktif.
 
 Ollama portable dipasang terpisah. Jalankan server lokal kemudian unduh sekali
 secara eksplisit dengan `ollama pull qwen3.5:9b`. Jangan gunakan model cloud.
@@ -49,7 +58,7 @@ Contoh konfigurasi Linux (sesuaikan lokasi instalasi):
 ```dotenv
 RAPAT_PYTHON=/opt/rapat/venv/bin/python
 RAPAT_MODEL_DIR=/opt/rapat/models
-RAPAT_WHISPER_MODEL=large-v3
+RAPAT_WHISPER_MODEL=small
 RAPAT_OLLAMA_URL=http://127.0.0.1:11434
 RAPAT_OLLAMA_MODEL=qwen3.5:9b
 ```
@@ -62,7 +71,7 @@ klip yang tersimpan dan lanjutkan secara manual. Ini bukan perekam background.
 
 | Variabel | Default / fungsi |
 | --- | --- |
-| `RAPAT_WHISPER_MODEL` | `large-v3`; environment eksplisit mengalahkan default; turbo opsional |
+| `RAPAT_WHISPER_MODEL` | `small`; environment eksplisit mengalahkan default; model lain opsional |
 | `RAPAT_MODEL_DIR` | `~/.cache/rapat-models`; folder berisi subfolder sesuai nama model |
 | `RAPAT_AUDIO_ROOTS` | direktori temp OS; daftar root privat absolut, dipisahkan `;` pada Windows / `:` pada Linux |
 | `RAPAT_OLLAMA_URL` | `http://127.0.0.1:11434`; hanya IP loopback atau localhost, tanpa kredensial, path, query, redirect, proxy environment |
@@ -113,7 +122,7 @@ menghasilkan `{text,segments:[{start,end,text,speaker:null}]}`; waktu dalam deti
 tanpa diarization atau identifikasi pembicara.
 
 Decoder tetap `language='id'` untuk bahasa dominan Indonesia dengan istilah Inggris,
-`task='transcribe'` (tidak menerjemahkan), CPU int8, beam 5, `temperature=0`, VAD,
+`task='transcribe'` (tidak menerjemahkan), CPU int8, dua thread, satu worker, beam 5, `temperature=0`, VAD,
 `condition_on_previous_text=False`, `word_timestamps=True`, dan
 `hallucination_silence_threshold=2`. Word timestamp dipakai decoder untuk kontrol
 halusinasi pada jeda; kontrak segmen tetap waktu tingkat segmen.
@@ -131,7 +140,7 @@ probabilitas no-speech > 0.6 ditandai `low_confidence_speech` tanpa menghapus te
 Ini indikator decoder, bukan skor akurasi terkalibrasi; warning kosong juga bukan
 jaminan kebenaran. Uji audio Indonesia/Inggris nyata tetap diperlukan pada server target.
 Upgrade tidak mengunduh ulang model secara otomatis; pengelola mengunduh model dan
-mengubah environment Laravel/worker ke `large-v3` sebelum pengujian nyata.
+mengubah environment Laravel/worker ke `small` sebelum pengujian nyata.
 Fixture Windows Zira/SAPI dengan pengucapan Indonesia yang kurang tepat hanya
 smoke test eksekusi, bukan benchmark akurasi. Validasi akurasi menunggu audio asli
 beserta pemeriksaan manual terhadap ucapan sumber. Statistik decoder tidak dapat
@@ -202,5 +211,5 @@ tenggat Yono null. Prompt membedakan keputusan kolektif dari penugasan serta
 meminta ringkasan hasil yang singkat; tidak memakai fallback ekstraktif.
 
 Referensi implementasi: [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
-[model Systran large-v3](https://huggingface.co/Systran/faster-whisper-large-v3), dan
+[model Systran small](https://huggingface.co/Systran/faster-whisper-small), dan
 [Ollama generate](https://docs.ollama.com/api/generate).
