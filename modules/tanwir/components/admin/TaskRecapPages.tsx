@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ApiError } from "@/lib/api";
@@ -24,7 +25,7 @@ function Stats({ counts }: { counts: RecapCounts }) { return <div className={s.s
 ].map(([label, value]) => <Stat key={label} label={String(label)} value={value} />)}</div>; }
 function Pagination({ meta, href, params }: { meta: RecapMeta; href: string; params: RecapParams }) {
   const page = (n: number) => { const query = recapQuery(params); query.set("page", String(n)); return `${href}?${query}`; };
-  return <nav aria-label="Halaman rekap" className={s.pagination}><span>{meta.total} hasil · Halaman {meta.current_page} dari {meta.last_page}</span><div className={s.actions}>{meta.current_page > 1 && <Link className={s.link} href={page(meta.current_page - 1)}>Sebelumnya</Link>}{meta.current_page < meta.last_page && <Link className={s.link} href={page(meta.current_page + 1)}>Berikutnya</Link>}</div></nav>;
+  return <nav aria-label="Halaman rekap" className={s.pagination}><span>{formatNumericText(meta.total)} hasil · Halaman {formatNumericText(meta.current_page)} dari {formatNumericText(meta.last_page)}</span><div className={s.actions}>{meta.current_page > 1 && <Link className={s.link} href={page(meta.current_page - 1)}>Sebelumnya</Link>}{meta.current_page < meta.last_page && <Link className={s.link} href={page(meta.current_page + 1)}>Berikutnya</Link>}</div></nav>;
 }
 
 export async function TaskRecapIndexPage({ params }: { params: RecapParams }) {
@@ -45,7 +46,7 @@ export async function TaskRecapIndexPage({ params }: { params: RecapParams }) {
     <div className={s.table}><table><caption className="sr-only">Rekap tugas PIC dan pengumpulan peserta</caption><thead><tr>{["Tugas", "PIC pembuat", "Kelompok tujuan", "Tenggat (WIB)", "Terkumpul", "Menunggu", "Aksi"].map(h => <th key={h} scope="col">{h}</th>)}</tr></thead><tbody>{result.tasks.map(task => <tr key={task.id}>
       <td><Link className={s.link} href={`${base}/${task.id}${query.get("group") ? `?group=${encodeURIComponent(query.get("group")!)}` : ""}`}>{task.title}</Link><div className="mt-2"><TypePill type={task.type} /></div></td>
       <td>{task.teacher?.name ?? "PIC tidak tersedia"}<p className={s.muted}>{task.teacher?.code}</p></td><td>{task.groups.map(g => <p key={g.id}>{g.code} · {g.name}</p>)}</td>
-      <td>{formatDateTime(task.deadline)}</td><td>{task.counts.submitted}/{task.counts.participants}<p className={s.muted}>{task.counts.missing} belum mengumpulkan</p></td><td>{task.counts.pending}</td>
+      <td>{formatDateTime(task.deadline)}</td><td>{formatNumericText(task.counts.submitted)}/{formatNumericText(task.counts.participants)}<p className={s.muted}>{formatNumericText(task.counts.missing)} belum mengumpulkan</p></td><td>{formatNumericText(task.counts.pending)}</td>
       <td><ButtonLink variant="secondary" href={`${base}/${task.id}${query.get("group") ? `?group=${encodeURIComponent(query.get("group")!)}` : ""}`}>Lihat rincian</ButtonLink></td>
     </tr>)}</tbody></table>{!result.tasks.length && <p className={s.empty}>Belum ada tugas yang sesuai filter.</p>}</div>
     <Pagination meta={result.meta} href={base} params={params} />
@@ -63,7 +64,7 @@ export async function TaskRecapDetailPage({ id, params }: { id: string; params: 
     <Link className={s.link} href={base}>← Semua rekap tugas</Link>
     <header><TypePill type={task.type} /><h1 className="mt-3">{task.title}</h1><p className={s.muted}>PIC pembuat: {task.teacher?.name ?? "Tidak tersedia"} · Tenggat {formatDateTime(task.deadline)}</p><p className={s.muted}>Kelompok tujuan: {task.groups.map(g => `${g.code} · ${g.name}`).join(", ") || "Belum ada kelompok tujuan"}</p></header>
     <Card><h2 className="mb-3 font-semibold">Perintah tugas</h2><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{task.description}</p></Card>
-    {task.type === "quiz" && <details className={s.details}><summary>Soal dan kunci jawaban ({task.questions.length})</summary><div className="mt-4"><QuizReview questions={task.questions} answers={[]} /></div></details>}
+    {task.type === "quiz" && <details className={s.details}><summary>Soal dan kunci jawaban ({formatNumericText(task.questions.length)})</summary><div className="mt-4"><QuizReview questions={task.questions} answers={[]} /></div></details>}
     <form className={s.filters} action={href}>
       <label>Kelompok peserta saat ini<select className={inputClass} name="group" defaultValue={query.get("group") ?? ""}><option value="">Semua kelompok</option>{result.groups.map(g => <option key={g.id} value={g.id}>{g.code} · {g.name}</option>)}</select></label>
       <label>Cari peserta<input className={inputClass} name="q" defaultValue={query.get("q") ?? ""} maxLength={200} placeholder="Nama atau kode peserta" /></label>
@@ -75,7 +76,7 @@ export async function TaskRecapDetailPage({ id, params }: { id: string; params: 
     <div className={s.table}><table><caption className="sr-only">Hasil setiap peserta untuk {task.title}</caption><thead><tr>{["Peserta", "Kelompok saat ini", "Status", "Nilai", "Percobaan", "Waktu kumpul (WIB)", "Hasil"].map(h => <th key={h} scope="col">{h}</th>)}</tr></thead><tbody>{result.participants.map(member => <tr key={member.id}>
       <td><strong>{member.name}</strong><p className={s.muted}>{member.code}{!member.active && " · Nonaktif"}</p>{!member.currentlyAssigned && <p className={s.muted}>Di luar sasaran saat ini</p>}</td><td>{member.group?.name ?? "Tanpa kelompok"}</td>
       <td>{member.submission ? <SubmissionPill status={member.submission.status} /> : <span>Belum mengumpulkan</span>}</td><td>{member.submission?.score != null ? <ScoreBadge score={member.submission.score} /> : "—"}</td>
-      <td>{member.submission?.attemptsCount ?? "—"}</td><td>{member.submission ? <>{formatDateTime(member.submission.submittedAt)}<div className="mt-2"><LatePill late={member.submission.isLate} /></div></> : "—"}</td>
+      <td>{formatNumericText(member.submission?.attemptsCount ?? "—")}</td><td>{member.submission ? <>{formatDateTime(member.submission.submittedAt)}<div className="mt-2"><LatePill late={member.submission.isLate} /></div></> : "—"}</td>
       <td>{member.submission ? <Link className={s.link} href={`${base}/hasil/${member.submission.id}?${query}`}>Lihat hasil</Link> : "Belum ada hasil"}</td>
     </tr>)}</tbody></table>{!result.participants.length && <p className={s.empty}>Tidak ada peserta yang sesuai filter.</p>}</div>
     <Pagination meta={result.meta} href={href} params={Object.fromEntries(query)} />
@@ -89,7 +90,7 @@ export async function TaskSubmissionRecapPage({ id, params }: { id: string; para
   const questions = result.answers.map(a => a.question).filter((q): q is RecapQuestion => q !== null).sort((a, b) => a.order - b.order);
   return <div className={s.page}>
     <Link className={s.link} href={`${base}/${result.task.id}?${recapQuery(params, ["group", "q", "status", "page"])}`}>← Kembali ke {result.task.title}</Link>
-    <header><h1>{result.student.name}</h1><p className={s.muted}>{result.student.code} · {result.student.group?.name ?? "Tanpa kelompok"}</p><p className={s.muted}>{result.task.title} · PIC {result.task.teacher?.name ?? "Tidak tersedia"}</p><div className="mt-3 flex flex-wrap items-center gap-3"><SubmissionPill status={result.status} /><LatePill late={result.isLate} />{result.score != null && <ScoreBadge score={result.score} />}</div><p className={s.muted}>Percobaan ke-{result.attemptsCount} · Dikumpulkan {formatDateTime(result.submittedAt)}</p></header>
+    <header><h1>{result.student.name}</h1><p className={s.muted}>{result.student.code} · {result.student.group?.name ?? "Tanpa kelompok"}</p><p className={s.muted}>{result.task.title} · PIC {result.task.teacher?.name ?? "Tidak tersedia"}</p><div className="mt-3 flex flex-wrap items-center gap-3"><SubmissionPill status={result.status} /><LatePill late={result.isLate} />{result.score != null && <ScoreBadge score={result.score} />}</div><p className={s.muted}>Percobaan ke-{formatNumericText(result.attemptsCount)} · Dikumpulkan {formatDateTime(result.submittedAt)}</p></header>
     <div className={s.split}><div className="min-w-0 space-y-6"><Card><h2 className="mb-4 font-semibold">{result.task.type === "quiz" ? "Jawaban kuis peserta" : "Hasil setoran peserta"}</h2>{result.task.type === "quiz" ? (questions.length ? <QuizReview questions={questions} answers={result.answers} /> : <p className={s.muted}>Rincian jawaban belum tersedia.</p>) : result.files.length ? <SubmissionMedia submission={result} /> : <p className={s.muted}>Berkas setoran tidak tersedia.</p>}</Card><Card><h2 className="mb-3 font-semibold">Perintah tugas</h2><p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{result.task.description}</p></Card></div>
       <Card><h2 className="mb-4 font-semibold">Riwayat koreksi</h2><ReviewHistory logs={result.logs} /></Card>
     </div>

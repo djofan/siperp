@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useId, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Bell, Camera, Check, CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, Clock3, FileText, Files, HandHeart, History, Inbox, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, ShieldCheck, Upload, UsersRound, Wallet, X } from "lucide-react";
@@ -46,6 +48,6 @@ export function Dialog({title,description,children,onClose,wide=false,className=
   </dialog>;
 }
 export function Tabs({items,active,onChange}:{items:{id:string;label:string;count?:number}[];active:string;onChange:(id:string)=>void}){
-  return <div className={s.tabs} role="tablist">{items.map(item=><button key={item.id} role="tab" aria-selected={active===item.id} className={active===item.id?s.activeTab:undefined} onClick={()=>onChange(item.id)}>{item.label}{item.count!==undefined&&<span>{item.count}</span>}</button>)}</div>;
+  return <div className={s.tabs} role="tablist">{items.map(item=><button key={item.id} role="tab" aria-selected={active===item.id} className={active===item.id?s.activeTab:undefined} onClick={()=>onChange(item.id)}>{item.label}{item.count!==undefined&&<span>{formatNumericText(item.count)}</span>}</button>)}</div>;
 }
 export function Breadcrumb({items}:{items:string[]}){return <div className={s.breadcrumb}>{items.map((item,i)=><span key={i}>{i>0&&<ChevronRight size={12}/>}<span>{item}</span></span>)}</div>;}

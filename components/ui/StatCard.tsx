@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { panelClasses } from "@/components/ui/panel";
@@ -17,7 +18,7 @@ export function StatCard({ label, value, icon, className }: StatCardProps) {
           {icon}
         </span>
       )}
-      <p className="truncate text-2xl font-semibold text-foreground">{value}</p>
+      <p className="truncate text-2xl font-semibold text-foreground">{formatNumericText(value)}</p>
       <p className="mt-1 text-sm text-foreground/50">{label}</p>
     </div>
   );

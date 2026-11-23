@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { LearningDashboardOverview } from "@/components/learning-reports/ReportPage";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -31,15 +32,15 @@ export default async function TanwirAdminDashboard({searchParams}:{searchParams:
       ]} />
       <div className="tanwir-dashboard-links flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-tanwir-muted">
         <Link href="/admin/tanwir/rekap-tugas" className="hover:text-tanwir-primary">Rekap tugas & hasil peserta</Link>
-        <Link href="/admin/tanwir/kelompok" className="hover:text-tanwir-primary">{summary.groups} kelompok pembinaan</Link>
-        <Link href="/admin/tanwir/tugas" className="hover:text-tanwir-primary">{summary.pending} setoran menunggu review</Link>
+        <Link href="/admin/tanwir/kelompok" className="hover:text-tanwir-primary">{formatNumericText(summary.groups)} kelompok pembinaan</Link>
+        <Link href="/admin/tanwir/tugas" className="hover:text-tanwir-primary">{formatNumericText(summary.pending)} setoran menunggu review</Link>
       </div>
 
       <div className="tanwir-dashboard-body grid gap-4 lg:grid-cols-[2fr_1fr]">
         <section className={panelClasses("tanwir-map-panel p-4")}>
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-semibold text-foreground">Sebaran guru & peserta</h2>
-            <p className="text-xs text-foreground/50">{points.length} lokasi dari alamat kelurahan</p>
+            <p className="text-xs text-foreground/50">{formatNumericText(points.length)} lokasi dari alamat kelurahan</p>
           </div>
           {points.length ? (
             <SpreadMap points={points} />
@@ -52,9 +53,9 @@ export default async function TanwirAdminDashboard({searchParams}:{searchParams:
 
         <section className={panelClasses("tanwir-program-panel p-4")}>
           <h2 className="mb-4 font-semibold text-foreground">Pembinaan</h2>
-          <div className="tanwir-program-count"><strong>{summary.groups}</strong><span>Kelompok pembinaan</span></div>
+          <div className="tanwir-program-count"><strong>{formatNumericText(summary.groups)}</strong><span>Kelompok pembinaan</span></div>
           <Link href="/admin/tanwir/kelompok" className="tanwir-program-link">Kelola kelompok ↗</Link>
-          <Link href="/admin/tanwir/tugas" className="tanwir-program-link">{summary.pending} setoran menunggu review ↗</Link>
+          <Link href="/admin/tanwir/tugas" className="tanwir-program-link">{formatNumericText(summary.pending)} setoran menunggu review ↗</Link>
         </section>
       </div>
       </div>

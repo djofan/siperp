@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { listReviewQueue } from "@/modules/tanwir/api/submissions";
@@ -27,18 +28,18 @@ export default async function GuruReviewQueuePage({ searchParams }: { searchPara
               href={`/tanwir/guru/koreksi/${item.id}`}
               className="flex items-center gap-4 rounded-2xl bg-tanwir-surface p-4 ring-1 ring-tanwir-line transition-colors hover:bg-tanwir-paper sm:p-5"
             >
-              <span className="w-6 shrink-0 text-center text-sm tabular-nums text-tanwir-muted">{index + 1}</span>
+              <span className="w-6 shrink-0 text-center text-sm tabular-nums text-tanwir-muted">{formatNumericText(index + 1)}</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{item.student.user.name}</p>
                 <p className="truncate text-sm text-tanwir-muted">{item.task.title}</p>
                 <div className="mt-2 flex flex-wrap gap-1.5 sm:hidden">
                   <TypePill type={item.task.type} />
-                  {item.attemptsCount > 1 && <Pill tone="gold">Percobaan ke-{item.attemptsCount}</Pill>}
+                  {item.attemptsCount > 1 && <Pill tone="gold">Percobaan ke-{formatNumericText(item.attemptsCount)}</Pill>}
                 </div>
               </div>
               <div className="hidden flex-col items-end gap-1.5 sm:flex">
                 <div className="flex gap-1.5">
-                  {item.attemptsCount > 1 && <Pill tone="gold">Percobaan ke-{item.attemptsCount}</Pill>}
+                  {item.attemptsCount > 1 && <Pill tone="gold">Percobaan ke-{formatNumericText(item.attemptsCount)}</Pill>}
                   {item.isLate && <Pill tone="danger">Terlambat</Pill>}
                   <TypePill type={item.task.type} />
                 </div>

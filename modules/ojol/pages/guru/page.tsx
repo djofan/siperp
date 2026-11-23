@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireOjolMember } from "@/modules/ojol/api/access";
 import { teacherSummary } from "@/modules/ojol/api/dashboard";
@@ -84,7 +85,7 @@ export default async function GuruHomePage() {
                     </div>
                     <p className="mt-2 truncate font-medium">{task.title}</p>
                     <p className="mt-0.5 text-xs text-ojol-muted">
-                      {task._count.submissions}/{audience} terkumpul · tenggat {deadlineLabel(task.deadline)}
+                      {formatNumericText(task._count.submissions)}/{formatNumericText(audience)} terkumpul · tenggat {deadlineLabel(task.deadline)}
                     </p>
                   </Link>
                 );

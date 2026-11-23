@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { Icon } from "@/modules/ojol/components/icons";
 import { PageIntro } from "@/modules/ojol/components/site/PageIntro";
@@ -19,7 +20,7 @@ export default function OjolJoinPage() {
           {JOIN_STEPS.map((step, index) => (
             <li key={step.title} className="flex gap-5 rounded-3xl bg-ojol-surface p-7 ring-1 ring-ojol-line">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ojol-primary font-[family-name:var(--font-ojol-display)] text-lg font-extrabold text-white">
-                {index + 1}
+                {formatNumericText(index + 1)}
               </span>
               <div>
                 <h2 className="text-lg font-semibold">{step.title}</h2>

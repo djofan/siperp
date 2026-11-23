@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { teacherSummary } from "@/modules/tanwir/api/dashboard";
@@ -87,7 +88,7 @@ export default async function GuruHomePage() {
                       <li key={member.id} className="flex items-center justify-between gap-3 text-sm">
                         <span className={member.user.isActive ? "" : "text-tanwir-muted line-through"}>{member.user.name}</span>
                         <span className="text-xs tabular-nums text-tanwir-muted">
-                          {member._count.submissions} setoran · {member._count.students} santri
+                          {formatNumericText(member._count.submissions)} setoran · {formatNumericText(member._count.students)} santri
                         </span>
                       </li>
                     ))}

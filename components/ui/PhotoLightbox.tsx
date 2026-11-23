@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 /* eslint-disable @next/next/no-img-element -- display original public gallery images without an optimizer or cropping */
 
 import * as Dialog from "@radix-ui/react-dialog";
@@ -18,7 +20,7 @@ export function PhotoLightbox({photos,title,index,onChange,onClose}:{photos:Phot
       <Dialog.Overlay className={styles.overlay}/>
       <Dialog.Content className={styles.content} onOpenAutoFocus={()=>{opener.current=document.activeElement instanceof HTMLElement?document.activeElement:null;}} onCloseAutoFocus={event=>{event.preventDefault();if(opener.current?.isConnected)opener.current.focus({preventScroll:true});}} onKeyDown={event=>{if(event.key==="ArrowLeft"||event.key==="ArrowRight"){event.preventDefault();move(event.key==="ArrowRight"?1:-1);}}}>
         <header className={styles.header}>
-          <div><Dialog.Title className={styles.title}>{title}</Dialog.Title><Dialog.Description className={styles.description}>Galeri foto · {active+1} dari {photos.length}</Dialog.Description></div>
+          <div><Dialog.Title className={styles.title}>{title}</Dialog.Title><Dialog.Description className={styles.description}>Galeri foto · {formatNumericText(active+1)} dari {formatNumericText(photos.length)}</Dialog.Description></div>
           <Dialog.Close className={styles.close} aria-label="Tutup foto"><X size={21}/></Dialog.Close>
         </header>
         <div className={styles.stage} onPointerDown={event=>{if(event.pointerType==="touch"&&event.isPrimary)touch.current={id:event.pointerId,x:event.clientX,y:event.clientY};}} onPointerCancel={()=>{touch.current=null;}} onPointerUp={event=>{const start=touch.current;touch.current=null;if(!start||start.id!==event.pointerId)return;const dx=event.clientX-start.x,dy=event.clientY-start.y;if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.25)move(dx<0?1:-1);}}>
@@ -27,7 +29,7 @@ export function PhotoLightbox({photos,title,index,onChange,onClose}:{photos:Phot
         </div>
         <footer className={styles.footer}>
           <div>{photo?.isDemo&&<span className={styles.demo}>Foto contoh</span>}<p>{photo?.caption||`Dokumentasi ${title}`}</p></div>
-          <span className={styles.counter} aria-live="polite" aria-atomic="true">{active+1} / {photos.length}</span>
+          <span className={styles.counter} aria-live="polite" aria-atomic="true">{formatNumericText(active+1)} / {formatNumericText(photos.length)}</span>
         </footer>
       </Dialog.Content>
     </Dialog.Portal>

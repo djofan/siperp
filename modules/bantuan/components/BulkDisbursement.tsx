@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCheck, Copy, FileText, ImagePlus, LoaderCircle, RefreshCw, Trash2, Wallet } from "lucide-react";
@@ -37,7 +39,7 @@ export function BulkDisbursement({ selectionKey, onSaved, ...props }: Props) {
   return <>
     {allowed && !rows && <section className={s.toolbar} aria-label="Pencairan sekaligus">
       <div className={s.intro}><span className={s.icon}><Wallet size={21}/></span><div><h3>Catat pencairan sekaligus</h3><p>Centang pengajuan yang sudah ditransfer, lalu simpan dalam satu form. Maksimal 50 pengajuan per pencatatan.</p></div></div>
-      <div className={s.controls}><label><input type="checkbox" checked={batchEligible.every(row => selected[row.id])} disabled={refreshing} onChange={event => setSelection({ key: selectionKey, ids: event.target.checked ? Object.fromEntries(batchEligible.map(row => [row.id, true])) : {} })}/>{eligible.length > 50 ? `Pilih 50 teratas (dari ${eligible.length})` : `Pilih semua di halaman ini (${eligible.length})`}</label><span>{chosen.length} dipilih · {money(chosen.reduce((sum, row) => sum + (row.amount ?? 0), 0))}</span><button className={s.primary} type="button" disabled={!chosen.length || refreshing} onClick={() => { setSuccess(""); setRows([...chosen]); }}><CheckCheck size={17}/>Tandai sudah dicairkan</button></div>
+      <div className={s.controls}><label><input type="checkbox" checked={batchEligible.every(row => selected[row.id])} disabled={refreshing} onChange={event => setSelection({ key: selectionKey, ids: event.target.checked ? Object.fromEntries(batchEligible.map(row => [row.id, true])) : {} })}/>{eligible.length > 50 ? `Pilih 50 teratas (dari ${eligible.length})` : `Pilih semua di halaman ini (${eligible.length})`}</label><span>{formatNumericText(chosen.length)} dipilih · {money(chosen.reduce((sum, row) => sum + (row.amount ?? 0), 0))}</span><button className={s.primary} type="button" disabled={!chosen.length || refreshing} onClick={() => { setSuccess(""); setRows([...chosen]); }}><CheckCheck size={17}/>Tandai sudah dicairkan</button></div>
     </section>}
     {success && <p className={s.success} role="status">{success}</p>}
     {!rows && <ApplicationList {...props} selection={allowed ? { ids: selected, onChange: select, limit: 50 } : undefined}/>}
@@ -98,12 +100,12 @@ function TransferForm({ rows, staff, onClose, onSaved, onReload }: { rows: AidAp
     <header className={s.pageHeader}><div><span className={s.eyebrow}>PENCATATAN PENCAIRAN</span><h2 ref={heading} tabIndex={-1} id="bulk-disbursement-title">Catat transfer, sekaligus.</h2><p>Catat pengajuan yang sudah dicairkan. Data penerima, rekening, dan bukti boleh dikosongkan.</p></div><button type="button" className={s.cancel} disabled={busy || evidenceBusy} onClick={onClose}><ArrowLeft size={16}/>Kembali ke pilihan</button></header>
     <div className={s.steps} aria-label="Langkah pencairan"><span><CheckCheck size={15}/>1. Pilih pengajuan</span><strong>2. Lengkapi transfer</strong><span>3. Simpan pencairan</span></div>
     <form onSubmit={save}><fieldset disabled={busy || evidenceBusy} className={s.fieldset}>
-      <div className={s.summary}><div><small>Pengajuan dipilih</small><strong>{rows.length} pengajuan</strong></div><div><small>Total dicairkan</small><strong>{money(total)}</strong></div><label>Tanggal transfer<input type="date" max={localToday()} value={date} onChange={event => { setDate(event.target.value); }}/></label></div>
+      <div className={s.summary}><div><small>Pengajuan dipilih</small><strong>{formatNumericText(rows.length)} pengajuan</strong></div><div><small>Total dicairkan</small><strong>{money(total)}</strong></div><label>Tanggal transfer<input type="date" max={localToday()} value={date} onChange={event => { setDate(event.target.value); }}/></label></div>
       <p className={s.help}>Nama penyalur sudah diisikan jika tersedia. Bank dan rekening dapat diisi jika tersedia. Gunakan tombol salin jika beberapa pengajuan memiliki penyalur yang sama.</p>
       <details className={s.sharedBank}><summary>Bank semua transfer sama? Isi sekali</summary><div><label>Nama bank<input maxLength={191} value={sharedBank} onChange={event => setSharedBank(event.target.value)} placeholder="Contoh: Mandiri"/></label><button type="button" className={s.copy} disabled={!sharedBank.trim()} onClick={() => { setTransfers(current => Object.fromEntries(Object.entries(current).map(([id, value]) => [id, { ...value, bank: sharedBank.trim() }]))); }}>Terapkan bank ke semua</button></div></details>
-      <div className={s.sectionHeading}><div><h3>Rincian penerima transfer</h3><p>Nominal sesuai persetujuan. Periksa setiap rekening sebelum menyimpan.</p></div><span>{rows.length} pengajuan</span></div>
+      <div className={s.sectionHeading}><div><h3>Rincian penerima transfer</h3><p>Nominal sesuai persetujuan. Periksa setiap rekening sebelum menyimpan.</p></div><span>{formatNumericText(rows.length)} pengajuan</span></div>
       <div className={s.rows}>{rows.map((row, index) => { const transfer = transfers[row.id]; const matches = rows.filter(other => other.id !== row.id && sameDistributor(row, other)).length; return <section className={s.row} key={row.id} aria-label={`Transfer ${row.name}`}>
-        <header><div><span className={s.index}>{index + 1}</span><div><h3>{row.name}</h3><small>{row.number} · {row.program}</small></div></div><strong>{money(row.amount)}</strong></header>
+        <header><div><span className={s.index}>{formatNumericText(index + 1)}</span><div><h3>{row.name}</h3><small>{row.number} · {row.program}</small></div></div><strong>{money(row.amount)}</strong></header>
         <div className={s.routing}><div><small>Jenis pengajuan</small><strong>{row.intakeType === "other" ? "Pengajuan lainnya" : "Bantuan perorangan"}</strong></div><div><small>Tipe penyaluran</small><strong>{row.distributionType === "direct" ? "Bendahara langsung ke penerima" : row.distributionType === "manual" ? "Melalui penyalur manual" : row.distributionType === "verifier" ? "Melalui petugas penyalur" : "Belum ditentukan"}</strong></div></div>
         <div className={s.fields}>
           <label>Nama penerima transfer<input maxLength={191} autoComplete="off" value={transfer.recipientName} onChange={event => set(row.id, "recipientName", event.target.value)}/></label>
@@ -112,11 +114,11 @@ function TransferForm({ rows, staff, onClose, onSaved, onReload }: { rows: AidAp
           <label>Nomor rekening<input maxLength={191} inputMode="numeric" autoComplete="off" placeholder="Nomor rekening tujuan" value={transfer.account} onChange={event => set(row.id, "account", event.target.value)}/></label>
         </div>
         <div className={s.rowBottom}><TransferEvidence file={transfer.file} name={row.name} onChange={file => changeFile(row.id, file)} onError={setError}/>
-        {matches > 0 && <button className={s.copy} type="button" disabled={!transfer.bank.trim() && !transfer.account.trim() && !transfer.recipientName.trim()} onClick={() => apply(row)}><Copy size={14}/>Salin rekening ke {matches} pengajuan dengan penyalur sama</button>}</div>
+        {matches > 0 && <button className={s.copy} type="button" disabled={!transfer.bank.trim() && !transfer.account.trim() && !transfer.recipientName.trim()} onClick={() => apply(row)}><Copy size={14}/>Salin rekening ke {formatNumericText(matches)} pengajuan dengan penyalur sama</button>}</div>
       </section>; })}</div>
       <div className={s.review}><p className={s.optionalNotice}>Semua isian bersifat opsional. Jika tanggal dikosongkan, digunakan tanggal hari ini. Nominal mengikuti dana yang telah disetujui.</p>
       {error && <div className={s.error} role="alert"><p>{error}</p><button type="button" onClick={onReload}>Muat ulang daftar pengajuan</button><small>Data form akan ditutup. Bukti yang sudah diunggah tetap tersimpan.</small></div>}
-      </div><footer className={s.footer}><div className={s.footerTotal}><small>Total pencairan · {rows.length} pengajuan</small><strong>{money(total)}</strong></div><button type="button" className={s.cancel} onClick={onClose}>Batal</button><button className={s.primary} disabled={evidenceBusy}>{busy ? <LoaderCircle size={17} className={s.spinner}/> : <CheckCheck size={17}/>} {busy ? progress || "Menyimpan…" : `Simpan ${rows.length} pencairan`}</button></footer>
+      </div><footer className={s.footer}><div className={s.footerTotal}><small>Total pencairan · {formatNumericText(rows.length)} pengajuan</small><strong>{money(total)}</strong></div><button type="button" className={s.cancel} onClick={onClose}>Batal</button><button className={s.primary} disabled={evidenceBusy}>{busy ? <LoaderCircle size={17} className={s.spinner}/> : <CheckCheck size={17}/>} {busy ? progress || "Menyimpan…" : `Simpan ${rows.length} pencairan`}</button></footer>
     </fieldset></form>
   </section>;
 }

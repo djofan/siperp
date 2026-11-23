@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
@@ -40,7 +41,7 @@ export default async function GuruReviewPage({ params }: { params: Promise<{ id:
         <p className="mt-1 text-sm text-tanwir-muted">
           {student.code}
           {student.group ? ` · ${student.group.name}` : ""}
-          {student.teachingPlace ? ` · ${student.teachingPlace}` : ""} · percobaan ke-{submission.attemptsCount} · {formatDateTime(submission.submittedAt)}
+          {student.teachingPlace ? ` · ${student.teachingPlace}` : ""} · percobaan ke-{formatNumericText(submission.attemptsCount)} · {formatDateTime(submission.submittedAt)}
         </p>
       </header>
 

@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import { useId, useRef, useState } from "react";
 import type { BantuanStaff } from "@/contracts/modules/bantuan";
 import s from "./Workspace.module.css";
@@ -20,7 +22,7 @@ export function VerifierPicker({staff,name,initialId="",required=true,label="Ver
     {open&&<div id={id+"-list"} role="listbox" aria-label={`Hasil pencarian ${label}`} style={{maxHeight:240,overflowY:"auto",background:"white",borderRadius:12,padding:6,boxShadow:"0 6px 20px #173d2514"}}>
       {!options.length&&<p role="status">Tidak ada petugas yang cocok.</p>}
       {options.map((person,index)=><button key={person.id} id={id+"-"+index} role="option" aria-selected={person.id===selected} type="button" onMouseDown={event=>event.preventDefault()} onClick={()=>choose(person)} style={{display:"block",width:"100%",textAlign:"left",padding:"10px 12px",border:0,borderRadius:8,background:index===cursor?"#edf4e6":"white",color:"#173d25"}}><strong>{person.name}</strong><small style={{display:"block"}}>{[person.code,person.region].filter(Boolean).join(" · ")}</small></button>)}
-      {matches.length>50&&<small>Ketik lebih spesifik untuk mempersempit {matches.length} petugas.</small>}
+      {matches.length>50&&<small>Ketik lebih spesifik untuk mempersempit {formatNumericText(matches.length)} petugas.</small>}
     </div>}
     <small>{selected?"Petugas sudah dipilih. Ketik lagi untuk mengganti.":required?"Ketik lalu klik nama petugas, atau gunakan panah dan Enter.":"Kosongkan jika petugas belum memiliki akun."}</small>
   </div>;

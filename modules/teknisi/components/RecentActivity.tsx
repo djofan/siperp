@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { dateTime } from "../api/queries";
 import { isStatus,statuses } from "../api/policy";
@@ -16,7 +17,7 @@ function activityLabel(event:Activity){
 }
 export function RecentActivity({events,root}:{events:Activity[];root:string}){
  return <section className={`tech-box ${styles.panel}`} aria-label="Aktivitas terbaru">
-  <header className={styles.header}><h2>Aktivitas terbaru</h2><span>{events.length} terbaru</span></header>
+  <header className={styles.header}><h2>Aktivitas terbaru</h2><span>{formatNumericText(events.length)} terbaru</span></header>
   {events.length?<ol className={styles.list}>{events.map(event=><li key={event.id}>
    <Link href={`${root}/tiket/${event.ticket.id}`} className={styles.row}>
     <span className={styles.icon} aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3h8v4H8zM6 5H4v16h16V5h-2M8 12h8M8 16h5"/></svg></span>

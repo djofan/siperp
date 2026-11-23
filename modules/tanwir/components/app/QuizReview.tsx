@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/modules/tanwir/components/icons";
 import { optionsOf, type QuizQuestionView } from "./quiz-options";
@@ -19,7 +20,7 @@ export function QuizReview({
           <li key={question.id} className="rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line">
             <div className="flex items-start justify-between gap-3">
               <p className="font-medium leading-relaxed">
-                <span className="mr-2 tabular-nums text-tanwir-muted">{index + 1}.</span>
+                <span className="mr-2 tabular-nums text-tanwir-muted">{formatNumericText(index + 1)}.</span>
                 {question.question}
               </p>
               {answer && (

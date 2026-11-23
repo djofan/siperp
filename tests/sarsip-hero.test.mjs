@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import vm from 'node:vm';
 import ts from 'typescript';
+import { createRequire } from 'node:module';
+const nativeRequire=createRequire(import.meta.url);
 
 const brand = { DEFAULT_HERO_IMAGE: '/aid/gempa-ntt.jpg', SARSIP_LOGO: '/sarsip-logo.png' };
 const photo = '/uploads/sarsip/12345678-1234-1234-1234-123456789012.webp';
@@ -26,7 +28,7 @@ function component(path, name, extras = {}) {
   }).outputText, {
     exports, Error, FormData, URL: { createObjectURL: () => 'blob:preview', revokeObjectURL() {} },
     ...extras,
-    require: name => ({
+    require: name => name === "@/lib/number-format" ? nativeRequire(name) : ({
       react: hooks,
       'react/jsx-runtime': { jsx, jsxs: jsx },
       'next/image': { default: 'Image' },

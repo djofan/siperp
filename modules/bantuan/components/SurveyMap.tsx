@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, Crosshair, ExternalLink, LocateFixed, MapPin, Minus, Plus, Route, Clock3, Navigation, RotateCcw } from "lucide-react";
@@ -322,7 +324,7 @@ function SurveyMapContent({ row, address, editable = false, initiallyExpanded = 
         <p className={s.hint}>Rute peta menggunakan profil mobil, tanpa lalu lintas langsung. *Waktu motor adalah perkiraan dengan asumsi 30 km/jam, bukan rute khusus motor; periksa akses jalan dan hindari jalan tol.</p>
         {routeError&&<p role="alert" className={s.error}>{routeError}</p>}
         {destinationLabel&&<p className={s.hint}>{destinationLabel}</p>}
-        {origin?.accuracy!==undefined&&<p className={s.hint}>Akurasi GPS sekitar {Math.ceil(origin.accuracy)} m.</p>}
+        {origin?.accuracy!==undefined&&<p className={s.hint}>Akurasi GPS sekitar {formatNumericText(Math.ceil(origin.accuracy))} m.</p>}
         {editable&&<div className={s.correction}><button type="button" className={s.secondary} disabled={mapState!=="ready"||saveState==="loading"} aria-pressed={selecting} onClick={()=>setSelecting(value=>!value)}><Crosshair size={15}/>{selecting?"Batal memilih":"Sesuaikan titik rumah di peta"}</button>{destination&&onDestination&&<button type="button" className={s.textButton} disabled={saveState==="loading"} onClick={()=>void save()}><Check size={14}/>{saveState==="loading"?"Menyimpan...":"Simpan titik rumah"}</button>}</div>}
         <div aria-live="polite">{saveState==="success"&&<p className={s.success}>Titik tujuan tersimpan.</p>}{saveState==="error"&&<p className={s.error}>{saveError}</p>}</div>
         <a className={s.navigation} href={destination?surveyDirections(destination,origin):`https://www.google.com/maps/search/?${new URLSearchParams({api:"1",query:fullAddress})}`} target="_blank" rel="noopener noreferrer">Buka di Google Maps <ExternalLink size={14}/></a>

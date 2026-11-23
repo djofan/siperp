@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireOjolMember } from "@/modules/ojol/api/access";
 import { studentGroupInfo } from "@/modules/ojol/api/dashboard";
@@ -55,7 +56,7 @@ export default async function PesertaHomePage() {
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-ojol-gold">Kelompok</p>
               <p className="mt-2 text-lg font-semibold">{group.name}</p>
               <p className="text-sm text-ojol-muted">
-                {group.code} · {group._count.members} peserta
+                {group.code} · {formatNumericText(group._count.members)} peserta
               </p>
               {group.description && <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-ojol-muted">{group.description}</p>}
             </Card>

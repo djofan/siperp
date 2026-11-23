@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { requireAcademyAdmin } from "../../../api/admin-access";
 import { academyPage } from "../../../api/page-data";
 import type { AcademyCohort } from "../../../api/page-contracts";
@@ -25,7 +26,7 @@ export default async function IntakePage({ searchParams }: { searchParams: Promi
           <FormField label="Angkatan" htmlFor="participant-cohort">
             <Select id="participant-cohort" name="cohortId" required defaultValue={cohort}>
               <option value="" disabled>Pilih angkatan</option>
-              {cohorts.map(item => <option key={item.id} value={item.id}>{item.title} · {item.participants_count} peserta</option>)}
+              {cohorts.map(item => <option key={item.id} value={item.id}>{item.title} · {formatNumericText(item.participants_count)} peserta</option>)}
             </Select>
           </FormField>
         </ActionForm>

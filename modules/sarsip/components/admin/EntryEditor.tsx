@@ -1,4 +1,6 @@
 "use client";
+import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
+
 import { GalleryEditor } from "./GalleryEditor";
 import type { SarsipGalleryPhoto } from "@/contracts/modules/sarsip";
 import { useEffect, useRef, useState, type FormEvent } from "react";
@@ -78,7 +80,7 @@ export function EntryEditor({ kind, entry }: { kind: string; entry?: Entry }) {
       }}>Hapus gambar</button></>}
     </div>
     <GalleryEditor value={gallery} onChange={setGallery} disabled={busy || galleryBusy} onUploadingChange={setGalleryBusy}/>
-    {kind === "campaign" && <label className="block text-sm font-medium">Target donasi (Rp)<input name="targetAmount" required type="number" step="1" min="1" max="2147483647" defaultValue={entry?.targetAmount || ""} className={field}/></label>}
+    {kind === "campaign" && <label className="block text-sm font-medium">Target donasi (Rp)<RupiahNumberInput name="targetAmount" required type="number" step="1" min="1" max="2147483647" defaultValue={entry?.targetAmount || ""} className={field}/></label>}
     <label className="block text-sm font-medium">Status<select name="status" defaultValue={entry?.status ?? "draft"} className={field}><option value="draft">Draft — belum tampil publik</option><option value="published">{kind === "campaign" ? "Publik — donasi dibuka" : "Dipublikasikan"}</option>{(kind !== "berita" || entry?.status === "completed") && <option value="completed">Selesai</option>}{entry?.status === "archived" && <option value="archived">Diarsipkan</option>}</select></label>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
     <div className="flex flex-wrap gap-3"><button disabled={busy || galleryBusy} className="rounded-full bg-orange-600 px-6 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? "Memproses…" : "Simpan"}</button>{entry && entry.status !== "archived" && <button type="button" disabled={busy || galleryBusy} onClick={archive} className="rounded-full border border-border px-6 py-3 text-sm disabled:opacity-50">Arsipkan</button>}</div>

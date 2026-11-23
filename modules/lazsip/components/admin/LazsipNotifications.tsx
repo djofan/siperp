@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -59,13 +61,13 @@ export function LazsipNotifications({ pendingCount }: { pendingCount: number }) 
 
   return <div ref={container} className={styles.root}>
     <button ref={trigger} type="button" className={styles.trigger} aria-label={`Notifikasi LAZSIP${count ? `, ${count} perlu dipantau` : ""}`} aria-expanded={open} aria-controls="lazsip-notifications" onClick={() => setOpen(!open)}>
-      <Bell size={20} />{count > 0 && <span className={styles.badge}>{count > 99 ? "99+" : count}</span>}
+      <Bell size={20} />{count > 0 && <span className={styles.badge}>{formatNumericText(count > 99 ? "99+" : count)}</span>}
     </button>
     {open && <section id="lazsip-notifications" aria-label="Notifikasi LAZSIP" className={styles.panel}>
       <header><div><h2>Aktivitas LAZSIP</h2><p>Transaksi terbaru & tindak lanjut</p></div><button type="button" aria-label="Tutup notifikasi" onClick={() => setOpen(false)}><X size={18} /></button></header>
       <div className={styles.content}>
-        <Link href="/admin/lazsip/transaksi" className={styles.attention} onClick={() => setOpen(false)}><span><strong>{summary?.counts.pendingTransactions ?? pendingCount} transaksi menunggu</strong><small>Pantau pembayaran dan status terbaru.</small></span><ArrowUpRight size={17} /></Link>
-        {!!summary?.newApplicants && <Link href="/admin/lazsip/pendaftar" className={styles.attention} onClick={() => setOpen(false)}><span><strong>{summary.newApplicants} pendaftar baru</strong><small>Periksa pengajuan program yang masuk.</small></span><ArrowUpRight size={17} /></Link>}
+        <Link href="/admin/lazsip/transaksi" className={styles.attention} onClick={() => setOpen(false)}><span><strong>{formatNumericText(summary?.counts.pendingTransactions ?? pendingCount)} transaksi menunggu</strong><small>Pantau pembayaran dan status terbaru.</small></span><ArrowUpRight size={17} /></Link>
+        {!!summary?.newApplicants && <Link href="/admin/lazsip/pendaftar" className={styles.attention} onClick={() => setOpen(false)}><span><strong>{formatNumericText(summary.newApplicants)} pendaftar baru</strong><small>Periksa pengajuan program yang masuk.</small></span><ArrowUpRight size={17} /></Link>}
         <div className={styles.subtitle}><h3>Transaksi masuk terbaru</h3><button type="button" disabled={loading} aria-label="Perbarui notifikasi" onClick={() => setRevision(revision + 1)}><RefreshCw size={15} /></button></div>
         {loading && <p role="status" className={styles.note}>Memperbarui aktivitas…</p>}
         {error && <p role="alert" className={styles.error}>{error}</p>}

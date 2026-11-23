@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useState, type FormEvent } from "react";
 import { Copy, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Plus, RefreshCw, Wallet } from "lucide-react";
@@ -144,7 +146,7 @@ export function FundingRequests({ viewer, onChanged }: { viewer: BantuanViewer; 
           return next;
         })}>{ready.data.length > 0 && ready.data.every(row => !!selected[row.id]) ? "Lepas halaman ini" : "Pilih halaman ini"}</button></div>
         <div className={s.selectAllBar}>
-          <div><strong>Pilih bantuan untuk diajukan dananya</strong><p>Semua halaman sesuai filter · maksimal 100 pengajuan per grup.</p><span aria-live="polite">{selection.length} pengajuan dipilih</span></div>
+          <div><strong>Pilih bantuan untuk diajukan dananya</strong><p>Semua halaman sesuai filter · maksimal 100 pengajuan per grup.</p><span aria-live="polite">{formatNumericText(selection.length)} pengajuan dipilih</span></div>
           <div className={s.selectAllActions}><button type="button" className={s.selectAllButton} disabled={!!busy||readyLoading||!!readyError||!ready.summary.count} onClick={()=>void selectAll()}><CheckCircle2 size={19}/>{busy==="select-all"?"Memilih pengajuan…":`Pilih semua (${Math.min(ready.summary.count,100)})`}</button>{selection.length>0&&<button type="button" className={s.clearSelection} disabled={!!busy} onClick={()=>setSelected({})}>Hapus pilihan</button>}</div>
         </div>
         {readyError && <p className={s.error} role="alert">{readyError}</p>}
@@ -153,9 +155,9 @@ export function FundingRequests({ viewer, onChanged }: { viewer: BantuanViewer; 
           {ready.data.map(row => <tr key={row.id} className={selected[row.id] ? s.selected : undefined}><td><input type="checkbox" checked={!!selected[row.id]} disabled={readyLoading || !!readyError || !selected[row.id] && selection.length >= 100} aria-label={`Pilih ${row.name}, ${row.number}`} onChange={() => toggle(row)}/></td><td><strong>{row.name}</strong><small>{row.number}</small></td><td>{row.program}<small>{row.region}</small></td><td className={s.amount}>{money(row.amount)}</td></tr>)}
         </tbody></table></div>
         <Pagination page={readyPage} last={ready.last_page} disabled={readyLoading || !!busy} onChange={value => { setReadyPage(value); setReadyLoading(true); }}/>
-        {selection.length > 0 && <details className={s.selection}><summary>Lihat {selection.length} bantuan terpilih, termasuk di luar filter</summary><div className={s.selectionList}>{selection.map(row => <div key={row.id}><span>{row.name} <small>{row.number}</small></span><strong>{money(row.amount)}</strong><button type="button" className={s.textButton} onClick={() => toggle(row)} aria-label={`Lepas ${row.name}`}>Lepas</button></div>)}</div></details>}
+        {selection.length > 0 && <details className={s.selection}><summary>Lihat {formatNumericText(selection.length)} bantuan terpilih, termasuk di luar filter</summary><div className={s.selectionList}>{selection.map(row => <div key={row.id}><span>{row.name} <small>{row.number}</small></span><strong>{money(row.amount)}</strong><button type="button" className={s.textButton} onClick={() => toggle(row)} aria-label={`Lepas ${row.name}`}>Lepas</button></div>)}</div></details>}
         {selection.length>0&&<DescriptionCopy title={title} items={selection} notes={notes}/>}
-        <div className={s.createFooter}><div><span>{selection.length} / 100 bantuan terpilih</span><strong>{money(total)}</strong></div><div className={s.actions}><button type="button" className={s.secondary} disabled={!selection.length} onClick={() => setSelected({})}>Kosongkan pilihan</button><button className={s.primary} disabled={!selection.length || !!busy || readyLoading || !!readyError}>{busy === "create" ? "Mengajukan…" : "Tandai sedang diajukan"}</button></div></div>
+        <div className={s.createFooter}><div><span>{formatNumericText(selection.length)} / 100 bantuan terpilih</span><strong>{money(total)}</strong></div><div className={s.actions}><button type="button" className={s.secondary} disabled={!selection.length} onClick={() => setSelected({})}>Kosongkan pilihan</button><button className={s.primary} disabled={!selection.length || !!busy || readyLoading || !!readyError}>{busy === "create" ? "Mengajukan…" : "Tandai sedang diajukan"}</button></div></div>
       </fieldset></form>
     </section>}
     {!creating&&<section aria-labelledby="funding-list-title"><div className={s.sectionHeading}><div><h2 id="funding-list-title">{status?labels[status as keyof typeof labels]:"Grup pengajuan dana"}</h2><p>Buka grup yang sama untuk menyalin rincian atau mencatat keputusan dari web pengajuan dana.</p></div></div>
@@ -169,7 +171,7 @@ export function FundingRequests({ viewer, onChanged }: { viewer: BantuanViewer; 
 
 function Pagination({ page, last, disabled, onChange }: { page: number; last: number; disabled: boolean; onChange: (page: number) => void }) {
   if(last<=1)return null;
-  return <nav className={s.pagination} aria-label="Halaman daftar"><button type="button" className={s.secondary} disabled={disabled || page <= 1} onClick={() => onChange(page - 1)}><ChevronLeft size={15}/>Sebelumnya</button><span>Halaman {page} / {last}</span><button type="button" className={s.secondary} disabled={disabled || page >= last} onClick={() => onChange(page + 1)}>Berikutnya<ChevronRight size={15}/></button></nav>;
+  return <nav className={s.pagination} aria-label="Halaman daftar"><button type="button" className={s.secondary} disabled={disabled || page <= 1} onClick={() => onChange(page - 1)}><ChevronLeft size={15}/>Sebelumnya</button><span>Halaman {formatNumericText(page)} / {formatNumericText(last)}</span><button type="button" className={s.secondary} disabled={disabled || page >= last} onClick={() => onChange(page + 1)}>Berikutnya<ChevronRight size={15}/></button></nav>;
 }
 
 function FundingCard({ row, canManage, busy, saving, onDecide }: { row: FundingBatch; canManage: boolean; busy: boolean; saving: boolean; onDecide: (row: FundingBatch, decision: "approved" | "rejected", reason: string) => Promise<void> }) {
@@ -178,7 +180,7 @@ function FundingCard({ row, canManage, busy, saving, onDecide }: { row: FundingB
   return <article className={s.card}>
     <div className={s.cardTop}><span className={`${s.badge} ${s[row.status]}`}>{labels[row.status]}</span><span className={s.muted}>{day(row.createdAt)}</span></div>
     <h3>{row.title}</h3><small className={s.number}>{row.number}</small>
-    <div className={s.cardTotal}><div><span>Total pengajuan</span><strong>{money(row.totalAmount)}</strong></div><span>{row.items.length} bantuan</span></div>
+    <div className={s.cardTotal}><div><span>Total pengajuan</span><strong>{money(row.totalAmount)}</strong></div><span>{formatNumericText(row.items.length)} bantuan</span></div>
     <div className={s.distributors}><span>Penyalur bantuan</span><strong>{[...new Set(row.items.map(item=>item.distributorName||"Belum ditetapkan"))].join(" · ")}</strong></div>
     {row.notes && <p className={s.notes}>{row.notes}</p>}
     {row.decidedAt && <p className={s.muted}>Keputusan dicatat {day(row.decidedAt)}</p>}
@@ -190,14 +192,14 @@ function FundingCard({ row, canManage, busy, saving, onDecide }: { row: FundingB
     </div>}
       {canManage && row.status === "submitted" && (changed ? <p className={s.error}>Isi kartu sudah berubah tahap atau nominal. Periksa pengajuan terkait sebelum mencatat keputusan.</p> : <form className={s.decisionForm} onSubmit={event => { event.preventDefault(); void onDecide(row, decision, reason); }}><fieldset disabled={busy} className={s.fieldset}>
         <header className={s.decisionHeader}><span className={s.decisionIcon}><CheckCircle2 size={22}/></span><div><span className={s.decisionEyebrow}>KONFIRMASI DANA</span><h4>Catat hasil pengajuan</h4><p>Isi setelah keputusan diterima di web pengajuan dana.</p></div></header>
-        <div className={s.decisionSummary}><div><span>Total dana</span><strong>{money(row.totalAmount)}</strong></div><div><span>Penerima bantuan</span><strong>{row.items.length}<small> orang</small></strong></div></div>
+        <div className={s.decisionSummary}><div><span>Total dana</span><strong>{money(row.totalAmount)}</strong></div><div><span>Penerima bantuan</span><strong>{formatNumericText(row.items.length)}<small> orang</small></strong></div></div>
         <fieldset className={s.decisionChoices}><legend>Hasil keputusan</legend>
           <label className={decision==="approved"?s.choiceApproved:s.choice}><input type="radio" name={`decision-${row.id}`} value="approved" checked={decision==="approved"} onChange={()=>setDecision("approved")}/><span><strong>Disetujui</strong><small>Lanjut ke pencairan</small></span></label>
           <label className={decision==="rejected"?s.choiceRejected:s.choice}><input type="radio" name={`decision-${row.id}`} value="rejected" checked={decision==="rejected"} onChange={()=>setDecision("rejected")}/><span><strong>Ditolak</strong><small>Tinjau ulang nominal</small></span></label>
         </fieldset>
         <label className={s.decisionNote}><span>{decision==="rejected"?"Alasan penolakan":"Catatan keputusan"} <small>{decision==="rejected"?"Wajib":"Opsional"}</small></span><textarea value={reason} minLength={5} maxLength={5000} required={decision==="rejected"} onChange={event=>setReason(event.target.value)} rows={3} placeholder={decision==="rejected"?"Jelaskan alasan dana ditolak agar dapat ditinjau kembali…":"Tambahkan referensi atau keterangan persetujuan…"}/></label>
         <div className={s.decisionNext} aria-live="polite"><span>Setelah dikonfirmasi</span><p>{decision==="approved"?"Seluruh penerima dalam grup menjadi siap dicairkan. Bendahara melanjutkan transfer ke penyalur.":"Seluruh bantuan dikembalikan ke penyetuju untuk meninjau ulang nominal."}</p></div>
-        <footer className={s.decisionFooter}><span>Keputusan berlaku untuk {row.items.length} penerima.</span><button className={decision==="approved"?s.primary:s.danger} disabled={busy}>{saving?"Menyimpan…":decision==="approved"?"Konfirmasi dana disetujui":"Konfirmasi penolakan"}<ChevronRight size={16}/></button></footer>
+        <footer className={s.decisionFooter}><span>Keputusan berlaku untuk {formatNumericText(row.items.length)} penerima.</span><button className={decision==="approved"?s.primary:s.danger} disabled={busy}>{saving?"Menyimpan…":decision==="approved"?"Konfirmasi dana disetujui":"Konfirmasi penolakan"}<ChevronRight size={16}/></button></footer>
       </fieldset></form>)}
   </article>;
 }

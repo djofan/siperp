@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { CampaignGallery } from "@/modules/lazsip/components/CampaignGallery";
 import { notFound } from "next/navigation";
 import { getBeneficiaryPublicById, listBeneficiariesPublic } from "@/modules/lazsip/api/beneficiaries";
@@ -51,7 +52,7 @@ export default async function LazsipBeneficiaryDetailPage({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
             </svg>
-            {item.gender} &middot; {item.age} tahun
+            {item.gender} &middot; {formatNumericText(item.age)} tahun
           </span>
           <span className="flex items-center gap-1.5">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0">

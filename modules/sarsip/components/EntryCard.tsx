@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, LifeBuoy } from "lucide-react";
@@ -17,7 +18,7 @@ export function EntryCard({ entry }: { entry: Entry }) {
       {entry.location && <p className={styles.cardLocation}><MapPin size={14} aria-hidden="true"/><span>{entry.location}</span></p>}
       {entry.kind === "campaign" ? <div className={styles.campaignSummary}>
         <div className={styles.progress}><div style={{ width: `${progress}%` }}/></div>
-        <div className={styles.campaignAmounts}><strong>{money(entry.currentAmount)}</strong><span>{Math.round(progress)}%</span></div>
+        <div className={styles.campaignAmounts}><strong>{money(entry.currentAmount)}</strong><span>{formatNumericText(Math.round(progress))}%</span></div>
         <p>Target {money(entry.targetAmount)} · {entry.status === "completed" ? "Selesai" : "Terbuka"}</p>
       </div> : <p className={styles.readMore}>Baca selengkapnya <span aria-hidden="true">→</span></p>}
     </div>

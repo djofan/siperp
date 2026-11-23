@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { academyPage } from "@/modules/academy/api/page-data";
 import type { AcademyPage5 } from "@/modules/academy/api/page-contracts";
@@ -23,7 +24,7 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
       <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm">
         <thead className="bg-gray-50 text-gray-600"><tr>{["No.", "Angkatan / Program", "Pertanyaan", "Tanggal (WIB)", "Status", "Aksi"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-gray-100">{questions.items.map((question, index) => <tr key={question.id} className="hover:bg-gray-50">
-          <td className="px-4 py-4 text-gray-500">{(questions.page - 1) * 10 + index + 1}</td><td className="px-4 py-4">{question.course.cohort?.title ?? question.course.title}</td>
+          <td className="px-4 py-4 text-gray-500">{formatNumericText((questions.page - 1) * 10 + index + 1)}</td><td className="px-4 py-4">{question.course.cohort?.title ?? question.course.title}</td>
           <td className="max-w-sm px-4 py-4"><p className="line-clamp-3 break-words">{question.question}</p></td>
           <td className="px-4 py-4 text-xs">{new Date(question.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</td>
           <td className="px-4 py-4"><span className={`inline-block rounded-full px-2.5 py-1 text-xs ${question.answer ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-800"}`}>{question.answer ? "Sudah dijawab" : "Menunggu jawaban"}</span></td>

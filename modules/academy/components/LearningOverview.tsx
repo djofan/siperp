@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import type { GetOwnRankingsResult, ListParticipantQuizzesResult } from "../api/courses";
 import { AcademyIcon } from "./icons";
@@ -19,7 +20,7 @@ export function LearningOverview({ quizzes, rankings }: { quizzes: ListParticipa
       <strong>{stat.value}</strong><span className="academy-muted">{stat.label}</span>
     </article>)}</div>
     <section aria-labelledby="exam-history-heading" className="academy-section">
-      <div className="academy-section-heading"><h2 id="exam-history-heading">Riwayat ujian ({attempts.length})</h2><Link href="/academy/kuis">Lihat ujian →</Link></div>
+      <div className="academy-section-heading"><h2 id="exam-history-heading">Riwayat ujian ({formatNumericText(attempts.length)})</h2><Link href="/academy/kuis">Lihat ujian →</Link></div>
       <div className="space-y-3">{attempts.length ? attempts.map(attempt => <article className="academy-card flex flex-wrap items-center gap-4 p-5" key={attempt.id}>
         <span className="academy-icon-tile"><AcademyIcon name="Quiz" className="h-5 w-5" /></span>
         <div className="min-w-0 flex-1"><h3 className="break-words font-semibold">{attempt.quiz.title}</h3>

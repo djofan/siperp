@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { LearningDashboardOverview } from "@/components/learning-reports/ReportPage";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -34,15 +35,15 @@ export default async function OjolAdminDashboard({searchParams}:{searchParams:Pr
           <h2>Pengelolaan program</h2>
           <p className="ojol-shortcut-caption">Ojol Mengaji</p>
           <div className="ojol-shortcut-links">
-            <Link href="/admin/ojol/guru"><span>Guru</span><strong>{summary.guru}</strong><small>Pembimbing dan musyrif ↗</small></Link>
-            <Link href="/admin/ojol/peserta"><span>Peserta</span><strong>{summary.peserta}</strong><small>Driver terdaftar ↗</small></Link>
-            <Link href="/admin/ojol/kelompok"><span>Kelompok</span><strong>{summary.groups}</strong><small>Wilayah dan basecamp ↗</small></Link>
+            <Link href="/admin/ojol/guru"><span>Guru</span><strong>{formatNumericText(summary.guru)}</strong><small>Pembimbing dan musyrif ↗</small></Link>
+            <Link href="/admin/ojol/peserta"><span>Peserta</span><strong>{formatNumericText(summary.peserta)}</strong><small>Driver terdaftar ↗</small></Link>
+            <Link href="/admin/ojol/kelompok"><span>Kelompok</span><strong>{formatNumericText(summary.groups)}</strong><small>Wilayah dan basecamp ↗</small></Link>
           </div>
         </section>
         <section className={panelClasses("ojol-map-panel p-5")}>
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="font-semibold text-foreground">Sebaran guru & peserta</h2>
-            <p className="text-xs text-foreground/50">{points.length} lokasi dari alamat kelurahan</p>
+            <p className="text-xs text-foreground/50">{formatNumericText(points.length)} lokasi dari alamat kelurahan</p>
           </div>
           {points.length ? (
             <SpreadMap points={points} />
@@ -58,7 +59,7 @@ export default async function OjolAdminDashboard({searchParams}:{searchParams:Pr
         <div className="ojol-dashboard-rail space-y-4">
         <section className="ojol-review-panel">
           <p className="text-sm font-medium">Setoran menunggu review</p>
-          <p className="ojol-review-value">{summary.pending}</p>
+          <p className="ojol-review-value">{formatNumericText(summary.pending)}</p>
           <Link href="/admin/ojol/tugas?filter=menunggu" className="ojol-review-link">Buka monitor tugas ↗</Link>
         </section>
         <section className={panelClasses("ojol-recent-panel p-5")}>

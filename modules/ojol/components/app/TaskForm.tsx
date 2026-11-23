@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
@@ -163,7 +165,7 @@ export function TaskForm({
               <ChipCheckbox key={group.id} name="groupIds" value={group.id} checked={groupIds.includes(group.id)} onChange={(on) => setGroupIds((list) => toggle(list, group.id, on))}>
                 <span className="font-medium">{group.name}</span>
                 <span className="ml-1.5 text-xs text-ojol-muted">
-                  {group.code} · {group._count.members} peserta
+                  {group.code} · {formatNumericText(group._count.members)} peserta
                 </span>
               </ChipCheckbox>
             ))}
@@ -192,7 +194,7 @@ export function TaskForm({
       {type === "quiz" && (
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Soal kuis · {questions.length}</h2>
+            <h2 className="text-sm font-semibold">Soal kuis · {formatNumericText(questions.length)}</h2>
             {!questionsLocked && (
               <button type="button" onClick={() => setQuestions((list) => [...list, newQuestion()])} className={buttonClass("secondary", "h-9 px-3.5")}>
                 <Icon name="plus" className="h-4 w-4" />
@@ -208,7 +210,7 @@ export function TaskForm({
               {questions.map((question, index) => (
                 <div key={question.key} className="rounded-2xl bg-ojol-paper p-4 ring-1 ring-ojol-line sm:p-5">
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold tabular-nums text-ojol-muted">Soal {index + 1}</p>
+                    <p className="text-xs font-semibold tabular-nums text-ojol-muted">Soal {formatNumericText(index + 1)}</p>
                     <div className="flex gap-1">
                       <button type="button" aria-label="Naikkan" disabled={index === 0} onClick={() => move(index, -1)} className="rounded-lg p-1.5 text-ojol-muted hover:bg-ojol-surface disabled:opacity-30">
                         <Icon name="chevronRight" className="h-4 w-4 -rotate-90" />

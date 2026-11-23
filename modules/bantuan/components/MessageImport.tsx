@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import { useState } from "react";
 import type { AidValues } from "@/contracts/modules/bantuan";
 import { parseWhatsappMessage, type MessageImport as Parsed } from "../whatsapp-import";
@@ -19,7 +21,7 @@ export function MessageImport({applicant,survey,labels,onApply}:{applicant:AidVa
     <div className={s.body}><p>Tempel pesan yang sudah diisi. Urutan kolom boleh berbeda; variasi seperti “ngontrak”, “blm punya”, dan “kadang-kadang” akan disesuaikan ke pilihan form. Periksa hasil sebelum menerapkan. Proses dilakukan di perangkat ini.</p>
     <label>Pesan WhatsApp<textarea maxLength={40000} rows={6} value={text} onChange={e=>{setText(e.target.value);setPreview(null);setNotice("");}} placeholder="Tempel data pemohon atau hasil verifikasi di sini…"/></label>
     <button type="button" disabled={!text.trim()} onClick={()=>{setPreview(parseWhatsappMessage(text));setNotice("");}}>Periksa hasil impor</button>
-    {preview&&<><div className={s.preview}><strong>{entries.length} kolom dikenali</strong>{entries.length===0?<p>Belum ada isian yang dikenali. Gunakan format Nama : isi dan kolom lainnya.</p>:<dl>{entries.map(({group,k,v})=><div key={group+k}><dt>{labels[k]??k}{occupied(group,k)&&<small>Sudah terisi</small>}</dt><dd>{typeof v==="boolean"?(v?"Ya":"Tidak"):String(v)}</dd></div>)}</dl>}</div>
+    {preview&&<><div className={s.preview}><strong>{formatNumericText(entries.length)} kolom dikenali</strong>{entries.length===0?<p>Belum ada isian yang dikenali. Gunakan format Nama : isi dan kolom lainnya.</p>:<dl>{entries.map(({group,k,v})=><div key={group+k}><dt>{labels[k]??k}{occupied(group,k)&&<small>Sudah terisi</small>}</dt><dd>{typeof v==="boolean"?(v?"Ya":"Tidak"):String(v)}</dd></div>)}</dl>}</div>
       {preview.warnings.map(w=><p role="status" key={w}>{w}</p>)}
       {!survey&&Object.keys(preview.survey).length>0&&<p>Bagian hasil survei belum diterapkan di form pemohon. Gunakan impor hasil survei pada tahap kunjungan.</p>}
       <label className={s.check}><input type="checkbox" checked={replace} onChange={e=>setReplace(e.target.checked)}/>Ganti juga kolom yang sudah terisi dengan hasil impor</label>

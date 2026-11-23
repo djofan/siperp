@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useCallback, useState } from "react";
 import { usePersistedPreference } from "@/lib/usePersistedPreference";
@@ -61,7 +63,7 @@ export function SipKontenUmumEditor({ sections }: { sections: SipKontenSection[]
                       isActive ? "bg-sip-ink/15" : "bg-white/[0.06] text-white/50"
                     )}
                   >
-                    {index + 1}
+                    {formatNumericText(index + 1)}
                   </span>
                   <span>{section.title}</span>
                   {isDirty && (

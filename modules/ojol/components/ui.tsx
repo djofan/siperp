@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -158,7 +159,7 @@ export function LatePill({ late }: { late: boolean }) {
 
 export function ScoreBadge({ score }: { score: number }) {
   const tone = { good: "success", fair: "warning", low: "danger" } as const;
-  return <Pill tone={tone[scoreTone(score)]}>{score}</Pill>;
+  return <Pill tone={tone[scoreTone(score)]}>{formatNumericText(score)}</Pill>;
 }
 
 export function Stat({ label, value, hint, emphasis = false }: { label: string; value: ReactNode; hint?: string; emphasis?: boolean }) {

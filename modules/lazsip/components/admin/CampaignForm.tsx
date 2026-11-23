@@ -1,4 +1,7 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -62,7 +65,7 @@ export function CampaignForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, targetAmount: Number(targetAmount), image, uniqueCode, isPinned, status, documentationPhotos }),
+      body: JSON.stringify({ title, description, targetAmount: Number(targetAmount), image, uniqueCode: uniqueCode.trim() || null, isPinned, status, documentationPhotos }),
     }).catch(()=>null);
 
     if(!response){setError("Koneksi terputus. Isian tetap tersimpan, silakan coba lagi.");setIsSubmitting(false);return;}
@@ -128,7 +131,7 @@ export function CampaignForm({
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
                 Target Nominal (Rp) <span className="text-xs font-normal opacity-60">Opsional</span>
               </label>
-              <input
+              <RupiahNumberInput
                 type="number"
                 min={0}
                 placeholder="Kosongkan jika tanpa target"
@@ -140,10 +143,10 @@ export function CampaignForm({
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
-                Kode Unik<span className="ml-0.5 text-red-600">*</span>
+                Kode Unik <span className="font-normal opacity-60">(opsional)</span>
               </label>
               <input
-                required
+                pattern="[0-9]{2}"
                 inputMode="numeric"
                 maxLength={2}
                 placeholder="mis. 07"
@@ -152,7 +155,7 @@ export function CampaignForm({
                 className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
               />
               <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">
-                2 digit angka, unik antar campaign. Otomatis ditempel di digit belakang nominal donasi supaya mudah dikenali saat rekonsiliasi transfer di rekening bersama.
+                Boleh dikosongkan agar nominal donasi tetap tanpa tambahan kode. Jika diisi, gunakan 2 digit angka yang belum dipakai campaign lain.
               </p>
             </div>
 
@@ -184,7 +187,7 @@ export function CampaignForm({
       <section className={panelClasses("p-5")} aria-label="Galeri dokumentasi campaign">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="text-base font-bold text-lazsip-primary-900 dark:text-white">Galeri dokumentasi campaign</h3><p className="mt-2 text-xs leading-6 text-lazsip-primary-800/60 dark:text-white/50">Tampil di bawah form donasi, sebelum Campaign Lainnya. Tambahkan foto, keterangan, lalu atur urutannya. Jangan unggah data pribadi sensitif.</p></div><button type="button" className="rounded-full bg-lazsip-primary-50 px-4 py-2 text-xs font-semibold text-lazsip-primary-900 dark:bg-white/10 dark:text-white" onClick={()=>setDocumentationPhotos(items=>[...items,{id:crypto.randomUUID(),image:"",caption:"",isDemo:false}])}>+ Tambah foto</button></div>
         {!documentationPhotos.length&&<p className="mt-5 text-xs text-lazsip-primary-800/50 dark:text-white/45">Belum ada dokumentasi. Galeri tidak tampil jika kosong.</p>}
-        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">{documentationPhotos.map((photo,index)=><div key={photo.id} className="rounded-2xl bg-lazsip-primary-50/50 p-4 dark:bg-white/5"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-semibold text-lazsip-primary-900 dark:text-white">Foto {index+1}{photo.isDemo?" · Contoh / dummy":""}</span><div className="flex gap-2"><button type="button" disabled={index===0||isSubmitting} onClick={()=>movePhoto(index,-1)} aria-label={`Majukan foto ${index+1}`} className="rounded-full border border-lazsip-primary-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-white/15">←</button><button type="button" disabled={index===documentationPhotos.length-1||isSubmitting} onClick={()=>movePhoto(index,1)} aria-label={`Mundurkan foto ${index+1}`} className="rounded-full border border-lazsip-primary-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-white/15">→</button><button type="button" disabled={uploads[photo.id]||isSubmitting} onClick={()=>setDocumentationPhotos(items=>items.filter(item=>item.id!==photo.id))} aria-label={`Hapus dokumentasi foto ${index+1}`} className="rounded-full bg-red-50 px-3 py-1 text-xs text-red-700 disabled:opacity-40 dark:bg-red-400/10 dark:text-red-300">Hapus</button></div></div><ImageUploadField label={`Foto dokumentasi ${index+1}`} initialUrl={photo.image} onChange={url=>updatePhoto(photo.id,{image:url??"",isDemo:false})} onUploadingChange={busy=>setUploads(items=>({...items,[photo.id]:busy}))}/><label className="mt-4 block text-xs text-lazsip-primary-900 dark:text-white" htmlFor={`caption-${photo.id}`}>Keterangan foto</label><textarea id={`caption-${photo.id}`} value={photo.caption??""} maxLength={500} rows={2} placeholder="Contoh: Penyerahan bantuan di lokasi penerima" onChange={event=>updatePhoto(photo.id,{caption:event.target.value})} className="mt-2 w-full resize-none rounded-xl border border-lazsip-primary-200 bg-white px-3 py-2 text-xs text-lazsip-primary-900 dark:border-white/10 dark:bg-white/5 dark:text-white"/></div>)}</div>
+        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">{documentationPhotos.map((photo,index)=><div key={photo.id} className="rounded-2xl bg-lazsip-primary-50/50 p-4 dark:bg-white/5"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-semibold text-lazsip-primary-900 dark:text-white">Foto {formatNumericText(index+1)}{photo.isDemo?" · Contoh / dummy":""}</span><div className="flex gap-2"><button type="button" disabled={index===0||isSubmitting} onClick={()=>movePhoto(index,-1)} aria-label={`Majukan foto ${index+1}`} className="rounded-full border border-lazsip-primary-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-white/15">←</button><button type="button" disabled={index===documentationPhotos.length-1||isSubmitting} onClick={()=>movePhoto(index,1)} aria-label={`Mundurkan foto ${index+1}`} className="rounded-full border border-lazsip-primary-200 px-2 py-1 text-xs disabled:opacity-30 dark:border-white/15">→</button><button type="button" disabled={uploads[photo.id]||isSubmitting} onClick={()=>setDocumentationPhotos(items=>items.filter(item=>item.id!==photo.id))} aria-label={`Hapus dokumentasi foto ${index+1}`} className="rounded-full bg-red-50 px-3 py-1 text-xs text-red-700 disabled:opacity-40 dark:bg-red-400/10 dark:text-red-300">Hapus</button></div></div><ImageUploadField label={`Foto dokumentasi ${index+1}`} initialUrl={photo.image} onChange={url=>updatePhoto(photo.id,{image:url??"",isDemo:false})} onUploadingChange={busy=>setUploads(items=>({...items,[photo.id]:busy}))}/><label className="mt-4 block text-xs text-lazsip-primary-900 dark:text-white" htmlFor={`caption-${photo.id}`}>Keterangan foto</label><textarea id={`caption-${photo.id}`} value={photo.caption??""} maxLength={500} rows={2} placeholder="Contoh: Penyerahan bantuan di lokasi penerima" onChange={event=>updatePhoto(photo.id,{caption:event.target.value})} className="mt-2 w-full resize-none rounded-xl border border-lazsip-primary-200 bg-white px-3 py-2 text-xs text-lazsip-primary-900 dark:border-white/10 dark:bg-white/5 dark:text-white"/></div>)}</div>
         {documentationPhotos.length>0&&<div className="mt-5"><LoadingButton type="submit" loading={isSubmitting} disabled={uploading}>Simpan campaign dan galeri</LoadingButton></div>}
       </section>
     </form>

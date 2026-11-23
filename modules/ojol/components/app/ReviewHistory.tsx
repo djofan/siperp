@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import type { SubmissionStatus } from "@/modules/ojol/api/policy";
 import { SubmissionPill, formatDateTime } from "@/modules/ojol/components/ui";
 
@@ -20,7 +21,7 @@ export function ReviewHistory({ logs }: { logs: ReviewLogView[] }) {
           <div className="flex flex-wrap items-center gap-2">
             <SubmissionPill status={log.status} />
             <span className="text-xs text-ojol-muted">
-              Percobaan ke-{log.attemptNumber} · {formatDateTime(log.createdAt)}
+              Percobaan ke-{formatNumericText(log.attemptNumber)} · {formatDateTime(log.createdAt)}
             </span>
           </div>
           {log.feedback && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed">{log.feedback}</p>}

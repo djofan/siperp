@@ -15,6 +15,7 @@ export function isValidUniqueCode(code: string): boolean {
  * bersama (lihat prd-lazsip.md §3.4 & §6 aturan #1).
  */
 export function applyUniqueCode(amount: number, code: string): number {
+  if (!code) return amount;
   const modulus = 10 ** code.length;
   const remainder = amount % modulus;
   const rounded = remainder === 0 ? amount : amount + (modulus - remainder);

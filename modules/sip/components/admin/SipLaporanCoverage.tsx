@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { panelClasses } from "@/components/ui/panel";
 
@@ -25,7 +26,7 @@ export function SipLaporanCoverage({
       </div>
 
       <p className="mt-4 text-3xl font-extrabold tracking-tight text-white">
-        {uploadedCount}
+        {formatNumericText(uploadedCount)}
         <span className="text-base font-semibold text-white/40">/12</span>
       </p>
       <p className="text-xs text-white/50">bulan sudah ada laporannya</p>

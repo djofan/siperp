@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { loadQuizReviewQuestions } from "../../../../api/quiz-review";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound } from "next/navigation";
@@ -46,16 +47,16 @@ export default async function ExamPage({ params, searchParams }: {
       <div className="mt-5"><QuestionForm action={saveTeacherQuestion.bind(null, quiz.id, null)}/></div>
     </details>
     <section id="daftar-soal" className="scroll-mt-24 overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Daftar soal">
-      <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Daftar soal</h2><p className="mt-1 text-sm text-gray-500">{pagination.total} soal · {cohortTitle} · {quiz.kind === "DAILY" ? quiz.chapter.title : "Semua bab"}</p></div>
+      <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Daftar soal</h2><p className="mt-1 text-sm text-gray-500">{formatNumericText(pagination.total)} soal · {cohortTitle} · {quiz.kind === "DAILY" ? quiz.chapter.title : "Semua bab"}</p></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm">
         <thead className="bg-gray-50 text-gray-600"><tr>{["No.", "Pertanyaan", "Media", "Jenis", "Opsi", "Kunci jawaban", "Bobot", "Aksi"].map(label => <th scope="col" key={label} className="px-5 py-3 font-medium">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-gray-100">{quiz.questions.map((question, index) => <tr key={question.id} className={selected?.id === question.id ? "bg-green-50" : "hover:bg-gray-50"}>
-          <td className="px-5 py-4 text-gray-500">{(pagination.page - 1) * 10 + index + 1}</td>
+          <td className="px-5 py-4 text-gray-500">{formatNumericText((pagination.page - 1) * 10 + index + 1)}</td>
           <td className="max-w-md px-5 py-4"><p className="line-clamp-3 break-words">{question.question}</p></td>
           <td className="px-5 py-4">{question.mediaMime?.startsWith("image/") ? "Gambar" : question.mediaMime?.startsWith("audio/") ? "Audio" : "—"}</td>
-          <td className="px-5 py-4">{types[question.type]}</td><td className="px-5 py-4">{question.options.length}</td>
+          <td className="px-5 py-4">{types[question.type]}</td><td className="px-5 py-4">{formatNumericText(question.options.length)}</td>
           <td className="max-w-xs px-5 py-4"><p className="line-clamp-3 break-words">{question.options.filter(option => option.isCorrect).map(option => option.label).join("; ") || "Belum diatur"}</p></td>
-          <td className="px-5 py-4">{question.weight}</td>
+          <td className="px-5 py-4">{formatNumericText(question.weight)}</td>
           <td className="px-5 py-4"><Link href={`${base}?page=${pagination.page}&edit=${encodeURIComponent(question.id)}#edit-soal`} className="inline-flex rounded-lg bg-green-700 px-3 py-2 text-xs font-semibold text-white hover:bg-green-800" aria-label={`Edit soal ${(pagination.page - 1) * 10 + index + 1}`}>Edit soal</Link></td>
         </tr>)}{!quiz.questions.length && <tr><td colSpan={8} className="px-5 py-12 text-center text-gray-500">Belum ada soal. <a href="#tambah-soal" className="text-green-700 underline">Buka Tambah soal</a>, isi pertanyaan dan pilih jawaban benar sebelum mengaktifkan ujian.</td></tr>}</tbody>
       </table></div>

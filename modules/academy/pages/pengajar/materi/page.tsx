@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { TeacherAudioField } from "../../../components/TeacherAudioField";
 import { ChapterSelect } from "../../../components/ChapterSelect";
@@ -44,7 +45,7 @@ export default async function MaterialsPage({ searchParams }: {
 
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Daftar materi">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-gray-100 p-5">
-        <div><h2 className="font-semibold">Daftar materi</h2><p className="mt-1 text-sm text-gray-500">{data.total} materi ditemukan</p></div>
+        <div><h2 className="font-semibold">Daftar materi</h2><p className="mt-1 text-sm text-gray-500">{formatNumericText(data.total)} materi ditemukan</p></div>
         <form method="get" className="flex flex-wrap items-end gap-3">
           <label className="text-sm">Filter angkatan
             <select name="cohort" defaultValue={cohort} className={inputClass}>
@@ -63,7 +64,7 @@ export default async function MaterialsPage({ searchParams }: {
           </tr></thead>
           <tbody className="divide-y divide-gray-100">
             {data.items.map((lesson, index) => <tr key={lesson.id} className={selected?.id === lesson.id ? "bg-green-50" : "hover:bg-gray-50"}>
-              <td className="px-5 py-4 text-gray-500">{(data.page - 1) * data.perPage + index + 1}</td>
+              <td className="px-5 py-4 text-gray-500">{formatNumericText((data.page - 1) * data.perPage + index + 1)}</td>
               <td className="max-w-xs px-5 py-4"><p className="break-words font-medium">{lesson.title}</p>{lesson.contentSummary && <p className="mt-1 line-clamp-2 break-words text-xs text-gray-500">{lesson.contentSummary}</p>}</td>
               <td className="px-5 py-4">{lesson.cohortTitle}</td>
               <td className="px-5 py-4">{lesson.chapterTitle}</td>
@@ -76,7 +77,7 @@ export default async function MaterialsPage({ searchParams }: {
         </table>
       </div>
       <nav aria-label="Halaman daftar materi" className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 p-5 text-sm">
-        <p className="text-gray-500">{data.total ? `Menampilkan ${(data.page - 1) * data.perPage + 1}–${Math.min(data.page * data.perPage, data.total)} dari ${data.total} materi` : "0 materi"} · Halaman {data.page} dari {data.lastPage}</p>
+        <p className="text-gray-500">{data.total ? `Menampilkan ${(data.page - 1) * data.perPage + 1}–${Math.min(data.page * data.perPage, data.total)} dari ${data.total} materi` : "0 materi"} · Halaman {formatNumericText(data.page)} dari {formatNumericText(data.lastPage)}</p>
         <div className="flex gap-2">
           {data.page > 1 ? <Link href={href(data.page - 1)} className="rounded-lg border px-3 py-2">Sebelumnya</Link> : <span aria-disabled="true" className="rounded-lg border px-3 py-2 text-gray-400">Sebelumnya</span>}
           {data.page < data.lastPage ? <Link href={href(data.page + 1)} className="rounded-lg border px-3 py-2">Berikutnya</Link> : <span aria-disabled="true" className="rounded-lg border px-3 py-2 text-gray-400">Berikutnya</span>}

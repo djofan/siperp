@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -39,7 +41,7 @@ export function AppShell({ root, roleLabel, nav, user, children, logoutHref = "/
         <nav aria-label="Menu utama" className="mt-4 flex-1 space-y-1 overflow-y-auto">
           {nav.map(item => <Link key={item.href} href={item.href} className="learning-nav-item" aria-current={active(item.href) ? "page" : undefined}>
             <Icon name={item.icon} className="h-[19px] w-[19px] shrink-0" /><span className="flex-1">{item.label}</span>
-            {!!item.badge && <span className="rounded-full bg-ojol-primary-soft px-2 py-0.5 text-[10px] text-ojol-primary">{item.badge}</span>}
+            {!!item.badge && <span className="rounded-full bg-ojol-primary-soft px-2 py-0.5 text-[10px] text-ojol-primary">{formatNumericText(item.badge)}</span>}
           </Link>)}
         </nav>
         <div className="flex items-center gap-3 border-t border-current/10 px-2 pt-5">
@@ -61,7 +63,7 @@ export function AppShell({ root, roleLabel, nav, user, children, logoutHref = "/
       <nav aria-label="Menu utama seluler" className="mobile-tabs fixed inset-x-0 bottom-0 z-30 flex overflow-x-auto pb-[env(safe-area-inset-bottom)] lg:hidden">
         {nav.map(item => <Link key={item.href} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={`relative flex min-w-[72px] flex-1 flex-col items-center gap-1.5 px-2 py-3 text-[10px] ${active(item.href) ? "font-semibold text-ojol-primary" : "text-ojol-muted"}`}>
           <Icon name={item.icon} className="h-5 w-5" />{item.label}
-          {!!item.badge && <span className="absolute right-2 top-1 rounded-full bg-ojol-primary-soft px-1.5 text-[9px] text-ojol-primary">{item.badge}</span>}
+          {!!item.badge && <span className="absolute right-2 top-1 rounded-full bg-ojol-primary-soft px-1.5 text-[9px] text-ojol-primary">{formatNumericText(item.badge)}</span>}
         </Link>)}
       </nav>
     </div>

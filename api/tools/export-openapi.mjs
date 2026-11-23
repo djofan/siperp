@@ -622,6 +622,23 @@ for (const [method,detail] of [['post',false],['put',true],['delete',true]]) {
 
 document.paths['/api/v1/bantuan/dashboard']={get:{tags:['Bantuan'],summary:'Read authorized aid statistics and current task counts',security:[{bearerAuth:[]}],description:'Application byStatus and taskCounts.survey/distribution retain existing access and assignment scopes. Additive santunanTasks counts transfer_pending for Admin/Treasurer, and handover_pending only for Admin or the assigned primary Volunteer/eligible companion. Completed santunan excluded; no age limit. These task counters are not period-filtered financial summaries. Consumers must treat missing task counter objects or failed reads as unknown, never zero. UI refreshes work counts alongside notifications every 15 seconds while visible, and on focus/visibility return.',responses:{200:{description:'Data envelope with existing dashboard fields and santunanTasks',content:{'application/json':{schema:{type:'object',properties:{data:{type:'object',properties:{santunanTasks:{type:'object',required:['transfer_pending','handover_pending'],properties:{transfer_pending:{type:'integer',minimum:0},handover_pending:{type:'integer',minimum:0}}}}}}}}}},401:{description:'Authentication required'},403:{description:'Module access denied'}}}};
 
+document['x-lazsip-optional-campaign-code']={field:'uniqueCode',input:{type:['string','null'],pattern:'^[0-9]{2}$'},behavior:'Optional on create/update. Omitted create/null/blank disables suffix; omitted update preserves current code. Supplied nonempty code remains exactly two digits and unique. Public representation uses empty string when absent. Uncoded checkout leaves amount unchanged. Requires migration 2026_11_23_000001_make_lazsip_campaign_unique_code_optional.'};
+for(const [path,method] of [['/api/v1/lazsip/campaigns','post'],['/api/v1/lazsip/campaigns/{id}','put']]){
+ document.paths[path]??={};
+ const operation=document.paths[path][method]??={tags:['Lazsip'],summary:method==='post'?'Create a campaign':'Update a campaign',security:[{bearerAuth:[]}],parameters:method==='put'?[{name:'id',in:'path',required:true,schema:{type:'string'}}]:[],responses:{[method==='post'?201:200]:{description:'Campaign saved'},401:{description:'Authentication required'},403:{description:'Module access denied'},404:{description:'Campaign not found'},422:{description:'Invalid fields or duplicate nonempty code'}}};
+ operation.requestBody??={required:true,content:{'application/json':{schema:{
+  type:'object',required:['title','description','isPinned','status'],properties:{
+   title:{type:'string',maxLength:191},description:{type:'string',maxLength:1000000},
+   targetAmount:{type:['integer','null'],minimum:0,maximum:2147483647},image:{type:['string','null'],maxLength:191},
+   isPinned:{type:'boolean'},status:{enum:['active','completed']},
+   documentationPhotos:{type:['array','null'],items:{type:'object'}}
+  }
+ }}}};
+ const schema=operation.requestBody.content['application/json'].schema;
+ schema.properties.uniqueCode={type:['string','null'],pattern:'^(?:[0-9]{2})?$',description:'Optional admin input. Blank or null disables the code. Omission preserves the value on update. A configured code remains mandatory in public checkout and cannot be disabled by donor input.'};
+ if(schema.required)schema.required=schema.required.filter(field=>field!=='uniqueCode');
+}
+
 const output = `${JSON.stringify(document, null, 2)}\n`;
 const target = new URL('../docs/openapi.json', import.meta.url);
 if (process.argv.includes('--check')) {

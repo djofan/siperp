@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import { History, CircleCheck, ArrowUpRight } from "lucide-react";
 import Link from "./WorkspaceNavigation";
 import type { AidApplicantHistory } from "@/contracts/modules/bantuan";
@@ -11,7 +13,7 @@ export function ApplicantHistory({count,applications}:{count:number;applications
   if(!count)return null;
   const helped=applications.filter(item=>item.status==="completed").length;
   return <section className={`${s.applicantHistory} ${helped?s.historyHelped:s.historyPrevious}`} aria-label="Riwayat pengajuan pemohon">
-    <div className={s.applicantHistoryHeading}><span className={s.historyIcon}>{helped?<CircleCheck size={24} aria-hidden="true"/>:<History size={24} aria-hidden="true"/>}</span><div><h3>{helped?"Perhatian: pemohon sudah pernah menerima bantuan":"Perhatian: pemohon memiliki riwayat pengajuan"}</h3><p>{count} pengajuan lain dengan NIK yang sama.{helped>0?` ${helped} pengajuan tercatat selesai.`:" Periksa status dan hasil pengajuan sebelumnya."} Pengajuan baru tetap dapat dilanjutkan.</p></div></div>
+    <div className={s.applicantHistoryHeading}><span className={s.historyIcon}>{helped?<CircleCheck size={24} aria-hidden="true"/>:<History size={24} aria-hidden="true"/>}</span><div><h3>{helped?"Perhatian: pemohon sudah pernah menerima bantuan":"Perhatian: pemohon memiliki riwayat pengajuan"}</h3><p>{formatNumericText(count)} pengajuan lain dengan NIK yang sama.{helped>0?` ${helped} pengajuan tercatat selesai.`:" Periksa status dan hasil pengajuan sebelumnya."} Pengajuan baru tetap dapat dilanjutkan.</p></div></div>
     {applications.length>0&&<div className={s.applicantHistoryList}>{applications.map(item=><Link key={item.id} href={"/admin/bantuan/pengajuan/"+item.id} target="_blank" rel="noreferrer" className={s.applicantHistoryItem} aria-label={"Lihat pengajuan "+item.number}>
       <div className={s.historyCardTop}><div><strong>{item.program}</strong><small>{item.number}</small></div><span className={s.badge}>{bantuanStatuses[item.status]??item.status}</span><ArrowUpRight size={18} aria-hidden="true"/></div>
       <dl className={s.historyFacts}>

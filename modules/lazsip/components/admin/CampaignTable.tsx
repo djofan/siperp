@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -109,7 +111,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                   const percentage = campaign.targetAmount > 0 ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0;
                   return (
                     <tr key={campaign.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
-                      <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
+                      <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{formatNumericText(startIndex + index + 1)}</td>
                       <td className="px-4 py-3.5">
                         {campaign.image ? (
                           // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin
@@ -123,7 +125,7 @@ export function CampaignTable({ campaigns }: { campaigns: CampaignRow[] }) {
                           {campaign.title}
                         </Link>
                       </td>
-                      <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{campaign.uniqueCode}</td>
+                      <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{campaign.uniqueCode || "—"}</td>
                       <td className="min-w-36 px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <div className="h-2 w-16 shrink-0 overflow-hidden rounded-full bg-lazsip-primary-100 sm:w-24 dark:bg-white/10">

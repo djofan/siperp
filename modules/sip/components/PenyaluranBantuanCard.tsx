@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
 import { SipGallery } from "./SipGallery";
@@ -49,7 +50,7 @@ export function PenyaluranBantuanCard({
       </div>
       <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-sip-primary-700">Lihat penyaluran <span aria-hidden="true">→</span></span>
       </Link>
-      {photos.length>0&&<details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-sip-primary-700">Lihat galeri · {photos.length} foto</summary><SipGallery photos={photos} title={title} kind="activity"/></details>}
+      {photos.length>0&&<details className="mt-4"><summary className="cursor-pointer text-sm font-semibold text-sip-primary-700">Lihat galeri · {formatNumericText(photos.length)} foto</summary><SipGallery photos={photos} title={title} kind="activity"/></details>}
     </div>
   );
 }

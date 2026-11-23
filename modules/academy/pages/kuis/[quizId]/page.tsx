@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { notFound } from "next/navigation";
 import { requireAcademyProfile } from "../../../api/access";
@@ -24,7 +25,7 @@ export default async function QuizPage({ params }: { params: Promise<{ quizId: s
   const ordinals = ["pertama", "kedua", "ketiga", "keempat", "kelima", "keenam", "ketujuh", "kedelapan", "kesembilan", "kesepuluh", "kesebelas", "kedua belas"];
   const label = quiz.kind === "FINAL" ? "Ujian akhir" : `${quiz.kind === "DAILY" ? "Ujian harian" : "Ujian pekanan"} ${ordinals[number - 1] ?? `ke-${number}`}`;
   const { available, message } = participantExamStatus(quiz, lessonReleased(quiz.chapter.course.startsAt, quiz.releaseDay), Boolean(latest));
-  return <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6"><LearnerNav /><Link href="/academy/kuis" className="mb-5 inline-flex items-center text-sm font-medium text-green-700 hover:underline">← Kembali ke daftar ujian</Link><PageHeading title={quiz.title}>{quiz._count.questions} soal · {quiz.timeLimitMinutes} menit.</PageHeading>
+  return <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6"><LearnerNav /><Link href="/academy/kuis" className="mb-5 inline-flex items-center text-sm font-medium text-green-700 hover:underline">← Kembali ke daftar ujian</Link><PageHeading title={quiz.title}>{formatNumericText(quiz._count.questions)} soal · {formatNumericText(quiz.timeLimitMinutes)} menit.</PageHeading>
     <section id="hasil-ujian" className={`scroll-mt-24 rounded-2xl border p-6 ${completed || review ? "border-green-300 bg-green-50" : "border-lazsip-primary-100 bg-white"}`}>
       <h2 className="mb-4 text-sm font-semibold capitalize">{label}</h2>
       {completed && <div role="status" className="mb-5"><p className="font-semibold text-green-800">✓ Ujian sudah selesai</p></div>}

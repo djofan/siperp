@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import {
   getTopCampaigns,
@@ -53,28 +54,28 @@ export default async function LazsipDashboardPage() {
           value={formatRupiah(totals.zakat)}
           trend={{ value: percentChange(totals.zakat, totals.lastMonthZakat), label: "vs bulan lalu" }}
         />
-        <DashboardStatCard icon="donors" label="Total Donatur & Muzakki" value={String(counts.totalDonors)} hint="Akumulasi transaksi lunas" />
-        <DashboardStatCard icon="applicant" label="Pendaftar Baru" value={String(newApplicants)} hint="Menunggu diproses" />
+        <DashboardStatCard icon="donors" label="Total Donatur & Muzakki" value={String(formatNumericText(counts.totalDonors))} hint="Akumulasi transaksi lunas" />
+        <DashboardStatCard icon="applicant" label="Pendaftar Baru" value={String(formatNumericText(newApplicants))} hint="Menunggu diproses" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <DashboardStatCard icon="campaign" label="Campaign Aktif" value={String(counts.activeCampaigns)} />
-        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(counts.totalBeneficiaries)} />
-        <DashboardStatCard icon="partners" label="Mitra Kerja Sama" value={String(counts.totalPartners)} />
-        <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(counts.pendingTransactions)} hint="Perlu ditinjau di Kelola Transaksi" />
+        <DashboardStatCard icon="campaign" label="Campaign Aktif" value={String(formatNumericText(counts.activeCampaigns))} />
+        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(formatNumericText(counts.totalBeneficiaries))} />
+        <DashboardStatCard icon="partners" label="Mitra Kerja Sama" value={String(formatNumericText(counts.totalPartners))} />
+        <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(formatNumericText(counts.pendingTransactions))} hint="Perlu ditinjau di Kelola Transaksi" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <DashboardStatCard
           icon="donors"
           label="Donatur Baru Bulan Ini"
-          value={String(donorMix.newDonors)}
+          value={String(formatNumericText(donorMix.newDonors))}
           hint="Transaksi pertama kali bulan ini"
         />
         <DashboardStatCard
           icon="donors"
           label="Donatur Lama (Repeat) Bulan Ini"
-          value={String(donorMix.repeatDonors)}
+          value={String(formatNumericText(donorMix.repeatDonors))}
           hint="Sudah pernah transaksi sebelum bulan ini"
         />
       </div>
@@ -98,7 +99,7 @@ export default async function LazsipDashboardPage() {
                   >
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2 truncate font-medium text-lazsip-primary-900 dark:text-white">
-                        <span className="text-xs font-bold text-lazsip-primary-400">#{i + 1}</span>
+                        <span className="text-xs font-bold text-lazsip-primary-400">#{formatNumericText(i + 1)}</span>
                         {campaign.title}
                       </span>
                       <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{campaign.targetAmount > 0 ? `${percentage}%` : "Tanpa target"}</span>

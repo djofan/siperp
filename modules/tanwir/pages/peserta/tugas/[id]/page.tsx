@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
@@ -46,7 +47,7 @@ export default async function PesertaTaskDetailPage({
 
       {selesai && submission?.score != null && (
         <Notice tone="success">
-          Kuis terkumpul. Nilai Anda {submission.score}
+          Kuis terkumpul. Nilai Anda {formatNumericText(submission.score)}
           {submission.isLate ? " — dikumpulkan setelah tenggat awal (terlambat)." : "."}
         </Notice>
       )}
@@ -66,7 +67,7 @@ export default async function PesertaTaskDetailPage({
             </div>
           </div>
           <p className="-mt-3 text-sm text-tanwir-muted">
-            Percobaan ke-{submission.attemptsCount} · dikirim {formatDateTime(submission.submittedAt)}
+            Percobaan ke-{formatNumericText(submission.attemptsCount)} · dikirim {formatDateTime(submission.submittedAt)}
           </p>
           <SubmissionMedia submission={submission}/>
           {task.type !== "quiz" && (
@@ -96,7 +97,7 @@ export default async function PesertaTaskDetailPage({
 
       {detail.canSubmit && task.type === "quiz" && (
         <section>
-          <SectionTitle>Kerjakan kuis · {questions.length} soal</SectionTitle>
+          <SectionTitle>Kerjakan kuis · {formatNumericText(questions.length)} soal</SectionTitle>
           <QuizForm questions={questions} action={submitQuizAction.bind(null, task.id)} />
         </section>
       )}

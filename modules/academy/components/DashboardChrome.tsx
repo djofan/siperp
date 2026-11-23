@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { useAcademyBasePath } from "../pwa/AcademyNavigation";
@@ -69,7 +71,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
           return <Link key={item.href} href={item.href} onClick={() => setOpen(false)} aria-current={selected ? "page" : undefined}
             className={cn("flex min-h-10 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors", selected ? "bg-emerald-50 font-semibold text-emerald-700" : "font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900")}>
             <Icon className="size-4 shrink-0" /><span className="flex-1">{item.label}</span>
-            {item.href === "/academy/pengingat" && unreadReminders > 0 ? <Badge className="px-1.5">{unreadReminders}</Badge> : selected && <ChevronRight className="size-3.5" />}
+            {item.href === "/academy/pengingat" && unreadReminders > 0 ? <Badge className="px-1.5">{formatNumericText(unreadReminders)}</Badge> : selected && <ChevronRight className="size-3.5" />}
           </Link>;
         })}
       </div>)}

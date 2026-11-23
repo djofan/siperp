@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useEffect, useState } from "react";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
@@ -46,7 +48,7 @@ export function TodayActivities({ initial }: { initial: AcademyToday }) {
         <Link href="/academy/kuis" className="mt-3 inline-block text-sm text-green-700 underline">Semua ujian & hasil</Link>
       </div>
       <div className="rounded-xl bg-white p-4"><h3 className="text-sm font-semibold">Materi hari ini</h3>
-        {material ? <div className="mt-3"><p className="mb-1 text-xs text-gray-600">Materi {material.number}</p><Link href={`/academy/materi/${material.id}`} className="break-words text-sm font-medium text-green-700 hover:underline">{material.title}</Link><p className="mt-2 text-xs text-gray-600">Tampil sampai: {format(material.closesAt)} WIB</p></div> : <p className="mt-3 text-sm text-gray-600">Tidak ada materi yang sedang dijadwalkan di beranda.</p>}
+        {material ? <div className="mt-3"><p className="mb-1 text-xs text-gray-600">Materi {formatNumericText(material.number)}</p><Link href={`/academy/materi/${material.id}`} className="break-words text-sm font-medium text-green-700 hover:underline">{material.title}</Link><p className="mt-2 text-xs text-gray-600">Tampil sampai: {format(material.closesAt)} WIB</p></div> : <p className="mt-3 text-sm text-gray-600">Tidak ada materi yang sedang dijadwalkan di beranda.</p>}
         <Link href="/academy/materi" className="mt-3 inline-block text-sm text-green-700 underline">Semua materi</Link>
       </div>
     </div>

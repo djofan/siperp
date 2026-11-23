@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { listTeacherTasks } from "@/modules/tanwir/api/tasks";
@@ -45,7 +46,7 @@ export default async function GuruTasksPage() {
                     ) : (
                       <Pill tone="primary">Aktif</Pill>
                     )}
-                    {pending > 0 && <Pill tone="warning">{pending} menunggu koreksi</Pill>}
+                    {pending > 0 && <Pill tone="warning">{formatNumericText(pending)} menunggu koreksi</Pill>}
                   </div>
                   <p className="mt-2 truncate font-medium">{task.title}</p>
                   <p className="mt-0.5 text-xs text-tanwir-muted" title={formatDateTime(task.deadline)}>
@@ -54,12 +55,12 @@ export default async function GuruTasksPage() {
                 </div>
                 <div className="flex items-center gap-6 text-sm sm:text-right">
                   <div>
-                    <p className="text-lg font-semibold tabular-nums">{task._count.submissions}</p>
+                    <p className="text-lg font-semibold tabular-nums">{formatNumericText(task._count.submissions)}</p>
                     <p className="text-xs text-tanwir-muted">terkumpul</p>
                   </div>
                   {task.type === "quiz" && (
                     <div>
-                      <p className="text-lg font-semibold tabular-nums">{task._count.questions}</p>
+                      <p className="text-lg font-semibold tabular-nums">{formatNumericText(task._count.questions)}</p>
                       <p className="text-xs text-tanwir-muted">soal</p>
                     </div>
                   )}

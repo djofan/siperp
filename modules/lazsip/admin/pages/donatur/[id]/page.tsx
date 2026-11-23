@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { notFound } from "next/navigation";
 import { BackLink } from "@/modules/lazsip/components/ui/BackLink";
 import { AdminBadge } from "@/modules/lazsip/components/admin/AdminBadge";
@@ -50,7 +51,7 @@ export default async function DonorDetailPage({
         </div>
         <div className={panelClasses("p-5")}>
           <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50 dark:text-white/40">Jumlah Transaksi</p>
-          <p className="mt-1.5 text-2xl font-extrabold text-lazsip-primary-900 dark:text-white">{donor.contributionCount}x</p>
+          <p className="mt-1.5 text-2xl font-extrabold text-lazsip-primary-900 dark:text-white">{formatNumericText(donor.contributionCount)}x</p>
         </div>
         <div className={panelClasses("p-5")}>
           <p className="text-xs font-semibold uppercase tracking-wide text-lazsip-primary-800/50 dark:text-white/40">Transaksi Terakhir</p>

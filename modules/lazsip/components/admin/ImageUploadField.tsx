@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useState } from "react";
 
@@ -99,7 +101,7 @@ export function ImageUploadField({
               onChange={(e) => { void handleFile(e.target.files?.[0] ?? null); e.target.value = ""; }}
             />
           </label>
-          <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
+          <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {formatNumericText(MAX_SIZE_MB)}MB — JPG, PNG, atau WEBP.</p>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       </div>

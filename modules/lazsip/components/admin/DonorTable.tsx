@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -87,7 +89,7 @@ export function DonorTable({ donors, showSegmentFilter = true, storageKey = "don
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {paginated.map((donor, index) => (
                   <tr key={donor.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{formatNumericText(startIndex + index + 1)}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">
                       <Link href={`/admin/lazsip/donatur/${donor.id}`} className="hover:underline">
                         {donor.name}
@@ -104,7 +106,7 @@ export function DonorTable({ donors, showSegmentFilter = true, storageKey = "don
                       ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{donor.contributionCount}x</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatNumericText(donor.contributionCount)}x</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{formatRupiah(donor.totalContribution)}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{formatDate(donor.lastContributionAt)}</td>
                   </tr>

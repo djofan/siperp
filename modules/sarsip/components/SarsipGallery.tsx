@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useState } from "react";
 import type { SarsipGalleryPhoto } from "@/contracts/modules/sarsip";
@@ -10,7 +12,7 @@ export function SarsipGallery({ photos, title, kind = "campaign" }: { photos: Sa
   if (!photos.length) return null;
   const category = kind === "news" ? "berita" : kind === "distribution" ? "penyaluran bantuan" : kind === "activity" ? "kegiatan" : kind === "program" ? "program pemberdayaan" : "campaign";
   return <section className={styles.gallery} aria-label={`Galeri ${title}`}>
-    <header className={styles.heading}><div className={styles.headingTitle}><h2>{kind === "campaign" ? "Dokumentasi campaign" : `Galeri ${category}`}</h2><span className={styles.count}>{photos.length} foto</span></div></header>
+    <header className={styles.heading}><div className={styles.headingTitle}><h2>{kind === "campaign" ? "Dokumentasi campaign" : `Galeri ${category}`}</h2><span className={styles.count}>{formatNumericText(photos.length)} foto</span></div></header>
     <div className={styles.fullGrid}>{photos.map((photo, index) => <figure key={photo.id} className={styles.card}>
       <button type="button" className={styles.photo} aria-label={`Lihat foto ${index+1}: ${photo.caption||title}`} onClick={()=>setSelectedPhoto(index)}>
         {/* eslint-disable-next-line @next/next/no-img-element -- uploaded admin media */}

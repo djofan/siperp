@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOjolMember } from "@/modules/ojol/api/access";
@@ -40,7 +41,7 @@ export default async function GuruReviewPage({ params }: { params: Promise<{ id:
         <p className="mt-1 text-sm text-ojol-muted">
           {student.code}
           {student.group ? ` · ${student.group.name}` : ""}
-          · percobaan ke-{submission.attemptsCount} · {formatDateTime(submission.submittedAt)}
+          · percobaan ke-{formatNumericText(submission.attemptsCount)} · {formatDateTime(submission.submittedAt)}
         </p>
       </header>
 
