@@ -282,7 +282,7 @@ function rapatCountingEngine(): LocalEngine
     };
 }
 it('invalidates legacy cached transcripts and cache from different model or pipeline revisions', function () {
-    config(['rapat.model_dirs.RAPAT_WHISPER_MODEL' => 'base', 'rapat.transcription_pipeline_version' => 'test-v1']);
+    config(['rapat.model_dirs.RAPAT_WHISPER_MODEL' => 'large-v3', 'rapat.transcription_pipeline_version' => 'test-v1']);
     $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
     $this->post('/api/v1/rapat/meetings/'.$id.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
     $media = Media::where('meeting_id', $id)->first();
@@ -302,7 +302,7 @@ it('invalidates legacy cached transcripts and cache from different model or pipe
     // Same failed run revision: retain the completed audio and retry only minutes.
     rapatRunAudio($this, $id, $engine);
     expect($engine->transcriptions)->toBe(1);
-    config(['rapat.model_dirs.RAPAT_WHISPER_MODEL' => 'large-v3-turbo']);
+    config(['rapat.model_dirs.RAPAT_WHISPER_MODEL' => 'small']);
     $modelRevision = $engine->transcriptionRevision();
     expect($modelRevision)->not->toBe($revision);
     // Config changes alone must not rewrite stored records.
