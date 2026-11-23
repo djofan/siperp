@@ -55,9 +55,13 @@ class LocalEngine
         try {
             $h = $this->run(['operation' => 'health']);
 
-            return ['provider' => 'local', 'configured' => ($h['provider'] ?? null) === 'local' && ($h['transcriberReady'] ?? false) === true && ($h['summarizerReady'] ?? false) === true];
+            $local = ($h['provider'] ?? null) === 'local';
+            $transcriber = $local && ($h['transcriberReady'] ?? false) === true;
+            $summarizer = $local && ($h['summarizerReady'] ?? false) === true;
+
+            return ['provider' => 'local', 'transcriberReady' => $transcriber, 'summarizerReady' => $summarizer, 'configured' => $transcriber && $summarizer];
         } catch (\Throwable) {
-            return ['provider' => 'local', 'configured' => false];
+            return ['provider' => 'local', 'configured' => false, 'transcriberReady' => false, 'summarizerReady' => false];
         }
     }
 }

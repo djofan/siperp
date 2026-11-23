@@ -26,8 +26,11 @@ class ProcessMeeting implements ShouldQueue
 
     public bool $failOnTimeout = true;
 
-    public function __construct(public string $meetingId, public string $runToken, public bool $useTranscript)
+    public bool $transcribeOnly = false;
+
+    public function __construct(public string $meetingId, public string $runToken, public bool $useTranscript, bool $transcribeOnly = false)
     {
+        $this->transcribeOnly = $transcribeOnly;
         $this->onConnection('rapat');
         $this->onQueue('rapat');
         $this->afterCommit();
@@ -50,7 +53,7 @@ class ProcessMeeting implements ShouldQueue
             $m->version++;
             $m->save();
             if ($audit) {
-                RapatHistory::record($m, null, 'ai_generate', $before, ['transcript', 'segments', 'minutes']);
+                RapatHistory::record($m, null, $this->transcribeOnly ? 'ai_transcribe' : 'ai_generate', $before, $this->transcribeOnly ? ['transcript', 'segments'] : ['transcript', 'segments', 'minutes']);
             }
 
             return true;
@@ -151,6 +154,19 @@ class ProcessMeeting implements ShouldQueue
             if (trim($p['transcript']) === '') {
                 throw new NoSpeechDetected;
             }
+            if ($this->transcribeOnly) {
+                $this->save(function ($m) {
+                    $p = $m->payload;
+                    $p['error'] = null;
+                    $p['processingMode'] = null;
+                    $m->payload = $p;
+                    $m->status = 'ready';
+                    $m->run_started_at = null;
+                    $m->run_token = null;
+                }, audit: true);
+
+                return;
+            }
             $metadata = array_diff_key($p, array_flip(['transcript', 'segments', 'minutes', 'error']));
             $minutes = $engine->run(['operation' => 'minutes', 'transcript' => $p['transcript'], 'meeting' => $metadata]);
             $rules = array_filter(RapatData::rules(), fn ($k) => $k === 'minutes' || str_starts_with($k, 'minutes.'), ARRAY_FILTER_USE_KEY);
@@ -164,6 +180,7 @@ class ProcessMeeting implements ShouldQueue
             $this->save(function ($m) use ($minutes) {
                 $p = $m->payload;
                 $p['minutes'] = $minutes;
+                $p['processingMode'] = null;
                 $p['error'] = null;
                 $m->payload = $p;
                 $m->status = 'ready';
@@ -182,6 +199,7 @@ class ProcessMeeting implements ShouldQueue
         $this->save(function ($m) use ($message) {
             $p = $m->payload;
             $p['error'] = $message;
+            $p['processingMode'] = null;
             $m->payload = $p;
             $m->status = 'failed';
             $m->run_started_at = null;

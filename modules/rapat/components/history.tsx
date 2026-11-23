@@ -8,7 +8,7 @@ import { request } from '../api/client';
 import { dateLabel, fieldLabel } from '../api/workflow';
 import { ErrorNotice, Loading } from './feedback';
 import Review from './review';
-const actions:Record<string,string>={create:'Rapat dicatat',update:'Catatan diperbarui',finalize:'Notulen difinalkan',reopen:'Notulen dibuka kembali',task_status:'Status tindak lanjut diubah',ai_generate:'Draf dari AI ditambahkan',attachment_added:'Dokumen ditambahkan',attachment_removed:'Dokumen dikeluarkan',archive:'Rapat diarsipkan',restore:'Rapat dikembalikan'};
+const actions:Record<string,string>={create:'Rapat dicatat',update:'Catatan diperbarui',finalize:'Notulen difinalkan',reopen:'Notulen dibuka kembali',task_status:'Status tindak lanjut diubah',ai_transcribe:'Transkrip audio selesai',ai_generate:'Draf dari AI ditambahkan',attachment_added:'Dokumen ditambahkan',attachment_removed:'Dokumen dikeluarkan',archive:'Rapat diarsipkan',restore:'Rapat dikembalikan'};
 export default function History({ id, version }: { id:string; version:number }) {
   const [page,setPage]=useState(1);const [data,setData]=useState<HistoryList|null>(null);const [error,setError]=useState<Error|null>(null);
   useEffect(()=>{const controller=new AbortController();void request<HistoryList>(`meetings/${encodeURIComponent(id)}/history?page=${page}`,{signal:controller.signal},false).then(setData).catch(e=>{if(!controller.signal.aborted)setError(e);});return()=>controller.abort();},[id,page,version]);

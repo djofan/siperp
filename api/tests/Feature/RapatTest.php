@@ -216,7 +216,7 @@ it('caches bounded local health and refuses unavailable engines without queueing
             throw new RuntimeException('sensitive model error');
         }
     };
-    expect($engine->health())->toBe(['provider' => 'local', 'configured' => false]);
+    expect($engine->health())->toBe(['provider' => 'local', 'configured' => false, 'transcriberReady' => false, 'summarizerReady' => false]);
     $engine->health();
     expect($engine->calls)->toBe(1);
     $this->app->instance(LocalEngine::class, $engine);
@@ -562,4 +562,150 @@ it('exports finalized attendance and Jakarta dates without any AI runtime', func
         unlink($tmp);
         $this->travelBack();
     }
+});
+it('transcribes with Whisper alone and preserves manual minutes and workflow', function () {
+    $engine = new class extends LocalEngine
+    {
+        public array $calls = [];
+
+        public function health(): array
+        {
+            return ['provider' => 'local', 'configured' => false, 'transcriberReady' => true, 'summarizerReady' => false];
+        }
+
+        public function run(array $input): array
+        {
+            $this->calls[] = $input['operation'];
+            if ($input['operation'] !== 'transcribe') {
+                throw new RuntimeException('Summarizer must not run');
+            }
+
+            return ['text' => 'Transkrip rapat lokal.', 'segments' => [['start' => 0, 'end' => 2, 'text' => 'Transkrip rapat lokal.', 'speaker' => null]]];
+        }
+    };
+    $this->app->instance(LocalEngine::class, $engine);
+    $manual = ['summary' => 'Catatan manual tetap tersimpan', 'discussion' => [], 'decisions' => [], 'actions' => []];
+    $id = $this->postJson('/api/v1/rapat/meetings', [...$this->payload, 'minutes' => $manual])->assertCreated()->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    $version = Meeting::find($id)->version;
+    $this->postJson($url.'/transcribe', ['version' => $version])->assertAccepted()->assertJsonPath('data.processingMode', 'transcribe');
+    Queue::assertPushed(ProcessMeeting::class, fn ($job) => $job->transcribeOnly && ! $job->useTranscript && $job->queue === 'rapat-transcription' && $job->connection === 'rapat');
+    $this->postJson($url.'/transcribe', ['version' => $version])->assertConflict();
+    $meeting = Meeting::find($id);
+    $job = new ProcessMeeting($id, $meeting->run_token, false, true);
+    $job->handle($engine);
+    $this->getJson($url)->assertOk()->assertJsonPath('data.status', 'ready')->assertJsonPath('data.processingMode', null)
+        ->assertJsonPath('data.transcript', 'Transkrip rapat lokal.')->assertJsonPath('data.minutes', $manual)->assertJsonPath('data.workflowStatus', 'draft');
+    expect($engine->calls)->toBe(['transcribe']);
+    $this->getJson($url.'/history')->assertOk()->assertJsonPath('data.0.action', 'ai_transcribe')->assertJsonPath('data.0.actor.id', null);
+    $version = Meeting::find($id)->version;
+    $job->handle($engine);
+    expect(Meeting::find($id)->version)->toBe($version);
+});
+
+it('requires audio and an available transcriber before queueing transcription', function () {
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    $this->postJson($url.'/transcribe', ['version' => 1])->assertUnprocessable();
+    Queue::assertNothingPushed();
+    $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    $this->app->instance(LocalEngine::class, new class extends LocalEngine
+    {
+        public function health(): array
+        {
+            return ['provider' => 'local', 'configured' => false, 'transcriberReady' => false, 'summarizerReady' => true];
+        }
+    });
+    $version = Meeting::find($id)->version;
+    $this->postJson($url.'/transcribe', ['version' => $version])->assertStatus(503);
+    Queue::assertNothingPushed();
+    expect(Meeting::find($id)->status)->toBe('draft');
+});
+
+it('does not allow readers or other secretaries to transcribe or change locked meetings', function () {
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    Sanctum::actingAs(rapatActor('viewer'));
+    $this->postJson($url.'/transcribe', ['version' => 1])->assertForbidden();
+    Sanctum::actingAs(rapatActor('secretary'));
+    $this->postJson($url.'/transcribe', ['version' => 1])->assertNotFound();
+    Sanctum::actingAs($this->actor);
+    $m = Meeting::find($id);
+    $p = $m->payload;
+    $p['workflowStatus'] = 'finalized';
+    $m->payload = $p;
+    $m->save();
+    $this->postJson($url.'/transcribe', ['version' => 1])->assertConflict();
+    $p['workflowStatus'] = 'draft';
+    $m->payload = $p;
+    $m->archived_at = now();
+    $m->save();
+    $this->postJson($url.'/transcribe', ['version' => 1])->assertConflict();
+    Queue::assertNothingPushed();
+});
+
+it('retains partial transcription and resumes unfinished audio without calling minutes', function () {
+    $engine = new class extends LocalEngine
+    {
+        public int $calls = 0;
+
+        public bool $fail = true;
+
+        public function health(): array
+        {
+            return ['provider' => 'local', 'configured' => false, 'transcriberReady' => true, 'summarizerReady' => false];
+        }
+
+        public function run(array $input): array
+        {
+            if ($input['operation'] !== 'transcribe') {
+                throw new RuntimeException;
+            }
+            $this->calls++;
+            if ($this->fail && $this->calls === 2) {
+                throw new RuntimeException('private decoder detail');
+            }
+
+            return ['text' => 'Bagian audio '.$this->calls, 'segments' => [['start' => 0, 'end' => 1, 'text' => 'Bagian audio '.$this->calls, 'speaker' => null]]];
+        }
+    };
+    $this->app->instance(LocalEngine::class, $engine);
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    foreach ([1, 2] as $sequence) {
+        $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => $sequence], ['Accept' => 'application/json'])->assertCreated();
+    }
+    $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
+    (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle($engine);
+    $this->getJson($url)->assertJsonPath('data.status', 'failed')->assertJsonPath('data.transcript', 'Bagian audio 1')->assertDontSee('private decoder detail');
+    expect(Media::where('meeting_id', $id)->where('transcribed', true)->count())->toBe(1);
+    $engine->fail = false;
+    $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
+    (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle($engine);
+    $this->getJson($url)->assertJsonPath('data.status', 'ready')->assertJsonPath('data.transcript', "Bagian audio 1\nBagian audio 3");
+    expect($engine->calls)->toBe(3);
+});
+it('supports a real local Whisper transcription through encrypted upload and queued job', function () {
+    $sample = getenv('RAPAT_REAL_ASR_SAMPLE');
+    $python = getenv('RAPAT_REAL_ASR_PYTHON');
+    $models = getenv('RAPAT_REAL_ASR_MODELS');
+    if (! $sample || ! $python || ! $models) {
+        $this->markTestSkipped('Opt-in real local ASR smoke test; no audio/model is bundled.');
+    }
+    config(['rapat.python' => $python, 'rapat.model_dirs' => ['RAPAT_MODEL_DIR' => $models, 'RAPAT_WHISPER_MODEL' => 'small', 'RAPAT_OLLAMA_URL' => 'http://127.0.0.1:11434', 'RAPAT_OLLAMA_MODEL' => 'qwen3.5:0.8b-q8_0']]);
+    $engine = new LocalEngine;
+    $this->app->instance(LocalEngine::class, $engine);
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->assertCreated()->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    $file = new UploadedFile($sample, 'sample.wav', 'audio/wav', null, true);
+    $this->post($url.'/media', ['file' => $file, 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
+    (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle($engine);
+    $meeting = Meeting::findOrFail($id);
+    expect($meeting->status)->toBe('ready');
+    expect(mb_strlen($meeting->payload['transcript']))->toBeGreaterThan(20);
+    expect(count($meeting->payload['segments']))->toBeGreaterThan(0);
+    expect($meeting->payload['minutes'])->toBe(RapatData::minutes());
+    expect(Media::where('meeting_id', $id)->first()->transcribed)->toBeTrue();
 });

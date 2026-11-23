@@ -218,3 +218,23 @@ meminta ringkasan hasil yang singkat; tidak memakai fallback ekstraktif.
 Referensi implementasi: [faster-whisper](https://github.com/SYSTRAN/faster-whisper),
 [model Systran small](https://huggingface.co/Systran/faster-whisper-small), dan
 [Ollama generate](https://docs.ollama.com/api/generate).
+
+## Alur transkripsi terlebih dahulu
+
+Workspace membuka tab Transkrip secara default. Buat rapat dengan judul dan tanggal,
+rekam atau unggah audio, lalu pilih Buat transkrip. Hasil dapat dikoreksi, disimpan,
+disalin dan diunduh TXT. Notulen disusun secara terpisah dari transkrip tersimpan;
+model notulen yang tidak siap tidak menghalangi transkripsi. Proses gagal tetap
+menyimpan audio dan bagian transkrip yang sudah berhasil. Konfirmasi diperlukan
+sebelum mengganti transkrip atau notulen yang sudah ada.
+
+Deploy memerlukan pembaruan helper worker melalui `ops/rapat/install-worker.sh`
+setelah rilis baru aktif, agar antrean `rapat-transcription` didengarkan. Ikuti
+panduan ops dan lakukan smoke test per pengguna; web update tidak memasang helper
+global secara otomatis. Tidak ada migration atau penghapusan data lama.
+
+Tes backend opsional dengan audio/model nyata memakai variabel proses
+`RAPAT_REAL_ASR_SAMPLE` (WAV lokal), `RAPAT_REAL_ASR_PYTHON` (venv) dan
+`RAPAT_REAL_ASR_MODELS` (root cache berisi small), lalu jalankan RapatTest dengan
+phpunit.xml. Tes tetap memakai SQLite dalam memori dan storage test. Audio/model
+tidak dibundel atau di-commit; tanpa ketiga variabel, hanya tes nyata ini dilewati.

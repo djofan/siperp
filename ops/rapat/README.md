@@ -86,7 +86,8 @@ Wrapper meneruskan SIGTERM dan menunggu PHP; SendSIGKILL=no menghindari pemaksaa
 stop. Exit error diteruskan ke systemd; exit 78 menghentikan restart otomatis
 untuk konfigurasi yang harus diperiksa. Antrean kosong bukan error dan tidak
 menghabiskan StartLimitBurst seperti pola Restart=always per proses sekali jalan.
-Jika model belum siap, helper menunggu tanpa mengambil job. Active/running saja
+Helper menunggu tanpa mengambil job jika kedua mesin tidak siap. Jika salah satu
+siap, API memeriksa kesiapan sesuai operasi yang diminta sebelum mengantrekan job. Active/running saja
 tidak membuktikan model atau proses pembuatan notulen siap.
 
 ## Perubahan konfigurasi dan verifikasi
@@ -126,3 +127,13 @@ bash -n ops/rapat/install-worker.sh
 
 Tes wrapper memakai proses tiruan, tanpa systemd, database, model atau VPS.
 Uji systemd/cgroup dan alur aplikasi tetap dilakukan pada server target.
+
+## Pembaruan alur transkripsi terpisah
+
+Worker mendengar `rapat-transcription,rapat` pada koneksi database Rapat yang sama.
+Transkripsi masuk antrean khusus agar worker versi lama yang hanya mendengar
+`rapat` tidak mengambilnya sebagai pekerjaan pembuatan notulen. Setelah deploy
+perubahan ini, jalankan installer worker secara eksplisit; update web saja tidak
+menimpa helper global. Selama helper belum diperbarui, job transkripsi baru tetap
+mengantre. Jangan menjalankan worker paralel atau memindahkan job ke antrean lama
+untuk melewati pembatasan tersebut. Tidak ada perubahan schema database.

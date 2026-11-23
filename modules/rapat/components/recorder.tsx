@@ -1,6 +1,7 @@
 'use client';
 import { formatNumericText } from "@/lib/number-format";
 
+import { Mic, Square, LoaderCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { request } from '../api/client';
 import type { Viewer } from '@/contracts/modules/rapat';
@@ -14,6 +15,9 @@ export default function Recorder({ meetingId, initialSequence, refresh, onPendin
   const [finalizing, setFinalizing] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const starting = useRef(false);
+  const [elapsed, setElapsed] = useState(0);
+  const startedAt = useRef(0);
+  useEffect(() => { if (!recording) return; const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startedAt.current) / 1000)), 1000); return () => clearInterval(timer); }, [recording]);
   const [message, setMessage] = useState('');
   const stop = useRef<(() => void) | null>(null);
   const sequence = useRef(initialSequence);
@@ -40,7 +44,7 @@ export default function Recorder({ meetingId, initialSequence, refresh, onPendin
       if (sequence.current >= 500) throw new Error('Batas 500 berkas tercapai. Buat rapat baru untuk melanjutkan rekaman.');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!mounted.current) { stream.getTracks().forEach(track => track.stop()); return; }
-      setRecording(true); setMessage('Mikrofon aktif. Tetap buka halaman ini; rekaman dapat terhenti saat perangkat terkunci.');
+      startedAt.current = Date.now(); setElapsed(0); setRecording(true); setMessage('Mikrofon aktif. Tetap buka halaman ini; rekaman dapat terhenti saat perangkat terkunci.');
       stop.current = recordClips(stream, blob => {
         const n = ++sequence.current;
         const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
@@ -52,5 +56,13 @@ export default function Recorder({ meetingId, initialSequence, refresh, onPendin
     } catch (e) { setMessage(e instanceof Error ? e.message : 'Izin mikrofon belum diberikan.'); } finally { starting.current = false; if (mounted.current) setRequesting(false); }
   }
   function download(clip: Clip) { const url = URL.createObjectURL(clip.blob); const a = document.createElement('a'); a.href = url; a.download = clip.name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-  return <section className="rp-card"><h2>Rekam percakapan</h2><p>Dengan menekan mulai, Anda mengizinkan penggunaan mikrofon. Pastikan peserta mengetahui perekaman ini.</p><div className="rp-actions">{recording ? <button type="button" disabled={finalizing} onClick={() => { setFinalizing(true); stop.current?.(); }}>■ Hentikan rekaman</button> : <button type="button" disabled={disabled || busy || requesting || finalizing} onClick={start}>● Mulai merekam</button>}<span>{finalizing ? 'Menyelesaikan klip terakhir…' : recording ? '● Sedang merekam' : 'Mikrofon tidak aktif'}</span></div><p className="rp-local-notice">Klip yang belum terkirim disimpan di browser ini sampai unggahan dikonfirmasi. Salinan lokal ini tidak terenkripsi; hindari merekam dari perangkat bersama. Pemulihan dan unggahan hanya tersedia untuk akun pembuat rekaman.</p><p role="status">{message}</p>{clips.length > 0 && <div><p>{formatNumericText(clips.length)} klip menunggu konfirmasi penyimpanan.</p><button type="button" disabled={disabled || busy || recording || finalizing} onClick={flush}>Coba unggah ulang</button>{clips.map(c => <div className="rp-row" key={c.clientId}><span>{c.name}</span><button type="button" onClick={() => download(c)}>Unduh salinan</button></div>)}</div>}</section>;
+  return <section className="rp-card rp-recorder">
+    <div className={`rp-recorder-orb ${recording ? 'is-recording' : ''}`}><Mic size={30}/></div>
+    <strong className="rp-recorder-clock" aria-label="Durasi rekaman">{String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}</strong>
+    <p>Pastikan peserta mengetahui perekaman ini. Tetap buka halaman selama merekam.</p>
+    <div className="rp-actions">{recording ? <button type="button" className="rp-record-stop" disabled={finalizing} onClick={() => { setFinalizing(true); stop.current?.(); }}><Square size={16}/> Hentikan & simpan audio</button> : <button type="button" className="rp-primary" disabled={disabled || busy || requesting || finalizing} onClick={start}>{requesting || finalizing || busy ? <LoaderCircle className="rp-spin" size={17}/> : <Mic size={17}/>} {requesting ? 'Membuka mikrofon…' : finalizing ? 'Menyimpan audio…' : busy ? 'Mengunggah rekaman…' : 'Mulai merekam'}</button>}</div>
+    <p role="status" className="rp-recorder-message">{message || 'Rekaman dibuat menjadi teks setelah Anda menekan Buat transkrip.'}</p>
+    {clips.length > 0 && <div className="rp-pending-clips"><strong>{formatNumericText(clips.length)} klip menunggu tersimpan</strong><button type="button" disabled={disabled || busy || recording || finalizing} onClick={flush}>Coba unggah ulang</button>{clips.map(c => <div className="rp-row" key={c.clientId}><span>{c.name}</span><button type="button" onClick={() => download(c)}>Unduh salinan</button></div>)}</div>}
+    <small>Audio yang belum terkirim tersimpan sementara di browser dan tidak terenkripsi. Gunakan perangkat pribadi dan tunggu konfirmasi unggahan.</small>
+  </section>;
 }
