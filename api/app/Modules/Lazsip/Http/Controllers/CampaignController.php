@@ -40,7 +40,8 @@ class CampaignController
         $data = $request->validate([
             'title' => 'required|string|max:191', 'description' => 'required|string|max:1000000',
             'targetAmount' => 'sometimes|nullable|integer|min:0|max:2147483647', 'image' => 'sometimes|nullable|string|max:191',
-            'uniqueCode' => ['sometimes', 'nullable', 'string', 'regex:/^\d{2}$/D', Rule::unique('lazsip_campaigns', 'unique_code')->ignore($id)],
+            // Keep writes readable by retained releases until every payment reader supports absent codes.
+            'uniqueCode' => ['required', 'string', 'regex:/^\d{2}$/D', Rule::unique('lazsip_campaigns', 'unique_code')->ignore($id)],
             'isPinned' => 'required|boolean', 'status' => 'required|in:active,completed',
             'documentationPhotos' => 'sometimes|nullable|array',
             'documentationPhotos.*' => 'array:id,image,caption,isDemo',
@@ -49,14 +50,17 @@ class CampaignController
             'documentationPhotos.*.caption' => 'present|nullable|string|max:500',
             'documentationPhotos.*.isDemo' => 'sometimes|boolean',
         ]);
-        if (array_key_exists('targetAmount', $data)) $data['targetAmount'] = $data['targetAmount'] ?? 0;
+        if (array_key_exists('targetAmount', $data)) {
+            $data['targetAmount'] = $data['targetAmount'] ?? 0;
+        }
+
         return $data;
     }
 
     public function store(Request $request): JsonResponse
     {
         $row = new LazsipCampaign;
-        $row->forceFill(['currentAmount' => 0, 'targetAmount' => 0, 'uniqueCode' => null, ...$this->input($request)])->save();
+        $row->forceFill(['currentAmount' => 0, 'targetAmount' => 0, ...$this->input($request)])->save();
 
         return response()->json(['ok' => true, 'id' => $row->id], 201)->header('Location', $request->url().'/'.$row->id);
     }
