@@ -24,6 +24,8 @@ def check():
     assert all(a['status'] == 'open' for a in notes['actions']), notes
     assert 0 < len(notes['summary']) < len(TRANSCRIPT), notes
     assert notes['discussion'], notes
+    # Regression: a small model previously invented government funding here.
+    assert 'pemerintah' not in json.dumps(notes, ensure_ascii=False).casefold(), notes
     print(json.dumps(notes, ensure_ascii=False))
     empty = engine.minutes({'transcript': 'Rapat membahas kondisi layanan. '
                             'Belum ada keputusan atau penugasan. Jadwal rapat berikutnya belum ditentukan.',
