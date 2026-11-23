@@ -33,6 +33,7 @@ function harness({ deny = false, fail = null } = {}) {
     '../app/QuizReview': { QuizReview: () => React.createElement('div', null, 'Jawaban kuis') },
     '../app/ReviewHistory': { ReviewHistory: () => React.createElement('div', null, 'Riwayat lama') },
     './TaskRecap.module.css': { default: {} },
+    './TaskRecapExport': { TaskRecapExport: () => React.createElement('button', null, 'Unduh semua progres (Excel)') },
   };
   const media = { exports: {} };
   vm.runInNewContext(compile('modules/tanwir/components/app/SubmissionMedia.tsx'), { exports: media.exports, require: id => id === './media' ? { submissionFileUrl: (id, index) => `/api/tanwir/files/submission/${id}?index=${index}` } : require(id) });
@@ -43,7 +44,7 @@ function harness({ deny = false, fail = null } = {}) {
 test('recap exposes filters and keeps group, status and search through pagination and result links', async () => {
   const { pages } = harness();
   const list = renderToStaticMarkup(await pages.TaskRecapIndexPage({ params }));
-  assert.match(list, /PIC pembuat tugas/); assert.match(list, /Kelompok tujuan/); assert.match(list, /Lihat rincian/);
+  assert.match(list, /Unduh semua progres/); assert.match(list, /PIC pembuat tugas/); assert.match(list, /Kelompok tujuan/); assert.match(list, /Lihat rincian/);
   const detail = renderToStaticMarkup(await pages.TaskRecapDetailPage({ id: 'task-1', params }));
   assert.match(detail, /Nilai 0/); assert.match(detail, /Belum mengumpulkan/); assert.match(detail, /Di luar sasaran saat ini/); assert.match(detail, /Nonaktif/);
   assert.match(detail, /hasil\/sub-1\?group=g1&amp;q=Nama\+%26\+kode&amp;status=approved/);
