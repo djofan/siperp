@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { useRef } from "react";
 
 import { useMemo, useState, type FormEvent } from "react";
@@ -98,7 +100,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        setError((data?.error?.message ?? data?.error) ?? "Gagal mengirim donasi.");
+        setError(describeApiProblem(data, 0, "Gagal mengirim donasi."));
         return;
       }
 
@@ -195,7 +197,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
 
       <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor="donasi-nama" className="text-sm font-medium text-lazsip-primary-900">Nama</label>
+          <label htmlFor="donasi-nama" className="text-sm font-medium text-lazsip-primary-900">Nama<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></label>
           <input
             id="donasi-nama"
             required

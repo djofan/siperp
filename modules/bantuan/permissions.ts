@@ -13,6 +13,7 @@ export function intakeViewer(viewer: BantuanViewer, direct = false): BantuanView
 }
 export function canEditIntake(viewer: BantuanViewer, row: AidApplication): boolean {
   if (hasAnyRole(viewer, ["admin", "call_center"])) return true;
+  if (["rejected_t1","review1"].includes(row.status) && hasAnyRole(viewer,["approver","chair","survey_approver"]) && row.createdBy !== viewer.id && row.verifierId !== viewer.id) return true;
   if (row.createdBy !== viewer.id) return false;
   if (hasRole(viewer,"verifier") && ["draft","needs_data","screening","review1","survey_assignment","survey_assigned","bypass_review"].includes(row.status)) return true;
   return hasRole(viewer,"requester") && row.source !== "bypass" && ["draft","needs_data"].includes(row.status);

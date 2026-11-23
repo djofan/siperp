@@ -39,11 +39,11 @@ async function upload(photo:QueuedPhoto,onProgress:(n:number)=>void):Promise<voi
     xhr.onload=()=>{
       if(xhr.status>=200&&xhr.status<300){
         try{const result=JSON.parse(xhr.responseText);if(typeof result?.data?.id!=="string")throw new Error();resolve();}
-        catch{reject(new RequestError("Respons unggahan tidak valid. Periksa penyimpanan sebelum mencoba ulang. (Kode: INVALID_API_RESPONSE)",502));}return;
+        catch{reject(new RequestError("Respons unggahan tidak valid. Periksa penyimpanan sebelum mencoba ulang.",502));}return;
       }
       let body:Parameters<typeof describeApiProblem>[0]=null;try{body=JSON.parse(xhr.responseText);}catch{}
       if(xhr.status===401&&window.location.pathname.startsWith("/bantuan-app/"))window.dispatchEvent(new Event("bantuan-session-expired"));
-      const message=xhr.status===413?"Berkas ditolak karena batas ukuran server. Maksimal aplikasi 10 MB; minta admin memeriksa batas unggahan PHP/Nginx. (HTTP 413)":describeApiProblem(body,xhr.status,"Unggahan ditolak server. Coba lagi atau hubungi admin dengan kode berikut.");
+      const message=xhr.status===413?"Berkas ditolak karena batas ukuran server. Gunakan berkas di bawah 10 MB. Hubungi admin jika berkas kecil tetap ditolak.":describeApiProblem(body,xhr.status,"Unggahan ditolak server. Coba lagi atau hubungi admin bila masih gagal.");
       reject(new RequestError(message,xhr.status));
     };
 

@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
@@ -23,7 +25,7 @@ export function TransactionActions({
       try {
         const response = await fetch(`/api/payment/gateway-status/${encodeURIComponent(id)}`, { method: "POST" });
         const body = await response.json();
-        if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : body.error?.message ?? "Status belum dapat diverifikasi.");
+        if (!response.ok) throw new Error(typeof body.error === "string" ? body.error : describeApiProblem(body, 0, "Status belum dapat diverifikasi."));
         router.refresh();
       } catch (err) { setError(err instanceof Error ? err.message : "Koneksi gagal."); }
     });

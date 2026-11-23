@@ -22,7 +22,7 @@ function harness(defaultValue=''){
  const hooks={...React,useState(initial){const i=cursor++;if(!(i in state))state[i]=typeof initial==='function'?initial():initial;return [state[i],value=>{state[i]=value;}];},useRef:()=>({current:null}),useId:()=> 'money-hint',useEffect:fn=>effects.push(fn)};
  const mod={exports:{}};
  vm.runInNewContext(ts.transpileModule(readFileSync('modules/keuangan/components/RupiahInput.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText,{exports:mod.exports,requestAnimationFrame:fn=>fn(),require:id=>id==='react'?hooks:id==='../rupiah-input'?{formatRupiahInput,parseRupiahInput}:require(id)});
- return {render(){cursor=0;const tree=mod.exports.RupiahInput({defaultValue});const children=tree.props.children.filter(x=>typeof x==='object');return {visible:children[0],hidden:children[1],hint:children[2]};}};
+ return {render(){cursor=0;const tree=mod.exports.RupiahInput({defaultValue});const children=tree.props.children.filter(x=>typeof x==='object');return {visible:children.find(n=>n.props.name==='amountDisplay'),hidden:children.find(n=>n.props.name==='amount'),hint:children.find(n=>n.type==='small')};}};
 }
 test('typing and pasting use a formatted visible field and a raw integer field for submission',()=>{
  const app=harness('4000000');let ui=app.render();

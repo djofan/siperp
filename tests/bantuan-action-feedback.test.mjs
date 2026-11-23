@@ -238,3 +238,24 @@ test('approver can explicitly open amount correction before funding but not afte
   const grouped=mount({status:'fund_ready',role:'approver',detail:{fundingRequest:{id:'group',number:'DANA-TEST'}}});
   assert.equal(grouped.find(n=>n.type==='button'&&text(n).startsWith('Ubah nominal bantuan')),undefined);
 });
+
+
+test('stage-one decision makers can edit and reopen only eligible rejected intakes', () => {
+  for (const role of ['approver','chair','survey_approver']) {
+    const app = mount({status:'rejected_t1',role,detail:{verifierId:null}});
+    app.click('Buka kembali pengajuan');
+    assert.ok(app.actionForm());
+    const {canEditIntake} = app.load('modules/bantuan/permissions.ts');
+    const viewer = {id:'actor',role};
+    const row = {status:'rejected_t1',createdBy:'other',verifierId:null};
+    assert.equal(canEditIntake(viewer,row),true);
+    assert.equal(canEditIntake(viewer,{...row,status:'review1'}),true);
+    assert.equal(canEditIntake(viewer,{...row,status:'rejected_t2'}),false);
+    assert.equal(canEditIntake(viewer,{...row,createdBy:'actor'}),false);
+    assert.equal(canEditIntake(viewer,{...row,verifierId:'actor'}),false);
+  }
+  for (const [role,status,detail] of [['survey_approver','rejected_t2',{}],['survey_approver','rejected_t1',{createdBy:'actor'}],['approver','rejected_t1',{verifierId:'actor'}]]) {
+    const app=mount({role,status,detail});
+    assert.equal(app.find(n=>n.type==='button'&&text(n).startsWith('Buka kembali pengajuan')),undefined);
+  }
+});

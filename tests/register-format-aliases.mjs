@@ -4,6 +4,7 @@ import {fileURLToPath} from "node:url";
 import path from "node:path";
 const require=createRequire(import.meta.url),ts=require("typescript");
 const aliases=new Map([
+ ["@/lib/api-problem",fileURLToPath(new URL("../lib/api-problem.ts",import.meta.url))],
  ["@/lib/number-format",fileURLToPath(new URL("../lib/number-format.ts",import.meta.url))],
  ["@/components/ui/RupiahNumberInput",fileURLToPath(new URL("../components/ui/RupiahNumberInput.tsx",import.meta.url))],
 ]);

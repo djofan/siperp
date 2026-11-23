@@ -12,9 +12,9 @@ export function ExtendDeadlineForm({ action }: { action: (state: ActionState, fo
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {state.message && <Notice tone="success">{state.message}</Notice>}
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
+        <label className="flex flex-col gap-1.5 text-sm font-medium"><span>
           Tambah (jam)
-          <input name="hours" type="number" inputMode="numeric" required min={EXTEND_HOURS_MIN} max={EXTEND_HOURS_MAX} defaultValue={2} className={inputClass + " w-28"} />
+          <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="hours" type="number" inputMode="numeric" required min={EXTEND_HOURS_MIN} max={EXTEND_HOURS_MAX} defaultValue={2} className={inputClass + " w-28"} />
         </label>
         <button type="submit" disabled={pending} className={buttonClass("primary")}>
           {pending ? "Menyimpan…" : "Perpanjang"}

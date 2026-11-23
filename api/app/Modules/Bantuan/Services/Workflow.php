@@ -40,7 +40,7 @@ class Workflow
         'handover' => [['disbursed'], ['verifier', 'volunteer', 'treasurer'], 'completed'],
         'delivery_fail' => [['disbursed'], ['verifier', 'volunteer', 'treasurer'], 'delivery_failed'],
         'return_funds' => [['delivery_failed'], ['treasurer'], 'returned'],
-        'reopen' => [['rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass', 'cancelled', 'returned'], ['approver', 'chair'], 'screening'],
+        'reopen' => [['rejected_screening', 'rejected_t1', 'rejected_t2', 'rejected_bypass', 'cancelled', 'returned'], ['approver', 'chair', 'survey_approver'], 'screening'],
         'cancel' => [['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'survey_submitted', 'bypass_review', 'approved', 'fund_ready'], ['call_center', 'verifier', 'requester'], 'cancelled'],
         'comment' => [[], ['call_center', 'approver', 'chair', 'verifier', 'fund_requester', 'treasurer', 'requester', 'observer', 'survey_approver'], null],
     ];
@@ -77,6 +77,10 @@ class Workflow
                 default => $roles,
             };
             $role = $access->allow($request, $manual !== null ? ['call_center'] : $roles);
+            if ($action === 'reopen') {
+                abort_if($role === 'survey_approver' && $from !== 'rejected_t1', 403);
+                abort_if($from === 'rejected_t1' && $role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');
+            }
             if ($manual !== null) $role = 'admin'; // Authorization above; executor identity is never changed.
             FundingRequests::guardIndividualAction($request, $row, $action);
             if ($action === 'cancel' && $role === 'verifier') {
@@ -233,7 +237,7 @@ class Workflow
                 $next = 'rejected_bypass';
             }
             if ($action === 'reopen') {
-                $next = $this->intakeStage($row);
+                $next = $from === 'rejected_t1' ? 'review1' : $this->intakeStage($row);
                 $row->amount = null;
                 $row->verifier_id = null;
                 $row->distributor_id = null;

@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { formatNumericText } from "@/lib/number-format";
 import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
 
@@ -51,8 +53,8 @@ export function CampaignForm({
     setError(null);
     if(uploading){setError("Tunggu hingga seluruh foto selesai diunggah.");return;}
     if(documentationPhotos.some(photo=>!photo.image)){setError("Unggah foto untuk setiap dokumentasi, atau hapus baris yang masih kosong.");return;}
-    if (!/^[0-9]{2}$/.test(uniqueCode.trim())) {
-      setError("Kode unik wajib diisi dengan 2 digit angka.");
+    if (uniqueCode.trim() && !/^[0-9]{2}$/.test(uniqueCode.trim())) {
+      setError("Jika diisi, kode unik harus terdiri dari 2 digit angka.");
       return;
     }
 
@@ -69,14 +71,14 @@ export function CampaignForm({
     const response = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, targetAmount: Number(targetAmount), image, uniqueCode: uniqueCode.trim(), isPinned, status, documentationPhotos }),
+      body: JSON.stringify({ title, description, targetAmount: Number(targetAmount), image, uniqueCode: uniqueCode.trim() || null, isPinned, status, documentationPhotos }),
     }).catch(()=>null);
 
     if(!response){setError("Koneksi terputus. Isian tetap tersimpan, silakan coba lagi.");setIsSubmitting(false);return;}
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError(typeof data?.error==="string"?data.error:data?.error?.message??"Gagal menyimpan campaign.");
+      setError(describeApiProblem(data, 0, "Gagal menyimpan campaign."));
       setIsSubmitting(false);
       return;
     }
@@ -147,11 +149,10 @@ export function CampaignForm({
 
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-lazsip-primary-900 dark:text-white">
-                Kode Unik<span className="ml-0.5 text-red-600">*</span>
+                Kode Unik <span className="font-normal opacity-60">(opsional)</span>
               </label>
               <input
                 pattern="[0-9]{2}"
-                required
                 inputMode="numeric"
                 maxLength={2}
                 placeholder="mis. 07"
@@ -160,7 +161,7 @@ export function CampaignForm({
                 className="rounded-full border border-lazsip-primary-200 bg-white px-4 py-2.5 text-sm text-lazsip-primary-900 outline-none focus:ring-2 focus:ring-lazsip-primary-400 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:ring-lazsip-primary-500"
               />
               <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">
-                Gunakan 2 digit angka yang belum dipakai campaign lain.
+                Boleh dikosongkan. Jika diisi, gunakan 2 digit angka yang belum dipakai campaign lain; kode ini tetap diterapkan saat donasi.
               </p>
             </div>
 

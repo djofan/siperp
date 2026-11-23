@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { formatNumericText } from "@/lib/number-format";
 
 
@@ -156,7 +158,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
         setDone({ isLate: !!body?.isLate });
         router.refresh();
       } else {
-        setError(typeof body?.error === "string" ? body.error : body?.error?.message ?? "Setoran gagal dikirim. Coba lagi.");
+        setError(describeApiProblem(body, 0, "Setoran gagal dikirim. Coba lagi."));
         setPhase("ready");
       }
     };

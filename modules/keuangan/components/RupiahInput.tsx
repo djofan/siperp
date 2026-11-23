@@ -29,8 +29,8 @@ export function RupiahInput({ defaultValue = "" }: { defaultValue?: string }) {
     }
   }
 
-  return <label>Nominal pengajuan (rupiah)
-    <input ref={input} name="amountDisplay" type="text" inputMode="numeric" required pattern="[1-9][0-9]{0,2}(\.[0-9]{3})*" maxLength={21}
+  return <label><span>Nominal pengajuan (rupiah)
+    <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input ref={input} name="amountDisplay" type="text" inputMode="numeric" required pattern="[1-9][0-9]{0,2}(\.[0-9]{3})*" maxLength={21}
       value={display} placeholder="Contoh: 4.000.000" aria-describedby={hintId} aria-invalid={invalid || undefined}
       onChange={event => apply(event.currentTarget.value, event.currentTarget.selectionStart ?? undefined)}
       onKeyDown={event => { if (event.key === ".") event.preventDefault(); }}

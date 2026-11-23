@@ -37,7 +37,7 @@ export function ReviewForm({ action }: { action: (state: ActionState, form: Form
         ))}
       </div>
       <label className="block">
-        <span className="text-sm font-medium">{decision === "rejected" ? "Alasan penolakan (wajib)" : "Catatan untuk peserta (opsional)"}</span>
+        <span className="text-sm font-medium">{decision === "rejected" ? "Alasan penolakan (wajib)" : "Catatan untuk peserta (opsional)"}{(decision === "rejected") && <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span>}</span>
         <textarea
           name="feedback"
           rows={4}

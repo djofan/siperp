@@ -24,7 +24,7 @@ class ApiProblem
             $state = (string) ($error->errorInfo[0] ?? $error->getCode());
             $driver = (int) ($error->errorInfo[1] ?? 0);
             if (in_array($state, ['42S02', '42S22'], true) || in_array($driver, [1054, 1146], true)) {
-                return [500, 'DB_SCHEMA_MISMATCH', 'Struktur database server belum sesuai dengan versi aplikasi. Minta admin memeriksa migration database sebelum mencoba kembali.'];
+                return [500, 'DB_SCHEMA_MISMATCH', 'Aplikasi belum siap memproses data ini. Hubungi admin untuk menyelesaikan pembaruan server.'];
             }
             if (str_starts_with($state, '08') || in_array($driver, [1040, 1042, 1045, 1049, 2002, 2003, 2006, 2013], true)) {
                 return [503, 'DB_UNAVAILABLE', 'Aplikasi belum dapat mengakses database. Admin perlu memeriksa layanan database dan konfigurasi koneksinya.'];
@@ -38,11 +38,11 @@ class ApiProblem
             if (in_array($driver, [1048, 1364, 1406, 1451, 1452], true) || in_array($state, ['23000', '23502', '23503'], true)) {
                 return [409, 'DATA_CONSTRAINT', 'Data belum dapat disimpan karena ada isian atau hubungan data yang tidak sesuai. Periksa isian dan pilihan akun; hubungi admin bila tetap gagal.'];
             }
-            return [500, 'DB_QUERY_FAILED', 'Database gagal memproses penyimpanan atau pembacaan data. Hubungi admin dengan kode dan ID laporan di bawah.'];
+            return [500, 'DB_QUERY_FAILED', 'Data belum dapat diproses karena kendala pada server. Periksa apakah data sudah tersimpan, lalu hubungi admin bila masih gagal.'];
         }
         if ($error instanceof ConnectionException) return [503, 'EXTERNAL_CONNECTION_FAILED', 'Layanan yang diperlukan belum dapat dihubungi. Periksa koneksi server atau coba kembali beberapa saat lagi.'];
-        if ($error instanceof MissingAppKeyException) return [503, 'APP_KEY_MISSING', 'Konfigurasi enkripsi aplikasi belum tersedia. Minta admin memeriksa APP_KEY pada konfigurasi server tanpa mengganti kunci yang sudah digunakan.'];
-        if ($error instanceof DecryptException) return [500, 'ENCRYPTION_DATA_UNREADABLE', 'Data tersimpan tidak dapat dibaca. Admin perlu memeriksa konfigurasi enkripsi server; jangan mengganti APP_KEY untuk mencoba memperbaikinya.'];
+        if ($error instanceof MissingAppKeyException) return [503, 'APP_KEY_MISSING', 'Layanan penyimpanan aman belum tersedia. Hubungi admin untuk memeriksa server.'];
+        if ($error instanceof DecryptException) return [500, 'ENCRYPTION_DATA_UNREADABLE', 'Data tersimpan belum dapat dibaca. Hubungi admin; jangan hapus atau unggah ulang data terlebih dahulu.'];
         if ($error instanceof HttpExceptionInterface && $error->getMessage() === 'Request origin is not allowed.') return [403, 'ORIGIN_NOT_ALLOWED', 'Domain website belum diizinkan oleh konfigurasi API. Minta admin menyesuaikan origin frontend pada server.'];
         if ($error instanceof HttpExceptionInterface && $error->getMessage() === 'Account is inactive.') return [401, 'ACCOUNT_INACTIVE', 'Akun ini sedang nonaktif. Hubungi admin untuk memeriksa status akun.'];
         if ($error instanceof HttpExceptionInterface && $error->getStatusCode() === 401 && $error->getMessage() === 'Email atau password salah.') return [401, 'LOGIN_INVALID_CREDENTIALS', 'Email atau password salah. Periksa kembali email dan password Anda.'];
@@ -63,7 +63,7 @@ class ApiProblem
             503 => ['SERVICE_UNAVAILABLE', 'Layanan belum tersedia. Admin perlu memeriksa konfigurasi dan layanan server.'],
             504 => ['UPSTREAM_TIMEOUT', 'Layanan pendukung terlalu lama merespons. Periksa apakah data sudah tersimpan sebelum mencoba lagi.'],
         ];
-        [$diagnostic, $message] = $defaults[$status] ?? [$status >= 500 ? 'SERVER_INTERNAL_ERROR' : 'REQUEST_REJECTED', $status >= 500 ? 'Server mengalami kesalahan saat memproses permintaan. Hubungi admin dengan kode dan ID laporan di bawah.' : 'Permintaan tidak dapat diproses. Periksa data atau hubungi admin.'];
+        [$diagnostic, $message] = $defaults[$status] ?? [$status >= 500 ? 'SERVER_INTERNAL_ERROR' : 'REQUEST_REJECTED', $status >= 500 ? 'Terjadi kendala pada server. Periksa apakah data sudah tersimpan; hubungi admin bila masih gagal.' : 'Permintaan tidak dapat diproses. Periksa data atau hubungi admin.'];
         // Keep deliberate domain validation messages, not framework exception text.
         if ($error instanceof HttpExceptionInterface && trim($error->getMessage()) !== '' && ! in_array($status, [404, 405, 413, 419, 429], true)) {
             $message = $error->getMessage();
@@ -104,9 +104,10 @@ class ApiProblem
         $retryAfter = isset($headers['Retry-After']) && is_numeric($headers['Retry-After']) ? max(0, (int) $headers['Retry-After']) : null;
         if ($status === 429 && $retryAfter !== null) $message = "Terlalu banyak percobaan. Tunggu {$retryAfter} detik sebelum mencoba kembali.";
         $code = match ($status) { 400 => 'bad_request', 409 => 'conflict', 401 => 'unauthenticated', 403 => 'forbidden', 404 => 'not_found', 422 => 'validation_failed', 429 => 'rate_limited', 501 => 'not_implemented', default => $status >= 500 ? 'server_error' : 'request_error' };
-        if ($status >= 500 || $error instanceof QueryException) $message .= " (Kode: {$diagnostic}; ID: {$requestId})";
+        $details = $error instanceof ValidationException ? FriendlyValidation::details($error) : (object) [];
+        if ($error instanceof ValidationException) $message = implode(' ', array_slice(array_unique(array_merge(...array_values($details))), 0, 3));
         return (new ErrorResource(['code' => $code, 'message' => $message,
-            'details' => $error instanceof ValidationException ? $error->errors() : (object) [],
+            'details' => $details,
             'diagnosticCode' => $diagnostic, 'requestId' => $requestId, 'retryAfter' => $retryAfter]))
             ->response()->setStatusCode($status)->withHeaders([...$headers, 'X-Request-ID' => $requestId, 'Cache-Control' => 'no-store, private']);
     }

@@ -37,7 +37,7 @@ export function SantunanCard({row,verifier,onClose}:{row:SantunanRecord;verifier
     } catch {setError("Unduhan gagal. Coba kembali.");} finally {setBusy(false);}
   }
   return <Dialog title={`Kertas bantuan - ${row.frequency==="non_routine"&&row.category==="orphan"?"Anak yatim tidak rutin":routineCardTemplates[row.category].label}`} description="Nominal, verifikator, dan penerima mengikuti data santunan. Pilih tanggal yang akan dicetak; pilihan ini tidak mengubah laporan penyaluran." onClose={onClose} wide>
-    <label className={s.field}>Tanggal pada kartu<input className={s.input} type="date" required value={date} onChange={e=>{setReady(false);setError("");setDate(e.target.value);}}/></label>
+    <label className={s.field}><span>Tanggal pada kartu<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input className={s.input} type="date" required value={date} onChange={e=>{setReady(false);setError("");setDate(e.target.value);}}/></label>
     {!verifier&&<p className={s.fieldError} role="alert">Nama penyalur tidak ditemukan. Periksa akun pada Tim & akses, lalu muat ulang daftar santunan.</p>}
     {error&&<p className={s.fieldError} role="alert">{error}</p>}
     {!ready&&date&&verifier&&!error&&<p role="status">Menyiapkan kartu…</p>}

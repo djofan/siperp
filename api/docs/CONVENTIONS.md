@@ -13,15 +13,13 @@ secara eksplisit melalui installer ops agar mendengar `rapat-transcription,rapat
 Tidak ada migration. Versi worker lama hanya mendengar antrean lama, sehingga tidak
 mengambil job transkripsi baru dan tidak mengganti notulen secara tidak sengaja.
 
-LAZSIP campaign `uniqueCode` masih wajib 2 digit dan unik pada create/update
-selama rilis pembayaran lama masih melayani request. Field hilang, null, kosong,
-atau hanya spasi ditolak 422 tanpa menulis/menghapus kode. Nullable schema dan
-reader toleran null adalah tahap persiapan; belum mengaktifkan penulisan campaign
-tanpa kode. Pembacaan null dinormalisasi menjadi string kosong, dan reader
-pembayaran baru dapat mempertahankan nominal tanpa kode. Ini tidak menjadikan
-reader pembayaran versi lama kompatibel. Migration
-`2026_11_23_000001_make_lazsip_campaign_unique_code_optional` dipertahankan utuh.
-Lakukan preflight data dan ikuti [rollout bertahap](../../docs/lazsip-campaign-code-rollout.md).
+LAZSIP campaign `uniqueCode` opsional pada admin: create tanpa field/null/kosong
+menyimpan null; omisi update mempertahankan kode lama, sedangkan null/kosong
+menghapusnya. Kode nonkosong tetap wajib dua digit dan unik. Campaign berkode
+selalu menerapkan kode di server saat pembayaran; input donor tidak dapat
+menonaktifkannya. Campaign tanpa kode mempertahankan nominal asli. Deploy hanya
+setelah seluruh pembaca pembayaran dan target rollback mendukung kode kosong;
+lihat [rollout bertahap](../../docs/lazsip-campaign-code-rollout.md).
 
 Audit antrean Bantuan: GET `/api/v1/bantuan/dashboard` menambahkan `santunanTasks`
 berisi `transfer_pending` (Admin/Bendahara) dan `handover_pending` (Admin atau penyalur/
@@ -661,3 +659,22 @@ menentukan tanggal publik dan urutan berita sesudah prioritas pin; `createdAt`
 tetap riwayat pembuatan. Field dihilangkan mempertahankan nilai; null kembali
 ke tanggal pembuatan. Ini bukan penjadwalan publish, status tetap menentukan
 visibilitas. Memerlukan migration `2026_11_17_150000_add_editorial_news_dates`.
+
+
+Bantuan: koreksi tahap 1 pada PUT `/api/v1/bantuan/applications/{id}` di
+`rejected_t1` dan `review1` diizinkan untuk Approver, Ketua, dan Approver Survei
+yang bukan pembuat/verifikator pengajuan. Hak Admin/Call Center tetap berlaku.
+Status tidak berubah saat edit; version dan audit sebelum/sesudah tetap wajib.
+Aksi `reopen` dengan version dan alasan minimal 5 karakter mengembalikan
+`rejected_t1` langsung ke `review1`, lalu keputusan mengikuti alur normal.
+Approver Survei tidak boleh membuka penolakan tahap lain. Riwayat penolakan
+serta dokumen tidak dihapus. Tidak ada migration baru.
+
+
+Pesan error untuk pengguna memakai bahasa Indonesia yang menjelaskan kolom dan
+langkah perbaikan. Validasi mengisi `error.details` dengan pesan per kolom dan
+merangkum maksimal tiga pesan pada `error.message`. Nama field bersarang diberi
+label dan nomor baris. Kode diagnosis dan request ID tetap berada pada metadata,
+header dan log; jangan digabungkan ke pesan yang ditampilkan pada form. Payload
+error tetap kompatibel. Client menerima pesan lama dengan menghapus suffix kode
+teknis dan menerjemahkan validasi Laravel bila diperlukan.
