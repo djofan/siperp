@@ -24,7 +24,7 @@ try {
         throw new RuntimeException;
     }
     $h = $app->make(LocalEngine::class)->run(['operation' => 'health']);
-    if (($h['transcriberReady'] ?? false) !== true || ($h['summarizerReady'] ?? false) !== true) {
+    if (($h['transcriberReady'] ?? false) !== true && ($h['summarizerReady'] ?? false) !== true) {
         echo 'RAPAT_WORKER_WAITING_FOR_AI '.json_encode([
             'transcriberReady' => ($h['transcriberReady'] ?? false) === true,
             'summarizerReady' => ($h['summarizerReady'] ?? false) === true,
@@ -39,7 +39,7 @@ try {
 }
 // Daemon mode preserves Laravel's signal and timeout handling; exit after one job.
 exit($kernel->call('queue:work', [
-    'connection' => 'rapat', '--queue' => 'rapat', '--max-jobs' => 1,
+    'connection' => 'rapat', '--queue' => 'rapat-transcription,rapat', '--max-jobs' => 1,
     '--stop-when-empty' => true, '--max-time' => 60, '--sleep' => 3,
     '--tries' => 1, '--timeout' => 3600, '--memory' => 256,
 ]));

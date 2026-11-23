@@ -1,5 +1,18 @@
 # Konvensi REST API Siperp
 
+Transkripsi Rapat: POST `/api/v1/rapat/meetings/{id}/transcribe` menerima `version`
+dan membutuhkan audio tersimpan serta transcriber siap; tidak membutuhkan model
+notulen. Respons 202, mode proses read-only `transcribe`, antrean khusus
+`rapat-transcription` pada koneksi/tabel Rapat yang sama. Catatan notulen dan status
+finalisasi dipertahankan. Cache audio kompatibel dipakai kembali saat retry gagal;
+regenerasi eksplisit dari ready mentranskripsi ulang. Hak akses, optimistic lock,
+final/arsip/proses tetap berlaku. GET `ai/status` menambahkan flag transcriber dan
+summarizer; `configured` tetap berarti keduanya siap. Generate dengan
+`useTranscript=true` hanya membutuhkan summarizer. Worker global harus diperbarui
+secara eksplisit melalui installer ops agar mendengar `rapat-transcription,rapat`.
+Tidak ada migration. Versi worker lama hanya mendengar antrean lama, sehingga tidak
+mengambil job transkripsi baru dan tidak mengganti notulen secara tidak sengaja.
+
 LAZSIP campaign `uniqueCode` masih wajib 2 digit dan unik pada create/update
 selama rilis pembayaran lama masih melayani request. Field hilang, null, kosong,
 atau hanya spasi ditolak 422 tanpa menulis/menghapus kode. Nullable schema dan

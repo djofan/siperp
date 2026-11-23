@@ -424,12 +424,45 @@ class RapatController
         return response($bytes)->header('Content-Type', $media->mime)->header('Content-Disposition', 'inline; filename="audio.'.$media->payload['extension'].'"')->header('Cache-Control', 'no-store, private');
     }
 
+    public function transcribe(Request $r, string $id, LocalEngine $engine)
+    {
+        $this->writer($r);
+        $r->validate(['version' => 'required|integer|min:1']);
+        $this->editable($this->meeting($r, $id), $r);
+        $health = $engine->health();
+        abort_unless($health['transcriberReady'] ?? $health['configured'] ?? false, 503, 'Mesin transkripsi lokal belum siap.');
+
+        return DB::transaction(function () use ($r, $id) {
+            $m = $this->meeting($r, $id, true);
+            $this->editable($m, $r);
+            abort_unless(Media::where('meeting_id', $id)->exists(), 422, 'Rekam atau unggah audio terlebih dahulu.');
+            if ($m->status === 'ready') {
+                Media::where('meeting_id', $id)->update(['transcribed' => false]);
+            }
+            $token = (string) Str::uuid();
+            $m->run_token = $token;
+            $m->run_started_at = null;
+            $m->status = 'processing';
+            $m->version++;
+            $p = $m->payload;
+            $p['error'] = null;
+            $p['processingMode'] = 'transcribe';
+            $m->payload = $p;
+            $m->save();
+            ProcessMeeting::dispatch($id, $token, false, true)->onConnection('rapat')->onQueue('rapat-transcription')->afterCommit();
+
+            return $this->response(D::detail($m), 202);
+        });
+    }
+
     public function generate(Request $r, string $id, LocalEngine $engine)
     {
         $this->writer($r);
         $r->validate(['version' => 'required|integer|min:1', 'useTranscript' => 'required|boolean']);
         $this->editable($this->meeting($r, $id), $r);
-        abort_unless($engine->health()['configured'], 503, 'Siapkan model AI lokal sebelum membuat notulen.');
+        $health = $engine->health();
+        $ready = $r->boolean('useTranscript') ? ($health['summarizerReady'] ?? $health['configured'] ?? false) : ($health['configured'] ?? false);
+        abort_unless($ready, 503, 'Siapkan model AI lokal sebelum membuat notulen.');
 
         return DB::transaction(function () use ($r, $id) {
             $m = $this->meeting($r, $id, true);
@@ -446,6 +479,7 @@ class RapatController
             $m->version++;
             $p = $m->payload;
             $p['error'] = null;
+            $p['processingMode'] = 'minutes';
             $m->payload = $p;
             $m->save();
             ProcessMeeting::dispatch($id, $token, $r->boolean('useTranscript'))->onConnection('rapat')->onQueue('rapat')->afterCommit();

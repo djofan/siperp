@@ -14,6 +14,7 @@ Route::put('meetings/{id}', [C::class, 'update']);
 Route::post('meetings/{id}/media', [C::class, 'upload']);
 Route::get('media/{id}', [C::class, 'play']);
 Route::delete('media/{id}', [C::class, 'removeMedia']);
+Route::post('meetings/{id}/transcribe', [C::class, 'transcribe']);
 Route::post('meetings/{id}/generate', [C::class, 'generate']);
 Route::post('meetings/{id}/archive', [C::class, 'archive']);
 Route::get('meetings/{id}/docx', [C::class, 'docx']);

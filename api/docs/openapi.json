@@ -3120,6 +3120,17 @@
               "address"
             ]
           },
+          "processingMode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "transcribe",
+              "minutes",
+              null
+            ]
+          },
           "transcript": {
             "type": "string",
             "maxLength": 200000
@@ -3433,6 +3444,7 @@
               "reopen",
               "task_status",
               "ai_generate",
+              "ai_transcribe",
               "archive",
               "attachment_added",
               "attachment_removed"
@@ -14970,6 +14982,12 @@
                             },
                             "configured": {
                               "type": "boolean"
+                            },
+                            "transcriberReady": {
+                              "type": "boolean"
+                            },
+                            "summarizerReady": {
+                              "type": "boolean"
                             }
                           },
                           "required": [
@@ -16096,13 +16114,97 @@
         }
       }
     },
+    "/api/v1/rapat/meetings/{id}/transcribe": {
+      "post": {
+        "tags": [
+          "Rapat"
+        ],
+        "summary": "Queue audio transcription without changing minutes",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires the transcriber only; a missing summarizer does not block transcription. Requires existing audio and current version. Uses the dedicated rapat-transcription queue on the rapat database connection. Preserves minutes and workflow finalization; terminal result is ready or failed, partial transcripts persist. Explicit ready regeneration refreshes audio transcripts; failed retries reuse compatible audio cache. Processing mode is read-only. Finalized workflow locks this operation until explicit reopen.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/RapatMeeting"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated/inactive"
+          },
+          "403": {
+            "description": "Module or role denied"
+          },
+          "404": {
+            "description": "Missing or outside ownership scope"
+          },
+          "409": {
+            "description": "Stale version, processing, archived or upload conflict"
+          },
+          "422": {
+            "description": "Invalid fields, MIME, source or search bound"
+          },
+          "503": {
+            "description": "Local AI or ZIP extension unavailable"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/rapat/meetings/{id}/generate": {
       "post": {
         "tags": [
           "Rapat"
         ],
         "summary": "Queue explicit local generation or retry",
-        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires configured local engines and nonempty transcript or audio. Dedicated durable rapat connection/table rapat_jobs, queue rapat, timeout 3600, tries 1. Token and atomic processing claim reject stale/duplicate work; Successful audio transcripts are reused on failed retries only when model and decoding-pipeline revisions match. An explicit regeneration from ready with useTranscript=false retranscribes all audio; changing the model invalidates prior cached transcripts. Audio without usable speech fails safely without generating minutes. Generic safe errors; no raw model output errors. Manual minutes replaced only after successful explicit generation. Finalized workflow locks this operation until explicit reopen.",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires the summarizer for useTranscript=true, both engines for useTranscript=false, and nonempty transcript or audio. Dedicated durable rapat connection/table rapat_jobs, queue rapat, timeout 3600, tries 1. Token and atomic processing claim reject stale/duplicate work; Successful audio transcripts are reused on failed retries only when model and decoding-pipeline revisions match. An explicit regeneration from ready with useTranscript=false retranscribes all audio; changing the model invalidates prior cached transcripts. Audio without usable speech fails safely without generating minutes. Generic safe errors; no raw model output errors. Manual minutes replaced only after successful explicit generation. Finalized workflow locks this operation until explicit reopen.",
         "security": [
           {
             "bearerAuth": []
@@ -16539,6 +16641,12 @@
                           "const": "local"
                         },
                         "configured": {
+                          "type": "boolean"
+                        },
+                        "transcriberReady": {
+                          "type": "boolean"
+                        },
+                        "summarizerReady": {
                           "type": "boolean"
                         }
                       },
