@@ -11,7 +11,7 @@ class LocalEngine
     public function transcriptionRevision(): string
     {
         return hash('sha256', json_encode([
-            'model' => config('rapat.model_dirs.RAPAT_WHISPER_MODEL', 'large-v3'),
+            'model' => config('rapat.model_dirs.RAPAT_WHISPER_MODEL', 'small'),
             'pipelineVersion' => config('rapat.transcription_pipeline_version', '2'),
             'language' => 'id',
         ], JSON_THROW_ON_ERROR));

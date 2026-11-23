@@ -30,7 +30,7 @@ class Failure(Exception):
 
 
 def model_path():
-    name = os.environ.get('RAPAT_WHISPER_MODEL', 'large-v3')
+    name = os.environ.get('RAPAT_WHISPER_MODEL', 'small')
     if name not in MODEL_REPOS:
         raise Failure('invalid_model')
     root = Path(os.environ.get('RAPAT_MODEL_DIR', str(Path.home() / '.cache/rapat-models')))
@@ -124,7 +124,7 @@ def transcribe(data):
         raise Failure('whisper_model_missing')
     from faster_whisper import WhisperModel
     model = WhisperModel(str(model_path()), device='cpu', compute_type='int8',
-                         local_files_only=True, cpu_threads=4, num_workers=1)
+                         local_files_only=True, cpu_threads=2, num_workers=1)
     # PyAV detects media content, regardless of a random temporary filename.
     with path.open('rb') as source:
         segments, _ = model.transcribe(source, language='id', task='transcribe',
