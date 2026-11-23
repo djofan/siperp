@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useActionState, useId, useRef, useState, type ReactNode } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
@@ -101,7 +103,7 @@ export function QuizForm({ action, initial, creating = false, chapterField, chap
     <FormField label="Batas pengerjaan (WIB)" htmlFor={prefix + "-close"}><Input id={prefix + "-close"} name="closesAt" type="datetime-local" value={values.closesAt ?? ""} onChange={event => setValues({ ...values, closesAt: event.target.value })} /></FormField>
     </div>
     {withQuestions && <section className="space-y-5 border-t border-gray-100 pt-5"><h2 className="font-semibold">Pertanyaan dan jawaban</h2>
-      {questionRows.map((row, index) => <section key={row.key} className="space-y-4 rounded-xl border border-gray-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Pertanyaan {index + 1}</h3><Button type="button" variant="secondary" size="sm" disabled={pending || questionRows.length <= 1} onClick={() => setQuestionRows(questionRows.filter(item => item.key !== row.key))}>Hapus pertanyaan</Button></div><QuestionFields initial={row.initial} pending={pending} namePrefix={`questions[${index}]`} /></section>)}
+      {questionRows.map((row, index) => <section key={row.key} className="space-y-4 rounded-xl border border-gray-200 p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-semibold">Pertanyaan {formatNumericText(index + 1)}</h3><Button type="button" variant="secondary" size="sm" disabled={pending || questionRows.length <= 1} onClick={() => setQuestionRows(questionRows.filter(item => item.key !== row.key))}>Hapus pertanyaan</Button></div><QuestionFields initial={row.initial} pending={pending} namePrefix={`questions[${index}]`} /></section>)}
       <Button type="button" variant="secondary" disabled={pending || questionRows.length >= 100} onClick={() => { setQuestionRows([...questionRows, { key: nextQuestionKey, initial: undefined }]); setNextQuestionKey(nextQuestionKey + 1); }}>Tambah Pertanyaan</Button>
     </section>}
     <FormField label="Status publikasi" htmlFor={prefix + "-publication"} hint="Draft menyembunyikan ujian dari peserta. Publikasi diperiksa kembali sebelum ujian diaktifkan.">

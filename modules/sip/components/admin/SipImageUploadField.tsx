@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useState } from "react";
 
@@ -107,7 +109,7 @@ export function SipImageUploadField({
               }}
             />
           </label>
-          <p className="text-xs text-white/45">Maks {MAX_SIZE_MB}MB — JPG, PNG, atau WEBP.</p>
+          <p className="text-xs text-white/45">Maks {formatNumericText(MAX_SIZE_MB)}MB — JPG, PNG, atau WEBP.</p>
           {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
       </div>

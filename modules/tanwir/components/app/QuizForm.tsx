@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useActionState, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -23,13 +25,13 @@ export function QuizForm({
     <form action={formAction} onReset={(event) => event.preventDefault()} className="quiz-form space-y-4">
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {Object.entries(answers).map(([id, answer]) => <input key={id} type="hidden" name={`q_${id}`} value={answer} />)}
-      <div className="flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tanwir-line"><div className="h-full bg-tanwir-primary" style={{ width: `${questions.length ? answered / questions.length * 100 : 0}%` }} /></div><span className="text-xs tabular-nums text-tanwir-muted">{answered}/{questions.length} terjawab</span></div>
-      <nav aria-label="Nomor soal" className="flex flex-wrap gap-2">{questions.map((question,index) => <button key={question.id} type="button" onClick={() => setCurrentQuestion(index)} aria-label={`Soal ${index + 1}${answers[question.id] ? ", terjawab" : ""}`} aria-current={currentQuestion === index ? "step" : undefined} className={cn("h-11 w-11 rounded-lg border text-sm", currentQuestion === index ? "border-tanwir-primary bg-tanwir-primary text-white" : answers[question.id] ? "border-tanwir-line bg-tanwir-primary-soft text-tanwir-primary" : "border-tanwir-line bg-white")}>{index + 1}</button>)}</nav>
+      <div className="flex items-center gap-3"><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-tanwir-line"><div className="h-full bg-tanwir-primary" style={{ width: `${questions.length ? answered / questions.length * 100 : 0}%` }} /></div><span className="text-xs tabular-nums text-tanwir-muted">{formatNumericText(answered)}/{formatNumericText(questions.length)} terjawab</span></div>
+      <nav aria-label="Nomor soal" className="flex flex-wrap gap-2">{questions.map((question,index) => <button key={question.id} type="button" onClick={() => setCurrentQuestion(index)} aria-label={`Soal ${index + 1}${answers[question.id] ? ", terjawab" : ""}`} aria-current={currentQuestion === index ? "step" : undefined} className={cn("h-11 w-11 rounded-lg border text-sm", currentQuestion === index ? "border-tanwir-primary bg-tanwir-primary text-white" : answers[question.id] ? "border-tanwir-line bg-tanwir-primary-soft text-tanwir-primary" : "border-tanwir-line bg-white")}>{formatNumericText(index + 1)}</button>)}</nav>
       {questions.slice(currentQuestion, currentQuestion + 1).map((question) => (
         <fieldset key={question.id} className="rounded-2xl bg-tanwir-surface p-5 ring-1 ring-tanwir-line sm:p-6">
-          <legend className="sr-only">Soal {currentQuestion + 1}</legend>
+          <legend className="sr-only">Soal {formatNumericText(currentQuestion + 1)}</legend>
           <p className="text-xs font-medium tabular-nums text-tanwir-muted">
-            Soal {currentQuestion + 1} dari {questions.length}
+            Soal {formatNumericText(currentQuestion + 1)} dari {formatNumericText(questions.length)}
           </p>
           <p className="mt-2 whitespace-pre-line font-medium leading-relaxed">{question.question}</p>
           <div className="mt-4 grid gap-2">

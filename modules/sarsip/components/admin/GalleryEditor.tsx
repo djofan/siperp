@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import Image from "next/image";
 import { useState } from "react";
 import type { SarsipGalleryPhoto } from "@/contracts/modules/sarsip";
@@ -30,7 +32,7 @@ export function GalleryEditor({ value, onChange, disabled, onUploadingChange }: 
     {uploading && <p role="status" className="text-sm">Mengunggah foto…</p>}
     <div className="grid gap-4 sm:grid-cols-2">{value.map((photo, index) => <div key={photo.id} className="space-y-2">
       <Image src={photo.image} alt={`Pratinjau foto galeri ${index + 1}`} width={320} height={200} unoptimized className="aspect-video w-full rounded-xl object-cover"/>
-      <label className="block text-xs">Keterangan foto {index + 1}<input value={photo.caption ?? ""} maxLength={500} onChange={event => onChange(value.map(row => row.id === photo.id ? { ...row, caption: event.target.value } : row))} className="mt-1 w-full rounded-lg border border-border bg-surface p-2 text-sm"/></label>
+      <label className="block text-xs">Keterangan foto {formatNumericText(index + 1)}<input value={photo.caption ?? ""} maxLength={500} onChange={event => onChange(value.map(row => row.id === photo.id ? { ...row, caption: event.target.value } : row))} className="mt-1 w-full rounded-lg border border-border bg-surface p-2 text-sm"/></label>
       <button type="button" onClick={() => onChange(value.filter(row => row.id !== photo.id))} className="text-xs text-red-600">Hapus dari galeri</button>
     </div>)}</div>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}

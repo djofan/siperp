@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -252,10 +254,10 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
 
       {items.length>0 && (
         <div className="space-y-4 rounded-2xl bg-ojol-paper p-4 sm:p-5">
-          <p className="text-sm font-medium">{items.length}/10 file - {(items.reduce((sum,item)=>sum+item.file.size,0)/1024/1024).toFixed(1)} / 50 MB</p>
+          <p className="text-sm font-medium">{formatNumericText(items.length)}/10 file - {(items.reduce((sum,item)=>sum+item.file.size,0)/1024/1024).toFixed(1)} / 50 MB</p>
           <p className="text-xs text-ojol-muted">Periksa semua file sebelum dikirim. Guru akan menerima seluruh file sebagai satu setoran.</p>
           {items.map((item,index)=><div key={item.id} className="space-y-2 rounded-xl bg-ojol-surface p-3">
-            <div className="flex min-w-0 items-center justify-between gap-3"><p className="min-w-0 break-all text-sm">{index+1}. {item.file.name}</p><button type="button" disabled={phase==="uploading"||phase==="recording"} onClick={()=>removeFile(item.id)} className={buttonClass("secondary","shrink-0")} aria-label={`Hapus ${item.file.name}`}>Hapus</button></div>
+            <div className="flex min-w-0 items-center justify-between gap-3"><p className="min-w-0 break-all text-sm">{formatNumericText(index+1)}. {item.file.name}</p><button type="button" disabled={phase==="uploading"||phase==="recording"} onClick={()=>removeFile(item.id)} className={buttonClass("secondary","shrink-0")} aria-label={`Hapus ${item.file.name}`}>Hapus</button></div>
             {isVideo?<video src={item.url} controls playsInline preload="metadata" className="aspect-video w-full rounded-xl bg-ojol-ink"/>:<audio src={item.url} controls preload="metadata" className="w-full"/>}
           </div>)}
           {phase === "uploading" ? (
@@ -263,7 +265,7 @@ export function MediaSubmit({ taskId, type, resubmit }: { taskId: string; type: 
               <div className="h-2 overflow-hidden rounded-full bg-ojol-line" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
                 <div className="h-full rounded-full bg-ojol-primary transition-[width]" style={{ width: `${progress}%` }} />
               </div>
-              <p className="mt-2 text-xs text-ojol-muted">Mengunggah… {progress}%</p>
+              <p className="mt-2 text-xs text-ojol-muted">Mengunggah… {formatNumericText(progress)}%</p>
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">

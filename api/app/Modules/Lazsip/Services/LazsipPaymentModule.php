@@ -22,8 +22,10 @@ class LazsipPaymentModule implements PaymentModule
         if ($source === 'campaign') {
             $campaign = LazsipCampaign::where('status', 'active')->lockForUpdate()->find($sourceId);
             abort_unless($campaign, 404, 'Campaign tidak ditemukan atau sudah selesai.');
-            abort_unless(preg_match('/^\d{2}$/D', $campaign->uniqueCode), 503);
-            $amount = (int) (ceil($amount / 100) * 100 + (int) $campaign->uniqueCode);
+            if ($campaign->uniqueCode !== null && $campaign->uniqueCode !== '') {
+                abort_unless(preg_match('/^\d{2}$/D', $campaign->uniqueCode), 503);
+                $amount = (int) (ceil($amount / 100) * 100 + (int) $campaign->uniqueCode);
+            }
         } else {
             $detail = new LazsipZakatDetail;
             $detail->forceFill(['zakatType' => $input['zakatType'], 'goldPriceSnapshot' => $input['zakatType'] === 'maal' ? ($input['goldPriceSnapshot'] ?? 0) : null, 'jiwaCount' => $input['zakatType'] === 'fitrah' ? ($input['jiwaCount'] ?? null) : null])->save();

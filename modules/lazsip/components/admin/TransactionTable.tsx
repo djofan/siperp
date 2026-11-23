@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useMemo, useState } from "react";
 import { DeleteTestTransaction } from "./DeleteTestTransaction";
@@ -120,7 +122,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
       </AdminFilterBar>
 
       <div className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <p className="text-xs leading-relaxed text-lazsip-primary-800/50 dark:text-white/50">Menampilkan {filtered.length} dari {rows.length} transaksi.</p>
+        <p className="text-xs leading-relaxed text-lazsip-primary-800/50 dark:text-white/50">Menampilkan {formatNumericText(filtered.length)} dari {formatNumericText(rows.length)} transaksi.</p>
         <button
           type="button"
           onClick={handleExport}
@@ -155,7 +157,7 @@ export function TransactionTable({ rows, showTypeFilter = true, storageKey = "tr
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {paginated.map((row, index) => (
                   <tr key={`${row.type}-${row.id}`} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{formatNumericText(startIndex + index + 1)}</td>
                     <td className="whitespace-nowrap px-4 py-3.5 font-mono text-xs text-lazsip-primary-900 dark:text-white/80">{row.trackingCode}</td>
                     <td className="px-4 py-3.5 font-medium text-lazsip-primary-900 dark:text-white">{row.label}</td>
                     <td className="px-4 py-3.5 text-lazsip-primary-800/60 dark:text-white/60">{row.donorName}</td>

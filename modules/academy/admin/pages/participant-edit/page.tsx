@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { academyPage } from "@/modules/academy/api/page-data";
@@ -23,5 +24,5 @@ export default async function Page({ params, searchParams }: {
     const cohorts = await academyPage<AcademyCohort[]>("academy/admin/cohorts");
     if (!person)
         notFound();
-    return <><Link href={backHref} className="mb-4 inline-block text-sm text-accent">← Kembali ke {fromUsers ? "peserta" : "pendaftaran"}</Link><PageHeader title="Edit Akun Peserta" description={`NIP ${person.nis} · Nomor akun tetap sama setelah diedit.`}/><Card className="max-w-2xl"><ActionForm action={editAcademyAccount.bind(null, id)} label="Simpan Perubahan"><input type="hidden" name="returnTo" value={fromUsers ? "pengguna" : "pendaftaran"} /><ParticipantRegistrationFields academy values={{ name: person.user.name, address: person.address, phone: person.phone, gender: person.gender }}/><FormField label="Angkatan" htmlFor="edit-participant-cohort"><Select id="edit-participant-cohort" name="cohortId" defaultValue={person.cohortId ?? ""}><option value="">Belum ditentukan</option>{cohorts.map(cohort => <option key={cohort.id} value={cohort.id}>{cohort.title} · {cohort.participants_count} peserta</option>)}</Select></FormField></ActionForm></Card></>;
+    return <><Link href={backHref} className="mb-4 inline-block text-sm text-accent">← Kembali ke {fromUsers ? "peserta" : "pendaftaran"}</Link><PageHeader title="Edit Akun Peserta" description={`NIP ${person.nis} · Nomor akun tetap sama setelah diedit.`}/><Card className="max-w-2xl"><ActionForm action={editAcademyAccount.bind(null, id)} label="Simpan Perubahan"><input type="hidden" name="returnTo" value={fromUsers ? "pengguna" : "pendaftaran"} /><ParticipantRegistrationFields academy values={{ name: person.user.name, address: person.address, phone: person.phone, gender: person.gender }}/><FormField label="Angkatan" htmlFor="edit-participant-cohort"><Select id="edit-participant-cohort" name="cohortId" defaultValue={person.cohortId ?? ""}><option value="">Belum ditentukan</option>{cohorts.map(cohort => <option key={cohort.id} value={cohort.id}>{cohort.title} · {formatNumericText(cohort.participants_count)} peserta</option>)}</Select></FormField></ActionForm></Card></>;
 }

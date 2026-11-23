@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import {
   getTopCampaigns,
@@ -42,14 +43,14 @@ export default async function SarsipDashboardPage() {
           value={formatRupiah(totals.donations)}
           trend={{ value: percentChange(totals.donations, totals.lastMonthDonations), label: "vs bulan lalu" }}
         />
-        <DashboardStatCard icon="campaign" label="Campaign Terbuka" value={String(counts.openCampaigns)} />
-        <DashboardStatCard icon="donors" label="Total Donatur" value={String(counts.totalDonors)} hint="Akumulasi transaksi lunas" />
-        <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(counts.pendingTransactions)} hint="Perlu ditinjau di Kelola Transaksi" />
+        <DashboardStatCard icon="campaign" label="Campaign Terbuka" value={String(formatNumericText(counts.openCampaigns))} />
+        <DashboardStatCard icon="donors" label="Total Donatur" value={String(formatNumericText(counts.totalDonors))} hint="Akumulasi transaksi lunas" />
+        <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(formatNumericText(counts.pendingTransactions))} hint="Perlu ditinjau di Kelola Transaksi" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <DashboardStatCard icon="applicant" label="Kegiatan Aktif" value={String(counts.activeActivities)} />
-        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(counts.totalBeneficiaries)} />
+        <DashboardStatCard icon="applicant" label="Kegiatan Aktif" value={String(formatNumericText(counts.activeActivities))} />
+        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(formatNumericText(counts.totalBeneficiaries))} />
       </div>
 
       <DashboardCharts periods={analytics.periods} moduleSource="sarsip" />
@@ -71,10 +72,10 @@ export default async function SarsipDashboardPage() {
                   >
                     <div className="flex items-center justify-between text-sm">
                       <span className="flex items-center gap-2 truncate font-medium text-lazsip-primary-900 dark:text-white">
-                        <span className="text-xs font-bold text-lazsip-primary-400">#{i + 1}</span>
+                        <span className="text-xs font-bold text-lazsip-primary-400">#{formatNumericText(i + 1)}</span>
                         {campaign.title}
                       </span>
-                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{percentage}%</span>
+                      <span className="shrink-0 text-xs text-lazsip-primary-800/50 dark:text-white/45">{formatNumericText(percentage)}%</span>
                     </div>
                     <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-lazsip-primary-100 dark:bg-white/10">
                       <div className="h-full rounded-full bg-lazsip-primary-700 dark:bg-lazsip-primary-400" style={{ width: `${percentage}%` }} />

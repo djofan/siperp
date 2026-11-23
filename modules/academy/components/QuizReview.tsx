@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { selectedOptions, type QuizSnapshot } from "../api/policy";
 import { QuestionMedia } from "./QuestionMedia";
 
@@ -7,7 +8,7 @@ export function QuizReview({ snapshot }: { snapshot: QuizSnapshot }) {
     <div className="space-y-5">{snapshot.questions.map((question, index) => {
       const selected = selectedOptions(snapshot.responses[question.id]);
       return <article key={question.id} className="rounded-2xl border border-lazsip-primary-100 bg-white p-5 sm:p-6">
-        <h3 className="whitespace-pre-wrap break-words font-semibold">{index + 1}. {question.question}</h3>
+        <h3 className="whitespace-pre-wrap break-words font-semibold">{formatNumericText(index + 1)}. {question.question}</h3>
         <QuestionMedia question={question} className="mt-4" />
         <ul className="mt-4 space-y-3">{question.options.map(option => {
           const chosen = selected.includes(option.id);

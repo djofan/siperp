@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { getMergedSiteContent, splitLines } from "@/modules/sip/api/siteContent";
 import { InfoPage, InfoLinks } from "@/modules/sip/components/InfoPage";
@@ -30,7 +31,7 @@ export default async function AboutPage() {
           <ol className="mt-4 space-y-3 text-sip-primary-900/65">
             {misi.map((item, i) => (
               <li key={i} className="flex gap-3 leading-7">
-                <span className="w-4 shrink-0 font-semibold text-sip-primary-500">{i + 1}.</span>
+                <span className="w-4 shrink-0 font-semibold text-sip-primary-500">{formatNumericText(i + 1)}.</span>
                 <span>{item}</span>
               </li>
             ))}

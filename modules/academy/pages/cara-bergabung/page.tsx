@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 
 export const metadata = { title: "Cara Bergabung" };
@@ -16,7 +17,7 @@ export default function Page() {
     <p className="mb-3 text-sm font-semibold text-green-700">Insan Academy</p>
     <h1 className="text-3xl font-bold text-gray-900">Cara Bergabung</h1>
     <p className="mb-8 mt-3 leading-relaxed text-gray-600">Pendaftaran dibantu oleh CS. Akun belajar dibuatkan admin setelah data peserta diproses.</p>
-    <ol className="space-y-4">{steps.map((step,index)=><li key={step.title} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-5"><span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-sm font-bold text-green-700">{index+1}</span><div className="min-w-0"><h2 className="font-semibold text-gray-900">{step.title}</h2><p className="mt-2 text-sm leading-relaxed text-gray-600">{step.description}</p></div></li>)}</ol>
+    <ol className="space-y-4">{steps.map((step,index)=><li key={step.title} className="flex gap-4 rounded-xl border border-gray-200 bg-white p-5"><span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-50 text-sm font-bold text-green-700">{formatNumericText(index+1)}</span><div className="min-w-0"><h2 className="font-semibold text-gray-900">{step.title}</h2><p className="mt-2 text-sm leading-relaxed text-gray-600">{step.description}</p></div></li>)}</ol>
     <div className="mt-8 flex flex-col gap-3 sm:flex-row"><Link href="/academy/daftar" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800">Informasi pendaftaran</Link><Link href="/academy/kontak" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-green-700 px-5 py-3 font-semibold text-green-700">Hubungi CS</Link></div>
     <p className="mt-5 text-sm text-gray-600">Sudah mendapat akun dari admin? <Link href="/academy/masuk" className="font-semibold text-green-700 underline">Masuk ke ruang belajar</Link>.</p>
   </section>;

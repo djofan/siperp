@@ -1,3 +1,4 @@
+import { RupiahNumberInput } from "./RupiahNumberInput";
 import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElem
 }
 
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  if (props.type === "number" && /amount|price|cost|capital|estimate|income|salary|rent|budget|balance|nominal|rupiah/i.test(`${props.name ?? ""} ${props.id ?? ""}`)) return <RupiahNumberInput className={cn(fieldClasses, className)} {...props} />;
   return <input className={cn(fieldClasses, className)} {...props} />;
 }
 

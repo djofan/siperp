@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import type { AidDependent } from "@/contracts/modules/bantuan";
 import { Plus, Trash2 } from "lucide-react";
 import { dependentStatuses, readDependents } from "../dependents";
@@ -21,7 +23,7 @@ export function DependentsEditor({value,onChange,errors={}}:{value:unknown;onCha
       <label className={s.field}>Status<select className={s.input} aria-label={`Status tanggungan ${i+1}`} value={row.status} onChange={e=>update(i,"status",e.target.value)} aria-invalid={!!error(i,"status")}><option value="">Pilih status</option>{dependentStatuses.map(status=><option key={status}>{status}</option>)}</select>{error(i,"status")&&<small className={s.fieldError}>{error(i,"status")}</small>}</label>
       </div>
     </div>)}
-    <div className={d.footer}><button type="button" className={d.add} disabled={rows.length>=100} onClick={()=>onChange([...rows,{name:"",relationship:"",gender:"",age:"",status:""}])}><Plus size={15} aria-hidden="true"/>Tambah tanggungan</button><small>{rows.length} orang</small></div>
+    <div className={d.footer}><button type="button" className={d.add} disabled={rows.length>=100} onClick={()=>onChange([...rows,{name:"",relationship:"",gender:"",age:"",status:""}])}><Plus size={15} aria-hidden="true"/>Tambah tanggungan</button><small>{formatNumericText(rows.length)} orang</small></div>
   </div>;
 }
 export function DependentsSummary({value}:{value:unknown}){

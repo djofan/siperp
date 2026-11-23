@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { requireAcademyParticipant } from "../../api/access";
 import { listParticipantQuizzes, type ListParticipantQuizzesResult } from "../../api/courses";
@@ -44,7 +45,7 @@ export default async function ExamsPage() {
     return <article key={quiz.id} className={`academy-quiz-card flex min-w-0 flex-col rounded-2xl border border-gray-200 bg-white p-5 ${mobile ? "w-[88%] max-w-sm shrink-0 snap-start" : ""}`}>
       <p className="text-xs font-semibold tracking-wide text-green-700">{labels.get(quiz.id)}</p>
       <h3 className="mt-2 break-words text-base font-semibold leading-6">{quiz.title}</h3>
-      <p className="mt-2 text-sm text-gray-500">{quiz._count.questions} soal <span aria-hidden="true">·</span> {quiz.timeLimitMinutes} menit</p>
+      <p className="mt-2 text-sm text-gray-500">{formatNumericText(quiz._count.questions)} soal <span aria-hidden="true">·</span> {formatNumericText(quiz.timeLimitMinutes)} menit</p>
       <dl className="my-4 grid gap-3 border-t border-gray-100 pt-4"><ExamSchedule label="Berakhir" date={quiz.closesAt} /></dl>
       <Link href={`/academy/kuis/${quiz.id}`} className="mt-auto flex min-h-11 items-center justify-center rounded-xl bg-green-50 px-3 py-2.5 text-center text-sm font-semibold text-green-700 hover:bg-green-100">
         {done ? "Lihat hasil ujian" : "Lihat ujian"} →

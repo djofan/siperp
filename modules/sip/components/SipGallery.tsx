@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { SipDocumentationPhoto } from "@/contracts/modules/sip";
@@ -32,7 +34,7 @@ export function SipGallery({photos,title,kind="campaign"}:{photos:SipDocumentati
   function scroll(direction:number){goToPage(active+direction);}
   return <section className={styles.gallery} aria-labelledby={`${id}-heading`}>
     <header className={styles.heading}>
-      <div className={styles.headingTitle}><h2 id={`${id}-heading`}>{kind==="campaign"?"Dokumentasi campaign":`Galeri ${category}`}</h2><span className={styles.count}>{photos.length} foto</span></div>
+      <div className={styles.headingTitle}><h2 id={`${id}-heading`}>{kind==="campaign"?"Dokumentasi campaign":`Galeri ${category}`}</h2><span className={styles.count}>{formatNumericText(photos.length)} foto</span></div>
       <div className={styles.navigation}><span className={styles.hint}>Geser untuk melihat lainnya</span><div className={styles.controls}><button type="button" disabled={active===0} aria-label="Foto sebelumnya" onClick={()=>scroll(-1)}>←</button><button type="button" disabled={active===pageCount-1} aria-label="Foto berikutnya" onClick={()=>scroll(1)}>→</button></div></div>
     </header>
     <div ref={strip} className={styles.strip} onScroll={syncPage} tabIndex={0} aria-label={`Galeri foto ${category}, geser kiri atau kanan`} onKeyDown={event=>{if(event.target!==event.currentTarget)return;if(event.key==="ArrowRight"||event.key==="ArrowLeft"){event.preventDefault();scroll(event.key==="ArrowRight"?1:-1);}}}>

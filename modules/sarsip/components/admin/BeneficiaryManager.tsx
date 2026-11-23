@@ -1,4 +1,6 @@
 "use client";
+import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
+
 import { GalleryEditor } from "./GalleryEditor";
 import type { SarsipGalleryPhoto } from "@/contracts/modules/sarsip";
 import { useState, type FormEvent } from "react";
@@ -62,7 +64,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
         <label className="text-sm">Bantuan yang diterima<input name="assistance" required maxLength={191} defaultValue={editing?.assistance} className={field}/></label>
         <label className="text-sm">Tanggal menerima bantuan<input name="receivedAt" required type="date" defaultValue={editing?.receivedAt} className={field}/></label>
         <label className="text-sm">Kategori bantuan<select name="category" defaultValue={editing?.category ?? "Lainnya"} className={field}>{BENEFICIARY_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label>
-        <label className="text-sm">Nominal bantuan tersalurkan (Rp)<input name="amount" type="number" min={0} max={2147483647} step={1} required defaultValue={editing?.amount ?? 0} className={field}/></label>
+        <label className="text-sm">Nominal bantuan tersalurkan (Rp)<RupiahNumberInput name="amount" type="number" min={0} max={2147483647} step={1} required defaultValue={editing?.amount ?? 0} className={field}/></label>
         <label className="text-sm">Nama tampilan publik<input name="publicName" maxLength={191} defaultValue={editing?.publicName ?? ""} placeholder="Nama yang diizinkan atau nama samaran" className={field}/></label>
         <div className="text-sm sm:col-span-2"><label>Foto dokumentasi<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" className={field}/></label><p className="mt-2 text-xs text-foreground/60">JPG, PNG, atau WebP, maksimal 2 MB. Foto baru menggantikan foto sebelumnya.</p>{editing?.image && <div className="mt-3"><Image unoptimized src={editing.image} width={200} height={160} alt="Foto penerima manfaat" className="max-h-40 rounded-lg object-contain"/><label className="mt-2 flex items-center gap-2"><input type="checkbox" name="removeImage"/>Hapus foto lama</label></div>}</div>
         <div className="sm:col-span-2"><GalleryEditor value={gallery} onChange={setGallery} disabled={busy} onUploadingChange={setGalleryBusy}/></div>

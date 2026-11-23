@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
 import { academyPage } from "../../api/page-data";
 import type { AcademyPage6 } from "../../api/page-contracts";
@@ -22,7 +23,7 @@ export async function ParticipantCertificates({ profileId }: { profileId: string
           <span className={`rounded-full px-3 py-1 text-xs ${course.isEligible ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{course.isEligible ? "Selesai" : "Belum selesai"}</span>
         </div>
         <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-          <p>Ujian: {course.completedQuizzes}/{course.totalQuizzes}</p>
+          <p>Ujian: {formatNumericText(course.completedQuizzes)}/{formatNumericText(course.totalQuizzes)}</p>
         </div>
         {course.isEligible ? <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link href={`/academy/sertifikat/${course.id}`} className={linkButton}>Lihat sertifikat</Link>

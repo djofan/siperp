@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useCallback } from "react";
 import { usePersistedPreference } from "@/lib/usePersistedPreference";
@@ -52,7 +54,7 @@ export function AdminPaginationBar({
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-lazsip-primary-100 px-4 py-3 dark:border-white/10">
       <label className="flex items-center gap-2.5 text-xs font-medium text-lazsip-primary-800/70 dark:text-white/60">
         <Toggle checked={enabled} onChange={onToggleEnabled} label="Gunakan pagination" />
-        Pagination {enabled ? "aktif" : "nonaktif"} · {totalCount} data
+        Pagination {enabled ? "aktif" : "nonaktif"} · {formatNumericText(totalCount)} data
       </label>
 
       {enabled && pageCount > 1 && (
@@ -66,7 +68,7 @@ export function AdminPaginationBar({
             Sebelumnya
           </button>
           <span className="text-xs text-lazsip-primary-800/60 dark:text-white/50">
-            Halaman {page} dari {pageCount}
+            Halaman {formatNumericText(page)} dari {formatNumericText(pageCount)}
           </span>
           <button
             type="button"

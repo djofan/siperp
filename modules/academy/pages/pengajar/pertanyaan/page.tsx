@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { requireAcademyAdmin } from "../../../api/admin-access";
 import { TeacherSessions } from "../../../components/TeacherSessions";
 import Link from "@/modules/academy/pwa/AcademyNavigation";
@@ -20,11 +21,11 @@ export async function QuestionsPanel({ searchParams, admin = false }: { searchPa
     {!admin && <nav aria-label="Tanya jawab pengajar" className="mb-6 flex gap-2">{[["pertanyaan", "Pertanyaan peserta"], ["jadwal", "Jadwal sesi langsung"]].map(([id, title]) => <Link key={id} href={`/academy/pengajar/pertanyaan?tab=${id}`} aria-current={tab === id ? "page" : undefined} className={`rounded-xl px-4 py-3 text-sm font-medium ${tab === id ? "bg-green-700 text-white" : "border bg-white text-gray-600"}`}>{title}</Link>)}</nav>}
     {tab === "jadwal" && <TeacherSessions page={page} saved={query.saved === "session"}/>}
     {data && <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Daftar pertanyaan">
-      <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Daftar pertanyaan</h2><p className="mt-1 text-sm text-gray-500">{data.total} pertanyaan</p></div>
+      <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Daftar pertanyaan</h2><p className="mt-1 text-sm text-gray-500">{formatNumericText(data.total)} pertanyaan</p></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[800px] text-left text-sm">
         <thead className="bg-gray-50 text-gray-600"><tr>{["No.", "Peserta", "Angkatan", "Pertanyaan", "Tanggal (WIB)", "Status", "Aksi"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-gray-100">{data.items.map((question, index) => <tr key={question.id} className="hover:bg-gray-50">
-          <td className="px-4 py-4 text-gray-500">{(data.page - 1) * 10 + index + 1}</td>
+          <td className="px-4 py-4 text-gray-500">{formatNumericText((data.page - 1) * 10 + index + 1)}</td>
           <td className="px-4 py-4">{question.profile.user.name}</td>
           <td className="px-4 py-4">{question.course.cohort?.title ?? question.course.title}</td>
           <td className="max-w-sm px-4 py-4"><p className="line-clamp-3 break-words">{question.question}</p></td>

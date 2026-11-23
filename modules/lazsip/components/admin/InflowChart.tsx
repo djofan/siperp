@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 const formatRupiah = (value: number) => `Rp${value.toLocaleString("id-ID")}`;
 const formatShortDate = (isoDate: string) =>
   new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" }).format(new Date(isoDate));
@@ -9,7 +10,7 @@ export function InflowChart({ data }: { data: { date: string; total: number }[] 
   return (
     <div>
       <div className="mb-4 flex items-baseline justify-between">
-        <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Total {data.length} hari terakhir</p>
+        <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Total {formatNumericText(data.length)} hari terakhir</p>
         <p className="text-sm font-bold text-lazsip-primary-900 dark:text-white">{formatRupiah(totalPeriod)}</p>
       </div>
       <div className="flex h-32 items-end gap-[3px]">

@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export default async function TanwirTaskMonitorPage({ searchParams }: { searchPa
                     task.teacher?.user.name ?? "Guru dihapus",
                     <div key="deadline" className={cn("whitespace-nowrap", isTaskLocked(task.deadline) ? "text-tanwir-danger" : "text-tanwir-muted")}><p>{formatDateTime(task.deadline)}</p><p className="text-xs">{deadlineLabel(task.deadline)}</p></div>,
                     task._count.submissions,
-                    <span key="pending" className={pending ? "directory-group" : "text-tanwir-muted"}>{pending}</span>,
+                    <span key="pending" className={pending ? "directory-group" : "text-tanwir-muted"}>{formatNumericText(pending)}</span>,
                     <div key="actions" className="flex items-center justify-end gap-2 whitespace-nowrap">
                       {reminder && (
                         <a href={reminder} target="_blank" rel="noopener noreferrer" className="mr-4 text-sm font-medium text-success hover:underline">

@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { SipAdminPageHeader } from "@/modules/sip/components/admin/SipAdminPageHeader";
 import { SipDashboardStatCard } from "@/modules/sip/components/admin/SipDashboardStatCard";
@@ -64,25 +65,25 @@ export default async function SipDashboardPage() {
         <SipDashboardStatCard
           icon="program"
           label="Program Bantuan"
-          value={String(counts.programCount)}
+          value={String(formatNumericText(counts.programCount))}
           hint={`${summary.programPinned} tampil di beranda`}
         />
         <SipDashboardStatCard
           icon="penyaluran"
           label="Penyaluran Bantuan"
-          value={String(counts.penyaluranCount)}
+          value={String(formatNumericText(counts.penyaluranCount))}
           hint={summary.lastPenyaluranDate ? `Terakhir ${formatDate(summary.lastPenyaluranDate)}` : "Belum ada data"}
         />
         <SipDashboardStatCard
           icon="berita"
           label="Berita Published"
-          value={String(counts.publishedNewsCount)}
+          value={String(formatNumericText(counts.publishedNewsCount))}
           hint={summary.newsDraft ? `${summary.newsDraft} masih draft` : "Tidak ada draft"}
         />
         <SipDashboardStatCard
           icon="laporan"
           label="Laporan"
-          value={String(counts.laporanCount)}
+          value={String(formatNumericText(counts.laporanCount))}
           hint={`${counts.laporanCount - summary.laporanTahunan} bulanan · ${summary.laporanTahunan} tahunan`}
         />
       </div>
@@ -131,7 +132,7 @@ export default async function SipDashboardPage() {
                   <span className="flex items-baseline justify-between text-sm">
                     <span className="text-white/75 group-hover:text-white">{row.label}</span>
                     <span className="text-xs text-white/45">
-                      <strong className="text-white">{row.value}</strong> dari {row.total}
+                      <strong className="text-white">{formatNumericText(row.value)}</strong> dari {formatNumericText(row.total)}
                     </span>
                   </span>
                   <span className="h-2 overflow-hidden rounded-full bg-white/[0.06]">

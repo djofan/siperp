@@ -15,7 +15,7 @@ test("quiz choices stay local until the participant submits once", () => {
 });
 
 test("quiz warns about unanswered question numbers before submission", () => {
-  assert.match(player, /Masih ada \{incomplete\.length\} soal yang belum dijawab/);
+  assert.match(player, /Masih ada \{formatNumericText\(incomplete\.length\)\} soal yang belum dijawab/);
   assert.match(player, /Periksa kembali soal nomor \{incomplete\.join\(", "\)\}/);
   assert.match(player, /Tetap kumpulkan jawaban/);
   assert.match(player, /Simpan dan kumpulkan jawaban/);

@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireTanwirMember } from "@/modules/tanwir/api/access";
 import { studentGroupInfo } from "@/modules/tanwir/api/dashboard";
@@ -61,7 +62,7 @@ export default async function PesertaHomePage() {
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-tanwir-gold">Kelompok</p>
               <p className="mt-2 text-lg font-semibold">{group.name}</p>
               <p className="text-sm text-tanwir-muted">
-                {group.code} · {group._count.members} peserta
+                {group.code} · {formatNumericText(group._count.members)} peserta
               </p>
               {group.pic && (
                 <p className="mt-4 text-sm">
@@ -79,7 +80,7 @@ export default async function PesertaHomePage() {
             </span>
             <div className="flex-1">
               <p className="font-medium">Anak didik</p>
-              <p className="text-sm text-tanwir-muted">{studentCount} santri tercatat</p>
+              <p className="text-sm text-tanwir-muted">{formatNumericText(studentCount)} santri tercatat</p>
             </div>
             <Icon name="chevronRight" className="h-4 w-4 text-tanwir-muted" />
           </Link>

@@ -1,4 +1,6 @@
 "use client";
+import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
+
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -177,7 +179,7 @@ export function CampaignHistoryPanel({
             </p>
           )}
 
-          <input
+          <RupiahNumberInput
             type="number"
             min={1}
             placeholder="Nominal (Rp)"

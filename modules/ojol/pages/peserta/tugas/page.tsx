@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Link from "next/link";
 import { requireOjolMember } from "@/modules/ojol/api/access";
 import { listStudentTasks } from "@/modules/ojol/api/submissions";
@@ -38,7 +39,7 @@ export default async function PesertaTasksPage({ searchParams }: { searchParams:
               )}
             >
               {filter.label}
-              <span className={cn("tabular-nums text-xs", active ? "text-white/60" : "text-ojol-muted/70")}>{count}</span>
+              <span className={cn("tabular-nums text-xs", active ? "text-white/60" : "text-ojol-muted/70")}>{formatNumericText(count)}</span>
             </Link>
           );
         })}

@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useActionState, useId, useState } from "react";
 import { Button } from "@/modules/academy/components/ui/ButtonCompat";
@@ -51,7 +53,7 @@ export function QuestionFields({ initial, pending = false, namePrefix }: { initi
           <textarea id={prefix + "-option-" + option.key} required maxLength={4000} rows={2} value={option.label} onChange={event => setOptions(options.map(item => item.key === option.key ? { ...item, label: event.target.value } : item))} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" />
         </FormField>
         <div className="flex flex-wrap items-center justify-between gap-3"><label className="flex items-center gap-2 text-sm text-foreground"><input type={type === "MULTIPLE" ? "checkbox" : "radio"} name={fieldName("correctOption")} required={type !== "MULTIPLE"} value={option.key} checked={option.isCorrect} onChange={() => setOptions(options.map(item => type === "MULTIPLE" ? item.key === option.key ? { ...item, isCorrect: !item.isCorrect } : item : { ...item, isCorrect: item.key === option.key }))} />Jawaban benar</label>
-          <Button type="button" variant="secondary" size="sm" disabled={pending || options.length <= 2 || type === "TRUE_FALSE"} onClick={() => setOptions(options.filter(item => item.key !== option.key))}>Hapus opsi {index + 1}</Button>
+          <Button type="button" variant="secondary" size="sm" disabled={pending || options.length <= 2 || type === "TRUE_FALSE"} onClick={() => setOptions(options.filter(item => item.key !== option.key))}>Hapus opsi {formatNumericText(index + 1)}</Button>
         </div>
       </div>)}
     </fieldset>

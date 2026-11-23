@@ -1,4 +1,6 @@
 "use client";
+import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
+
 import styles from "./Detail.module.css";
 import { GatewayHandoff } from "@/modules/payment/components/GatewayHandoff";
 import { useRef } from "react";
@@ -51,7 +53,7 @@ export function DonationForm({ campaignId, methods, preview = false }: { campaig
     <div><p className="text-xs font-bold uppercase tracking-widest text-orange-700">Dukung misi kemanusiaan</p><h2 className="mt-2 text-2xl font-bold">Form donasi</h2></div>
     <p className={styles.fieldTitle}>Nominal donasi</p>
     <div className={styles.presets}> { [50000,100000,250000,500000,1000000].map((v) => <button key={v} type="button" onClick={() => setAmount(String(v))} aria-pressed={nominal === v}>{money(v)}</button>)}</div>
-    <label className="block space-y-2 text-sm font-medium"><span className="sr-only">Nominal donasi (Rp)</span><input required type="number" min="1" max="2147483647" step="1" inputMode="numeric" placeholder="Rp Nominal lainnya" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass}/></label>
+    <label className="block space-y-2 text-sm font-medium"><span className="sr-only">Nominal donasi (Rp)</span><RupiahNumberInput required type="number" min="1" max="2147483647" step="1" inputMode="numeric" placeholder="Rp Nominal lainnya" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass}/></label>
     {!(isIpaymu && (preview || methods.length === 1)) && <label className="block space-y-2 text-sm font-medium"><span>Metode pembayaran</span><select required disabled={preview} value={method} onChange={(e) => setMethod(e.target.value)} className={inputClass}>{preview && <option value="">iPaymu · Pratinjau</option>}{methods.map((m) => <option key={m.method}>{m.method}</option>)}</select></label>}
     {isIpaymu && <p className={styles.paymentHint}>Pilih metode pembayaran langsung di iPaymu. Biaya ditampilkan sebelum pembayaran.</p>}
     <div className={styles.identity}><label className="block space-y-2 text-sm font-medium"><span>Nama lengkap</span><input required placeholder="Nama Anda" autoComplete="name" maxLength={191} value={name} onChange={(e) => setName(e.target.value)} className={inputClass}/></label>

@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 import { useState } from "react";
 import { BellRing } from "lucide-react";
 import type { AidApplication, BantuanViewer } from "@/contracts/modules/bantuan";
@@ -25,12 +27,12 @@ export function BulkReminder({rows,viewer,refreshing}:{rows:AidApplication[];vie
     catch{setError("Tidak dapat menyalin otomatis. Pilih dan salin teks pesan di bawah.");}
   }
   return <section className={`${s.root} ${s.bulk}`} aria-label="Pengingat sekaligus">
-    <div className={s.bulkHeader}><div><strong>Ingatkan petugas sekaligus</strong><p>{eligible.length} pengajuan aktif pada halaman ini. Satu pesan per petugas sesuai tugasnya.</p></div><button className={s.trigger} type="button" disabled={busy||refreshing} onClick={prepare}><BellRing size={16}/>{busy?"Menyiapkan…":`Siapkan ${targets.length} pengingat`}</button></div>
+    <div className={s.bulkHeader}><div><strong>Ingatkan petugas sekaligus</strong><p>{formatNumericText(eligible.length)} pengajuan aktif pada halaman ini. Satu pesan per petugas sesuai tugasnya.</p></div><button className={s.trigger} type="button" disabled={busy||refreshing} onClick={prepare}><BellRing size={16}/>{busy?"Menyiapkan…":`Siapkan ${targets.length} pengingat`}</button></div>
     {eligible.length>100&&<p>Maksimal 100 pengajuan teratas per proses. Untuk sisanya, pilih 100 per halaman lalu lanjutkan ke halaman berikutnya.</p>}<small>Notifikasi lonceng dibuat saat disiapkan. Pesan WhatsApp Anda periksa dan kirim sendiri. Gunakan filter untuk menentukan tahap yang ingin diingatkan.</small>
     {error&&<p role="alert" className={s.error}>{error}</p>}
     {result&&<div className={s.result}><p role="status">{result.count>0?`${result.count} pengajuan dikelompokkan untuk ${result.recipients.length} petugas. Pengingat lonceng tahap yang sama tidak digandakan dalam sehari.`:"Belum ada pengingat yang dibuat. Periksa pengajuan yang dilewati di bawah."}</p>
-      {!!result.skipped?.length&&<details open><summary>{result.skipped.length} pengajuan dilewati — lihat alasannya</summary><ul>{result.skipped.map(item=><li key={item.id}><strong>{item.number} · {item.task}</strong><p>{item.reason}</p></li>)}</ul></details>}
-      {result.recipients.map(p=><details key={p.id}><summary>{p.name} · {p.count} pengajuan — lihat pesan</summary><textarea aria-label={`Pesan untuk ${p.name}`} readOnly value={p.message} rows={9}/><div className={s.person}><button type="button" className={s.trigger} onClick={()=>copy(p.id,p.message)}>{copied===p.id?"Pesan tersalin":"Salin pesan"}</button>{p.url?<a href={p.url} target="_blank" rel="noopener noreferrer">Buka WhatsApp ↗</a>:<span>Nomor WA belum diisi. Notifikasi lonceng tetap tersedia.</span>}</div>{p.copyRequired&&<p>Pesan panjang: salin pesan, buka WhatsApp, lalu tempel dan kirim.</p>}</details>)}
+      {!!result.skipped?.length&&<details open><summary>{formatNumericText(result.skipped.length)} pengajuan dilewati — lihat alasannya</summary><ul>{result.skipped.map(item=><li key={item.id}><strong>{item.number} · {item.task}</strong><p>{item.reason}</p></li>)}</ul></details>}
+      {result.recipients.map(p=><details key={p.id}><summary>{p.name} · {formatNumericText(p.count)} pengajuan — lihat pesan</summary><textarea aria-label={`Pesan untuk ${p.name}`} readOnly value={p.message} rows={9}/><div className={s.person}><button type="button" className={s.trigger} onClick={()=>copy(p.id,p.message)}>{copied===p.id?"Pesan tersalin":"Salin pesan"}</button>{p.url?<a href={p.url} target="_blank" rel="noopener noreferrer">Buka WhatsApp ↗</a>:<span>Nomor WA belum diisi. Notifikasi lonceng tetap tersedia.</span>}</div>{p.copyRequired&&<p>Pesan panjang: salin pesan, buka WhatsApp, lalu tempel dan kirim.</p>}</details>)}
       <button className={s.close} type="button" onClick={()=>setResult(null)}>Tutup pengingat</button></div>}
   </section>;
 }

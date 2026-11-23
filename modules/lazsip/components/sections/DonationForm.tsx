@@ -249,7 +249,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
 
       <div className="flex flex-col gap-2 border-t border-lazsip-primary-100 pt-4 text-sm">
         <div className="flex items-center justify-between text-lazsip-primary-800/70">
-          <span>Nominal donasi + kode unik</span>
+          <span>{uniqueCode ? "Nominal donasi + kode unik" : "Nominal donasi"}</span>
           <span className="font-medium text-lazsip-primary-900">{formatRupiah(codedAmount)}</span>
         </div>
         <div className="flex items-center justify-between text-lazsip-primary-800/70">
@@ -260,7 +260,7 @@ export function DonationForm({ campaignId, uniqueCode, feeRefs }: { campaignId: 
           <span>{isIpaymu ? "Nominal diteruskan ke iPaymu" : "Total pembayaran"}</span>
           <span>{formatRupiah(total)}</span>
         </div>
-        {nominalNumber > 0 && (
+        {nominalNumber > 0 && uniqueCode && (
           <p className="text-xs leading-relaxed text-lazsip-primary-800/50">
             Nominal otomatis ditambah kode unik campaign (belakangnya jadi {uniqueCode}) supaya donasi Anda mudah dikenali saat verifikasi.
           </p>

@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { panelClasses } from "@/components/ui/panel";
 
 // Bar chart satu seri (jumlah penyaluran per tahun). Server component — tooltip cukup
@@ -12,7 +13,7 @@ export function SipPenyaluranYearChart({ data }: { data: { year: number; count: 
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-semibold text-white">Penyaluran bantuan per tahun</h2>
         <span className="text-xs text-white/45">
-          {total} penyaluran{data.length > 0 && ` · ${data[0].year}–${data[data.length - 1].year}`}
+          {formatNumericText(total)} penyaluran{data.length > 0 && ` · ${data[0].year}–${data[data.length - 1].year}`}
         </span>
       </div>
 
@@ -32,9 +33,9 @@ export function SipPenyaluranYearChart({ data }: { data: { year: number; count: 
                 className="group relative flex h-full min-w-0 flex-1 flex-col items-center justify-end outline-none"
               >
                 <span className="pointer-events-none absolute bottom-full z-10 mb-1 hidden whitespace-nowrap rounded-lg bg-black/85 px-2.5 py-1.5 text-xs text-white shadow-lg group-hover:block group-focus:block">
-                  {d.year}: <strong>{d.count}</strong> penyaluran
+                  {d.year}: <strong>{formatNumericText(d.count)}</strong> penyaluran
                 </span>
-                {d.count > 0 && <span className="mb-1 text-xs font-semibold text-white/80">{d.count}</span>}
+                {d.count > 0 && <span className="mb-1 text-xs font-semibold text-white/80">{formatNumericText(d.count)}</span>}
                 <div
                   className="w-full max-w-10 rounded-t-[4px] bg-sip-lime transition-opacity group-hover:opacity-80"
                   style={{ height: d.count ? `${(d.count / max) * 80}%` : 0 }}
@@ -62,7 +63,7 @@ export function SipPenyaluranYearChart({ data }: { data: { year: number; count: 
               {data.map((d) => (
                 <tr key={d.year}>
                   <td>{d.year}</td>
-                  <td>{d.count}</td>
+                  <td>{formatNumericText(d.count)}</td>
                 </tr>
               ))}
             </tbody>

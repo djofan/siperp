@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -70,7 +72,7 @@ export function PartnerTable({ partners }: { partners: PartnerRow[] }) {
               <tbody className="divide-y divide-lazsip-primary-50 dark:divide-white/5">
                 {paginated.map((partner, index) => (
                   <tr key={partner.id} className="transition-colors hover:bg-lazsip-primary-50/40 dark:hover:bg-white/3">
-                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{startIndex + index + 1}</td>
+                    <td className="px-4 py-3.5 text-lazsip-primary-800/50 dark:text-white/40">{formatNumericText(startIndex + index + 1)}</td>
                     <td className="px-4 py-3.5">
                       {partner.logo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- thumbnail admin

@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import { useActionState, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -23,9 +25,9 @@ export function QuizForm({
       {state.error && <Notice tone="danger">{state.error}</Notice>}
       {questions.map((question, index) => (
         <fieldset key={question.id} className="rounded-2xl bg-ojol-surface p-5 ring-1 ring-ojol-line sm:p-6">
-          <legend className="sr-only">Soal {index + 1}</legend>
+          <legend className="sr-only">Soal {formatNumericText(index + 1)}</legend>
           <p className="text-xs font-medium tabular-nums text-ojol-muted">
-            Soal {index + 1} dari {questions.length}
+            Soal {formatNumericText(index + 1)} dari {formatNumericText(questions.length)}
           </p>
           <p className="mt-2 whitespace-pre-line font-medium leading-relaxed">{question.question}</p>
           <div className="mt-4 grid gap-2">
@@ -64,7 +66,7 @@ export function QuizForm({
       ))}
       <div className="sticky bottom-20 flex items-center justify-between gap-4 rounded-2xl bg-ojol-ink px-5 py-4 text-white lg:bottom-4">
         <p className="text-sm tabular-nums text-white/75">
-          {answered}/{questions.length} terjawab
+          {formatNumericText(answered)}/{formatNumericText(questions.length)} terjawab
         </p>
         <button
           type="submit"

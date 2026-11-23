@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import { panelClasses } from "@/components/ui/panel";
 
 const ICONS: Record<string, string> = {
@@ -40,7 +41,7 @@ export function DashboardStatCard({
                 : "bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-400"
             }`}
           >
-            {trend.value >= 0 ? "▲" : "▼"} {Math.abs(trend.value)}%
+            {trend.value >= 0 ? "▲" : "▼"} {formatNumericText(Math.abs(trend.value))}%
           </span>
         )}
       </div>

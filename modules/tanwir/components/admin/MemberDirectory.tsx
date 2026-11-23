@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -43,9 +45,9 @@ export function MemberDirectory({ members, role, initialQuery = "" }: { members:
         <label className="directory-search"><Icon name="search" className="h-4 w-4" /><input value={query} onChange={event => { setQuery(event.target.value); setPage(1); }} placeholder="Cari nama, kode, atau nomor HP" aria-label={`Cari ${label}`} /></label>
         <div className="directory-filters" aria-label="Status akun">{[
           { value: "all", label: "Semua", count: members.length }, { value: "active", label: "Aktif", count: active }, { value: "inactive", label: "Nonaktif", count: members.length - active },
-        ].map(item => <button key={item.value} type="button" aria-pressed={status === item.value} onClick={() => { setStatus(item.value); setPage(1); }}>{item.label} · {item.count}</button>)}</div>
+        ].map(item => <button key={item.value} type="button" aria-pressed={status === item.value} onClick={() => { setStatus(item.value); setPage(1); }}>{item.label} · {formatNumericText(item.count)}</button>)}</div>
         <select value={group} onChange={event => { setGroup(event.target.value); setPage(1); }} aria-label="Filter kelompok" className="directory-group-filter"><option value="">Semua kelompok</option>{groups.map(name => <option key={name}>{name}</option>)}</select>
-        <span className="ml-auto text-xs text-tanwir-muted">{filtered.length} {label}</span>
+        <span className="ml-auto text-xs text-tanwir-muted">{formatNumericText(filtered.length)} {label}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="directory-table"><thead><tr><th>{role === "guru" ? "Guru" : "Peserta"}</th><th>Kode</th><th>{role === "guru" ? "Kelompok diampu" : "Kelompok"}</th><th>No. HP</th><th>{countLabel}</th><th>Status</th><th className="text-right">Aksi</th></tr></thead>
@@ -53,14 +55,14 @@ export function MemberDirectory({ members, role, initialQuery = "" }: { members:
             <td><div className="flex items-center gap-3"><Avatar name={member.name} size={36} /><div><Link href={`${base}/${member.id}`} className="font-medium hover:text-tanwir-primary">{member.name}</Link>{member.teachingPlace && <p className="text-xs text-tanwir-muted">{member.teachingPlace}</p>}</div></div></td>
             <td data-label="Kode"><span className="directory-code">{member.code ?? "—"}</span></td>
             <td data-label="Kelompok">{member.groups.length ? member.groups.map(name => <span key={name} className="directory-group">{name}</span>) : "—"}</td>
-            <td data-label="No. HP" className="whitespace-nowrap tabular-nums">{member.phone ?? "—"}</td><td data-label={countLabel} className="whitespace-nowrap text-tanwir-muted">{member.count} {countLabel}</td>
+            <td data-label="No. HP" className="whitespace-nowrap tabular-nums">{member.phone ?? "—"}</td><td data-label={countLabel} className="whitespace-nowrap text-tanwir-muted">{formatNumericText(member.count)} {countLabel}</td>
             <td data-label="Status"><div className="flex items-center gap-2">{member.activeControl}</div></td>
             <td data-label="Aksi"><div className="flex items-center justify-end gap-2"><Link href={`${base}/${member.id}`} className="directory-icon-button" aria-label={`Ubah ${member.name}`} title="Ubah"><Icon name="edit" className="h-4 w-4" /></Link>{member.deleteControl}</div></td>
           </tr>)}</tbody>
         </table>
         {!visible.length && <p role="status" className="px-6 py-10 text-sm text-tanwir-muted">{members.length ? "Tidak ada yang cocok dengan filter." : `Belum ada ${label}.`}</p>}
       </div>
-      <footer className="directory-footer"><p>Menampilkan {filtered.length ? start + 1 : 0}–{Math.min(start + pageSize, filtered.length)} dari {filtered.length} {label}</p><div className="flex items-center gap-2"><button type="button" className="directory-icon-button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} aria-label="Halaman sebelumnya"><Icon name="arrowLeft" className="h-4 w-4" /></button><span className="directory-page" aria-label={`Halaman ${currentPage} dari ${pages}`}>{currentPage}</span><button type="button" className="directory-icon-button" disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)} aria-label="Halaman berikutnya"><Icon name="chevronRight" className="h-4 w-4" /></button></div></footer>
+      <footer className="directory-footer"><p>Menampilkan {formatNumericText(filtered.length ? start + 1 : 0)}–{formatNumericText(Math.min(start + pageSize, filtered.length))} dari {formatNumericText(filtered.length)} {label}</p><div className="flex items-center gap-2"><button type="button" className="directory-icon-button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} aria-label="Halaman sebelumnya"><Icon name="arrowLeft" className="h-4 w-4" /></button><span className="directory-page" aria-label={`Halaman ${currentPage} dari ${pages}`}>{formatNumericText(currentPage)}</span><button type="button" className="directory-icon-button" disabled={currentPage === pages} onClick={() => setPage(currentPage + 1)} aria-label="Halaman berikutnya"><Icon name="chevronRight" className="h-4 w-4" /></button></div></footer>
     </section>
   </div>;
 }

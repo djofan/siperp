@@ -1,4 +1,6 @@
 "use client";
+import { formatNumericText } from "@/lib/number-format";
+
 
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, UsersRound, Layers3 } from "lucide-react";
@@ -44,7 +46,7 @@ export function ModuleAccounts({initial, initialModule}:{initial:ManagedAccountD
       return <Link className={styles.card} key={module.id} href={`/admin/akun-modul?modul=${encodeURIComponent(module.slug)}`}>
         <span className={styles.icon}><Layers3 size={22}/></span>
         <h2>{module.name}</h2><p>Anggota dan peran operasional</p>
-        <div className={styles.metrics}><strong>{count}<small>akun</small></strong><span>{active} aktif · {count-active} nonaktif</span></div>
+        <div className={styles.metrics}><strong>{formatNumericText(count)}<small>akun</small></strong><span>{formatNumericText(active)} aktif · {formatNumericText(count-active)} nonaktif</span></div>
         <span className={styles.open}>Lihat akun modul <ArrowUpRight size={18}/></span>
       </Link>;
     })}</div> : <>

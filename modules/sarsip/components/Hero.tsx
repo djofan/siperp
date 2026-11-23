@@ -1,3 +1,4 @@
+import { formatNumericText } from "@/lib/number-format";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Radio, LifeBuoy, ScrollText, HeartHandshake } from "lucide-react";
@@ -34,7 +35,7 @@ export function SarsipHero({ profile }: {
         </div>
         <p className={styles.heroNote}><LifeBuoy size={15} aria-hidden="true"/> Pencarian, pertolongan, dan aksi kemanusiaan</p>
       </div>
-      <div className={styles.heroFocus} aria-label="Fokus bantuan SARSIP">{focusAreas.map(({ title, description }, index) => <div key={title}><span aria-hidden="true">0{index + 1}</span><h2>{title}</h2><p>{description}</p></div>)}</div>
+      <div className={styles.heroFocus} aria-label="Fokus bantuan SARSIP">{focusAreas.map(({ title, description }, index) => <div key={title}><span aria-hidden="true">0{formatNumericText(index + 1)}</span><h2>{title}</h2><p>{description}</p></div>)}</div>
       <div className={styles.heroCommitments} aria-label="Tentang kegiatan SARSIP">{commitments.map(({ icon: Icon, title, description }) => <div key={title}><span><Icon size={20} aria-hidden="true"/></span><div><h2>{title}</h2><p>{description}</p></div></div>)}</div>
     </div>
   </section>;
