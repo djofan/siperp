@@ -1,12 +1,14 @@
 # Konvensi REST API Siperp
 
-LAZSIP campaign `uniqueCode` opsional: create tanpa field/null/kosong disimpan null;
-omisi pada update mempertahankan nilai, null/kosong menghapus kode. Nilai nonkosong
-tetap 2 digit dan unik. Representasi API memakai string kosong jika tanpa kode,
-sehingga konsumen lama tetap kompatibel. Checkout tanpa kode memakai nominal asli;
-kode lama tetap mengikuti pembulatan sebelumnya. Memerlukan migration
-`2026_11_23_000001_make_lazsip_campaign_unique_code_optional` sebelum deploy kode.
-
+LAZSIP campaign `uniqueCode` masih wajib 2 digit dan unik pada create/update
+selama rilis pembayaran lama masih melayani request. Field hilang, null, kosong,
+atau hanya spasi ditolak 422 tanpa menulis/menghapus kode. Nullable schema dan
+reader toleran null adalah tahap persiapan; belum mengaktifkan penulisan campaign
+tanpa kode. Pembacaan null dinormalisasi menjadi string kosong, dan reader
+pembayaran baru dapat mempertahankan nominal tanpa kode. Ini tidak menjadikan
+reader pembayaran versi lama kompatibel. Migration
+`2026_11_23_000001_make_lazsip_campaign_unique_code_optional` dipertahankan utuh.
+Lakukan preflight data dan ikuti [rollout bertahap](../../docs/lazsip-campaign-code-rollout.md).
 
 Audit antrean Bantuan: GET `/api/v1/bantuan/dashboard` menambahkan `santunanTasks`
 berisi `transfer_pending` (Admin/Bendahara) dan `handover_pending` (Admin atau penyalur/
