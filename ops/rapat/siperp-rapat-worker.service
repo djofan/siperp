@@ -1,0 +1,32 @@
+[Unit]
+Description=SIPERP Rapat worker
+After=network.target mysql.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=siperp
+Group=www-data
+WorkingDirectory=/var/www/siperp-deploy/current/api
+ExecStart=/usr/local/lib/siperp-rapat/run-worker.sh
+Restart=on-failure
+RestartSec=5
+RestartPreventExitStatus=78
+Nice=10
+CPUQuota=100%
+MemoryHigh=1536M
+MemoryMax=2G
+OOMPolicy=kill
+TimeoutStopSec=3700
+KillMode=mixed
+SendSIGKILL=no
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0027
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=2
+Environment=MKL_NUM_THREADS=2
+
+[Install]
+WantedBy=multi-user.target

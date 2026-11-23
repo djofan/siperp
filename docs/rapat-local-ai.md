@@ -47,6 +47,11 @@ secara eksplisit dengan `ollama pull qwen3.5:9b`. Jangan gunakan model cloud.
 
 ## Konfigurasi proses
 
+Panduan worker systemd dan profil VPS berkapasitas terbatas berada di
+[ops/rapat/README.md](../ops/rapat/README.md). Profil tersebut memakai override
+`RAPAT_OLLAMA_MODEL=qwen3.5:0.8b-q8_0`; default model notulen dalam kode tetap
+`qwen3.5:9b`. Environment VPS dan checkpoint tidak masuk repositori.
+
 Laravel membaca `RAPAT_PYTHON` sebagai lokasi executable Python venv. Isi juga
 `RAPAT_MODEL_DIR`, `RAPAT_WHISPER_MODEL`, `RAPAT_OLLAMA_URL`, dan
 `RAPAT_OLLAMA_MODEL` pada environment backend. Gunakan path absolut milik server;
