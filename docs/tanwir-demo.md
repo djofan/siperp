@@ -63,3 +63,22 @@ Catatan lingkungan Windows: kegagalan bootstrap Pest sebelumnya berasal dari PHP
 ## Penyimpanan saat deploy
 
 Backend sekarang menyimpan file privat melalui disk Laravel `local`, pada subdirektori `tanwir/`. Volume tersebut harus persisten dan masuk backup. File dibuka melalui endpoint berizin `/api/tanwir/files/...`, bukan direktori publik. Pastikan batas unggahan PHP (`upload_max_filesize`, `post_max_size`) dan proxy mencukupi file 50 MB beserta overhead multipart.
+
+
+## Unduh semua progres dari Rekap Tugas
+
+Admin Tanwir/Superadmin dapat memilih **Unduh semua progres (Excel)** pada
+`/admin/tanwir/rekap-tugas`. Unduhan mencakup semua halaman tugas dan peserta,
+tanpa mengikuti filter layar. File memiliki Ringkasan peserta, Rekap tugas,
+dan Rincian progres (satu baris per tugas/peserta). Semua pembacaan memakai
+endpoint rekap privat yang sudah ada, dengan sesi Core dan otorisasi Laravel.
+Tidak ada endpoint baru atau migration.
+
+Peserta belum mengumpulkan, akun nonaktif, serta hasil lama peserta yang pindah
+kelompok mengikuti cakupan rekap yang sudah berlaku. Kelompok adalah kelompok
+saat data diambil; perpindahan historis tidak direkonstruksi. Status/nilai adalah
+hasil terakhir tersimpan; jumlah percobaan ditampilkan, tanpa mengekspor seluruh
+riwayat percobaan, berkas media privat, atau kunci jawaban. Nilai belum tersedia
+kosong; nilai 0 tetap angka 0. Data dibaca bertahap selama unduhan, bukan snapshot
+transaksi database. Perubahan jumlah halaman/data, duplikasi, atau kegagalan API
+membatalkan unduhan agar tidak menghasilkan laporan parsial.
