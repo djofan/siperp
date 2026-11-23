@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import lazsipLogo from "@/public/lazsip-logo.png";
 import { useRouter, usePathname } from "next/navigation";
 import { lazsipSiteConfig } from "@/modules/lazsip/components/siteConfig";
 import { Button } from "@/modules/lazsip/components/ui/Button";
-import { LazsipMark } from "@/modules/lazsip/components/LazsipMark";
+
 import { smoothScrollToId } from "@/modules/lazsip/components/smoothScroll";
 
 export function Navbar() {
@@ -37,11 +39,8 @@ export function Navbar() {
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-3 pt-2 sm:px-6 sm:pt-4">
       <nav className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-white/95 px-3 py-1.5 shadow-md shadow-lazsip-primary-900/5 backdrop-blur-md sm:px-6 sm:py-2.5">
-        <Link href="/lazsip" onClick={handleLogoClick} className="flex items-center gap-2.5">
-          <LazsipMark />
-          <span className="text-base font-extrabold tracking-tight sm:text-lg text-lazsip-primary-900">
-            {lazsipSiteConfig.name}
-          </span>
+        <Link href="/lazsip" onClick={handleLogoClick} className="flex shrink-0 items-center" aria-label="LAZSIP — Beranda">
+          <Image src={lazsipLogo} alt="LAZSIP — Tunaikan Zakat Bahagiakan Umat" preload sizes="(min-width: 640px) 172px, 140px" className="h-auto w-[140px] object-contain sm:w-[172px]" />
         </Link>
 
         <div className="hidden items-center gap-7 lg:flex">
