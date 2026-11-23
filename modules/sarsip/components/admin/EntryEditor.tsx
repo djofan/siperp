@@ -57,8 +57,8 @@ export function EntryEditor({ kind, entry }: { kind: string; entry?: Entry }) {
     finally { setBusy(false); }
   }
   return <form onSubmit={submit} className="max-w-3xl space-y-5 rounded-2xl border border-border bg-surface p-6 text-foreground">
-    <label className="block text-sm font-medium">Judul<input name="title" required maxLength={191} defaultValue={entry?.title} className={field}/></label>
-    <label className="block text-sm font-medium">{kind === "berita" ? "Isi berita" : "Deskripsi"}<textarea name="description" required maxLength={50000} rows={9} defaultValue={entry?.description} className={field}/></label>
+    <label className="block text-sm font-medium"><span>Judul<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="title" required maxLength={191} defaultValue={entry?.title} className={field}/></label>
+    <label className="block text-sm font-medium"><span>{kind === "berita" ? "Isi berita" : "Deskripsi"}<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><textarea name="description" required maxLength={50000} rows={9} defaultValue={entry?.description} className={field}/></label>
     <div className="grid gap-5 sm:grid-cols-2"><label className="block text-sm font-medium">Lokasi<input name="location" maxLength={191} defaultValue={entry?.location ?? ""} className={field}/></label><label className="block text-sm font-medium">Tanggal {kind === "berita" ? "berita" : kind === "kegiatan" ? "kegiatan" : "pelaksanaan"}<input name="eventDate" type="date" defaultValue={entry?.eventDate} className={field}/></label></div>
     <div className="space-y-3">
       <label className="block text-sm font-medium">Foto dokumentasi
@@ -80,7 +80,7 @@ export function EntryEditor({ kind, entry }: { kind: string; entry?: Entry }) {
       }}>Hapus gambar</button></>}
     </div>
     <GalleryEditor value={gallery} onChange={setGallery} disabled={busy || galleryBusy} onUploadingChange={setGalleryBusy}/>
-    {kind === "campaign" && <label className="block text-sm font-medium">Target donasi (Rp)<RupiahNumberInput name="targetAmount" required type="number" step="1" min="1" max="2147483647" defaultValue={entry?.targetAmount || ""} className={field}/></label>}
+    {kind === "campaign" && <label className="block text-sm font-medium"><span>Target donasi (Rp)<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><RupiahNumberInput name="targetAmount" required type="number" step="1" min="1" max="2147483647" defaultValue={entry?.targetAmount || ""} className={field}/></label>}
     <label className="block text-sm font-medium">Status<select name="status" defaultValue={entry?.status ?? "draft"} className={field}><option value="draft">Draft — belum tampil publik</option><option value="published">{kind === "campaign" ? "Publik — donasi dibuka" : "Dipublikasikan"}</option>{(kind !== "berita" || entry?.status === "completed") && <option value="completed">Selesai</option>}{entry?.status === "archived" && <option value="archived">Diarsipkan</option>}</select></label>
     {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
     <div className="flex flex-wrap gap-3"><button disabled={busy || galleryBusy} className="rounded-full bg-orange-600 px-6 py-3 text-sm font-bold text-white disabled:opacity-50">{busy ? "Memproses…" : "Simpan"}</button>{entry && entry.status !== "archived" && <button type="button" disabled={busy || galleryBusy} onClick={archive} className="rounded-full border border-border px-6 py-3 text-sm disabled:opacity-50">Arsipkan</button>}</div>

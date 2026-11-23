@@ -11,14 +11,14 @@ export function ChapterSelect({ chapters, requireChapter = true }: { chapters: C
   const available = chapters.filter(chapter => chapter.course.id === courseId);
 
   return <div className="grid gap-4 sm:grid-cols-2">
-    <label className="block text-sm">Angkatan
-      <select name="courseId" required value={courseId} onChange={event => setCourseId(event.target.value)} className={inputClass}>
+    <label className="block text-sm"><span>Angkatan
+      <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><select name="courseId" required value={courseId} onChange={event => setCourseId(event.target.value)} className={inputClass}>
         <option value="">Pilih angkatan</option>
         {courses.map(course => <option key={course.id} value={course.id}>{course.title}</option>)}
       </select>
     </label>
-    {requireChapter && <label className="block text-sm">Bab
-      <select key={courseId} name="chapterId" required defaultValue="" disabled={!courseId} className={inputClass}>
+    {requireChapter && <label className="block text-sm"><span>Bab
+      <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><select key={courseId} name="chapterId" required defaultValue="" disabled={!courseId} className={inputClass}>
         <option value="">{courseId ? "Pilih bab" : "Pilih angkatan terlebih dahulu"}</option>
         {available.map(chapter => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}
       </select>

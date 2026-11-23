@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
 
 import styles from "./Detail.module.css";
@@ -42,7 +44,7 @@ export function DonationForm({ campaignId, methods, preview = false }: { campaig
           donorName: name, donorPhone: phone, donorEmail: email, amount: nominal, paymentMethod: method, isAnonymous: anonymous, coversFee: !isIpaymu && coversFee }),
       });
       const data = await response.json();
-      if (!response.ok || typeof data.transactionId !== "string") throw new Error(data.error?.message ?? data.error ?? "Gagal membuat transaksi.");
+      if (!response.ok || typeof data.transactionId !== "string") throw new Error(describeApiProblem(data, 0, "Gagal membuat transaksi."));
       if (isIpaymu) setTransactionId(data.transactionId);
       else router.push(`/payment/checkout/${data.transactionId}`);
     } catch (err) { setError(err instanceof Error ? err.message : "Koneksi gagal. Coba kembali."); }
@@ -53,11 +55,11 @@ export function DonationForm({ campaignId, methods, preview = false }: { campaig
     <div><p className="text-xs font-bold uppercase tracking-widest text-orange-700">Dukung misi kemanusiaan</p><h2 className="mt-2 text-2xl font-bold">Form donasi</h2></div>
     <p className={styles.fieldTitle}>Nominal donasi</p>
     <div className={styles.presets}> { [50000,100000,250000,500000,1000000].map((v) => <button key={v} type="button" onClick={() => setAmount(String(v))} aria-pressed={nominal === v}>{money(v)}</button>)}</div>
-    <label className="block space-y-2 text-sm font-medium"><span className="sr-only">Nominal donasi (Rp)</span><RupiahNumberInput required type="number" min="1" max="2147483647" step="1" inputMode="numeric" placeholder="Rp Nominal lainnya" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass}/></label>
-    {!(isIpaymu && (preview || methods.length === 1)) && <label className="block space-y-2 text-sm font-medium"><span>Metode pembayaran</span><select required disabled={preview} value={method} onChange={(e) => setMethod(e.target.value)} className={inputClass}>{preview && <option value="">iPaymu · Pratinjau</option>}{methods.map((m) => <option key={m.method}>{m.method}</option>)}</select></label>}
+    <label className="block space-y-2 text-sm font-medium"><span className="sr-only">Nominal donasi (Rp)<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><RupiahNumberInput required type="number" min="1" max="2147483647" step="1" inputMode="numeric" placeholder="Rp Nominal lainnya" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputClass}/></label>
+    {!(isIpaymu && (preview || methods.length === 1)) && <label className="block space-y-2 text-sm font-medium"><span>Metode pembayaran<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><select required disabled={preview} value={method} onChange={(e) => setMethod(e.target.value)} className={inputClass}>{preview && <option value="">iPaymu · Pratinjau</option>}{methods.map((m) => <option key={m.method}>{m.method}</option>)}</select></label>}
     {isIpaymu && <p className={styles.paymentHint}>Pilih metode pembayaran langsung di iPaymu. Biaya ditampilkan sebelum pembayaran.</p>}
-    <div className={styles.identity}><label className="block space-y-2 text-sm font-medium"><span>Nama lengkap</span><input required placeholder="Nama Anda" autoComplete="name" maxLength={191} value={name} onChange={(e) => setName(e.target.value)} className={inputClass}/></label>
-    <label className="block space-y-2 text-sm font-medium"><span>Nomor WhatsApp</span><input required type="tel" autoComplete="tel" placeholder="081234567890" maxLength={25} value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass}/></label></div>
+    <div className={styles.identity}><label className="block space-y-2 text-sm font-medium"><span>Nama lengkap<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input required placeholder="Nama Anda" autoComplete="name" maxLength={191} value={name} onChange={(e) => setName(e.target.value)} className={inputClass}/></label>
+    <label className="block space-y-2 text-sm font-medium"><span>Nomor WhatsApp<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input required type="tel" autoComplete="tel" placeholder="081234567890" maxLength={25} value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass}/></label></div>
     <label className="block space-y-2 text-sm font-medium"><span>Email (opsional)</span><input type="email" placeholder="nama@email.com" autoComplete="email" maxLength={191} value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass}/><span className="block text-xs text-slate-500">Kode pelacakan dikirim ke email ini.</span></label>
     <label className="flex items-start gap-3 text-sm text-slate-600"><input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} className="mt-1 accent-orange-600"/><span>Sembunyikan nama publik (Hamba Allah). Identitas tetap tercatat untuk admin.</span></label>
 

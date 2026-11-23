@@ -1,4 +1,6 @@
 "use client";
+
+import { describeApiProblem } from "@/lib/api-problem";
 import { useRef } from "react";
 
 import { useMemo, useState, type FormEvent } from "react";
@@ -105,7 +107,7 @@ export function ZakatPaymentForm({
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        setError((data?.error?.message ?? data?.error) ?? "Gagal mengirim pembayaran zakat.");
+        setError(describeApiProblem(data, 0, "Gagal mengirim pembayaran zakat."));
         return;
       }
 
@@ -200,7 +202,7 @@ export function ZakatPaymentForm({
         <div className="flex flex-1 flex-col gap-1.5">
           <label htmlFor="zakat-nama" className="text-sm font-medium text-lazsip-primary-900">
             Nama
-          </label>
+          <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></label>
           <input
             id="zakat-nama"
             required

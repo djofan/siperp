@@ -22,7 +22,7 @@ test('structured API rejections stay readable inside the manual balance form wit
  const h=harness(async()=>({ok:false,status:422,json:async()=>({error:{message:'Isi nomor WhatsApp atau email yang valid.',code:'VALIDATION_FAILED',requestId:'diagnostic-test'}})}));
  h.render();h.state[1]='500000';h.state[3]='Donatur pengujian';
  await find(h.render(),node=>node.type==='form').props.onSubmit({preventDefault(){}});
- const html=renderToStaticMarkup(h.render());assert.match(html,/role="alert"/);assert.match(html,/Isi nomor WhatsApp atau email yang valid/);assert.match(html,/diagnostic-test/);assert.equal(h.state[1],'500000');assert.equal(h.state[3],'Donatur pengujian');assert.equal(h.refreshes,0);
+ const html=renderToStaticMarkup(h.render());assert.match(html,/role="alert"/);assert.match(html,/Isi nomor WhatsApp atau email yang valid/);assert.doesNotMatch(html,/diagnostic-test|VALIDATION_FAILED/);assert.equal(h.state[1],'500000');assert.equal(h.state[3],'Donatur pengujian');assert.equal(h.refreshes,0);
 });
 test('failed connections release the save button and tell users to verify history before retrying',async()=>{
  const h=harness(async()=>{throw new Error('offline');});h.render();h.state[1]='500000';await find(h.render(),node=>node.type==='form').props.onSubmit({preventDefault(){}});

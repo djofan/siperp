@@ -1,6 +1,6 @@
 import type { ServiceMedia } from "../api/workflow";
 export function PhotoField({name,label,required=true}:{name:string;label:string;required?:boolean}) {
-  return <label className="tech-photo-field" htmlFor={name}>{label}<input id={name} name={name} type="file" accept="image/jpeg,image/png,image/webp" required={required}/><small>JPG, PNG, atau WebP · maksimal 4 MB.</small></label>;
+  return <label className="tech-photo-field" htmlFor={name}><span>{label}{(required) && <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span>}</span><input id={name} name={name} type="file" accept="image/jpeg,image/png,image/webp" required={required}/><small>JPG, PNG, atau WebP · maksimal 4 MB.</small></label>;
 }
 export function ServicePhotos({media,stage}:{media:ServiceMedia[];stage?:string}) {
   const titles:Record<string,string>={before:"Foto sebelum servis",after:"Foto setelah servis",payment:"Bukti pembayaran",handover:"Bukti serah terima"};

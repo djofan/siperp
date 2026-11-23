@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { SipLoadingButton } from "@/modules/sip/components/admin/SipLoadingButton";
@@ -47,7 +49,7 @@ export function LaporanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Gagal mengunggah file.");
+      setError(describeApiProblem(data, 0, "Gagal mengunggah file."));
       return;
     }
     const data = await response.json();
@@ -69,7 +71,7 @@ export function LaporanForm({
 
     if (!response.ok) {
       const data = await response.json().catch(() => null);
-      setError((data?.error?.message ?? data?.error) ?? "Gagal menyimpan.");
+      setError(describeApiProblem(data, 0, "Gagal menyimpan."));
       setIsSubmitting(false);
       return;
     }
@@ -159,7 +161,7 @@ export function LaporanForm({
                   disabled={uploading}
                   onChange={(e) => handleUploadPdf(e.target.files?.[0] ?? null)}
                 />
-              </label>
+              <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></label>
             </div>
           </div>
         </div>

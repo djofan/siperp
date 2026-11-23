@@ -25,7 +25,7 @@ export async function AnswerPanel({ params, searchParams, admin = false }: {
     <section className="mb-6 rounded-2xl border border-gray-200 bg-white p-5"><h2 className="font-semibold">Pertanyaan peserta</h2><p className="mt-2 text-xs text-gray-500">{new Date(question.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB</p><p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7">{question.question}</p>{admin && <CopyQuestion text={question.question} />}</section>
     <section className="rounded-2xl border border-gray-200 bg-white p-5">
       <ActionForm action={(admin ? answerAdminDiscussion : answerTeacherDiscussion).bind(null, question.id, page)} label={admin ? "Sampaikan jawaban ke peserta" : "Simpan jawaban & kembali"}>
-        <label className="block text-sm font-medium">{admin ? "Jawaban dari ustadz" : "Jawaban"}<textarea name="answer" required maxLength={10000} defaultValue={question.answer ?? ""} rows={8} className={inputClass}/></label>
+        <label className="block text-sm font-medium"><span>{admin ? "Jawaban dari ustadz" : "Jawaban"}<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><textarea name="answer" required maxLength={10000} defaultValue={question.answer ?? ""} rows={8} className={inputClass}/></label>
         <p className="text-xs text-gray-500">Jawaban hanya dapat dilihat peserta yang bertanya dan pengelola. Setelah tersimpan, Anda kembali ke tabel pertanyaan.</p>
       </ActionForm>
     </section>

@@ -78,3 +78,24 @@ it('distinguishes encryption configuration and unreadable stored data', function
     [Illuminate\Encryption\MissingAppKeyException::class, 'APP_KEY_MISSING', 503],
     [Illuminate\Contracts\Encryption\DecryptException::class, 'ENCRYPTION_DATA_UNREADABLE', 500],
 ]);
+
+
+it('summarizes invalid fields clearly for every module without putting diagnostics in user text', function (string $module) {
+    Route::post('/api/v1/test-friendly-'.$module, function (Illuminate\Http\Request $request) {
+        $request->validate(['title'=>'required|string', 'email'=>'required|email', 'applicant.dependents.*.name'=>'required|string', 'description'=>'required|string|min:10']);
+    })->middleware('api');
+    $response=$this->postJson('/api/v1/test-friendly-'.$module, ['email'=>'invalid','description'=>'short','applicant'=>['dependents'=>[['name'=>'']]]])->assertUnprocessable();
+    expect($response->json('error.message'))->toContain('Judul wajib diisi.', 'Email harus berupa alamat email yang valid.')
+        ->not->toContain('VALIDATION_FAILED','Kode:', 'ID:', 'The ');
+    expect($response->json('error.details')['applicant.dependents.0.name'][0])->toBe('Nama lengkap pada baris 1 wajib diisi.');
+    expect($response->json('error.details.description.0'))->toBe('Deskripsi minimal 10 karakter.');
+    expect($response->json('error.diagnosticCode'))->toBe('VALIDATION_FAILED');
+})->with(['core','sip','lazsip','sarsip','bantuan','teknisi','academy','tanwir','ojol','payment','keuangan','rapat']);
+
+it('retains support references separately from readable server failures', function () {
+    Route::get('/api/v1/test-friendly-server', fn () => throw diagnosticQuery('42S22',1054))->middleware('api');
+    $response=$this->getJson('/api/v1/test-friendly-server')->assertStatus(500);
+    expect($response->json('error.message'))->toContain('Hubungi admin')->not->toContain('DB_SCHEMA_MISMATCH','Kode:','ID:', 'migration');
+    expect($response->json('error.diagnosticCode'))->toBe('DB_SCHEMA_MISMATCH');
+    expect($response->headers->get('X-Request-ID'))->toBe($response->json('error.requestId'));
+});

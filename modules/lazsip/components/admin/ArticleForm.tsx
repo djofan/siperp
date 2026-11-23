@@ -1,5 +1,7 @@
 "use client";
 
+import { describeApiProblem } from "@/lib/api-problem";
+
 import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ARTICLE_CATEGORIES, type LazsipArticle } from "@/contracts/modules/lazsipArticles";
@@ -32,7 +34,7 @@ export function ArticleForm({ article }: { article?: LazsipArticle }) {
       });
       if (!response.ok) {
         const result = await response.json().catch(() => null);
-        throw new Error(typeof result?.error === "string" ? result.error : result?.error?.message ?? "Gagal menyimpan artikel. Periksa isian lalu coba lagi.");
+        throw new Error(describeApiProblem(result, 0, "Gagal menyimpan artikel. Periksa isian lalu coba lagi."));
       }
       router.push("/admin/lazsip/artikel"); router.refresh();
     } catch (err) { setError(err instanceof Error ? err.message : "Gagal menyimpan artikel."); }

@@ -1,4 +1,5 @@
 import { RupiahNumberInput } from "./RupiahNumberInput";
+import { Children, isValidElement } from "react";
 import type { InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
@@ -29,12 +30,15 @@ interface FormFieldProps {
   error?: string;
   hint?: string;
   children: ReactNode;
+  required?: boolean;
 }
 
-export function FormField({ label, htmlFor, error, hint, children }: FormFieldProps) {
+export function FormField({ label, htmlFor, error, hint, children, required }: FormFieldProps) {
+  const hasRequired = (nodes: ReactNode): boolean => Children.toArray(nodes).some(node => isValidElement<{required?: boolean; children?: ReactNode}>(node) && (node.props.required === true || hasRequired(node.props.children)));
+  const mandatory = required === true || hasRequired(children);
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <Label htmlFor={htmlFor}>{label}{mandatory && !label.includes("*") && <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span>}</Label>
       {children}
       {hint && !error && <p className="text-xs text-foreground/70">{hint}</p>}
       {error && <p className="text-xs text-danger">{error}</p>}

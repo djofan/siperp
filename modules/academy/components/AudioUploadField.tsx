@@ -5,7 +5,7 @@ export function AudioUploadField({ required = false, label = "Upload audio" }: {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   return <div className="space-y-2 text-sm">
-    <label htmlFor={id} className="inline-flex cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 font-medium text-white hover:bg-green-700">{label}</label>
+    <label htmlFor={id} className="inline-flex cursor-pointer rounded-xl bg-green-600 px-4 py-2.5 font-medium text-white hover:bg-green-700">{label}{(required) && <span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span>}</label>
     <input id={id} name="file" type="file" required={required} accept=".mp3,.wav,.ogg,.m4a" className="sr-only" onChange={event => {
       const file = event.target.files?.[0];
       if (file && file.size > 50 * 1024 * 1024) { event.target.value = ""; setName(""); setError("Audio maksimal 50 MB."); }

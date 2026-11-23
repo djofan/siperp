@@ -23,9 +23,9 @@ export function ProfileEditor({ profile }: { profile: SarsipProfile }) {
   }
   const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground";
   return <form onSubmit={submit} className="max-w-3xl space-y-5 rounded-2xl border border-border bg-surface p-6 text-foreground">
-    <label className="block text-sm font-medium">Judul utama halaman publik<input name="headline" required maxLength={191} defaultValue={profile.headline} className={field}/></label>
+    <label className="block text-sm font-medium"><span>Judul utama halaman publik<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="headline" required maxLength={191} defaultValue={profile.headline} className={field}/></label>
     <HeroImageField value={heroImage} disabled={busy} onUploadingChange={setUploading} onChange={(url) => { setHeroImage(url); setMessage(""); setError(""); }} />
-    <label className="block text-sm font-medium">Tentang tim<textarea name="description" required rows={8} maxLength={10000} defaultValue={profile.description} className={field}/></label>
+    <label className="block text-sm font-medium"><span>Tentang tim<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><textarea name="description" required rows={8} maxLength={10000} defaultValue={profile.description} className={field}/></label>
     <label className="block text-sm font-medium">Kontak koordinasi (publik)<textarea name="contact" rows={3} maxLength={191} defaultValue={profile.contact ?? ""} className={field}/></label>
     {message && <p role="status" className="text-sm text-emerald-600">{message}</p>}
     {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
