@@ -10,6 +10,7 @@ import { SubmissionMedia } from "../app/SubmissionMedia";
 import { QuizReview } from "../app/QuizReview";
 import { ReviewHistory } from "../app/ReviewHistory";
 import s from "./TaskRecap.module.css";
+import { TaskRecapExport } from "./TaskRecapExport";
 
 const base = "/admin/tanwir/rekap-tugas";
 async function read<T>(load: () => Promise<T>) {
@@ -34,7 +35,7 @@ export async function TaskRecapIndexPage({ params }: { params: RecapParams }) {
   if (!result) return <InvalidFilters href={base} />;
   const query = recapQuery(params);
   return <div className={s.page}>
-    <header><h1>Rekap Tugas</h1><p className={s.muted}>Lihat tugas yang diberikan PIC dan hasil peserta pada setiap kelompok.</p></header>
+    <header className={s.heading}><div><h1>Rekap Tugas</h1><p className={s.muted}>Lihat tugas yang diberikan PIC dan hasil peserta pada setiap kelompok.</p></div><TaskRecapExport /></header>
     <form className={s.filters} action={base}>
       <label>Cari tugas<input className={inputClass} name="q" defaultValue={query.get("q") ?? ""} maxLength={200} placeholder="Judul tugas" /></label>
       <label>PIC pembuat tugas<select className={inputClass} name="teacher" defaultValue={query.get("teacher") ?? ""}><option value="">Semua PIC</option>{result.teachers.map(t => <option key={t.id} value={t.id}>{t.name} · {t.code}</option>)}</select></label>

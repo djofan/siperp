@@ -25,3 +25,5 @@
 :global(.tanwir-admin) .page :global(.module-stat) { background:var(--color-tanwir-surface); color:var(--color-tanwir-ink); }
 :global(.tanwir-admin) .page :global(.module-stat) > p { color:var(--color-tanwir-muted); }
 :global(.tanwir-admin) .page :global(.module-stat) > p:nth-child(2) { color:var(--color-tanwir-ink); }
+
+.export {display:grid;gap:8px;max-width:390px}.exportButton {background:var(--color-tanwir-primary,#1f4d43);color:#fff;border-radius:10px;padding:12px 18px;min-height:44px;font-size:14px;font-weight:600;cursor:pointer}.exportButton:focus-visible {outline:2px solid var(--color-tanwir-ink,#1f4d43);outline-offset:4px}.exportButton:disabled {opacity:.65;cursor:wait}.export p {font-size:12px;margin:0}.exportError {color:#b84040}@media(max-width:640px){.export{max-width:none;width:100%}}
