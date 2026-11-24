@@ -6,7 +6,7 @@ return [
     'health_timeout' => 10,
     'timeout' => 1800,
     // Bump whenever decoding/VAD/filtering changes invalidate previous transcripts.
-    'transcription_pipeline_version' => env('RAPAT_TRANSCRIPTION_PIPELINE_VERSION', '2'),
+    'transcription_pipeline_version' => env('RAPAT_TRANSCRIPTION_PIPELINE_VERSION', '3'),
     // Explicitly forward Laravel dotenv values; child processes do not inherit them.
     'model_dirs' => [
         'RAPAT_MODEL_DIR' => env('RAPAT_MODEL_DIR'),

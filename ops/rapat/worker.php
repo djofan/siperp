@@ -39,7 +39,7 @@ try {
 }
 // Daemon mode preserves Laravel's signal and timeout handling; exit after one job.
 exit($kernel->call('queue:work', [
-    'connection' => 'rapat', '--queue' => 'rapat-transcription,rapat', '--max-jobs' => 1,
+    'connection' => 'rapat', '--queue' => 'rapat-transcription-v2,rapat-transcription,rapat', '--max-jobs' => 1,
     '--stop-when-empty' => true, '--max-time' => 60, '--sleep' => 3,
     '--tries' => 1, '--timeout' => 3600, '--memory' => 256,
 ]));

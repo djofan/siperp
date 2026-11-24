@@ -1,5 +1,36 @@
 # Runtime AI dan worker Rapat pada VPS
 
+## Transkrip panjang bertahap
+
+`rapat-transcription-v2` memproses satu media/window maksimal 15 menit audio per job.
+Klip browser 1 menit tetap menjadi satu langkah; file 1 jam menjadi empat langkah.
+Whisper small CPU int8 dan beam 5 dipertahankan. Decoder membaca streaming ke WAV
+privat maksimal 15 menit, bukan memuat seluruh file panjang ke RAM. Audio terkompresi
+sebelum window dapat didekode ulang secara streaming untuk container tanpa indeks;
+inferensi yang sudah tersimpan tidak diulang. Tidak menjamin percepatan proporsional.
+
+Checkpoint, teks, dan timestamp disimpan terenkripsi; bagian hening tetap dihitung
+dalam timeline. Token berbeda per continuation mencegah penyimpanan ganda. Retry
+runtime maksimal tiga percobaan, kemudian failed dengan hasil sebelumnya tetap ada.
+Klik lanjut dari status failed memakai checkpoint; buat ulang dari ready mulai awal.
+
+Pembaruan global helper tetap eksplisit setelah rilis baru aktif:
+
+```bash
+bash /var/www/siperp-deploy/current/ops/rapat/install-worker.sh
+```
+
+Scheduler existing harus aktif. `rapat:resume-transcription` berjalan tiap menit:
+enqueue hilang dipulihkan setelah 5 menit (pending job yang masih ada dibiarkan);
+klaim worker mati dipulihkan setelah lease 1980 detik, agar tidak menduplikasi inferensi
+yang masih sah. Timeout job 1920 < lease 1980 < retry_after 3900. Recovery berulang
+dibatasi tiga kali per checkpoint; kegagalan persisten perlu intervensi admin. Tidak
+menjalankan worker paralel. Koneksi database/queue serta schema lama tetap sama.
+
+Model notulen tetap tahap terpisah. Perubahan ini tidak membuktikan kecepatan atau
+akurasi rapat nyata 3 jam pada VPS. Batas upload tetap 20 MiB per file; rekaman browser
+diunggah dalam klip. Hasil keseluruhan tetap dibatasi 200.000 karakter/20.000 segmen.
+
 Folder ini menyimpan tooling yang dipasang secara eksplisit oleh operator.
 Tidak memasang model, mengubah `.env`, menjalankan migration, atau me-restart
 MySQL/PHP-FPM/worker pembayaran melalui deployment web biasa.

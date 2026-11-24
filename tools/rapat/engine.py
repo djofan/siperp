@@ -11,6 +11,7 @@ import stat
 import sys
 import tempfile
 import threading
+import wave
 from urllib.parse import urlsplit
 
 MAX_FILE = 20 * 1024 * 1024
@@ -122,6 +123,11 @@ def transcribe(data):
         raise Failure('invalid_language')
     if not model_ready():
         raise Failure('whisper_model_missing')
+    with path.open('rb') as source:
+        return recognize(source)
+
+
+def recognize(source):
     try:
         from faster_whisper import WhisperModel
     except ImportError:
@@ -133,12 +139,11 @@ def transcribe(data):
         raise Failure('whisper_model_load_failed') from None
     # PyAV detects media content, regardless of a random temporary filename.
     try:
-        with path.open('rb') as source:
-            segments, _ = model.transcribe(source, language='id', task='transcribe',
-                                           beam_size=5, temperature=0, word_timestamps=True,
-                                           hallucination_silence_threshold=2,
-                                           vad_filter=True, condition_on_previous_text=False)
-            decoded = list(segments)
+        segments, _ = model.transcribe(source, language='id', task='transcribe',
+                                       beam_size=5, temperature=0, word_timestamps=True,
+                                       hallucination_silence_threshold=2,
+                                       vad_filter=True, condition_on_previous_text=False)
+        decoded = list(segments)
     except Exception as exc:
         code = 'audio_decode_failed' if type(exc).__module__.startswith('av.') else 'transcription_failed'
         raise Failure(code) from None
@@ -163,6 +168,74 @@ def transcribe(data):
                  lowConfidenceSegmentIndexes=low_confidence)
     return dict(text=text, segments=result, stats=stats,
                 warnings=['low_confidence_speech'] if low_confidence else [])
+
+
+def decode_window(path, destination, start, seconds):
+    """Stream decode, retaining only the requested window; works without WebM cues.
+
+    Re-reading preceding compressed frames costs decode time, but never stores the
+    full recording in RAM and avoids inaccurate seeks on live/browser containers.
+    """
+    import av
+    skip = start * 16000
+    limit = seconds * 16000
+    written = cursor = 0
+    more = False
+    with av.open(str(path)) as container, wave.open(str(destination), 'wb') as out:
+        out.setnchannels(1); out.setsampwidth(2); out.setframerate(16000)
+        resampler = av.AudioResampler(format='s16', layout='mono', rate=16000)
+        def frames():
+            for frame in container.decode(audio=0):
+                yield from resampler.resample(frame)
+            yield from resampler.resample(None)
+        for frame in frames():
+            values = frame.to_ndarray().reshape(-1)
+            begin = max(0, skip - cursor)
+            cursor += len(values)
+            if begin >= len(values):
+                continue
+            values = values[begin:]
+            take = min(len(values), limit-written)
+            if take:
+                out.writeframesraw(values[:take].astype('<i2', copy=False).tobytes())
+                written += take
+            if len(values) > take:
+                more = True
+                break
+    return written/16000, more
+
+
+def transcribe_part(data):
+    path = audio_file(data.get('file'))
+    start = data.get('startSeconds', 0)
+    seconds = data.get('chunkSeconds', 900)
+    if type(start) is not int or start < 0 or type(seconds) is not int or not 1 <= seconds <= 900:
+        raise Failure('invalid_audio_window')
+    if data.get('language', 'id') != 'id' or os.environ.get('RAPAT_WHISPER_MODEL', 'small') != 'small':
+        raise Failure('invalid_language_or_model')
+    if not model_ready():
+        raise Failure('whisper_model_missing')
+    fd, name = tempfile.mkstemp(prefix=path.name+'_window_', suffix='.wav', dir=path.parent)
+    os.close(fd)
+    try:
+        try:
+            duration, more = decode_window(path, name, start, seconds)
+        except Exception:
+            raise Failure('audio_decode_failed') from None
+        if duration == 0:
+            result = dict(text='', segments=[])
+        else:
+            try:
+                with open(name, 'rb') as source:
+                    result = recognize(source)
+            except Failure as error:
+                if str(error) != 'no_usable_speech':
+                    raise
+                result = dict(text='', segments=[])
+        return dict(text=result['text'], segments=result['segments'], startSeconds=start,
+                    durationSeconds=duration, hasMore=more)
+    finally:
+        Path(name).unlink(missing_ok=True)
 
 
 SYSTEM = '''Write factual, formal Indonesian meeting minutes as JSON.
@@ -287,6 +360,8 @@ def dispatch(command, data):
         return health()
     if command == 'transcribe':
         return transcribe(data)
+    if command == 'transcribe_part':
+        return transcribe_part(data)
     if command == 'minutes':
         return minutes(data)
     raise Failure('invalid_command')

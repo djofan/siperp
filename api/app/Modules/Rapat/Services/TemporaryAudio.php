@@ -58,6 +58,13 @@ class TemporaryAudio
             if (is_resource($stream)) {
                 fclose($stream);
             }
+            // Python's hard deadline can skip its finally. Remove only range WAVs
+            // belonging to this unpredictable input path, never another job's files.
+            foreach (new \DirectoryIterator($dir) as $entry) {
+                if (str_starts_with($entry->getFilename(), basename($path).'_window_') && str_ends_with($entry->getFilename(), '.wav') && $entry->isFile()) {
+                    unlink($entry->getPathname());
+                }
+            }
             if (is_file($path)) {
                 unlink($path);
             }
