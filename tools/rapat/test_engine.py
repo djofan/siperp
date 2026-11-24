@@ -24,6 +24,39 @@ class EngineTests(unittest.TestCase):
             with patch.dict(os.environ, RAPAT_OLLAMA_URL=url):
                 self.assertIn(':11434', e.ollama_url())
 
+    def test_part_validation_and_cleanup_and_silent_windows(self):
+        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_AUDIO_ROOTS=root, RAPAT_WHISPER_MODEL='small'), patch.object(e,'model_ready',return_value=True):
+            f=Path(root)/'audio';f.write_bytes(b'compressed')
+            for invalid in [{'startSeconds':-1},{'startSeconds':True},{'chunkSeconds':901},{'chunkSeconds':0}]:
+                with self.assertRaises(e.Failure):e.transcribe_part({'file':str(f),**invalid})
+            with patch.object(e,'decode_window',return_value=(900,True)) as decode, patch.object(e,'recognize',side_effect=e.Failure('no_usable_speech')):
+                r=e.transcribe_part({'file':str(f),'startSeconds':900})
+                self.assertEqual(r,dict(text='',segments=[],startSeconds=900,durationSeconds=900,hasMore=True))
+                self.assertEqual(decode.call_args.args[2:],(900,900))
+            self.assertEqual(list(Path(root).iterdir()),[f])
+            with patch.object(e,'decode_window',side_effect=RuntimeError('PRIVATE internal decoder path')):
+                with self.assertRaisesRegex(e.Failure,'^audio_decode_failed$'):e.transcribe_part({'file':str(f)})
+            self.assertEqual(list(Path(root).iterdir()),[f])
+
+    def test_streaming_decoder_preserves_window_boundaries(self):
+        try:
+            import av
+        except ImportError:
+            self.skipTest('PyAV runtime required for streaming decoder test')
+        import wave
+        import array
+        with tempfile.TemporaryDirectory() as root:
+            source=Path(root)/'source.wav'
+            samples=array.array('h',[1000]*16000+[2000]*16000+[3000]*8000)
+            with wave.open(str(source),'wb') as w:
+                w.setnchannels(1);w.setsampwidth(2);w.setframerate(16000);w.writeframes(samples.tobytes())
+            for start,length,more,expected in [(0,1,True,1000),(1,1,True,2000),(2,.5,False,3000)]:
+                out=Path(root)/f'{start}.wav'
+                self.assertEqual(e.decode_window(source,out,start,1),(length,more))
+                with wave.open(str(out),'rb') as w:
+                    actual=array.array('h',w.readframes(w.getnframes()))
+                    self.assertEqual(len(actual),int(length*16000));self.assertTrue(all(v==expected for v in actual))
+
     def test_health_no_download_and_remote_model(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_MODEL_DIR=root), \
                 patch.object(e, 'request_ollama', return_value={'models': []}) as req:

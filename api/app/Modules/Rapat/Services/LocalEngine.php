@@ -31,7 +31,7 @@ class LocalEngine
                 throw new RuntimeException;
             }
             $data = json_decode($p->getOutput(), true, 64, JSON_THROW_ON_ERROR);
-            if ($input['operation'] === 'transcribe' && is_array($data) && in_array($data['error']['code'] ?? null, ['no_speech', 'no_speech_detected', 'no_usable_speech'], true)) {
+            if (in_array($input['operation'], ['transcribe', 'transcribe_part'], true) && is_array($data) && in_array($data['error']['code'] ?? null, ['no_speech', 'no_speech_detected', 'no_usable_speech'], true)) {
                 throw new NoSpeechDetected;
             }
             if (! $p->isSuccessful() || ! is_array($data) || isset($data['error'])) {

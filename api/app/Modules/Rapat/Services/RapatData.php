@@ -97,6 +97,12 @@ class RapatData
     public static function detail(Meeting $m): array
     {
         $p = self::normalize($m->payload);
+        $state = $p['transcriptionState'] ?? null;
+        unset($p['transcriptionState']);
+        $p['transcriptionProgress'] = $state ? [
+            'phase' => $state['phase'], 'completedParts' => $state['parts'],
+            'processedAudioSeconds' => $state['seconds'], 'chunkSeconds' => 900,
+        ] : null;
 
         return [...$p, 'historyAvailable' => true, ...self::summary($m), 'media' => Media::where('meeting_id', $m->id)->orderBy('sequence')->orderBy('id')->get()->map(fn ($f) => self::media($f))->all()];
     }

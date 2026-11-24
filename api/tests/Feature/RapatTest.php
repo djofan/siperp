@@ -2,6 +2,7 @@
 
 use App\Modules\Core\Services\UserService;
 use App\Modules\Rapat\Jobs\ProcessMeeting;
+use App\Modules\Rapat\Jobs\TranscribeMeeting;
 use App\Modules\Rapat\Models\Media;
 use App\Modules\Rapat\Models\Meeting;
 use App\Modules\Rapat\Providers\RapatServiceProvider;
@@ -622,7 +623,7 @@ it('transcribes with Whisper alone and preserves manual minutes and workflow', f
     $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
     $version = Meeting::find($id)->version;
     $this->postJson($url.'/transcribe', ['version' => $version])->assertAccepted()->assertJsonPath('data.processingMode', 'transcribe');
-    Queue::assertPushed(ProcessMeeting::class, fn ($job) => $job->transcribeOnly && ! $job->useTranscript && $job->queue === 'rapat-transcription' && $job->connection === 'rapat');
+    Queue::assertPushed(TranscribeMeeting::class, fn ($job) => $job->queue === 'rapat-transcription-v2' && $job->connection === 'rapat');
     $this->postJson($url.'/transcribe', ['version' => $version])->assertConflict();
     $meeting = Meeting::find($id);
     $job = new ProcessMeeting($id, $meeting->run_token, false, true);
@@ -734,11 +735,18 @@ it('uses worker private temporary audio and removes plaintext on success and fai
     });
     expect($result)->toBe('processed');
     expect(is_file($seen))->toBeFalse();
-    expect(fn () => $temp->withFile('private test audio', function ($path) use (&$seen) {
-        $seen = $path;
-        throw new RuntimeException('decoder failed');
-    }))->toThrow(RuntimeException::class, 'decoder failed');
+    $window = null;
+    expect(function () use ($temp, &$seen, &$window) {
+        return $temp->withFile('private test audio', function ($path) use (&$seen, &$window) {
+            $seen = $path;
+            $window = $path.'_window_interrupted.wav';
+            file_put_contents($window, 'private range audio');
+            throw new RuntimeException('decoder failed');
+        });
+    })->toThrow(RuntimeException::class, 'decoder failed');
+    expect($window)->toBeString();
     expect(is_file($seen))->toBeFalse();
+    expect(is_file($window))->toBeFalse();
 });
 
 it('identifies temporary audio permission failures without losing audio or leaking private errors', function () {

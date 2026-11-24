@@ -3131,6 +3131,47 @@
               null
             ]
           },
+          "transcriptionProgress": {
+            "readOnly": true,
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "queued",
+                      "processing",
+                      "retrying",
+                      "complete",
+                      "failed"
+                    ]
+                  },
+                  "completedParts": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "processedAudioSeconds": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "chunkSeconds": {
+                    "const": 900
+                  }
+                },
+                "required": [
+                  "phase",
+                  "completedParts",
+                  "processedAudioSeconds",
+                  "chunkSeconds"
+                ]
+              }
+            ]
+          },
           "transcript": {
             "type": "string",
             "maxLength": 200000
@@ -16120,7 +16161,7 @@
           "Rapat"
         ],
         "summary": "Queue audio transcription without changing minutes",
-        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires the transcriber only; a missing summarizer does not block transcription. Requires existing audio and current version. Uses the dedicated rapat-transcription queue on the rapat database connection. Preserves minutes and workflow finalization; terminal result is ready or failed, partial transcripts persist. Explicit ready regeneration refreshes audio transcripts; failed retries reuse compatible audio cache. Processing mode is read-only. Finalized workflow locks this operation until explicit reopen.",
+        "description": "Sanctum, active user and module.access:rapat required. Roles admin (including Core Superadmin), secretary (own meetings), viewer (read all, no mutations). All responses private, no-store. Sensitive payload and audio encrypted at rest. Local AI only; no paid/cloud fallback. Requires the transcriber only; a missing summarizer does not block transcription. Requires existing audio and current version. Uses rapat-transcription-v2 on the rapat database connection, one streaming window of at most 900 audio seconds per job. Encrypted checkpoints, fenced continuation tokens, bounded automatic retries and scheduler recovery preserve completed work across interruptions. Preserves minutes and workflow finalization; terminal result is ready or failed, partial transcripts persist. Explicit ready regeneration refreshes audio transcripts; failed retries reuse compatible audio cache. Processing mode is read-only. Finalized workflow locks this operation until explicit reopen.",
         "security": [
           {
             "bearerAuth": []

@@ -11,6 +11,7 @@ use App\Modules\Rapat\Services\RapatData as D;
 use App\Modules\Rapat\Services\RapatHistory;
 use App\Modules\Rapat\Services\RapatStorage;
 use App\Modules\Rapat\Services\RapatWorkflow;
+use App\Modules\Rapat\Services\TranscriptionRun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -438,7 +439,13 @@ class RapatController
             $this->editable($m, $r);
             abort_unless(Media::where('meeting_id', $id)->exists(), 422, 'Rekam atau unggah audio terlebih dahulu.');
             if ($m->status === 'ready') {
-                Media::where('meeting_id', $id)->update(['transcribed' => false]);
+                foreach (Media::where('meeting_id', $id)->get() as $media) {
+                    $cached = $media->payload;
+                    unset($cached['checkpoint']);
+                    $media->payload = $cached;
+                    $media->transcribed = false;
+                    $media->save();
+                }
             }
             $token = (string) Str::uuid();
             $m->run_token = $token;
@@ -448,9 +455,10 @@ class RapatController
             $p = $m->payload;
             $p['error'] = null;
             $p['processingMode'] = 'transcribe';
+            $p['transcriptionState'] = TranscriptionRun::initial();
             $m->payload = $p;
             $m->save();
-            ProcessMeeting::dispatch($id, $token, false, true)->onConnection('rapat')->onQueue('rapat-transcription')->afterCommit();
+            TranscriptionRun::enqueue($m);
 
             return $this->response(D::detail($m), 202);
         });
@@ -471,7 +479,13 @@ class RapatController
             abort_if($r->boolean('useTranscript') ? trim($m->payload['transcript']) === '' : ! Media::where('meeting_id', $id)->exists(), 422, 'Sumber transkrip atau audio wajib tersedia.');
             // Ready + audio means an intentional fresh transcription, not a retry.
             if ($m->status === 'ready' && ! $r->boolean('useTranscript')) {
-                Media::where('meeting_id', $id)->update(['transcribed' => false]);
+                foreach (Media::where('meeting_id', $id)->get() as $media) {
+                    $cached = $media->payload;
+                    unset($cached['checkpoint']);
+                    $media->payload = $cached;
+                    $media->transcribed = false;
+                    $media->save();
+                }
             }
             $token = (string) Str::uuid();
             $m->run_token = $token;
@@ -481,9 +495,16 @@ class RapatController
             $p = $m->payload;
             $p['error'] = null;
             $p['processingMode'] = 'minutes';
+            if (! $r->boolean('useTranscript')) {
+                $p['transcriptionState'] = TranscriptionRun::initial(true);
+            }
             $m->payload = $p;
             $m->save();
-            ProcessMeeting::dispatch($id, $token, $r->boolean('useTranscript'))->onConnection('rapat')->onQueue('rapat')->afterCommit();
+            if ($r->boolean('useTranscript')) {
+                ProcessMeeting::dispatch($id, $token, true)->onConnection('rapat')->onQueue('rapat')->afterCommit();
+            } else {
+                TranscriptionRun::enqueue($m);
+            }
 
             return $this->response(D::detail($m), 202);
         });

@@ -1,5 +1,16 @@
 # Konvensi REST API Siperp
 
+Transkripsi bertahap memakai job `TranscribeMeeting`, antrean `rapat-transcription-v2`,
+dan decoder streaming `transcribe_part` (maksimal 900 detik audio per job). Checkpoint
+dan hasil bagian disimpan terenkripsi pada payload media yang sudah ada. Continuation
+memutar run_token per langkah; duplikasi/stale job tidak bisa menyimpan hasil. Satu
+teks dan timestamp utuh dihitung dari durasi audio, termasuk bagian hening. Status
+detail menambahkan `transcriptionProgress` read-only; state internal tidak diekspos.
+Kegagalan runtime dicoba otomatis maksimal 3 kali per bagian. Scheduler
+`rapat:resume-transcription` memulihkan klaim kadaluwarsa dan enqueue yang hilang,
+tanpa membuka browser. Job 1920 detik, lease 1980 detik, retry_after tetap 3900.
+Tidak ada migration; worker helper harus di-update eksplisit untuk antrean v2.
+
 Upload terenkripsi Rapat memakai path/disk lokal persisten yang sama, dengan adapter
 khusus modul: private file 0640 dan directory 2770 (setgid). PHP dan worker memakai
 grup www-data yang sama agar worker dapat membaca ciphertext upload; tidak ada akses
