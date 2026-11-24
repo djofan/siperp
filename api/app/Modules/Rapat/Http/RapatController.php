@@ -9,6 +9,7 @@ use App\Modules\Rapat\Services\DocxExport;
 use App\Modules\Rapat\Services\LocalEngine;
 use App\Modules\Rapat\Services\RapatData as D;
 use App\Modules\Rapat\Services\RapatHistory;
+use App\Modules\Rapat\Services\RapatStorage;
 use App\Modules\Rapat\Services\RapatWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -386,7 +387,7 @@ class RapatController
             abort_if(Media::where('meeting_id', $id)->count() >= 500 || Media::where('meeting_id', $id)->where('sequence', $r->input('sequence'))->exists(), 409, 'Urutan audio sudah digunakan atau batas tercapai.');
             $mid = (string) Str::uuid();
             $path = 'rapat/media/'.$mid.'.enc';
-            abort_unless(Storage::disk('local')->put($path, Crypt::encryptString($bytes)), 503, 'Penyimpanan privat tidak tersedia.');
+            abort_unless(RapatStorage::put($path, Crypt::encryptString($bytes)), 503, 'Penyimpanan privat tidak tersedia.');
             try {
                 $media = Media::create(['id' => $mid, 'meeting_id' => $id, 'client_id' => strtolower($r->input('clientId')), 'sequence' => (int) $r->input('sequence'), 'mime' => $mime, 'size' => strlen($bytes), 'path' => $path, 'payload' => ['name' => mb_substr(basename(str_replace('\\', '/', $f->getClientOriginalName())), 0, 255), 'hash' => $hash, 'extension' => $ext]]);
                 $m->version++;
