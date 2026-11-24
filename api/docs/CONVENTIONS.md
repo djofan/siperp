@@ -1,5 +1,18 @@
 # Konvensi REST API Siperp
 
+Rapat kini hanya menyediakan rekaman dan transkrip. Metadata serta peserta opsional;
+create tanpa judul/tanggal memakai judul otomatis dan tanggal Asia/Jakarta, update
+kosong mempertahankan judul/tanggal lama, baris peserta kosong diabaikan. Tidak
+memuat default pengaturan lama. Endpoint settings/tasks/history/finalize/actions/
+generate/docx/attachments dihentikan (410, setelah akses modul); field minutes pada
+create/update juga 410. Data lama dan audit internal tetap disimpan. Finalisasi
+lama tidak mengunci transkrip/informasi; arsip/proses/versi/otorisasi tetap berlaku.
+Stats daftar menambahkan ready/processing/failed sesuai status transkripsi.
+Whisper adalah satu-satunya dependensi AI aktif; configured=transcriberReady,
+summarizerReady=false. Job lama dan bertahap tidak lagi menyusun notulen. Tidak
+ada migration atau penghapusan data/file. Ketentuan historis notulen di bawah
+berlaku untuk format data legacy, bukan fitur aktif.
+
 Transkripsi bertahap memakai job `TranscribeMeeting`, antrean `rapat-transcription-v2`,
 dan decoder streaming `transcribe_part` (maksimal 900 detik audio per job). Checkpoint
 dan hasil bagian disimpan terenkripsi pada payload media yang sudah ada. Continuation

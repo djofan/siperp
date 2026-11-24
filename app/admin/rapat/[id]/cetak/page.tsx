@@ -1,1 +1,2 @@
-export { default } from '@/modules/rapat/pages/print';
+import { redirect } from 'next/navigation';
+export default async function Page({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; redirect(`/admin/rapat/${encodeURIComponent(id)}`); }

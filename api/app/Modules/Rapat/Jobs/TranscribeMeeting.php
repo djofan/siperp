@@ -187,7 +187,7 @@ class TranscribeMeeting implements ShouldQueue
             $m->run_token = null;
             $p['processingMode'] = null;
             $p['error'] = NoSpeechDetected::MESSAGE;
-        } elseif ($complete && ! $state['minutes']) {
+        } elseif ($complete) {
             $before = RapatHistory::snapshot($m);
             $m->status = 'ready';
             $m->run_token = null;
@@ -203,11 +203,7 @@ class TranscribeMeeting implements ShouldQueue
         $m->payload = $p;
         $m->save();
         if ($m->status === 'processing') {
-            if ($complete) {
-                ProcessMeeting::dispatch($m->id, $m->run_token, true)->afterCommit();
-            } else {
-                TranscriptionRun::enqueue($m);
-            }
+            TranscriptionRun::enqueue($m);
         }
     }
 

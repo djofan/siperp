@@ -13,17 +13,6 @@ import engine as e
 
 
 class EngineTests(unittest.TestCase):
-    def test_urls(self):
-        for url in ['https://example.com', 'http://127.0.0.1@evil.com',
-                    'http://localhost/x', 'http://localhost?x=1', 'file:///tmp/a',
-                    'http://192.168.1.1', 'http://localhost:bad']:
-            with self.subTest(url=url), patch.dict(os.environ, RAPAT_OLLAMA_URL=url):
-                with self.assertRaises(e.Failure):
-                    e.ollama_url()
-        for url in ['http://127.0.0.1:11434', 'http://[::1]:11434', 'http://localhost:11434']:
-            with patch.dict(os.environ, RAPAT_OLLAMA_URL=url):
-                self.assertIn(':11434', e.ollama_url())
-
     def test_part_validation_and_cleanup_and_silent_windows(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_AUDIO_ROOTS=root, RAPAT_WHISPER_MODEL='small'), patch.object(e,'model_ready',return_value=True):
             f=Path(root)/'audio';f.write_bytes(b'compressed')
@@ -57,15 +46,12 @@ class EngineTests(unittest.TestCase):
                     actual=array.array('h',w.readframes(w.getnframes()))
                     self.assertEqual(len(actual),int(length*16000));self.assertTrue(all(v==expected for v in actual))
 
-    def test_health_no_download_and_remote_model(self):
-        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_MODEL_DIR=root), \
-                patch.object(e, 'request_ollama', return_value={'models': []}) as req:
+    def test_health_whisper_only_without_network_or_download(self):
+        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_MODEL_DIR=root):
             self.assertEqual(e.health(), dict(transcriberReady=False, summarizerReady=False, provider='local'))
             self.assertEqual(list(Path(root).iterdir()), [])
-            req.assert_called_once_with('/api/tags')
-        with patch.object(e, 'request_ollama', return_value={'models': [
-                {'name': e.ollama_model(), 'remote_host': 'https://cloud'}]}):
-            self.assertFalse(e.health()['summarizerReady'])
+        with patch.object(e, 'model_ready', return_value=True), patch.object(e.importlib.util, 'find_spec', return_value=object()):
+            self.assertEqual(e.health(), dict(transcriberReady=True, summarizerReady=False, provider='local'))
 
     def test_file_boundaries(self):
         with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as other, \
@@ -204,90 +190,9 @@ class EngineTests(unittest.TestCase):
                 with self.assertRaisesRegex(e.Failure, 'no_usable_speech'):
                     e.transcribe({'file': str(f)})
 
-    def test_validation(self):
-        notes = e.clean_notes({'summary': 12, 'discussion': [None, 'Bahasan'],
-            'actions': [{'task': 'Kirim laporan', 'assignee': 'Budi', 'dueDate': '2026-11-30', 'status': 'done'},
-                        {'task': 'Periksa', 'assignee': 'Fiktif', 'dueDate': '2026-02-30'}]},
-                        'Budi kirim laporan 2026-11-30')
-        self.assertEqual(notes['summary'], '')
-        self.assertEqual(notes['discussion'], ['Bahasan'])
-        self.assertEqual(notes['actions'][0]['status'], 'open')
-        self.assertIsNone(notes['actions'][1]['assignee'])
-        self.assertIsNone(notes['actions'][1]['dueDate'])
-
-    def test_minutes_map_reduce(self):
-        calls = []
-        def fake(endpoint, payload):
-            calls.append(payload)
-            return {'done': True, 'response': json.dumps({'summary': 'Rapat membahas laporan.',
-                                                        'discussion': ['Isi laporan.']})}
-        with patch.object(e, 'health', return_value={'summarizerReady': True}), \
-                patch.object(e, 'request_ollama', side_effect=fake):
-            self.assertEqual(e.minutes({'transcript': 'a' * 25000})['summary'], 'Rapat membahas laporan.')
-        self.assertEqual(len(calls), 5)
-        self.assertTrue(all(c['options']['num_ctx'] == 8192 for c in calls))
-        self.assertIn('TIDAK TEPERCAYA', calls[0]['system'])
-
-    def test_missing_model_no_fallback(self):
-        with patch.object(e, 'health', return_value={'summarizerReady': False}), \
-                patch.object(e, 'generate') as generate:
-            with self.assertRaises(e.Failure):
-                e.minutes({'transcript': 'Rahasia'})
-            generate.assert_not_called()
-
-    def test_maximum_transcript_and_http_safety(self):
-        with patch.object(e, 'health', return_value={'summarizerReady': True}), \
-                patch.object(e, 'generate', return_value={'summary': 'Catatan', 'discussion': [],
-                             'decisions': [], 'actions': []}) as generate:
-            e.minutes({'transcript': 'a' * 200000})
-            self.assertEqual(generate.call_count, 33)
-        import requests
-        response = unittest.mock.MagicMock()
-        response.__enter__.return_value = response
-        response.status_code = 302
-        session = unittest.mock.MagicMock()
-        session.__enter__.return_value = session
-        session.request.return_value = response
-        with patch.object(requests, 'Session', return_value=session):
-            with self.assertRaises(e.Failure):
-                e.request_ollama('/api/tags')
-        self.assertFalse(session.trust_env)
-        self.assertFalse(session.request.call_args.kwargs['allow_redirects'])
-
-    def test_invalid_response(self):
-        for response in [{'done': True, 'response': 'bad'}, {'done': False},
-                         {'done': True, 'response': '[]'}, {'done': True, 'done_reason': 'length'}]:
-            with patch.object(e, 'request_ollama', return_value=response):
-                with self.assertRaises(e.Failure):
-                    e.generate({}, '')
-
-    def test_metadata_never_enters_model_prompt(self):
-        with patch.object(e, 'request_ollama', return_value={'done': True, 'response': '{}'}) as request:
-            e.generate({'transcript': 'Laporan.', 'meeting': {'agenda': 'PRIVATE_AGENDA'}}, 'Laporan.')
-        prompt = request.call_args.args[1]['prompt']
-        self.assertEqual(json.loads(prompt), {'transcript': 'Laporan.'})
-        self.assertNotIn('PRIVATE_AGENDA', prompt)
-
-    def test_summarizer_default_and_memory_controls(self):
-        with patch.dict(os.environ):
-            os.environ.pop('RAPAT_OLLAMA_MODEL', None)
-            self.assertEqual(e.ollama_model(), 'qwen3.5:9b')
-        with patch.dict(os.environ, RAPAT_OLLAMA_MODEL='qwen2.5:1.5b'), \
-                patch.object(e, 'request_ollama', return_value={'done': True, 'response': '{}'}) as request:
-            e.generate({'transcript': 'Laporan.'}, 'Laporan.')
-        payload = request.call_args.args[1]
-        self.assertEqual(payload['model'], 'qwen2.5:1.5b')
-        self.assertIs(payload['think'], False)
-        self.assertEqual(payload['keep_alive'], 0)
-        self.assertEqual(payload['options']['num_ctx'], 8192)
-
-    def test_empty_sections_use_uncertainty_summary(self):
-        notes = e.clean_notes({'summary': 'Unsupported confident narrative.'}, '')
-        self.assertEqual(notes['summary'], 'Transkrip belum memuat rincian pembahasan yang memadai.')
-
-    def test_size_and_cli_safe_errors(self):
-        with self.assertRaises(e.Failure):
-            e.minutes({'transcript': 'a' * 200001})
+    def test_removed_minutes_cli_never_uses_transcript_or_network(self):
+        with self.assertRaisesRegex(e.Failure, 'invalid_command'):
+            e.dispatch('minutes', {'transcript': 'SECRET'})
         run = subprocess.run([sys.executable, str(Path(e.__file__)), 'minutes'],
                              input=b'{"transcript":"SECRET", "meeting":[]}', capture_output=True)
         self.assertEqual(run.returncode, 1)

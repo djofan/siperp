@@ -1,3 +1,8 @@
+> Pembaruan 24 November 2026: workspace Rapat hanya memakai rekaman dan transkrip
+> Whisper small int8. Fitur/model notulen dihentikan, readiness tidak menghubungi
+> Ollama. Bagian penyusun notulen di bawah adalah catatan konfigurasi historis;
+> tidak perlu memasang atau mengaktifkannya. Data lama tetap disimpan.
+
 # Runtime AI dan worker Rapat pada VPS
 
 ## Transkrip panjang bertahap

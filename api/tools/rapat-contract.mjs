@@ -198,6 +198,36 @@ export function applyRapatContract(document) {
 
   docx.responses[200].description+=' Manual export requires no AI; labels DRAF/FINAL, finalization date in Asia/Jakarta WIB, participant attendance Hadir/Tidak hadir/Izin, explicit unrecorded-section placeholders; plaintext XML escaped.';
 
+  // Current Rapat scope: audio and transcription only. Keep legacy response fields read-only.
+  for (const suffix of ['settings','tasks','meetings/{id}/history','meetings/{id}/finalize','meetings/{id}/actions/{index}','meetings/{id}/generate','meetings/{id}/docx','meetings/{id}/attachments','attachments/{id}']) {
+    for (const op of Object.values(document.paths['/api/v1/rapat/'+suffix])) {
+      op.deprecated=true;
+      op.summary='Removed Rapat capability';
+      op.description=common+' Removed in the transcription-only workspace. Always returns 410 for authorized module users, without reading or changing legacy records or files.';
+      delete op.requestBody;
+      op.responses={401:{description:'Unauthenticated'},403:{description:'Module or role denied'},410:{description:'Feature removed; use recording and transcription instead'}};
+    }
+  }
+  for (const method of ['post','put']) {
+    const op=method==='post'?create:document.paths['/api/v1/rapat/meetings/{id}'].put;
+    const schema=op.requestBody.content['application/json'].schema;
+    delete schema.properties.minutes;
+    schema.properties.title={...nullable,maxLength:255};
+    schema.properties.meetingDate={...nullable,format:'date'};
+    schema.properties.participants={type:'array',maxItems:500,items:obj({name:{...nullable,maxLength:255},position:{...nullable,maxLength:255},attendance:{type:'string',enum:['present','absent','excused']}},[])};
+    schema.required=method==='post'?[]:['version'];
+    op.description=common+' All meeting metadata and participants optional. Blank participant rows ignored. Create supplies a generated title, Jakarta current date, empty participants and internal document defaults. Blank title/date on update retain existing values. Legacy minutes remain unchanged and cannot be supplied (410). Transcript edits clear timestamps only when text actually changes. Processing/archived locks and optimistic version checks remain; legacy finalization does not block transcription or metadata edits.';
+    op.responses[410]={description:'Manual minutes are removed'};
+  }
+  for(const key of ['ready','processing','failed']) list.responses[200].content['application/json'].schema.properties.meta.properties.stats.properties[key]={type:'integer',minimum:0};
+  list.responses[200].content['application/json'].schema.properties.meta.properties.stats.required.push('ready','processing','failed');
+  list.description=common+' Scoped search over title, agenda and transcript only. All statistics are computed over the full filtered set before pagination; ready/processing/failed refer to transcription status. Legacy workflow statistics remain for compatibility.';
+  detail.properties.historyAvailable={const:false};
+  detail.properties.minutes={...minutes,readOnly:true,description:'Preserved legacy data; minutes feature removed.'};
+  document.paths['/api/v1/rapat/ai/status'].get.description=common+' Whisper readiness only, cached for 30 seconds; configured equals transcriberReady and summarizerReady is always false. No Ollama or summarizer request.';
+  document.paths['/api/v1/rapat/viewer'].get.description=common+' Cached readiness only; no AI probe or retired settings lookup.';
+  document.paths['/api/v1/rapat/meetings/{id}/transcribe'].post.description=common+' Requires audio and ready transcriber only. Durable 15-minute chunks, automatic resume and one combined transcript; no summarizer dispatch, including legacy in-flight generation. Finalized legacy workflow does not lock transcription; archive/processing locks, writer ownership and versions remain. Legacy data preserved.';
+
   return document;
 
 }
