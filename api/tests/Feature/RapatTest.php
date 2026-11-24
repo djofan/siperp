@@ -9,6 +9,7 @@ use App\Modules\Rapat\Services\LocalEngine;
 use App\Modules\Rapat\Services\LocalEngineFailure;
 use App\Modules\Rapat\Services\NoSpeechDetected;
 use App\Modules\Rapat\Services\RapatData;
+use App\Modules\Rapat\Services\RapatStorage;
 use App\Modules\Rapat\Services\TemporaryAudio;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
 
 uses(RefreshDatabase::class);
 function rapatActor(string $role)
@@ -111,6 +113,33 @@ it('validates real mime idempotency stable sequence and private playback', funct
     $this->deleteJson('/api/v1/rapat/media/'.$mid, ['version' => 1])->assertConflict();
     $this->deleteJson('/api/v1/rapat/media/'.$mid, ['version' => 2])->assertNoContent();
     $this->getJson('/api/v1/rapat/media/'.$mid)->assertNotFound();
+});
+it('writes group-readable encrypted Rapat uploads without changing other module storage', function () {
+    $root = Storage::disk('local')->path('');
+    Storage::disk('local')->put('other-module/private.enc', 'private-other-module');
+    $other = Storage::disk('local')->path('other-module/private.enc');
+    $before = fileperms($other);
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $this->post('/api/v1/rapat/meetings/'.$id.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    $media = Media::where('meeting_id', $id)->firstOrFail();
+    $disk = RapatStorage::disk();
+    expect($disk->path(''))->toBe($root);
+    expect($disk->getConfig()['visibility'])->toBe('private');
+    expect($disk->getConfig()['serve'])->toBeFalse();
+    $permissions = PortableVisibilityConverter::fromArray($disk->getConfig()['permissions']);
+    expect($permissions->forFile('private'))->toBe(0640);
+    expect($permissions->forDirectory('private'))->toBe(02770);
+    expect($disk->get($media->path))->not->toContain('RIFF');
+    if (PHP_OS_FAMILY !== 'Windows') {
+        expect($disk->getVisibility($media->path))->toBe('private');
+        expect(fileperms($disk->path($media->path)) & 0777)->toBe(0640);
+        expect(fileperms($disk->path('rapat')) & 07777)->toBe(02770);
+        expect(fileperms($disk->path('rapat/media')) & 07777)->toBe(02770);
+    }
+    clearstatcache(true, $other);
+    expect(fileperms($other))->toBe($before);
+    expect(Storage::disk('local')->get('other-module/private.enc'))->toBe('private-other-module');
+    expect(fn () => RapatStorage::put('other-module/test.enc', 'encrypted'))->toThrow(RuntimeException::class);
 });
 it('queues durable generation and ignores duplicate stale jobs', function () {
     $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');

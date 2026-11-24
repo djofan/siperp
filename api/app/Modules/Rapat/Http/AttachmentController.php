@@ -5,6 +5,7 @@ namespace App\Modules\Rapat\Http;
 use App\Modules\Rapat\Models\Attachment;
 use App\Modules\Rapat\Services\AttachmentAccess;
 use App\Modules\Rapat\Services\RapatHistory;
+use App\Modules\Rapat\Services\RapatStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
@@ -54,7 +55,7 @@ class AttachmentController
                 $path = 'rapat/attachments/'.$attachmentId.'.enc';
                 $bytes = file_get_contents($file->getRealPath());
                 abort_if($bytes === false, 503, 'Berkas tidak dapat dibaca.');
-                abort_unless(Storage::disk('local')->put($path, Crypt::encryptString($bytes), ['visibility' => 'private']), 503, 'Penyimpanan privat tidak tersedia.');
+                abort_unless(RapatStorage::put($path, Crypt::encryptString($bytes)), 503, 'Penyimpanan privat tidak tersedia.');
                 $attachment = Attachment::create(['id' => $attachmentId, 'meeting_id' => $id,
                     'name' => $name, 'mime' => $mime, 'size' => strlen($bytes), 'path' => $path]);
                 $meeting->version++;

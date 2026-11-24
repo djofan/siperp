@@ -1,5 +1,12 @@
 # Konvensi REST API Siperp
 
+Upload terenkripsi Rapat memakai path/disk lokal persisten yang sama, dengan adapter
+khusus modul: private file 0640 dan directory 2770 (setgid). PHP dan worker memakai
+grup www-data yang sama agar worker dapat membaca ciphertext upload; tidak ada akses
+world/public. Upload audio dan lampiran melalui helper yang sama agar pembuatan parent
+Rapat tidak kembali ke 0700. Disk/izin modul lain tidak diganti. File lama memerlukan
+repair izin eksplisit oleh operator; tidak ada perubahan schema atau kunci enkripsi.
+
 Rapat memproses audio plaintext dalam direktori sementara privat milik user worker
 di temp OS, bukan direktori storage bersama yang dapat dibuat user PHP berbeda.
 Whitelist Python mengikuti direktori privat tersebut. File sementara berizin 0600

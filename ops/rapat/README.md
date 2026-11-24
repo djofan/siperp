@@ -120,6 +120,28 @@ pembaruan helper menggunakan installer eksplisit setelah review.
 
 ### Diagnosa audio gagal
 
+Jika pemeriksaan menunjukkan `stage=read_audio`, periksa file ciphertext dan izin
+PHP-FPM (umumnya www-data) versus worker (siperp, group www-data). Adapter lokal
+default membuat private file 0600/directory 0700; itu tidak memberi worker akses
+ke upload yang dibuat PHP-FPM. Adapter khusus Rapat kini memakai file 0640 dan
+directory setgid 2770 pada path yang sama. Plaintext sementara tetap 0600/0700.
+
+Untuk rekaman lama, upload `ops/rapat/repair-audio-access.py` yang sudah direview ke
+`/root/repair-audio-access.py`, lalu jalankan sebagai root:
+
+```bash
+python3 /root/repair-audio-access.py --apply
+```
+
+Tanpa `--apply` hanya menampilkan rencana. Skrip memegang lock deployment, menolak
+symlink/hardlink/path di luar Rapat, membaca path upload aktif dari DB, menyimpan
+audit mode/owner/group sebelumnya, dan memperbaiki hanya izin ciphertext terdaftar
+serta direktori Rapat. Pada ancestor storage, ia hanya menambahkan group traverse
+jika grupnya sudah www-data; tidak memberi listing/write baru. Konten file, DB,
+APP_KEY, upload modul lain, dan backup tidak diubah. Upload yang hilang dilaporkan,
+tidak dibuat ulang. Pemeriksaan akhir membaca audio sebagai user/group worker tanpa
+inferensi. Jika tetap gagal, pertahankan output stage/exception untuk penelusuran.
+
 ErrorException saja tidak mengidentifikasi penyebab: kegagalan read/decrypt,
 mkdir/tempnam, atau izin logging sebelumnya dapat tertutup pesan generik.
 Helper berikut memeriksa rekaman gagal terbaru, tanpa mengubah baris rapat/media
