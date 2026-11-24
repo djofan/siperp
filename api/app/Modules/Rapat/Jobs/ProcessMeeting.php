@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use RuntimeException;
 
 class ProcessMeeting implements ShouldQueue
@@ -56,7 +55,7 @@ class ProcessMeeting implements ShouldQueue
             $m->version++;
             $m->save();
             if ($audit) {
-                RapatHistory::record($m, null, $this->transcribeOnly ? 'ai_transcribe' : 'ai_generate', $before, $this->transcribeOnly ? ['transcript', 'segments'] : ['transcript', 'segments', 'minutes']);
+                RapatHistory::record($m, null, 'ai_transcribe', $before, ['transcript', 'segments']);
             }
 
             return true;
@@ -158,35 +157,10 @@ class ProcessMeeting implements ShouldQueue
             if (trim($p['transcript']) === '') {
                 throw new NoSpeechDetected;
             }
-            if ($this->transcribeOnly) {
-                $this->save(function ($m) {
-                    $p = $m->payload;
-                    $p['error'] = null;
-                    $p['processingMode'] = null;
-                    $m->payload = $p;
-                    $m->status = 'ready';
-                    $m->run_started_at = null;
-                    $m->run_token = null;
-                }, audit: true);
-
-                return;
-            }
-            $metadata = array_diff_key($p, array_flip(['transcript', 'segments', 'minutes', 'error']));
-            $stage = 'minutes';
-            $minutes = $engine->run(['operation' => 'minutes', 'transcript' => $p['transcript'], 'meeting' => $metadata]);
-            $rules = array_filter(RapatData::rules(), fn ($k) => $k === 'minutes' || str_starts_with($k, 'minutes.'), ARRAY_FILTER_USE_KEY);
-            $rules['minutes'][0] = 'required';
-            $minutes = RapatData::normalize(Validator::make(['minutes' => $minutes], $rules)->validate())['minutes'];
-            foreach ($minutes['actions'] as $action) {
-                if ($action['status'] !== 'open') {
-                    throw new RuntimeException;
-                }
-            }
-            $this->save(function ($m) use ($minutes) {
+            $this->save(function ($m) {
                 $p = $m->payload;
-                $p['minutes'] = $minutes;
-                $p['processingMode'] = null;
                 $p['error'] = null;
+                $p['processingMode'] = null;
                 $m->payload = $p;
                 $m->status = 'ready';
                 $m->run_started_at = null;
@@ -214,7 +188,7 @@ class ProcessMeeting implements ShouldQueue
                 default => $error instanceof LocalEngineFailure ? match ($error->reason) {
                     'whisper_model_missing', 'whisper_model_load_failed', 'transcriber_dependency_missing' => 'Mesin transkrip belum dapat dijalankan. Minta admin memeriksa runtime dan model Whisper. Rekaman tetap tersimpan.',
                     'audio_decode_failed' => 'Format atau isi rekaman belum dapat dibaca. Coba putar audio tersimpan untuk memeriksa rekamannya.',
-                    'timeout' => 'Proses transkrip atau notulen melewati batas waktu server. Audio dan hasil yang sudah tersimpan tetap tersedia.',
+                    'timeout' => 'Proses transkrip melewati batas waktu server. Audio dan hasil yang sudah tersimpan tetap tersedia.',
                     default => 'Pemrosesan AI lokal gagal. Periksa model lokal lalu coba lagi.',
                 } : 'Pemrosesan AI lokal gagal. Periksa model lokal lalu coba lagi.',
             };

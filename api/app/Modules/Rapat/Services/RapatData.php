@@ -22,10 +22,10 @@ class RapatData
 
     public static function rules(bool $create = false): array
     {
-        $r = ['title' => ['string', 'max:255'], 'meetingDate' => ['date_format:Y-m-d'], 'template' => ['in:'.implode(',', array_keys(self::TEMPLATES))],
+        $r = ['title' => ['nullable', 'string', 'max:255'], 'meetingDate' => ['nullable', 'date_format:Y-m-d'], 'template' => ['in:'.implode(',', array_keys(self::TEMPLATES))],
             'startTime' => ['nullable', 'date_format:H:i'], 'endTime' => ['nullable', 'date_format:H:i'],
             'location' => ['nullable', 'string', 'max:1000'], 'agenda' => ['nullable', 'string', 'max:20000'], 'chair' => ['nullable', 'string', 'max:255'], 'notetaker' => ['nullable', 'string', 'max:255'],
-            'participants' => ['array', 'max:500'], 'participants.*' => ['array:name,position,attendance'], 'participants.*.name' => ['required', 'string', 'max:255'], 'participants.*.position' => ['present', 'nullable', 'string', 'max:255'], 'participants.*.attendance' => ['sometimes', 'in:present,absent,excused'],
+            'participants' => ['array', 'max:500'], 'participants.*' => ['array:name,position,attendance'], 'participants.*.name' => ['sometimes', 'nullable', 'string', 'max:255'], 'participants.*.position' => ['sometimes', 'nullable', 'string', 'max:255'], 'participants.*.attendance' => ['sometimes', 'in:present,absent,excused'],
             'institution' => ['array:name,heading,address'], 'institution.name' => ['present', 'nullable', 'string', 'max:1000'], 'institution.heading' => ['present', 'nullable', 'string', 'max:2000'], 'institution.address' => ['present', 'nullable', 'string', 'max:2000'],
             'transcript' => ['nullable', 'string', 'max:200000'], 'minutes' => ['array:summary,discussion,decisions,actions'],
             'minutes.summary' => ['present', 'nullable', 'string', 'max:50000'], 'minutes.discussion' => ['present', 'array', 'max:500'], 'minutes.discussion.*' => ['string', 'max:10000'],
@@ -35,13 +35,10 @@ class RapatData
             'minutes.actions.*.dueDate' => ['present', 'nullable', 'date_format:Y-m-d'], 'minutes.actions.*.status' => ['required', 'in:open,done']];
         foreach ($r as $k => &$v) {
             if (! str_contains($k, '.')) {
-                array_unshift($v, $create && in_array($k, ['title', 'meetingDate', 'template', 'participants', 'institution']) ? 'required' : 'sometimes');
+                array_unshift($v, 'sometimes');
             }
         }
         unset($v);
-        if ($create) {
-            $r['participants'][0] = 'present';
-        }
         foreach ($r as $k => &$v) {
             if (str_contains($k, '.')) {
                 array_unshift($v, 'exclude_without:'.explode('.', $k)[0]);
@@ -54,7 +51,7 @@ class RapatData
     public static function normalize(array $data): array
     {
         if (isset($data['participants'])) {
-            $data['participants'] = array_map(fn ($participant) => [...$participant, 'attendance' => $participant['attendance'] ?? 'present'], $data['participants']);
+            $data['participants'] = array_values(array_map(fn ($participant) => [...$participant, 'position' => $participant['position'] ?? '', 'attendance' => $participant['attendance'] ?? 'present'], array_filter($data['participants'], fn ($p) => trim($p['name'] ?? '') !== '')));
         }
         if (isset($data['institution'])) {
             foreach (['name', 'heading', 'address'] as $key) {
@@ -104,6 +101,6 @@ class RapatData
             'processedAudioSeconds' => $state['seconds'], 'chunkSeconds' => 900,
         ] : null;
 
-        return [...$p, 'historyAvailable' => true, ...self::summary($m), 'media' => Media::where('meeting_id', $m->id)->orderBy('sequence')->orderBy('id')->get()->map(fn ($f) => self::media($f))->all()];
+        return [...$p, 'historyAvailable' => false, ...self::summary($m), 'media' => Media::where('meeting_id', $m->id)->orderBy('sequence')->orderBy('id')->get()->map(fn ($f) => self::media($f))->all()];
     }
 }

@@ -27,6 +27,5 @@ class RapatWorkflow
         abort_if($m->version !== (int) $r->input('version'), 409, 'Versi rapat sudah berubah.');
         abort_if($m->status === 'processing', 409, 'Rapat sedang diproses.');
         abort_if(! $allowArchived && $m->archived_at, 409, 'Rapat sudah diarsipkan.');
-        abort_if(! $allowFinalized && ($m->payload['workflowStatus'] ?? 'draft') === 'finalized', 409, 'Notulen final dikunci. Buka kembali dengan alasan untuk mengubah isinya.');
     }
 }

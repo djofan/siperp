@@ -1,1 +1,2 @@
-export { default } from '@/modules/rapat/pages/settings';
+import { redirect } from 'next/navigation';
+export default function Page() { redirect('/admin/rapat'); }

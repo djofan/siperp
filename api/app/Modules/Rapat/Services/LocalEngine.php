@@ -20,6 +20,9 @@ class LocalEngine
 
     public function run(array $input): array
     {
+        if (($input['operation'] ?? null) === 'minutes') {
+            throw new LocalEngineFailure('process_failed');
+        }
         try {
             $env = array_filter(config('rapat.model_dirs', []), fn ($v) => is_string($v) && $v !== '');
             $env['RAPAT_TIMEOUT_SECONDS'] = (string) ($input['operation'] === 'health' ? config('rapat.health_timeout') : config('rapat.timeout'));
@@ -64,9 +67,9 @@ class LocalEngine
 
             $local = ($h['provider'] ?? null) === 'local';
             $transcriber = $local && ($h['transcriberReady'] ?? false) === true;
-            $summarizer = $local && ($h['summarizerReady'] ?? false) === true;
+            $summarizer = false;
 
-            return ['provider' => 'local', 'transcriberReady' => $transcriber, 'summarizerReady' => $summarizer, 'configured' => $transcriber && $summarizer];
+            return ['provider' => 'local', 'transcriberReady' => $transcriber, 'summarizerReady' => $summarizer, 'configured' => $transcriber];
         } catch (\Throwable) {
             return ['provider' => 'local', 'configured' => false, 'transcriberReady' => false, 'summarizerReady' => false];
         }

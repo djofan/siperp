@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { AudioLines, Upload, Trash2, RefreshCw, Sparkles, Mic, FileText, Copy, Download, Check, LoaderCircle } from 'lucide-react';
+import { AudioLines, Upload, Trash2, RefreshCw, Mic, FileText, Copy, Download, Check, LoaderCircle } from 'lucide-react';
 import type { Meeting, Viewer } from '@/contracts/modules/rapat';
 import { request } from '../api/client';
 import Recorder from './recorder';
@@ -13,14 +13,12 @@ export default function Auxiliary({ meeting, draft, locked, busy, pending, dirty
   const [ai, setAI] = useState<Viewer['ai'] | null>(null);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [confirm, setConfirm] = useState<'transcribe' | 'minutes' | null>(null);
+  const [confirm, setConfirm] = useState<'transcribe' | null>(null);
   const [copyNotice, setCopyNotice] = useState('');
   const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
   const processing = meeting.status === 'processing';
-  const transcribing = meeting.processingMode === 'transcribe' || Boolean(meeting.transcriptionProgress && !['complete', 'failed'].includes(meeting.transcriptionProgress.phase));
   const hasText = Boolean(draft.transcript?.trim());
   const transcriberReady = ai?.transcriberReady ?? ai?.configured ?? false;
-  const summarizerReady = ai?.summarizerReady ?? ai?.configured ?? false;
   const mutationsBlocked = locked || busy || pending || dirty;
   const checkAI = useCallback(async (signal?: AbortSignal) => {
     setChecking(true); setError(null);
@@ -54,10 +52,10 @@ export default function Auxiliary({ meeting, draft, locked, busy, pending, dirty
     } catch (e) { throw new Error(`${done} dari ${selected.length} berkas tersimpan. Unggah kembali hanya berkas yang belum masuk. ${asError(e).message}`); }
     finally { setUploadProgress(null); }
   }
-  async function process(mode: 'transcribe' | 'minutes') {
+  async function process() {
     const result = await run(async () => {
-      const next = await request<Meeting>(`meetings/${encodeURIComponent(meeting.id)}/${mode === 'transcribe' ? 'transcribe' : 'generate'}`, {
-        method: 'POST', body: JSON.stringify({ version: meeting.version, ...(mode === 'minutes' ? { useTranscript: true } : {}) }),
+      const next = await request<Meeting>(`meetings/${encodeURIComponent(meeting.id)}/transcribe`, {
+        method: 'POST', body: JSON.stringify({ version: meeting.version }),
       });
       onMeeting(next);
     });
@@ -97,14 +95,14 @@ export default function Auxiliary({ meeting, draft, locked, busy, pending, dirty
       {!meeting.media.length && <div className="rp-transcript-empty"><AudioLines size={30}/><strong>Belum ada audio</strong><p>Mulai merekam atau unggah berkas di atas. Audio harus selesai tersimpan sebelum dibuat transkrip.</p></div>}
       {meeting.media.map(media => <div className="rp-media" key={media.id}><div><strong>{media.sequence}. {media.name}</strong><small>{(media.size / 1024 / 1024).toFixed(1)} MB · {media.transcribed ? 'Teks sudah diproses' : 'Siap ditranskrip'}</small>
         {remove === media.id && <div className="rp-inline-confirm"><p>Hapus audio ini dari rapat? Transkrip yang sudah disimpan tetap ada.</p><button className="rp-danger-button" disabled={mutationsBlocked} onClick={() => void run(async () => { await request(`media/${encodeURIComponent(media.id)}`, { method: 'DELETE', body: JSON.stringify({ version: meeting.version }) }); await refresh(); setRemove(null); })}>Hapus audio</button><button disabled={busy} onClick={() => setRemove(null)}>Batal</button></div>}
-      </div>{media.mime.startsWith('video/') ? <video controls preload="none" aria-label={`Putar ${media.name}`} src={`/api/rapat/media/${encodeURIComponent(media.id)}`}/> : <audio controls preload="none" aria-label={`Putar ${media.name}`} src={`/api/rapat/media/${encodeURIComponent(media.id)}`}/>}
+      </div><audio controls preload="none" aria-label={`Putar ${media.name}`} src={`/api/rapat/media/${encodeURIComponent(media.id)}`}/>
         {!locked && <button className="rp-icon-button" disabled={mutationsBlocked} aria-label={`Hapus ${media.name}`} onClick={() => setRemove(media.id)}><Trash2 size={17}/></button>}
       </div>)}
-      {!locked && <div className="rp-transcribe-action"><div><strong>Ubah audio menjadi teks</strong><p>Hasil transkrip dapat dikoreksi sebelum dijadikan notulen.</p><small>{checking ? 'Memeriksa mesin transkripsi…' : transcriberReady ? 'Mesin transkripsi siap' : 'Mesin transkripsi belum siap'}</small></div><div className="rp-actions"><button type="button" className="rp-primary" disabled={mutationsBlocked || checking || !transcriberReady || !meeting.media.length} onClick={() => hasText ? setConfirm('transcribe') : void process('transcribe')}><FileText size={17}/>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Lanjutkan transkrip' : hasText ? 'Buat ulang transkrip' : 'Buat transkrip'}</button><button type="button" aria-label="Periksa kesiapan transkripsi" disabled={checking || busy} onClick={() => void checkAI()}><RefreshCw size={16}/></button></div></div>}
-      {dirty && <p className="rp-warning">Simpan perubahan teks terlebih dahulu sebelum memproses audio atau membuat notulen.</p>}
+      {!locked && <div className="rp-transcribe-action"><div><strong>Ubah audio menjadi teks</strong><p>Periksa hasil, koreksi teks, lalu simpan atau unduh.</p><small>{checking ? 'Memeriksa mesin transkripsi…' : transcriberReady ? 'Mesin transkripsi siap' : 'Mesin transkripsi belum siap'}</small></div><div className="rp-actions"><button type="button" className="rp-primary" disabled={mutationsBlocked || checking || !transcriberReady || !meeting.media.length} onClick={() => hasText ? setConfirm('transcribe') : void process()}><FileText size={17}/>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Lanjutkan transkrip' : hasText ? 'Buat ulang transkrip' : 'Buat transkrip'}</button><button type="button" aria-label="Periksa kesiapan transkripsi" disabled={checking || busy} onClick={() => void checkAI()}><RefreshCw size={16}/></button></div></div>}
+      {dirty && <p className="rp-warning">Simpan perubahan teks terlebih dahulu sebelum memproses audio.</p>}
       {pending && <p className="rp-warning" role="status">Selesaikan rekaman dan tunggu seluruh audio tersimpan sebelum memulai transkripsi.</p>}
-      {confirm === 'transcribe' && <div className="rp-inline-confirm"><strong>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Lanjutkan transkrip yang terputus?' : 'Ganti transkrip yang sekarang?'}</strong><p>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Bagian audio yang berhasil akan dipakai kembali. ' : 'Audio akan diproses kembali. '}Koreksi manual pada teks akan diganti dengan hasil gabungan; isi notulen tetap dipertahankan.</p><button className="rp-primary" disabled={mutationsBlocked || !transcriberReady} onClick={() => void process('transcribe')}>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Ya, lanjutkan transkrip' : 'Ya, buat ulang transkrip'}</button><button disabled={busy} onClick={() => setConfirm(null)}>Batal</button></div>}
-      {processing && <div className="rp-transcript-progress" role="status"><LoaderCircle className="rp-spin" size={22}/><div><strong>{transcribing ? 'Sedang membuat transkrip…' : 'Sedang menyusun notulen…'}</strong><p>{transcribing ? `${done} dari ${meeting.media.length} berkas audio telah diproses. ` : ''}{meeting.transcriptionProgress ? `${meeting.transcriptionProgress.completedParts} bagian tersimpan · ${Math.floor(meeting.transcriptionProgress.processedAudioSeconds / 60)} menit audio diproses. ${meeting.transcriptionProgress.phase === 'retrying' ? 'Mencoba melanjutkan otomatis. ' : ''}` : ''}{transcribing ? 'Audio diproses maksimal 15 menit per bagian. Hasil digabung berurutan dan dilanjutkan otomatis jika worker terputus. Anda boleh meninggalkan halaman ini.' : 'Transkrip tersimpan. Draf notulen sedang disusun di server.'}</p></div></div>}
+      {confirm === 'transcribe' && <div className="rp-inline-confirm"><strong>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Lanjutkan transkrip yang terputus?' : 'Ganti transkrip yang sekarang?'}</strong><p>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Bagian audio yang berhasil akan dipakai kembali. ' : 'Audio akan diproses kembali. '}Koreksi manual pada teks akan diganti dengan hasil gabungan.</p><button className="rp-primary" disabled={mutationsBlocked || !transcriberReady} onClick={() => void process()}>{meeting.status === 'failed' && meeting.transcriptionProgress ? 'Ya, lanjutkan transkrip' : 'Ya, buat ulang transkrip'}</button><button disabled={busy} onClick={() => setConfirm(null)}>Batal</button></div>}
+      {processing && <div className="rp-transcript-progress" role="status"><LoaderCircle className="rp-spin" size={22}/><div><strong>Sedang membuat transkrip…</strong><p>{done} dari {meeting.media.length} berkas audio telah diproses. {meeting.transcriptionProgress && <>{meeting.transcriptionProgress.completedParts} bagian tersimpan · {Math.floor(meeting.transcriptionProgress.processedAudioSeconds / 60)} menit audio diproses. {meeting.transcriptionProgress.phase === 'retrying' ? 'Mencoba melanjutkan otomatis. ' : ''}</>}Audio diproses maksimal 15 menit per bagian. Hasil digabung berurutan dan dilanjutkan otomatis jika worker terputus. Anda boleh meninggalkan halaman ini.</p></div></div>}
     </section>
     </div>
     <section className={`rp-card rp-transcript-result ${hasText ? '' : 'is-empty'}`}><div className="rp-section-head"><div><p className="rp-eyebrow">HASIL TRANSKRIP</p><h2>Periksa teks percakapan</h2><p>Periksa nama, angka, dan tanggal sambil mendengarkan audio.</p></div>{hasText && <div className="rp-actions"><button type="button" onClick={() => void copy()}><Copy size={16}/> Salin</button><button type="button" onClick={download}><Download size={16}/> Unduh TXT</button></div>}</div>
@@ -112,9 +110,6 @@ export default function Auxiliary({ meeting, draft, locked, busy, pending, dirty
       <div className="rp-row rp-transcript-caption"><span>{hasText ? `${draft.transcript.length.toLocaleString('id-ID')} karakter${dirty ? ' · perubahan belum disimpan' : ' · tersimpan'}` : 'Belum ada hasil transkrip'}</span><span role="status">{copyNotice}</span></div>
       {meeting.segments?.length > 0 && <details className="rp-disclosure rp-segments"><summary>Lihat teks beserta waktu audio ({meeting.segments.length})</summary>{meeting.segments.map((segment, i) => <div className="rp-segment" key={i}><time>{Math.floor(segment.start / 60)}:{String(Math.floor(segment.start % 60)).padStart(2, '0')}</time><p>{segment.text}</p></div>)}</details>}
     </section>
-    {!locked && <details className="rp-card rp-disclosure rp-ai-panel"><summary><Sparkles size={17}/> Langkah lanjutan: buat draf notulen</summary><p>Gunakan transkrip yang sudah diperiksa untuk menyusun ringkasan, keputusan, dan tugas.</p>
-      {confirm === 'minutes' ? <div className="rp-inline-confirm"><p>Draf notulen yang tersimpan akan diganti hanya setelah proses berhasil. Teks transkrip tetap dipertahankan.</p><button className="rp-primary" disabled={mutationsBlocked || !summarizerReady || !hasText} onClick={() => void process('minutes')}>Ya, susun notulen</button><button disabled={busy} onClick={() => setConfirm(null)}>Batal</button></div> : <button type="button" disabled={mutationsBlocked || checking || !hasText || !summarizerReady} onClick={() => setConfirm('minutes')}><Sparkles size={16}/> Susun notulen dari transkrip</button>}
-      <p className="rp-note">{!hasText ? 'Buat atau simpan transkrip terlebih dahulu.' : !summarizerReady ? 'Model notulen belum siap. Transkripsi audio tetap dapat digunakan.' : 'Periksa kembali seluruh hasil sebelum finalisasi.'}</p>
-    </details>}
+
   </div>;
 }

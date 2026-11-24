@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Core\Services\UserService;
+use App\Modules\Rapat\Jobs\ProcessMeeting;
 use App\Modules\Rapat\Jobs\TranscribeMeeting;
 use App\Modules\Rapat\Models\Media;
 use App\Modules\Rapat\Models\Meeting;
@@ -72,7 +73,10 @@ beforeEach(function () {
     Sanctum::actingAs($user);
     $this->engine = new StagedTestEngine;
     app()->instance(LocalEngine::class, $this->engine);
-    $id = $this->postJson('/api/v1/rapat/meetings', ['title' => 'Uji bertahap', 'meetingDate' => '2026-11-24', 'template' => 'dinas', 'participants' => [], 'institution' => ['name' => '', 'heading' => '', 'address' => ''], 'minutes' => ['summary' => 'Notulen manual dipertahankan', 'discussion' => [], 'decisions' => [], 'actions' => []]])->assertCreated()->json('data.id');
+    $id = $this->postJson('/api/v1/rapat/meetings', ['title' => 'Uji bertahap', 'meetingDate' => '2026-11-24', 'template' => 'dinas', 'participants' => [], 'institution' => ['name' => '', 'heading' => '', 'address' => '']])->assertCreated()->json('data.id');
+    $legacy = Meeting::find($id);
+    $legacy->payload = [...$legacy->payload, 'minutes' => ['summary' => 'Notulen manual dipertahankan', 'discussion' => [], 'decisions' => [], 'actions' => []]];
+    $legacy->save();
     $this->meetingId = $id;
     $this->url = '/api/v1/rapat/meetings/'.$id;
     $samples = str_repeat("\0", 1600);
@@ -252,4 +256,19 @@ it('registers scheduler recovery and resumes work without any browser request', 
     expect(Meeting::find($this->meetingId)->payload['transcriptionState']['phase'])->toBe('retrying');
     $events = app(Schedule::class)->events();
     expect(collect($events)->contains(fn ($event) => str_contains($event->command ?? '', 'rapat:resume-transcription')))->toBeTrue();
+});
+
+it('finishes an old staged generation run without dispatching minutes', function () {
+    $m = Meeting::find($this->meetingId);
+    $p = $m->payload;
+    $p['transcriptionState']['minutes'] = true;
+    $p['processingMode'] = 'minutes';
+    $m->payload = $p;
+    $m->save();
+    for ($i = 0; $i < 4; $i++) {
+        stagedStep($this);
+    }
+    $this->getJson($this->url)->assertJsonPath('data.status', 'ready')->assertJsonPath('data.processingMode', null)
+        ->assertJsonPath('data.transcriptionProgress.phase', 'complete')->assertJsonPath('data.minutes.summary', 'Notulen manual dipertahankan');
+    Queue::assertNotPushed(ProcessMeeting::class);
 });

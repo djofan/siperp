@@ -1,3 +1,8 @@
+> Pembaruan 24 November 2026: workspace Rapat hanya memakai rekaman dan transkrip
+> Whisper small int8. Fitur/model notulen dihentikan, readiness tidak menghubungi
+> Ollama. Bagian penyusun notulen di bawah adalah catatan konfigurasi historis;
+> tidak perlu memasang atau mengaktifkannya. Data lama tetap disimpan.
+
 # Runtime AI Rapat lokal gratis
 
 Python 3.10+, faster-whisper CPU int8 (tanpa Torch), PyAV untuk membaca konten
