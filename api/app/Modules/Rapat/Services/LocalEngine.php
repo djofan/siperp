@@ -4,6 +4,7 @@ namespace App\Modules\Rapat\Services;
 
 use Illuminate\Support\Facades\Cache;
 use RuntimeException;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 
 class LocalEngine
@@ -22,7 +23,7 @@ class LocalEngine
         try {
             $env = array_filter(config('rapat.model_dirs', []), fn ($v) => is_string($v) && $v !== '');
             $env['RAPAT_TIMEOUT_SECONDS'] = (string) ($input['operation'] === 'health' ? config('rapat.health_timeout') : config('rapat.timeout'));
-            $env['RAPAT_AUDIO_ROOTS'] = storage_path('app/private/rapat/tmp');
+            $env['RAPAT_AUDIO_ROOTS'] = TemporaryAudio::root();
             $env += ['HF_HUB_OFFLINE' => '1', 'TRANSFORMERS_OFFLINE' => '1', 'HF_HUB_DISABLE_TELEMETRY' => '1'];
             $p = new Process([config('rapat.python'), config('rapat.engine'), $input['operation']], dirname(base_path()), $env, json_encode($input, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE), $input['operation'] === 'health' ? config('rapat.health_timeout') : config('rapat.timeout'));
             $p->run();
@@ -34,14 +35,20 @@ class LocalEngine
                 throw new NoSpeechDetected;
             }
             if (! $p->isSuccessful() || ! is_array($data) || isset($data['error'])) {
-                throw new RuntimeException;
+                $known = ['whisper_model_missing', 'transcriber_dependency_missing', 'whisper_model_load_failed', 'audio_decode_failed', 'transcription_failed', 'timeout'];
+                $reason = $data['error']['code'] ?? null;
+                throw new LocalEngineFailure(in_array($reason, $known, true) ? $reason : 'runtime_failed');
             }
 
             return $data;
         } catch (NoSpeechDetected $error) {
             throw $error;
+        } catch (LocalEngineFailure $error) {
+            throw $error;
+        } catch (ProcessTimedOutException) {
+            throw new LocalEngineFailure('timeout');
         } catch (\Throwable) {
-            throw new RuntimeException('Mesin AI lokal tidak tersedia.');
+            throw new LocalEngineFailure('process_failed');
         }
     }
 

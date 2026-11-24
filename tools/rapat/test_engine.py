@@ -73,6 +73,30 @@ class EngineTests(unittest.TestCase):
             self.assertFalse(options['condition_on_previous_text'])
             self.assertEqual(options['hallucination_silence_threshold'], 2)
 
+    def test_transcriber_failures_have_safe_stage_codes(self):
+        with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_AUDIO_ROOTS=root), \
+                patch.object(e, 'model_ready', return_value=True):
+            f = Path(root) / 'audio'
+            f.write_bytes(b'audio')
+            with patch.dict(sys.modules, faster_whisper=None):
+                with self.assertRaisesRegex(e.Failure, '^transcriber_dependency_missing$'):
+                    e.transcribe({'file': str(f)})
+            constructor = unittest.mock.Mock(side_effect=RuntimeError('PRIVATE path and internal error'))
+            with patch.dict(sys.modules, faster_whisper=types.SimpleNamespace(WhisperModel=constructor)):
+                with self.assertRaisesRegex(e.Failure, '^whisper_model_load_failed$'):
+                    e.transcribe({'file': str(f)})
+            decoder_error = type('InvalidDataError', (Exception,), {'__module__': 'av.error'})
+            for error, expected in [(decoder_error('PRIVATE data'), 'audio_decode_failed'),
+                                    (RuntimeError('PRIVATE data'), 'transcription_failed')]:
+                def segments():
+                    raise error
+                    yield
+                model = unittest.mock.Mock()
+                model.transcribe.return_value = (segments(), None)
+                with patch.dict(sys.modules, faster_whisper=types.SimpleNamespace(WhisperModel=lambda *a, **k: model)):
+                    with self.assertRaisesRegex(e.Failure, '^' + expected + '$'):
+                        e.transcribe({'file': str(f)})
+
     def test_default_small_and_explicit_large_and_turbo_cache_variants(self):
         with tempfile.TemporaryDirectory() as root, patch.dict(os.environ, RAPAT_MODEL_DIR=root):
             with patch.dict(os.environ, RAPAT_WHISPER_MODEL='large-v3-turbo'):

@@ -122,16 +122,26 @@ def transcribe(data):
         raise Failure('invalid_language')
     if not model_ready():
         raise Failure('whisper_model_missing')
-    from faster_whisper import WhisperModel
-    model = WhisperModel(str(model_path()), device='cpu', compute_type='int8',
-                         local_files_only=True, cpu_threads=2, num_workers=1)
+    try:
+        from faster_whisper import WhisperModel
+    except ImportError:
+        raise Failure('transcriber_dependency_missing') from None
+    try:
+        model = WhisperModel(str(model_path()), device='cpu', compute_type='int8',
+                             local_files_only=True, cpu_threads=2, num_workers=1)
+    except Exception:
+        raise Failure('whisper_model_load_failed') from None
     # PyAV detects media content, regardless of a random temporary filename.
-    with path.open('rb') as source:
-        segments, _ = model.transcribe(source, language='id', task='transcribe',
-                                       beam_size=5, temperature=0, word_timestamps=True,
-                                       hallucination_silence_threshold=2,
-                                       vad_filter=True, condition_on_previous_text=False)
-        decoded = list(segments)
+    try:
+        with path.open('rb') as source:
+            segments, _ = model.transcribe(source, language='id', task='transcribe',
+                                           beam_size=5, temperature=0, word_timestamps=True,
+                                           hallucination_silence_threshold=2,
+                                           vad_filter=True, condition_on_previous_text=False)
+            decoded = list(segments)
+    except Exception as exc:
+        code = 'audio_decode_failed' if type(exc).__module__.startswith('av.') else 'transcription_failed'
+        raise Failure(code) from None
     result = [dict(start=float(s.start), end=float(s.end), text=s.text.strip(), speaker=None)
               for s in decoded]
     text = ' '.join(s['text'] for s in result).strip()

@@ -1,5 +1,13 @@
 # Konvensi REST API Siperp
 
+Rapat memproses audio plaintext dalam direktori sementara privat milik user worker
+di temp OS, bukan direktori storage bersama yang dapat dibuat user PHP berbeda.
+Whitelist Python mengikuti direktori privat tersebut. File sementara berizin 0600
+dan dibersihkan saat operasi selesai/gagal. Pesan kegagalan membedakan tahap akses
+audio, penyiapan sementara, runtime/model, decoder, dan timeout; log hanya mencatat
+ID rapat, tahap, kelas exception, dan kode alasan yang dibatasi. Tidak mencatat isi
+audio/transkrip, pesan exception mentah, atau path privat. Kontrak field tidak berubah.
+
 Transkripsi Rapat: POST `/api/v1/rapat/meetings/{id}/transcribe` menerima `version`
 dan membutuhkan audio tersimpan serta transcriber siap; tidak membutuhkan model
 notulen. Respons 202, mode proses read-only `transcribe`, antrean khusus
