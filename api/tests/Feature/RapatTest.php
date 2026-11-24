@@ -6,13 +6,16 @@ use App\Modules\Rapat\Models\Media;
 use App\Modules\Rapat\Models\Meeting;
 use App\Modules\Rapat\Providers\RapatServiceProvider;
 use App\Modules\Rapat\Services\LocalEngine;
+use App\Modules\Rapat\Services\LocalEngineFailure;
 use App\Modules\Rapat\Services\NoSpeechDetected;
 use App\Modules\Rapat\Services\RapatData;
+use App\Modules\Rapat\Services\TemporaryAudio;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -236,7 +239,7 @@ it('passes the real CLI command and explicit model environment through Symfony P
         expect($result['model'])->toBe('base');
         expect($result['ollama'])->toBe('qwen2.5:1.5b');
         expect($result['url'])->toBe('http://127.0.0.1:11434');
-        expect($result['roots'])->toBe(storage_path('app/private/rapat/tmp'));
+        expect($result['roots'])->toBe(TemporaryAudio::root());
     } finally {
         unlink($script);
     }
@@ -686,6 +689,86 @@ it('retains partial transcription and resumes unfinished audio without calling m
     $this->getJson($url)->assertJsonPath('data.status', 'ready')->assertJsonPath('data.transcript', "Bagian audio 1\nBagian audio 3");
     expect($engine->calls)->toBe(3);
 });
+it('uses worker private temporary audio and removes plaintext on success and failure', function () {
+    $temp = new TemporaryAudio;
+    $seen = null;
+    $result = $temp->withFile('private test audio', function ($path) use (&$seen) {
+        $seen = $path;
+        expect(dirname($path))->toBe(TemporaryAudio::root());
+        expect(file_get_contents($path))->toBe('private test audio');
+        if (PHP_OS_FAMILY !== 'Windows') {
+            expect(fileperms($path) & 0777)->toBe(0600);
+            expect(fileperms(dirname($path)) & 0777)->toBe(0700);
+        }
+
+        return 'processed';
+    });
+    expect($result)->toBe('processed');
+    expect(is_file($seen))->toBeFalse();
+    expect(fn () => $temp->withFile('private test audio', function ($path) use (&$seen) {
+        $seen = $path;
+        throw new RuntimeException('decoder failed');
+    }))->toThrow(RuntimeException::class, 'decoder failed');
+    expect(is_file($seen))->toBeFalse();
+});
+
+it('identifies temporary audio permission failures without losing audio or leaking private errors', function () {
+    Log::spy();
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
+    $temp = new class extends TemporaryAudio
+    {
+        public function withFile(string $bytes, callable $use): mixed
+        {
+            throw new ErrorException('mkdir permission denied PRIVATE AUDIO /private/path');
+        }
+    };
+    (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle(app(LocalEngine::class), $temp);
+    $this->getJson($url)->assertJsonPath('data.status', 'failed')->assertJsonPath('data.transcript', '')
+        ->assertJsonPath('data.minutes.summary', '')->assertDontSee('PRIVATE AUDIO')
+        ->assertJsonPath('data.error', 'Worker tidak dapat menyiapkan audio sementara. Minta admin memeriksa izin folder sementara. Rekaman tetap tersimpan.');
+    Storage::disk('local')->assertExists(Media::where('meeting_id', $id)->first()->path);
+    Log::shouldHaveReceived('warning')->once()->with('rapat_processing_failed', Mockery::on(fn ($context) => $context['stage'] === 'temporary_audio' && $context['exception'] === ErrorException::class
+        && ! str_contains(json_encode($context), 'PRIVATE AUDIO') && ! str_contains(json_encode($context), '/private/path')));
+});
+
+it('identifies unreadable encrypted audio before running Whisper', function () {
+    Log::spy();
+    $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->json('data.id');
+    $url = '/api/v1/rapat/meetings/'.$id;
+    $this->post($url.'/media', ['file' => rapatAudio(), 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
+    Storage::disk('local')->delete(Media::where('meeting_id', $id)->first()->path);
+    $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
+    $engine = Mockery::mock(LocalEngine::class);
+    $engine->shouldReceive('transcriptionRevision')->once()->andReturn('test');
+    $engine->shouldNotReceive('run');
+    (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle($engine);
+    $this->getJson($url)->assertJsonPath('data.status', 'failed')
+        ->assertJsonPath('data.error', 'Audio tersimpan belum dapat dibaca oleh worker. Minta admin memeriksa akses penyimpanan privat. Rekaman tetap tersimpan.');
+    Log::shouldHaveReceived('warning')->once()->with('rapat_processing_failed', Mockery::on(fn ($context) => $context['stage'] === 'read_audio'));
+});
+
+it('preserves only allowlisted engine failure codes and never logs raw engine output', function () {
+    $script = tempnam(sys_get_temp_dir(), 'rapat_error_');
+    try {
+        config(['rapat.python' => PHP_BINARY, 'rapat.engine' => $script]);
+        foreach (['whisper_model_missing', 'audio_decode_failed', 'transcription_failed', 'PRIVATE secret /path'] as $reason) {
+            file_put_contents($script, '<?php echo '.var_export(json_encode(['error' => ['code' => $reason, 'message' => 'PRIVATE AUDIO']]), true).';exit(1);');
+            try {
+                (new LocalEngine)->run(['operation' => 'transcribe']);
+                $this->fail('Engine error must fail.');
+            } catch (LocalEngineFailure $error) {
+                expect($error->reason)->toBe(str_starts_with($reason, 'PRIVATE') ? 'runtime_failed' : $reason);
+                expect($error->getMessage())->toBe('Mesin AI lokal tidak tersedia.');
+            }
+        }
+    } finally {
+        unlink($script);
+    }
+});
+
 it('supports a real local Whisper transcription through encrypted upload and queued job', function () {
     $sample = getenv('RAPAT_REAL_ASR_SAMPLE');
     $python = getenv('RAPAT_REAL_ASR_PYTHON');
@@ -698,7 +781,7 @@ it('supports a real local Whisper transcription through encrypted upload and que
     $this->app->instance(LocalEngine::class, $engine);
     $id = $this->postJson('/api/v1/rapat/meetings', $this->payload)->assertCreated()->json('data.id');
     $url = '/api/v1/rapat/meetings/'.$id;
-    $file = new UploadedFile($sample, 'sample.wav', 'audio/wav', null, true);
+    $file = new UploadedFile($sample, 'sample.'.strtolower(pathinfo($sample, PATHINFO_EXTENSION)), null, null, true);
     $this->post($url.'/media', ['file' => $file, 'clientId' => (string) Str::uuid(), 'sequence' => 1], ['Accept' => 'application/json'])->assertCreated();
     $this->postJson($url.'/transcribe', ['version' => Meeting::find($id)->version])->assertAccepted();
     (new ProcessMeeting($id, Meeting::find($id)->run_token, false, true))->handle($engine);

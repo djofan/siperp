@@ -118,6 +118,30 @@ pembaruan helper menggunakan installer eksplisit setelah review.
 
 ## Pemeriksaan lokal
 
+### Diagnosa audio gagal
+
+ErrorException saja tidak mengidentifikasi penyebab: kegagalan read/decrypt,
+mkdir/tempnam, atau izin logging sebelumnya dapat tertutup pesan generik.
+Helper berikut memeriksa rekaman gagal terbaru, tanpa mengubah baris rapat/media
+dan tanpa mencetak audio, transkrip, nama rekaman, atau pesan exception mentah:
+
+```bash
+runuser -u siperp -- /usr/bin/php8.4 /var/www/siperp-deploy/current/api/tools/check-rapat-audio.php
+```
+
+Tambahkan `--transcribe` untuk menguji audio tersebut dengan model, ketika tidak
+ada rapat yang sedang diproses. Inferensi memakai CPU/RAM; jangan menjalankannya
+bersamaan dengan worker yang sedang memproses. Periksa `stage` dan `reason` pada
+output serta event `rapat_processing_failed` di log aplikasi (atau journal worker
+jika file log tidak dapat ditulis). Jangan membuka storage publik atau chmod 777.
+
+Direktori plaintext kini berada di temp OS per-user (`siperp-rapat-<uid>`), 0700;
+file 0600 dan dibersihkan melalui finally. `PrivateTmp=true` tetap dipertahankan.
+Storage audio terenkripsi lama tidak dipindah, dihapus, atau dilonggarkan izinnya.
+Jika tahap read_audio gagal, periksa kepemilikan/ACL jalur audio terenkripsi dan
+identitas PHP/worker secara spesifik sebelum memperbaiki izin. Pemeriksaan health
+model bukan bukti worker dapat membaca audio upload.
+
 ```bash
 node --test tests/rapat-worker.test.cjs
 php -l ops/rapat/worker.php
