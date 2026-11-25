@@ -18,6 +18,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState("");
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -27,6 +28,34 @@ export default function Navbar() {
   }, []);
   const headerRef = useRef<HTMLElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (pathname !== "/sarsip") return;
+    let frame = 0;
+    function updateActiveSection() {
+      const offset = (headerRef.current?.getBoundingClientRect().height ?? 64) + 48;
+      let current = "";
+      for (const id of ["campaign", "berita", "penerima-manfaat", "tentang"]) {
+        const section = document.querySelector(`[id="${id}"]`);
+        if (section && section.getBoundingClientRect().top <= offset) current = id;
+      }
+      setActiveSection(current);
+    }
+    function scheduleUpdate() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateActiveSection);
+    }
+    scheduleUpdate();
+    window.addEventListener("scroll", scheduleUpdate, { passive: true });
+    window.addEventListener("resize", scheduleUpdate);
+    window.addEventListener("hashchange", scheduleUpdate);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+      window.removeEventListener("hashchange", scheduleUpdate);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,6 +89,7 @@ export default function Navbar() {
     const target = id ? document.getElementById(id) : document.documentElement;
     if (!target) return;
     event.preventDefault();
+    setActiveSection(id || "");
     target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     window.history.replaceState(null, "", href);
   }
@@ -90,7 +120,7 @@ export default function Navbar() {
           className={`${styles.navLinks} ${open ? styles.navOpen : ""}`}
         >
           {links.map(([label, href]) => (
-            <Link key={label} href={href} onClick={(event) => navigate(event, href)} aria-current={pathname === href ? "page" : undefined} className={styles.navLink}>{label}</Link>
+            <Link key={label} href={href} onClick={(event) => navigate(event, href)} aria-current={(pathname === "/sarsip" ? href === (activeSection ? `/sarsip#${activeSection}` : "/sarsip") : href.includes("#") && pathname.startsWith(`/sarsip/${href.split("#")[1]}`)) ? "page" : undefined} className={styles.navLink}>{label}</Link>
           ))}
           <Link href="/sarsip#campaign" onClick={(event) => navigate(event, "/sarsip#campaign")} className={styles.navDonate}>Donasi sekarang</Link>
         </nav>
