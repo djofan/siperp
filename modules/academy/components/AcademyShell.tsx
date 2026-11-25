@@ -6,6 +6,7 @@ import { Navbar } from "./landing/navbar";
 import { Footer } from "./landing/footer";
 import { publicNavigation } from "./public-navigation";
 import { DashboardChrome } from "./DashboardChrome";
+import type { ExamNotification } from "../api/notifications";
 const links = [
   { path: "belajar", label: "Dashboard", icon: "Dashboard" },
   { path: "materi", label: "Materi Belajar", icon: "BookOpen" },
@@ -28,7 +29,7 @@ const adminLinks = [
   { path: "/pendaftaran", label: "Pendaftaran", icon: "Users" },
   { path: "/angkatan", label: "Angkatan", icon: "Users" },
 ] as const;
-export function AcademyShell({ user, children, admin = false, csPhone = "628111186626", unreadReminders = 0, certificatesAvailable = false }: { user: { name: string; nis: string | null; isTeacher?: boolean; isSuperadmin?: boolean; isAdmin?: boolean } | null; children: ReactNode; admin?: boolean; csPhone?: string; unreadReminders?: number; certificatesAvailable?: boolean }) {
+export function AcademyShell({ user, children, admin = false, csPhone = "628111186626", unreadReminders = 0, notifications = [], certificatesAvailable = false }: { user: { name: string; nis: string | null; isTeacher?: boolean; isSuperadmin?: boolean; isAdmin?: boolean } | null; children: ReactNode; admin?: boolean; csPhone?: string; unreadReminders?: number; notifications?: ExamNotification[]; certificatesAvailable?: boolean }) {
   const pathname = canonicalAcademyPath(usePathname());
   const adminView = admin || !!user?.isAdmin || !!user?.isSuperadmin;
   const auth = pathname === "/academy/masuk" || pathname === "/academy/daftar";
@@ -41,5 +42,5 @@ export function AcademyShell({ user, children, admin = false, csPhone = "6281111
   }
   if (auth) return <div className={`academy-theme academy-public academy-auth flex min-h-dvh items-center justify-center bg-gray-50 px-4 ${pathname === "/academy/masuk" ? "py-6" : "py-12"}`}><main id="academy-content" className="w-full">{children}</main></div>;
   if (!dashboard) return <div className="academy-theme academy-public flex min-h-screen flex-col bg-white text-gray-900"><Navbar isLoggedIn={!!user} dashboardHref={adminView ? "/admin/academy" : "/academy/belajar"} /><main id="academy-content" className="flex-1 pt-14">{children}</main><Footer /></div>;
-  return <DashboardChrome groups={[{ heading: "Menu utama", items: navigation }]} userName={user?.name ?? "Peserta"} userNumber={user?.nis} role={adminView ? "Admin" : "Peserta"} csPhone={csPhone} unreadReminders={unreadReminders}>{children}</DashboardChrome>;
+  return <DashboardChrome groups={[{ heading: "Menu utama", items: navigation }]} userName={user?.name ?? "Peserta"} userNumber={user?.nis} role={adminView ? "Admin" : "Peserta"} csPhone={csPhone} unreadReminders={unreadReminders} notifications={notifications}>{children}</DashboardChrome>;
 }

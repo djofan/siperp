@@ -150,3 +150,12 @@
 /* Original Insan Academy artwork keeps its green/gold colors on every surface. */
 .academy-logo { background: #fff; line-height: 0; }
 .academy-logo img { object-fit: contain; filter: none; }
+
+/* Neutral full-width backing for the original green/gold sidebar artwork. */
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-brand {
+  width:100%; background:#fff; color:var(--academy-green); border-color:var(--academy-border);
+}
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-brand-label { color:var(--academy-muted); }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar) .academy-sidebar-brand:focus-visible { outline-color:var(--academy-green); outline-offset:-3px; }
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar)>.academy-sheet-close {color:var(--academy-green)}
+:is(.academy-theme .academy-sidebar, .academy-theme.academy-sidebar)>.academy-sheet-close:focus-visible {outline-color:var(--academy-green)}
