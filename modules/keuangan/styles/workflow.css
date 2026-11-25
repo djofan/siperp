@@ -84,3 +84,40 @@
 @media(max-width:1100px){.finance-approval-layout{grid-template-columns:1fr}.finance-decision-panel{max-width:none}}
 @media(max-width:800px){.finance-topbar-actions{gap:9px}.finance-role-badge{max-width:105px;text-align:center}.finance-notification-popover{position:fixed;right:18px;top:68px;width:320px}.finance-topbar>strong{font-size:14px}.finance-menu-toggle{flex-shrink:0}.finance-shell .finance-topbar{gap:8px}.finance-decision-heading{padding:18px 18px 0}.finance-shell .finance-decision-panel .finance-form{padding:18px}.finance-description-box{padding:16px}}
 @media print{.finance-shell{display:block;background:white;color:#111;color-scheme:light;min-height:0}.finance-sidebar,.finance-topbar,.finance-skip{display:none!important}.finance-content{padding:0!important;max-width:none}.finance-main{display:block!important}.finance-shell .finance-print{background:#fff;color:#111}.finance-shell .finance-print .finance-grid dt{color:#444}.finance-shell .finance-print .finance-status{color:#111;background:#fff}.finance-shell .finance-print h1{color:#111}}
+
+/* Readable master lists on Program & Pengaturan. */
+.finance-settings-heading {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px}
+.finance-settings-heading>div {display:flex;align-items:center;gap:10px;min-width:0}
+.finance-workspace .finance-settings-heading h2 {margin:0;font-size:16px}
+.finance-settings-icon {display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:#e8eee5;color:#043222;flex-shrink:0}
+.finance-settings-count {border:1px solid #d9dfd2;border-radius:20px;background:#eef2e9;color:#405c4d;padding:5px 10px;font-size:12px;white-space:nowrap}
+.finance-settings-search {margin:0 0 18px;max-width:480px}
+.finance-settings-search label {display:block;font-size:12px;font-weight:600;margin-bottom:7px}
+.finance-settings-search>div {display:flex;align-items:center;gap:10px;border:1px solid #b9c4b8;border-radius:10px;background:#fffdf9;padding:4px 8px 4px 12px;min-height:46px}
+.finance-settings-search>div:focus-within {outline:2px solid #043222;outline-offset:2px}
+.finance-settings-search svg {flex-shrink:0;color:#627369}
+.finance-settings-search input {flex:1;min-width:0;width:100%;padding:8px 0;border:0;background:transparent;font:inherit;color:#043222;outline:none!important}
+.finance-settings-search input::-webkit-search-cancel-button {-webkit-appearance:none;appearance:none}
+.finance-settings-search button {display:grid;place-items:center;flex-shrink:0;width:36px;min-height:36px;padding:6px;border-radius:8px;background:transparent;color:#043222}
+.finance-settings-search button:hover {background:#e8eee5}
+.finance-settings-list {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;list-style:none;padding:0;margin:0;min-width:0}
+.finance-settings-programs .finance-settings-list {grid-template-columns:repeat(3,minmax(0,1fr));max-height:420px;overflow-y:auto;scrollbar-gutter:stable;padding:3px 6px 3px 3px;scrollbar-width:thin}
+.finance-settings-list li {display:flex;align-items:center;gap:10px;min-width:0;min-height:50px;padding:12px 14px;border:1px solid #e2ded1;border-radius:10px;background:#fffdf9}
+.finance-settings-dot {width:6px;height:6px;border-radius:50%;background:#2e754e;flex-shrink:0}
+.finance-settings-name {flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px;font-weight:500;line-height:1.45}
+.finance-settings-archived {flex-shrink:0;border-radius:12px;background:#edeae2;color:#666d62;padding:3px 7px;font-size:11px}
+.finance-settings-empty {padding:24px 16px;border:1px dashed #b9c4b8;border-radius:10px;text-align:center;color:#627369}
+.finance-settings-scroll-hint {margin:10px 0 0;font-size:12px;color:#627369}
+.finance-settings-add {border-top:1px solid #ded8ca;margin-top:22px;padding-top:20px}
+.finance-settings-add h3 {font-size:14px;font-weight:600;margin:0}
+.finance-settings-add .finance-form {background:transparent;border:0;border-radius:0;margin:12px 0 0;padding:0}
+.finance-settings-add .finance-form fieldset {grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px}
+.finance-settings-options>.finance-panel {margin:0}
+@media(max-width:1100px) {.finance-settings-programs .finance-settings-list {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px) {
+  .finance-settings-list,.finance-settings-programs .finance-settings-list {grid-template-columns:minmax(0,1fr)}
+  .finance-settings-programs .finance-settings-list {max-height:360px}
+  .finance-settings-add .finance-form fieldset {grid-template-columns:minmax(0,1fr)}
+  .finance-settings-heading {align-items:flex-start}
+  .finance-settings-search {max-width:none}
+}
