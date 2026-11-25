@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { SarsipDetailLink as Link } from "./DetailNavigation";
 import { listEntries } from "@/modules/sarsip/api/data";
 import { KINDS, type EntryKind } from "@/modules/sarsip/api/data";
 
