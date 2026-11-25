@@ -36,6 +36,7 @@ test('material list and editors highlight Materi instead of Dashboard', async ()
     './ui/sheet': { Sheet: 'div', SheetContent: 'div', SheetTitle: 'h2', SheetDescription: 'p', SheetTrigger: 'div' },
     './ui/utils': { cn: (...values) => values.filter(Boolean).join(' ') },
     './LogoutButton': { LogoutButton: 'button' },
+    './NotificationBell': { NotificationBell: 'notification-bell' },
   });
   for (const suffix of ['', '/baru', '/qa-lesson']) {
     pathname = `/admin/academy/materi${suffix}`;

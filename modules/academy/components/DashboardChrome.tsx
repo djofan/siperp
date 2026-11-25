@@ -14,6 +14,8 @@ import { Sheet, SheetContent, SheetTitle, SheetDescription, SheetTrigger } from 
 import { cn } from "./ui/utils";
 import { AcademyLogo } from "./AcademyLogo";
 import { LogoutButton } from "./LogoutButton";
+import { NotificationBell } from "./NotificationBell";
+import type { ExamNotification } from "../api/notifications";
 
 export type DashboardNavGroup = { heading?: string; items: { href: string; label: string; icon?: string }[] };
 const participantQuickLinks = [
@@ -47,9 +49,9 @@ function activeNavigationHref(pathname: string, role: "Admin" | "Peserta") {
   return pathname;
 }
 
-export function DashboardChrome({ groups, userName, role, userNumber, unreadReminders = 0, csPhone, children }: {
+export function DashboardChrome({ groups, userName, role, userNumber, unreadReminders = 0, notifications = [], csPhone, children }: {
   groups: DashboardNavGroup[]; userName: string; role: "Admin" | "Peserta";
-  userNumber?: string | null; unreadReminders?: number; csPhone?: string; children: ReactNode;
+  userNumber?: string | null; unreadReminders?: number; notifications?: ExamNotification[]; csPhone?: string; children: ReactNode;
 }) {
   const pathname = canonicalAcademyPath(usePathname());
   const mobileApp = useAcademyBasePath() === "/academy-app";
@@ -58,9 +60,9 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
   const navigationPathname = activeNavigationHref(pathname, role);
   const active = items.filter(item => navigationPathname === item.href || navigationPathname.startsWith(`${item.href}/`) || (item.href === "/academy/peringkat" && pathname.startsWith("/academy/sertifikat/"))).sort((a, b) => b.href.length - a.href.length)[0];
   const sidebar = (compact = false) => <>
-    <Link href="/academy" onClick={() => setOpen(false)} className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
+    <Link href="/academy" onClick={() => setOpen(false)} className="academy-sidebar-brand flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
       <AcademyLogo />
-      <span className="text-xs text-slate-500">Ruang<br />{role.toLowerCase()}</span>
+      <span className="academy-sidebar-brand-label text-xs">Ruang<br />{role.toLowerCase()}</span>
     </Link>
     <nav aria-label={`Menu ${role.toLowerCase()}`} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
       {groups.map((group, index) => <div key={group.heading ?? index} className="space-y-1">
@@ -91,7 +93,7 @@ export function DashboardChrome({ groups, userName, role, userNumber, unreadRemi
       <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 sm:px-8 print:hidden">
         <div className="flex min-w-0 items-center gap-3"><SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Buka menu" className="lg:hidden"><Menu /></Button></SheetTrigger><AcademyLogo compact className="h-8 w-8 p-1 sm:hidden" /><span className="hidden text-sm text-slate-400 sm:block">Academy</span><ChevronRight className="hidden size-3.5 text-slate-300 sm:block" /><span className="truncate text-sm font-medium text-slate-700">{active?.label ?? "Dashboard"}</span></div>
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          {role === "Peserta" && <Button asChild variant="ghost" size="icon"><Link href="/academy/pengingat" aria-label={`Pengingat ujian${unreadReminders ? `, ${unreadReminders} belum dibaca` : ""}`} className="relative"><Bell />{unreadReminders > 0 && <span className="absolute right-1 top-1 size-2 rounded-full bg-emerald-500" />}</Link></Button>}
+          {role === "Peserta" && <NotificationBell key={userNumber ?? userName} items={notifications}/>}
           <LogoutButton compact />
         </div>
       </header>
