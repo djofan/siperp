@@ -27,7 +27,7 @@ import { DecisionNotice } from "./DecisionNotice";
 import { DeleteApplication } from "./DeleteApplication";
 import { IntakeForm } from "./IntakeForm";
 import { DependentsSummary } from "./Dependents";
-import { ActionPanel, DocumentUpload } from "./ActionPanel";
+import { ActionPanel, DocumentUpload, type ActionPanelHandle } from "./ActionPanel";
 import { Management } from "./Management";
 import { ProcessHub } from "./ProcessHub";
 import { ReportExport } from "./ReportExport";
@@ -250,6 +250,8 @@ export function Workspace({ route, initialViewer, mobileApp=false }: { route: st
 
 function Detail({ row,viewer,staff,reload,origin }: {origin?:{key:string;label:string};row:AidDetail;viewer:BantuanViewer;staff:BantuanStaff[];reload:()=>void}) {
   const requestedAction=useSearchParams().get("action");
+  const amountEditor=useRef<ActionPanelHandle|null>(null);
+  const canReviseAmount=getAvailableActions(row,viewer).some(action=>action.key==="revise_amount");
   const directHandover=["certificate","handover"].includes(requestedAction??"")&&getAvailableActions(row,viewer).some(action=>action.key==="handover");
   const [todayTime]=useState(()=>Date.now());
   const isSurveyReview=row.status==="survey_cc_review";
@@ -272,7 +274,7 @@ function Detail({ row,viewer,staff,reload,origin }: {origin?:{key:string;label:s
     {["survey_assignment","survey_assigned"].includes(row.status)&&(hasAnyRole(viewer,["admin","call_center"])||hasRole(viewer,"verifier")&&row.verifierId===viewer.id)&&<SurveyMap row={row} initiallyExpanded={isSurveyEntry} onAddressChange={hasAnyRole(viewer,["admin","call_center"])?async surveyAddress=>{await request(`applications/${row.id}/actions/survey_address`,{method:"POST",body:JSON.stringify({surveyAddress,version:row.version})});reload();}:undefined} editable={hasAnyRole(viewer,["admin","call_center"])||hasRole(viewer,"verifier")&&row.verifierId===viewer.id} onDestination={async point=>{await request(`applications/${row.id}/actions/survey_location`,{method:"POST",body:JSON.stringify({...point,version:row.version})});reload();}}/>}
     {row.bypassReason&&<div className={s.notice}>Alasan jalur langsung: {row.bypassReason}</div>}
     <div className={s.caseSummary}>
-      <div><small>Nominal bantuan</small><strong>{row.amount?money(row.amount):"Belum ditetapkan"}</strong></div>
+      <div className={canReviseAmount?s.amountEditable:undefined}><small>Nominal bantuan</small><strong>{row.amount?money(row.amount):"Belum ditetapkan"}</strong>{canReviseAmount&&<><p className={s.amountEditHint}>Masih bisa dikoreksi sebelum dana diajukan.</p><button type="button" className={s.amountEditButton} aria-controls="case-panel-tindakan" onClick={event=>{setSection("tindakan");amountEditor.current?.openAmountEditor(event.currentTarget);}}>Ubah nominal bantuan <Icon name="arrow"/></button></>}</div>
       <div><small>Verifikator</small><strong>{row.manualVerifierName??person(row.verifierId)}</strong></div>
       <div><small>Penyalur</small><strong>{row.manualDistributorName??(row.distributionType==="direct"?"Bendahara langsung":person(row.distributorId))}</strong></div>
       <div><small>{row.disbursedAt?"Dana dicairkan":"Referensi dana"}</small><strong>{row.disbursedAt?day(row.disbursedAt):row.fundReference??"Belum ada"}</strong></div>
@@ -288,7 +290,7 @@ function Detail({ row,viewer,staff,reload,origin }: {origin?:{key:string;label:s
       {/* Keep every panel mounted: switching tabs or uploading must retain drafts. */}
       <div role="tabpanel" id="case-panel-tindakan" aria-labelledby="case-tab-tindakan" hidden={section!=="tindakan"} className={s.casePanel}>
         {hasRole(viewer,"admin")&&<AdminCorrection key={`${row.id}:${row.version}`} row={row} staff={staff} reload={reload}/>}
-        <ActionPanel initialAction={directHandover?requestedAction:undefined} key={`${row.id}:${row.status}:${requestedAction}`} row={row} viewer={viewer} staff={staff} reload={reload}/>
+        <ActionPanel ref={amountEditor} initialAction={directHandover?requestedAction:undefined} key={`${row.id}:${row.status}:${requestedAction}`} row={row} viewer={viewer} staff={staff} reload={reload}/>
         {row.survey&&!isSurveyEntry&&!canReviewSurvey&&<section className={s.card}><div className={s.cardHeader}><h2>Hasil verifikasi</h2></div><div className={s.cardBody}>{renderData({housing:row.applicant.housing??"Belum diisi",rent:row.applicant.rent??null,rentPeriod:row.applicant.rentPeriod??"Belum diisi",dependentCount:row.applicant.dependentCount??0,dependents:row.applicant.dependents??[]})}<h3 className={s.sectionTitle} style={{marginTop:20}}>Hasil kunjungan</h3>{renderData(row.survey)}{Array.isArray(row.survey.contacts)&&row.survey.contacts.length>0&&<><h3 className={s.sectionTitle} style={{marginTop:20}}>Kontak kerabat / tetangga</h3>{(row.survey.contacts as {name:string;relationship:string;phone:string}[]).map((c,i)=><p key={i}>{c.name} · {c.relationship} · {c.phone}</p>)}</>}</div></section>}
         {row.manualProcess?.transferRecipient&&<section className={s.card}><div className={s.cardHeader}><h2>Transfer kepada penyalur</h2></div><div className={s.cardBody}>{renderData(row.manualProcess.transferRecipient)}</div></section>}
         {hasHandoverReport&&<button type="button" className={`${s.button} ${s.secondary}`} onClick={openHandoverReport}>Lihat laporan penyerahan</button>}

@@ -31,7 +31,7 @@ export function SarsipHero({ profile }: {
         <p className={styles.heroDescription}>Setiap dukungan berarti bagi upaya pencarian, pertolongan, dan pemulihan. Kenali tim kami dan ambil bagian dalam misi kemanusiaan.</p>
         <div className={styles.actions}>
           <Link href="/sarsip#campaign" className={styles.primary}>Salurkan bantuan <ArrowRight size={17} aria-hidden="true"/></Link>
-          <Link href="/sarsip/kegiatan" className={styles.secondary}>Lihat kegiatan tim <ArrowRight size={17} aria-hidden="true"/></Link>
+          <Link href="/sarsip#berita" className={styles.secondary}>Kabar terbaru tim <ArrowRight size={17} aria-hidden="true"/></Link>
         </div>
         <p className={styles.heroNote}><LifeBuoy size={15} aria-hidden="true"/> Pencarian, pertolongan, dan aksi kemanusiaan</p>
       </div>

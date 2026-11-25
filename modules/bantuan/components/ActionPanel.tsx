@@ -10,7 +10,7 @@ import Link from "./WorkspaceNavigation";
 import { surveyApplicantErrors, surveyApplicantKeys } from "../survey-applicant";
 import { rolesOf, hasRole } from "../permissions";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useImperativeHandle, useRef, useState, type FormEvent, type Ref } from "react";
 import type { AidDetail, BantuanStaff, BantuanViewer } from "@/contracts/modules/bantuan";
 import { documentLabels } from "@/contracts/modules/bantuan";
 import { fieldMessage, request, RequestError } from "../api/client";
@@ -181,7 +181,9 @@ const confirmLabels:Record<string,string>={
   return_funds:"Simpan pengembalian",reopen:"Buka kembali pengajuan",cancel:"Ya, batalkan pengajuan",
 };
 
-export function ActionPanel({ row, viewer, staff, reload, initialAction }: { initialAction?:string|null; row: AidDetail; viewer: BantuanViewer; staff: BantuanStaff[]; reload:()=>void }) {
+export type ActionPanelHandle = { openAmountEditor: (trigger: HTMLButtonElement) => void };
+
+export function ActionPanel({ row, viewer, staff, reload, initialAction, ref }: { ref?: Ref<ActionPanelHandle>; initialAction?:string|null; row: AidDetail; viewer: BantuanViewer; staff: BantuanStaff[]; reload:()=>void }) {
   const actionLock=useRef(false),actionRegion=useRef<HTMLElement>(null),lastTrigger=useRef<HTMLButtonElement|null>(null);
   const actionForm=useRef<HTMLFormElement>(null),errorSummary=useRef<HTMLDivElement>(null);
   const [fieldErrors,setFieldErrors]=useState<ActionErrors>({});
@@ -222,6 +224,11 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction }: { ini
     if(active===key&&actionRegion.current)revealActionTarget(actionRegion.current);
     else setActive(key);
   }
+  useImperativeHandle(ref, () => ({
+    openAmountEditor(trigger) {
+      if (getAvailableActions(row,viewer).some(action=>action.key==="revise_amount")) openAction("revise_amount",trigger);
+    },
+  }));
   function closeAction(){
     if(actionLock.current)return;
     setActive(null);setError("");setFieldErrors({});

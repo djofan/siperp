@@ -1,4 +1,7 @@
 "use client";
+import styles from "./Admin.module.css";
+import { Save, FileText, ImagePlus, Settings2 } from "lucide-react";
+import { describeApiProblem } from "@/lib/api-problem";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { SarsipProfile } from "@/contracts/modules/sarsip";
@@ -14,22 +17,18 @@ export function ProfileEditor({ profile }: { profile: SarsipProfile }) {
     try { const response = await fetch("/api/sarsip/profile", { method: "PUT", headers: { "Content-Type":"application/json" }, body: JSON.stringify({ ...data, heroImage }) });
       const result = await response.json().catch(() => null);
       if (!response.ok) {
-        const details = Object.values(result?.error?.details ?? {}).flat().find((value) => typeof value === "string");
-        const errorMessage = details ?? result?.error?.message ?? result?.error;
-        throw new Error(typeof errorMessage === "string" ? errorMessage : "Gagal menyimpan profil. Coba lagi.");
+        throw new Error(describeApiProblem(result,response.status,"Gagal menyimpan profil. Coba lagi."));
       }
       setMessage("Profil dan foto hero berhasil disimpan."); router.refresh();
     } catch (error) { setError(error instanceof Error ? error.message : "Gagal menyimpan."); } finally { setBusy(false); }
   }
-  const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground";
-  return <form onSubmit={submit} className="max-w-3xl space-y-5 rounded-2xl border border-border bg-surface p-6 text-foreground">
-    <label className="block text-sm font-medium"><span>Judul utama halaman publik<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="headline" required maxLength={191} defaultValue={profile.headline} className={field}/></label>
-    <HeroImageField value={heroImage} disabled={busy} onUploadingChange={setUploading} onChange={(url) => { setHeroImage(url); setMessage(""); setError(""); }} />
-    <label className="block text-sm font-medium"><span>Tentang tim<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><textarea name="description" required rows={8} maxLength={10000} defaultValue={profile.description} className={field}/></label>
-    <label className="block text-sm font-medium">Kontak koordinasi (publik)<textarea name="contact" rows={3} maxLength={191} defaultValue={profile.contact ?? ""} className={field}/></label>
-    {message && <p role="status" className="text-sm text-emerald-600">{message}</p>}
-    {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
-    <button disabled={busy || uploading} className="rounded-full bg-orange-600 px-6 py-3 text-sm font-bold text-white disabled:opacity-50">{uploading ? "Menunggu upload…" : busy ? "Menyimpan…" : "Simpan profil"}</button>
+  const field = styles.input;
+  return <form onSubmit={submit} className={styles.editor}>
+    <div className={styles.editorMain}><section className={styles.panel}><div className={styles.panelHead}><div><h2><FileText size={17}/>Identitas & cerita tim</h2><p>Teks yang tampil di hero dan bagian Tentang SARSIP.</p></div></div><div className={styles.fields}>
+      <label className={styles.field}>Judul utama halaman publik <span aria-hidden="true" className={styles.required}>*</span><input name="headline" required maxLength={191} defaultValue={profile.headline} className={field}/></label>
+      <label className={styles.field}>Tentang tim <span aria-hidden="true" className={styles.required}>*</span><textarea name="description" required rows={8} maxLength={10000} defaultValue={profile.description} className={field}/></label>
+      <label className={styles.field}>Kontak koordinasi (publik)<textarea name="contact" rows={3} maxLength={191} defaultValue={profile.contact??""} className={field}/><small className={styles.hint}>Gunakan kontak resmi yang boleh diakses pengunjung.</small></label>
+    </div></section><section className={styles.panel}><div className={styles.panelHead}><div><h2><ImagePlus size={17}/>Foto utama</h2><p>Dokumentasi tim yang mewakili kegiatan SARSIP.</p></div></div><HeroImageField value={heroImage} disabled={busy} onUploadingChange={setUploading} onChange={url=>{setHeroImage(url);setMessage("");setError("");}}/></section></div>
+    <aside className={styles.editorAside}><section className={styles.panel}><div className={styles.panelHead}><div><h2><Settings2 size={17}/>Simpan profil</h2><p>Perubahan akan digunakan pada halaman publik.</p></div></div><div className={styles.fields}><div className={styles.notice}><strong>Informasi resmi SARSIP</strong>Periksa kembali penulisan dan kontak sebelum menyimpan.</div>{message&&<p role="status" className={styles.success}>{message}</p>}{error&&<p role="alert" className={styles.error}>{error}</p>}<button disabled={busy||uploading} className={styles.primary}><Save size={15}/>{uploading?"Menunggu upload…":busy?"Menyimpan…":"Simpan profil"}</button></div></section></aside>
   </form>;
 }
-

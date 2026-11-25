@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "./Admin.module.css";
 import { MobileSidebar } from "@/components/admin-shell/MobileSidebar";
 import { SarsipSidebar } from "@/modules/sarsip/components/admin/SarsipSidebar";
 import { SarsipTopbar } from "@/modules/sarsip/components/admin/SarsipTopbar";
@@ -18,8 +19,8 @@ export function SarsipAdminShellChrome({
   function closeMobileSidebar() { setMobileOpen(false); }
 
   return (
-    <div className="dark relative flex h-dvh overflow-hidden text-foreground">
-      <AdminGradientBackground glow="16,185,129" />
+    <div className={`${styles.shell} dark relative flex h-dvh overflow-hidden text-foreground`} data-sarsip-admin>
+      <AdminGradientBackground glow="247,150,51" />
       <div className="relative z-10 hidden shrink-0 lg:block">
         <SarsipSidebar userName={userName} />
       </div>

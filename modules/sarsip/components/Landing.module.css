@@ -1,5 +1,6 @@
-.site { --sar-green: #73ae43; --sar-orange: #f79633; --sar-ink: #0c1107; background: #f8fafc; color: #0f172a; }
-.home { background: #f8fafc; color: #0f172a; }
+.site { --sar-green: #73ae43; --sar-orange: #f79633; --sar-ink: #0c1107; background: #fff; color: #0f172a; }
+.home { background: #fff; color: #0f172a; }
+.beneficiariesSection { scroll-margin-top: 8rem; background: #fff; border-top: 1px solid #f0ece5; }
 .hero { position: relative; overflow: hidden; background: #0c1107; color: white; }
 .heroBackdrop { object-fit: cover; opacity: .16; }
 .topography { pointer-events: none; position: absolute; inset: 0; width: 100%; height: 100%; color: #d5e7c7; opacity: .13; }
@@ -28,7 +29,7 @@
 .trustStrip p { margin-top: .35rem; color: #64748b; font-size: .74rem; line-height: 1.7; }
 .sectionInner { max-width: 1152px; margin: auto; padding: 3.5rem 2rem; }
 .entrySection { scroll-margin-top: 6rem; border-bottom: 1px solid #e2e8f0; background: white; }
-.entrySection:nth-of-type(odd) { background: #f1f4ed; }
+.entrySection:nth-of-type(odd) { background: #fffdf9; }
 .sectionHeading { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.8rem; }
 .sectionHeading > div { max-width: 660px; }
 .eyebrow { color: #4e762e; font-size: .68rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
@@ -38,7 +39,7 @@
 .outline:hover { border-color: #73ae43; background: #f2f8ec; }
 .entryGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.15rem; }
 .empty { padding: 1.5rem; border: 1px dashed #cbd5e1; border-radius: 12px; color: #64748b; font-size: .85rem; background: white; }
-.card { display: flex; flex-direction: column; overflow: hidden; min-width: 0; border: 1px solid #e2e8f0; border-radius: 15px; background: #fff; box-shadow: 0 2px 5px #0f172a04; transition: transform .2s, box-shadow .2s; }
+.card { display: flex; flex-direction: column; overflow: hidden; min-width: 0; border: 0; border-radius: 15px; background: #fff; box-shadow: 0 4px 20px #0f172a08; transition: transform .2s, box-shadow .2s; }
 .card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px #0f172a0c; }
 .cardVisual { position: relative; display: flex; align-items: center; justify-content: center; aspect-ratio: 16/9; overflow: hidden; background: #1c2a10; }
 .cardVisual > img { object-fit: cover; transition: transform .4s; }
@@ -59,7 +60,7 @@
 .campaignAmounts strong { color: #4e762e; font-size: .9rem; overflow-wrap: anywhere; }
 .campaignSummary > p { margin-top: .4rem; font-size: .7rem; color: #64748b; }
 .readMore { margin-top: auto; padding-top: .4rem; color: #4e762e; font-size: .78rem; font-weight: 650; }
-.home > section[id="penerima-manfaat"] { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.home > section[id="penerima-manfaat"] { background: #fff; border-bottom: 1px solid #f0ece5; }
 .home > section[id="penerima-manfaat"] > div { padding-top: 3.5rem; padding-bottom: 3.5rem; }
 .home > section[id="penerima-manfaat"] h2 { font-size: clamp(1.65rem, 2.7vw, 2.15rem); }
 .home > section[id="penerima-manfaat"] > div > p:first-child { color: #4e762e; font-size: .68rem; }
@@ -167,7 +168,7 @@
 .eyebrow, .card:hover h3, .cardLocation svg, .campaignAmounts strong, .readMore { color: #a85d21; }
 .progress { background: #f9e7d1; }
 .progress > div { background: #f79633; }
-.entrySection:nth-of-type(odd) { background: #faf7f2; }
+.entrySection:nth-of-type(odd) { background: #fffdf9; }
 .outline { color: #98551e; border-color: #efd8bd; }
 .outline:hover, .sectionFooter .outline { background: #fff0df; border-color: #f4dec4; }
 .sectionFooter .outline:hover { background: #ffe4c4; }

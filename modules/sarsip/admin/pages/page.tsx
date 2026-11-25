@@ -34,9 +34,9 @@ export default async function SarsipDashboardPage() {
   const totals = analytics.totals;
   return (
     <div className="flex min-w-0 flex-col gap-5">
-      <AdminPageHeader title="Dashboard" description="Ringkasan aktivitas SARSIP — kegiatan SAR, campaign donasi, dan dukungan masyarakat." />
+      <AdminPageHeader title="Dashboard" description="Ringkasan campaign, bantuan, donatur, dan transaksi SARSIP." />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <DashboardStatCard
           icon="fund"
           label="Donasi Bulan Ini"
@@ -46,11 +46,7 @@ export default async function SarsipDashboardPage() {
         <DashboardStatCard icon="campaign" label="Campaign Terbuka" value={String(formatNumericText(counts.openCampaigns))} />
         <DashboardStatCard icon="donors" label="Total Donatur" value={String(formatNumericText(counts.totalDonors))} hint="Akumulasi transaksi lunas" />
         <DashboardStatCard icon="pending" label="Transaksi Menunggu" value={String(formatNumericText(counts.pendingTransactions))} hint="Perlu ditinjau di Kelola Transaksi" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <DashboardStatCard icon="applicant" label="Kegiatan Aktif" value={String(formatNumericText(counts.activeActivities))} />
-        <DashboardStatCard icon="beneficiaries" label="Penerima Manfaat" value={String(formatNumericText(counts.totalBeneficiaries))} />
+        <DashboardStatCard icon="beneficiaries" label="Bantuan" value={String(formatNumericText(counts.totalBeneficiaries))} hint="Catatan penerima bantuan" />
       </div>
 
       <DashboardCharts periods={analytics.periods} moduleSource="sarsip" />

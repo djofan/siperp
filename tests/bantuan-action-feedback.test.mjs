@@ -25,7 +25,7 @@ function text(tree) {
   return Array.isArray(tree) ? tree.map(text).join('') : text(tree.props?.children);
 }
 
-function mount({ status = 'review1', role = 'approver', values = {}, controls = [], request, detail = {} } = {}) {
+function mount({ status = 'review1', role = 'approver', values = {}, controls = [], request, detail = {}, editorRef } = {}) {
   const hooks = [], effects = [], frames = new Map(), cache = new Map(), requests = [];
   let cursor = 0, frameId = 0, tree;
   const form = { elements: controls, values, reset() { this.values = {}; } }, region = target(), summary = target();
@@ -34,6 +34,7 @@ function mount({ status = 'review1', role = 'approver', values = {}, controls = 
     useRef(value) { const i = cursor++; return hooks[i] ??= { current: value }; },
     useState(value) { const i = cursor++; if (!(i in hooks)) hooks[i] = typeof value === 'function' ? value() : value; return [hooks[i], next => { hooks[i] = typeof next === 'function' ? next(hooks[i]) : next; }]; },
     useCallback: fn => fn,
+    useImperativeHandle(ref, create) { if(ref) ref.current=create(); },
     useEffect(fn, deps) { const i = cursor++, old = hooks[i]; if (!old || deps.some((d, n) => d !== old.deps[n])) { old?.cleanup?.(); hooks[i] = { deps }; effects.push(() => { hooks[i].cleanup = fn(); }); } },
   };
   function load(file) {
@@ -68,7 +69,7 @@ function mount({ status = 'review1', role = 'approver', values = {}, controls = 
   if (role === 'approver') row.verifierId = 'other';
   Object.assign(row,detail);
   function render() {
-    cursor = 0; tree = ActionPanel({ viewer, row, staff: [], reload() {} });
+    cursor = 0; tree = ActionPanel({ viewer, row, staff: [], reload() {}, ref: editorRef });
     for (const node of nodes(tree)) {
       if (!node.props?.ref) continue;
       node.props.ref.current = node.type === 'form' ? form : node.props.role === 'alert' ? summary : region;
@@ -258,4 +259,20 @@ test('stage-one decision makers can edit and reopen only eligible rejected intak
     const app=mount({role,status,detail});
     assert.equal(app.find(n=>n.type==='button'&&text(n).startsWith('Buka kembali pengajuan')),undefined);
   }
+});
+
+
+test('amount summary shortcut opens the existing correction form only while authorized and before funding submission',()=>{
+ for(const status of ['approved','fund_ready']){
+  const editorRef={current:null};const app=mount({status,role:'approver',editorRef,detail:{amount:2500000}});
+  assert.equal(app.actionForm(),undefined);
+  editorRef.current.openAmountEditor(target());app.render();app.flush();
+  assert.ok(app.actionForm());assert.ok(app.find(n=>n.props?.['data-action']==='revise_amount'));
+  assert.equal(app.requests.length,0,'Opening the editor must not save any change');
+ }
+ for(const detail of [{fundingRequest:{id:'group'}},{createdBy:'actor'},{verifierId:'actor'}]){
+  const editorRef={current:null};const app=mount({status:'fund_ready',role:'approver',editorRef,detail});
+  editorRef.current.openAmountEditor(target());app.render();assert.equal(app.actionForm(),undefined);
+ }
+ const editorRef={current:null};const app=mount({status:'fund_submitted',role:'approver',editorRef});editorRef.current.openAmountEditor(target());app.render();assert.equal(app.actionForm(),undefined);
 });
