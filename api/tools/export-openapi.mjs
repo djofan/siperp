@@ -469,9 +469,19 @@ for (const [path, method] of [['/api/v1/academy/admin/materials','post'],['/api/
   };
 }
 document['x-academy-material-pdfs'] = {listing:'Material listing _count.pdfs counts PDF attachments alongside existing _count.attachments. File links are disclosed only in authorized detail/admin contexts.',access:'Existing private file endpoint and enrollment/release checks remain unchanged.'};
+document.paths['/api/v1/academy/courses/{courseId}/questions'] = {post:{
+  tags:['Academy'],summary:'Submit a private question with a topic title',
+  description:'Authenticated participant with active profile after initial password change and enrolled in the selected course. New questions require title (3–191 characters) and question (10–3000). The owner is always resolved from the signed-in user; supplied profile/user IDs never select another account. Existing untitled questions remain unchanged. Titles remain private under the same discussion authorization.',
+  security:[{bearerAuth:[]}],parameters:[{name:'courseId',in:'path',required:true,schema:{type:'string'}}],
+  requestBody:{required:true,content:json({type:'object',required:['title','question'],properties:{title:{type:'string',minLength:3,maxLength:191},question:{type:'string',minLength:10,maxLength:3000}}})},
+  responses:{200:{description:'Question saved'},401:error,403:error,404:error,422:error},
+}};
+for (const suffix of ['learning/discussions','learning/discussions/{id}','teacher/questions','teacher/questions/{id}']) {
+  document.paths['/api/v1/academy/'+suffix].get.description += ' Each discussion includes title (string or null for legacy records); title never changes the ownership/access rules.';
+}
 const academyOwnProfile = {
-  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender','cohortName'],
-  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]},cohortName:{type:['string','null'],description:'Assigned cohort title only; read-only.'}},
+  type:'object',additionalProperties:false,required:['name','code','email','nis','phone','address','gender','cohortName','profession','expertise'],
+  properties:{name:{type:'string'},code:{type:['string','null']},email:{type:['string','null']},nis:{type:['string','null']},phone:{type:['string','null']},address:{type:['string','null']},profession:{type:['string','null'],maxLength:191},expertise:{type:['string','null'],maxLength:1000},gender:{type:['string','null'],enum:['IKHWAN','AKHWAT',null]},cohortName:{type:['string','null'],description:'Assigned cohort title only; read-only.'}},
 };
 document.paths['/api/v1/academy/profile'] = {get:{
   tags:['Academy'], summary:'Read the signed-in participant profile',
@@ -479,9 +489,9 @@ document.paths['/api/v1/academy/profile'] = {get:{
   security:[{bearerAuth:[]}], responses:{200:{description:'Own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error},
 }};
 document.paths['/api/v1/academy/profile'].put = {
-  tags:['Academy'],summary:'Update own participant name, email, phone and address',
-  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Own Core user name/email and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
-  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address'],properties:{name:{type:'string',minLength:2,maxLength:100},email:{type:'string',format:'email',maxLength:191},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000}}})},
+  tags:['Academy'],summary:'Update own participant contact details, profession and expertise',
+  description:'Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, profession, expertise, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Profession is required (2–191 characters) on every update; expertise optional/nullable (max 1000), omitted preserves current value, empty/null clears it. Existing accounts may have null profession until saved. Own Core user name/email and Academy contact/professional fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.',
+  security:[{bearerAuth:[]}],requestBody:{required:true,content:json({type:'object',additionalProperties:false,required:['name','phone','address','profession'],properties:{name:{type:'string',minLength:2,maxLength:100},email:{type:'string',format:'email',maxLength:191},phone:{type:'string',description:'Indonesian mobile number, normalized to ^628[0-9]{7,12}$.'},address:{type:'string',maxLength:2000},profession:{type:'string',minLength:2,maxLength:191},expertise:{type:['string','null'],maxLength:1000}}})},
   responses:{200:{description:'Updated own profile',content:json({type:'object',required:['data'],properties:{data:academyOwnProfile}})},401:error,403:error,404:error,422:error},
 };
 document.paths['/api/v1/bantuan/applications/{id}/actions/survey_revise'] = {post:{tags:['Bantuan'],summary:'Reopen the assigned verifier survey for correction',description:'Only the assigned verifier, from survey_cc_review or survey_submitted before amount approval. Returns to survey_assigned, preserves survey data and evidence, and requires resubmission through Call Center review. Version locking prevents concurrent decisions.',security:[{bearerAuth:[]}],parameters:[{name:'id',in:'path',required:true,schema:{type:'string'}}],requestBody:{required:true,content:json({type:'object',required:['version'],properties:{version:{type:'integer',minimum:1}}})},responses:{200:{description:'Survey reopened with preserved evidence'},403:error,404:error,409:error,422:error}}};

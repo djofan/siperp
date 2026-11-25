@@ -66,7 +66,7 @@ export default async function LoginPage() {
                 <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#73AE43]" />
                 <div>
                   <p className="text-sm font-semibold text-white">{module.name}</p>
-                  {module.description && (
+                  {module.description && !["keuangan", "bantuan", "rapat"].includes(module.slug) && (
                     <p className="text-xs text-[#B8BCC4]">{module.description}</p>
                   )}
                 </div>

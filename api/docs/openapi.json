@@ -6659,7 +6659,7 @@
     "/api/v1/academy/teacher/questions": {
       "get": {
         "summary": "List teacher discussions with pagination",
-        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
+        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Each discussion includes title (string or null for legacy records); title never changes the ownership/access rules. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "view",
@@ -6731,7 +6731,7 @@
     "/api/v1/academy/teacher/questions/{id}": {
       "get": {
         "summary": "Read private teacher discussion detail",
-        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
+        "description": "Teacher/admin only. Detail includes question, answer, dates, participant name and cohort/program metadata. List view=table returns items,page,pages,total at 10 per page, unanswered first. Legacy list response remains without view=table. Each discussion includes title (string or null for legacy records); title never changes the ownership/access rules. Legacy URL retained for admin components only; the teacher role has been retired. Requires Academy admin or Superadmin.",
         "parameters": [
           {
             "name": "id",
@@ -6792,7 +6792,7 @@
     "/api/v1/academy/learning/discussions": {
       "get": {
         "summary": "List own participant discussions",
-        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise.",
+        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise. Each discussion includes title (string or null for legacy records); title never changes the ownership/access rules.",
         "parameters": [
           {
             "name": "view",
@@ -6864,7 +6864,7 @@
     "/api/v1/academy/learning/discussions/{id}": {
       "get": {
         "summary": "Read own participant discussion",
-        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise.",
+        "description": "Active participant profile required. Only own discussions in enrolled published courses are returned; foreign detail IDs return 404. view=table returns questions as items,page,pages,total at 10 per page alongside existing enrollments/session metadata. Legacy list response preserved otherwise. Each discussion includes title (string or null for legacy records); title never changes the ownership/access rules.",
         "parameters": [
           {
             "name": "id",
@@ -10353,6 +10353,101 @@
         }
       }
     },
+    "/api/v1/academy/courses/{courseId}/questions": {
+      "post": {
+        "tags": [
+          "Academy"
+        ],
+        "summary": "Submit a private question with a topic title",
+        "description": "Authenticated participant with active profile after initial password change and enrolled in the selected course. New questions require title (3–191 characters) and question (10–3000). The owner is always resolved from the signed-in user; supplied profile/user IDs never select another account. Existing untitled questions remain unchanged. Titles remain private under the same discussion authorization.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "courseId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "question"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 191
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 10,
+                    "maxLength": 3000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Question saved"
+          },
+          "401": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request rejected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/academy/profile": {
       "get": {
         "tags": [
@@ -10387,7 +10482,9 @@
                         "phone",
                         "address",
                         "gender",
-                        "cohortName"
+                        "cohortName",
+                        "profession",
+                        "expertise"
                       ],
                       "properties": {
                         "name": {
@@ -10422,6 +10519,20 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "profession": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        },
+                        "expertise": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 1000
                         },
                         "gender": {
                           "type": [
@@ -10484,8 +10595,8 @@
         "tags": [
           "Academy"
         ],
-        "summary": "Update own participant name, email, phone and address",
-        "description": "Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Own Core user name/email and Academy contact fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.",
+        "summary": "Update own participant contact details, profession and expertise",
+        "description": "Authenticated active participant after initial password change. Strict allowlist rejects every field except name, email, phone, address, profession, expertise, including selectors, cohort, gender and account/participant codes. Email is optional for legacy clients; when sent it must be nonempty RFC email, maximum 191 characters, normalized to lowercase without surrounding spaces, and unique across accounts (case insensitive, excluding self). Profession is required (2–191 characters) on every update; expertise optional/nullable (max 1000), omitted preserves current value, empty/null clears it. Existing accounts may have null profession until saved. Own Core user name/email and Academy contact/professional fields are saved atomically; password, identifiers and memberships are preserved. Indonesian phone prefixes 08/+628/628 and spaces/hyphens normalize to 628 digits. Returns updated own profile with no-store, private.",
         "security": [
           {
             "bearerAuth": []
@@ -10501,7 +10612,8 @@
                 "required": [
                   "name",
                   "phone",
-                  "address"
+                  "address",
+                  "profession"
                 ],
                 "properties": {
                   "name": {
@@ -10521,6 +10633,18 @@
                   "address": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "profession": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 191
+                  },
+                  "expertise": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
                   }
                 }
               }
@@ -10549,7 +10673,9 @@
                         "phone",
                         "address",
                         "gender",
-                        "cohortName"
+                        "cohortName",
+                        "profession",
+                        "expertise"
                       ],
                       "properties": {
                         "name": {
@@ -10584,6 +10710,20 @@
                             "string",
                             "null"
                           ]
+                        },
+                        "profession": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 191
+                        },
+                        "expertise": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 1000
                         },
                         "gender": {
                           "type": [

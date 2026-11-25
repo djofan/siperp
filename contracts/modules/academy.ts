@@ -23,6 +23,8 @@ export interface ZakatAcademyProfile {
   nis: string | null;
   phone: string | null;
   address: string | null;
+  profession: string | null;
+  expertise: string | null;
   gender: ZakatAcademyGender | null;
   image: string | null;
   legacyCertificateUrl: string | null;
@@ -167,6 +169,7 @@ export interface AcademyDiscussion {
   id: string;
   courseId: string;
   profileId: string;
+  title: string | null;
   question: string;
   answer: string | null;
   createdAt: Date;
@@ -248,7 +251,7 @@ export interface AcademyTeacherExamList extends Omit<AcademyTeacherMaterialList,
 export type AcademyTeacherExamScope = { kind: "DAILY"; chapterId: string; courseId?: string } | { kind: "WEEKLY" | "FINAL"; courseId: string; chapterId?: string };
 
 export interface AcademyTeacherDiscussion {
-  id: string; question: string; answer: string | null;
+  id: string; title: string | null; question: string; answer: string | null;
   createdAt: string; answeredAt: string | null;
   profile: { user: { name: string } };
   course: { title: string; cohort: { id: string; title: string } | null };

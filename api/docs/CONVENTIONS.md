@@ -1,5 +1,16 @@
 # Konvensi REST API Siperp
 
+Tanya Ustadz Academy: POST `/academy/courses/{courseId}/questions` mewajibkan
+`title` (3–191 karakter) selain `question` (10–3000). Daftar/detail peserta dan
+admin mengembalikan title; null pada pertanyaan lama, tanpa backfill buatan.
+GET `/academy/profile` menambahkan `profession` dan `expertise` milik sendiri.
+PUT profile mewajibkan profession (2–191); expertise opsional/nullable maksimal
+1000, omisi mempertahankan nilai, kosong/null menghapus keahlian. Hanya profil
+sendiri, allowlist dan penyimpanan akun/profil atomik tetap berlaku. Tidak ada
+penguncian akses belajar bagi akun lama yang profesinya belum diisi. Migration
+`2026_11_25_000001_add_academy_question_title_and_profile_details` hanya menambah
+kolom nullable; data/import lama tetap dapat dibaca tanpa isian palsu.
+
 Rapat kini hanya menyediakan rekaman dan transkrip. Metadata serta peserta opsional;
 create tanpa judul/tanggal memakai judul otomatis dan tanggal Asia/Jakarta, update
 kosong mempertahankan judul/tanggal lama, baris peserta kosong diabaikan. Tidak

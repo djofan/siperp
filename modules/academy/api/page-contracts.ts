@@ -241,6 +241,7 @@ export type AcademyPage5 = {
         createdAt: Date;
         profileId: string;
         courseId: string;
+        title: string | null;
         question: string;
         answer: string | null;
         answeredAt: Date | null;
@@ -249,6 +250,7 @@ export type AcademyPage5 = {
         createdAt: Date;
         profileId: string;
         courseId: string;
+        title: string | null;
         question: string;
         answer: string | null;
         answeredAt: Date | null;
@@ -478,6 +480,7 @@ export type AcademyPage13 = {
         course: {
             title: string;
         };
+        title: string | null;
         question: string;
         answer: string | null;
     }[] | {
@@ -490,6 +493,7 @@ export type AcademyPage13 = {
         course: {
             title: string;
         };
+        title: string | null;
         question: string;
         answer: string | null;
     }[];

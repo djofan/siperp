@@ -15,9 +15,11 @@ use App\Modules\Academy\Services\AcademyContext;
 use App\Modules\Academy\Services\CohortLearning;
 use App\Modules\Core\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class LearningController
 {
@@ -76,6 +78,7 @@ class LearningController
             'name' => $request->user()->name, 'code' => $request->user()->code,
             'email' => $request->user()->email, 'nis' => $profile->nis,
             'phone' => $profile->phone, 'address' => $profile->address, 'gender' => $profile->gender,
+            'profession' => $profile->profession, 'expertise' => $profile->expertise,
             'cohortName' => $profile->cohort?->title,
         ]])->header('Cache-Control', 'no-store, private');
     }
@@ -83,9 +86,9 @@ class LearningController
     public function updateAccount(Request $request)
     {
         $this->context->profile($request);
-        if (array_diff(array_keys($request->all()), ['name', 'email', 'phone', 'address'])) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'profile' => 'Hanya nama, email, nomor HP, dan alamat yang dapat diubah.',
+        if (array_diff(array_keys($request->all()), ['name', 'email', 'phone', 'address', 'profession', 'expertise'])) {
+            throw ValidationException::withMessages([
+                'profile' => 'Hanya nama, email, nomor HP, alamat, profesi, dan keahlian yang dapat diubah.',
             ]);
         }
         if (is_string($request->input('email'))) {
@@ -102,7 +105,10 @@ class LearningController
             'email' => 'sometimes|required|string|email:rfc|max:191',
             'phone' => ['required', 'string', 'regex:/^628\d{7,12}$/'],
             'address' => 'required|string|max:2000',
+            'profession' => 'required|string|min:2|max:191',
+            'expertise' => 'sometimes|nullable|string|max:1000',
         ], [
+            'profession.required' => 'Profesi wajib diisi.',
             'phone.regex' => 'Gunakan nomor HP Indonesia yang valid, diawali 08, 628, atau +628.',
         ]);
         try {
@@ -113,7 +119,7 @@ class LearningController
                 abort_if($profile->mustChangePassword, 403, 'Ganti password awal sebelum melanjutkan.');
                 if (array_key_exists('email', $data)) {
                     if (User::whereRaw('LOWER(email) = ?', [$data['email']])->where('id', '!=', $user->id)->exists()) {
-                        throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+                        throw ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
                     }
                     $user->email = $data['email'];
                 }
@@ -121,10 +127,14 @@ class LearningController
                 $user->save();
                 $profile->phone = $data['phone'];
                 $profile->address = $data['address'];
+                $profile->profession = $data['profession'];
+                if (array_key_exists('expertise', $data)) {
+                    $profile->expertise = $data['expertise'];
+                }
                 $profile->save();
             }, 3);
-        } catch (\Illuminate\Database\UniqueConstraintViolationException $exception) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
+        } catch (UniqueConstraintViolationException $exception) {
+            throw ValidationException::withMessages(['email' => 'Email sudah digunakan oleh akun lain.']);
         }
         $request->user()->refresh();
 
@@ -185,11 +195,14 @@ class LearningController
     public function ask(Request $request, string $courseId)
     {
         $profile = $this->context->profile($request);
-        $data = $request->validate(['question' => 'required|string|min:10|max:3000']);
+        $data = $request->validate(['title' => 'required|string|min:3|max:191', 'question' => 'required|string|min:10|max:3000'], [
+            'title.required' => 'Judul pertanyaan wajib diisi.',
+        ]);
         Enrollment::where('profile_id', $profile->id)->where('course_id', $courseId)->firstOrFail();
         $row = new Discussion;
         $row->profileId = $profile->id;
         $row->courseId = $courseId;
+        $row->title = $data['title'];
         $row->question = $data['question'];
         $row->save();
 
