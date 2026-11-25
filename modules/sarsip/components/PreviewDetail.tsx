@@ -1,7 +1,7 @@
 import { SarsipGallery } from "./SarsipGallery";
 import { previewGallery } from "./landingPreview";
 import Image from "next/image";
-import Link from "next/link";
+import { SarsipDetailLink as Link } from "./DetailNavigation";
 import { money } from "@/modules/sarsip/api/data";
 import { previewEntries, previewBeneficiaries } from "./landingPreview";
 import { notFound } from "next/navigation";

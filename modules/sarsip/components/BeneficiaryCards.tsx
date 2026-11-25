@@ -3,7 +3,7 @@
 import styles from "./Landing.module.css";
 
 import Image from "next/image";
-import Link from "next/link";
+import { SarsipDetailLink as Link } from "./DetailNavigation";
 
 type Row = { id: string; publicName: string | null; category: string; amount: number; image: string | null; isPreview?: boolean };
 export function BeneficiaryCards({ rows, limit }: { rows: Row[]; limit?: number }) {

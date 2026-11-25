@@ -1,18 +1,23 @@
 import Link from "next/link";
+import { DetailBackLink } from "./DetailNavigation";
 import { money } from "@/modules/sarsip/api/data";
 import styles from "./Detail.module.css";
 export function DetailLayout({ title, kind, preview = false, children, sidebar, related, gallery }: { title: string; kind: string; preview?: boolean; children: React.ReactNode; sidebar: React.ReactNode; related?: React.ReactNode; gallery?: React.ReactNode }) {
+  const isAssistance = kind === "penerima-manfaat";
+  const kindLabel = isAssistance ? "bantuan" : kind;
+  const listingHref = isAssistance ? "/sarsip/penerima-manfaat" : preview || kind === "campaign" ? `/sarsip#${kind}` : `/sarsip/${kind}`;
   return <div className={styles.page}>
-    <nav className={styles.breadcrumb} aria-label="Navigasi detail"><Link href="/sarsip">← Beranda</Link><span aria-hidden="true">/</span><Link href={preview || kind === "campaign" ? `/sarsip#${kind}` : `/sarsip/${kind}`}>Semua {kind}</Link></nav>
+    <nav className={styles.breadcrumb} aria-label="Navigasi detail"><DetailBackLink kind={kind}/><span aria-hidden="true">/</span><Link href={listingHref}>Semua {kindLabel}</Link></nav>
     {preview && <p className={styles.notice}>Pratinjau desain · Cerita, foto, dan nominal merupakan contoh. Pembayaran tidak diaktifkan.</p>}
-    <header className={styles.heading}><p>SARSIP / {kind}</p><h1>{title}</h1></header>
-    <div className={`${styles.columns} ${kind === "campaign" ? styles.campaign : ""}`}>
+    <header className={styles.heading}><p>SARSIP / {kindLabel}</p><h1>{title}</h1></header>
+    {isAssistance && <aside className={styles.assistanceSummary} aria-label="Ringkasan bantuan">{sidebar}</aside>}
+    <div className={`${styles.columns} ${kind === "campaign" ? styles.campaign : kind === "berita" || isAssistance ? styles.news : ""}`}>
       {kind === "campaign" && <aside className={styles.sidebar} aria-label="Form donasi SARSIP">{sidebar}</aside>}
       <article className={styles.article}>{children}</article>
-      {kind !== "campaign" && <aside className={styles.sidebar} aria-label="Informasi terkait">{sidebar}</aside>}
+      {kind !== "campaign" && kind !== "berita" && !isAssistance && <aside className={styles.sidebar} aria-label="Informasi terkait">{sidebar}</aside>}
     </div>
     {gallery}
-    {related && <section className={styles.related}><h2>{kind === "campaign" ? "Campaign lainnya" : "Jelajahi kabar dan kegiatan tim"}</h2>{related}</section>}
+    {related && <section className={styles.related}><h2>{kind === "campaign" ? "Campaign lainnya" : "Berita lainnya"}</h2>{related}</section>}
   </div>;
 }
 export function CampaignSummary({ current, target, preview = false }: { current: number; target: number; preview?: boolean }) {

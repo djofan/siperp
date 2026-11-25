@@ -32,7 +32,7 @@ export default async function DetailPage({ params }: { params: Promise<{ kind: s
   return <DetailLayout title={entry.title} kind={kind}
     gallery={<SarsipGallery photos={entry.gallery ?? []} title={entry.title} kind={isCampaign ? "campaign" : kind === "berita" ? "news" : "activity"}/>}
     sidebar={isCampaign ? entry.status === "published" ? <DonationForm campaignId={id} methods={methods}/> : <div className={styles.infoBox}><h2>Campaign selesai</h2><p>Terima kasih atas dukungan Anda. Donasi untuk campaign ini sudah ditutup.</p><Link href="/sarsip#campaign">Lihat campaign lainnya →</Link></div> : related}
-    related={isCampaign ? related : undefined}>
+    related={isCampaign || kind === "berita" ? related : undefined}>
     <div className={styles.meta}>{entry.location && <span>{entry.location}</span>}{entry.eventDate && <time dateTime={entry.eventDate.toISOString()}>{entry.eventDate.toLocaleDateString("id-ID", { dateStyle: "long", timeZone: "Asia/Jakarta" })}</time>}</div>
     {entry.image && <Image src={entry.image} alt={entry.title} width={1000} height={650} unoptimized sizes="(max-width: 900px) 100vw, 60vw"/>}
     {isCampaign && <CampaignSummary current={entry.currentAmount} target={entry.targetAmount}/>}

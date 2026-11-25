@@ -1,5 +1,5 @@
 import { formatNumericText } from "@/lib/number-format";
-import Link from "next/link";
+import { SarsipDetailLink as Link } from "./DetailNavigation";
 import Image from "next/image";
 import { MapPin, LifeBuoy } from "lucide-react";
 import { money } from "@/modules/sarsip/api/data";
