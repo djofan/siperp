@@ -236,12 +236,12 @@ class PageDataController
 
         if ($request->query('view') === 'table') {
             $input = $request->validate(['page' => 'sometimes|integer|min:1|max:100000']);
-            $result = AcademyDto::page(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->orderByRaw('CASE WHEN answered_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('created_at')->orderBy('id'), (int) ($input['page'] ?? 1), 10);
+            $result = AcademyDto::page(Discussion::select('id', 'title', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->orderByRaw('CASE WHEN answered_at IS NULL THEN 0 ELSE 1 END')->orderByDesc('created_at')->orderBy('id'), (int) ($input['page'] ?? 1), 10);
 
             return $this->data($result);
         }
 
-        return $this->data(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title')->orderBy('answered_at')->orderByDesc('created_at')->take(100)->get());
+        return $this->data(Discussion::select('id', 'title', 'question', 'answer', 'profile_id', 'course_id')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title')->orderBy('answered_at')->orderByDesc('created_at')->take(100)->get());
     }
 
     public function teacherSessions(Request $request)
@@ -258,7 +258,7 @@ class PageDataController
     {
         $this->context->teacher($request);
 
-        return $this->data(Discussion::select('id', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->findOrFail($id));
+        return $this->data(Discussion::select('id', 'title', 'question', 'answer', 'profile_id', 'course_id', 'created_at', 'answered_at')->with('profile:id,user_id', 'profile.user:id,name', 'course:id,title,cohort_id', 'course.cohort:id,title')->findOrFail($id));
     }
 
     public function teacherGrades(Request $request)

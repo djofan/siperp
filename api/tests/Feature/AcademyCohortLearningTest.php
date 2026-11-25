@@ -379,8 +379,8 @@ it('keeps participant discussion tables and detail private to their owner', func
     Sanctum::actingAs($owner->user);
     $this->getJson('/api/v1/academy/learning/discussions?view=table')->assertSuccessful()->assertJsonPath('data.questions.total', 1);
     $this->getJson('/api/v1/academy/learning/discussions/'.$row->id)->assertSuccessful()->assertJsonPath('data.answer', 'Private answer');
-    $this->postJson('/api/v1/academy/courses/'.$chapter->courseId.'/questions', ['question' => 'New participant question'])->assertSuccessful();
-    $this->postJson('/api/v1/academy/courses/'.$chapter->courseId.'/questions', ['question' => 'short'])->assertUnprocessable();
+    $this->postJson('/api/v1/academy/courses/'.$chapter->courseId.'/questions', ['title' => 'Judul pertanyaan peserta', 'question' => 'New participant question'])->assertSuccessful();
+    $this->postJson('/api/v1/academy/courses/'.$chapter->courseId.'/questions', ['title' => 'Judul pertanyaan peserta', 'question' => 'short'])->assertUnprocessable();
     Sanctum::actingAs($other->user);
     $this->getJson('/api/v1/academy/learning/discussions?view=table')->assertJsonPath('data.questions.total', 0);
     $this->getJson('/api/v1/academy/learning/discussions/'.$row->id)->assertNotFound()->assertJsonMissingPath('data.answer');

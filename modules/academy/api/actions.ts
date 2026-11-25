@@ -64,6 +64,7 @@ export async function updateAcademyProfile(_: ActionState, form: FormData): Prom
     await requireAcademyProfile();
     const result = await mutate("academy/profile", {
         name: String(form.get("name") ?? ""), email: String(form.get("email") ?? ""), phone: String(form.get("phone") ?? ""), address: String(form.get("address") ?? ""),
+        profession: String(form.get("profession") ?? ""), expertise: String(form.get("expertise") ?? ""),
     }, "PUT");
     return result.error ? result : { ...result, message: "Profil berhasil diperbarui." };
 }

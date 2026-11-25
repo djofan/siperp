@@ -22,10 +22,10 @@ export default async function QuestionsPage({ searchParams }: { searchParams: Pr
     <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white" aria-label="Pertanyaan saya">
       <div className="border-b border-gray-100 p-5"><h2 className="font-semibold">Pertanyaan saya</h2><p className="mt-1 text-sm text-gray-500">Hanya pertanyaan milik Anda yang ditampilkan.</p></div>
       <div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm">
-        <thead className="bg-gray-50 text-gray-600"><tr>{["No.", "Angkatan / Program", "Pertanyaan", "Tanggal (WIB)", "Status", "Aksi"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
+        <thead className="bg-gray-50 text-gray-600"><tr>{["No.", "Angkatan / Program", "Judul & pertanyaan", "Tanggal (WIB)", "Status", "Aksi"].map(label => <th scope="col" key={label} className="px-4 py-3 font-medium">{label}</th>)}</tr></thead>
         <tbody className="divide-y divide-gray-100">{questions.items.map((question, index) => <tr key={question.id} className="hover:bg-gray-50">
           <td className="px-4 py-4 text-gray-500">{formatNumericText((questions.page - 1) * 10 + index + 1)}</td><td className="px-4 py-4">{question.course.cohort?.title ?? question.course.title}</td>
-          <td className="max-w-sm px-4 py-4"><p className="line-clamp-3 break-words">{question.question}</p></td>
+          <td className="max-w-sm px-4 py-4"><p className="break-words font-semibold">{question.title || "Pertanyaan tanpa judul"}</p><p className="mt-1 line-clamp-2 break-words text-gray-500">{question.question}</p></td>
           <td className="px-4 py-4 text-xs">{new Date(question.createdAt).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })}</td>
           <td className="px-4 py-4"><span className={`inline-block rounded-full px-2.5 py-1 text-xs ${question.answer ? "bg-green-50 text-green-700" : "bg-amber-50 text-amber-800"}`}>{question.answer ? "Sudah dijawab" : "Menunggu jawaban"}</span></td>
           <td className="px-4 py-4"><Link href={`/academy/tanya-jawab/${question.id}?page=${questions.page}`} className="font-medium text-green-700 underline">{question.answer ? "Baca jawaban" : "Lihat pertanyaan"}</Link></td>

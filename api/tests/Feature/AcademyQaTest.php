@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\Academy\Models\AcademyCohort;
+use App\Modules\Academy\Models\AcademyDiscussion;
 use App\Modules\Academy\Models\ZakatAcademyEnrollment;
 use App\Modules\Academy\Models\ZakatAcademyLesson;
 use App\Modules\Academy\Models\ZakatAcademyProfile;
@@ -203,7 +204,7 @@ it('returns only the authenticated participants profile even when another user i
         ->assertJsonPath('data.name', $this->student->name)->assertJsonPath('data.nis', 'PAZ-QA')
         ->assertJsonPath('data.phone', '628123456789')->assertJsonPath('data.address', 'Alamat sendiri')
         ->assertJsonPath('data.cohortName', $this->cohort->title);
-    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender', 'cohortName'])
+    expect(array_keys($response->json('data')))->toBe(['name', 'code', 'email', 'nis', 'phone', 'address', 'gender', 'profession', 'expertise', 'cohortName'])
         ->and($response->getContent())->not->toContain('PRIVATE_OTHER', 'PRIVATE_ADDRESS', 'private-other@example.test', 'password_hash');
 });
 
@@ -216,7 +217,7 @@ it('updates only the own contact profile and preserves enrollment identifiers an
     $this->student->forceFill(['code' => 'PAZ001'])->save();
     $this->profile->forceFill(['gender' => 'IKHWAN'])->save();
     $beforePassword = $this->student->password_hash;
-    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama Baru', 'phone' => '0812-3456-7890', 'address' => 'Alamat baru'])
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama Baru', 'phone' => '0812-3456-7890', 'address' => 'Alamat baru', 'profession' => 'Guru'])
         ->assertOk()->assertHeader('Cache-Control', 'no-store, private')
         ->assertJsonPath('data.name', 'Nama Baru')->assertJsonPath('data.phone', '6281234567890')
         ->assertJsonPath('data.cohortName', $this->cohort->title);
@@ -231,20 +232,20 @@ it('updates only the own contact profile and preserves enrollment identifiers an
 
 it('rejects immutable fields and attempts to target other participant accounts atomically', function (string $field) {
     $before = $this->student->name;
-    $this->putJson('/api/v1/academy/profile', ['name' => 'Tidak boleh tersimpan', 'phone' => '6281234567890', 'address' => 'Alamat baru', $field => 'foreign-or-modified'])
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Tidak boleh tersimpan', 'phone' => '6281234567890', 'address' => 'Alamat baru', 'profession' => 'Guru', $field => 'foreign-or-modified'])
         ->assertUnprocessable();
     expect($this->student->fresh()->name)->toBe($before);
 })->with(['code', 'nis', 'gender', 'cohortId', 'cohortName', 'userId', 'profileId', 'password', 'is_superadmin']);
 
 it('rejects invalid contact input without partially updating the name', function (array $invalid) {
     $before = $this->student->name;
-    $this->putJson('/api/v1/academy/profile', array_replace(['name' => 'Nama valid', 'phone' => '6281234567890', 'address' => 'Alamat valid'], $invalid))
+    $this->putJson('/api/v1/academy/profile', array_replace(['name' => 'Nama valid', 'phone' => '6281234567890', 'address' => 'Alamat valid', 'profession' => 'Guru'], $invalid))
         ->assertUnprocessable();
     expect($this->student->fresh()->name)->toBe($before);
 })->with([[['name' => '']], [['phone' => 'abc081234567890']], [['phone' => '123']], [['address' => str_repeat('a', 2001)]]]);
 
 it('blocks profile updates before initial password change and after participant deletion', function () {
-    $input = ['name' => 'Nama baru', 'phone' => '+6281234567890', 'address' => 'Alamat baru'];
+    $input = ['name' => 'Nama baru', 'phone' => '+6281234567890', 'address' => 'Alamat baru', 'profession' => 'Guru'];
     $this->profile->forceFill(['mustChangePassword' => true])->save();
     $this->putJson('/api/v1/academy/profile', $input)->assertForbidden();
     $this->profile->forceFill(['mustChangePassword' => false, 'deletedAt' => now()])->save();
@@ -253,7 +254,7 @@ it('blocks profile updates before initial password change and after participant 
 
 it('requires authentication to update a participant profile', function () {
     $this->app['auth']->forgetGuards();
-    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama baru', 'phone' => '6281234567890', 'address' => 'Alamat baru'])->assertUnauthorized();
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Nama baru', 'phone' => '6281234567890', 'address' => 'Alamat baru', 'profession' => 'Guru'])->assertUnauthorized();
 });
 
 it('opens certificates for every enrolled participant only after all exam deadlines', function () {
@@ -450,7 +451,7 @@ it('lists all cohort participants with unique ordered ranks and isolates other c
 it('updates own email with normalization while preserving account identifiers and password', function () {
     $code = $this->student->code;
     $password = $this->student->password_hash;
-    $payload = ['name' => 'Updated name', 'email' => '  New.Academy@Example.test  ', 'phone' => '081234567890', 'address' => 'New address'];
+    $payload = ['name' => 'Updated name', 'email' => '  New.Academy@Example.test  ', 'phone' => '081234567890', 'address' => 'New address', 'profession' => 'Guru'];
     $this->putJson('/api/v1/academy/profile', $payload)->assertSuccessful()->assertHeader('Cache-Control', 'no-store, private')->assertJsonPath('data.email', 'new.academy@example.test');
     expect($this->student->fresh()->email)->toBe('new.academy@example.test')->and($this->student->fresh()->code)->toBe($code)->and($this->student->fresh()->password_hash)->toBe($password);
     $this->getJson('/api/v1/academy/profile')->assertSuccessful()->assertJsonPath('data.email', 'new.academy@example.test');
@@ -463,7 +464,7 @@ it('rejects invalid or duplicate email without partial profile updates', functio
     $name = $this->student->name;
     $original = $this->student->email;
     $phone = $this->profile->phone;
-    $this->putJson('/api/v1/academy/profile', ['name' => 'Must not persist', 'email' => $email, 'phone' => '081234567890', 'address' => 'Must not persist'])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['email']]]);
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Must not persist', 'email' => $email, 'phone' => '081234567890', 'address' => 'Must not persist', 'profession' => 'Guru'])->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['email']]]);
     expect($this->student->fresh()->name)->toBe($name)->and($this->student->fresh()->email)->toBe($original)->and($this->profile->fresh()->phone)->toBe($phone)->and($other->fresh()->email)->toBe('TAKEN@example.test');
 })->with(['', 'not-an-email', 'taken@example.test', ' TAKEN@EXAMPLE.TEST ']);
 
@@ -546,4 +547,72 @@ it('keeps a manually rescheduled future exam closed until its new opening', func
     $this->quiz->forceFill(['quizDate' => now()->addDay(), 'closesAt' => now()->addDays(2)])->save();
     $this->postJson('/api/v1/academy/quizzes/'.$this->quiz->id.'/attempts')->assertForbidden();
     expect(ZakatAcademyQuizAttempt::count())->toBe(0);
+});
+
+it('requires profession on profile save and rejects invalid professional details atomically', function (array $details) {
+    $name = $this->student->name;
+    $this->putJson('/api/v1/academy/profile', ['name' => 'Should not persist', 'phone' => '081234567890', 'address' => 'New address', ...$details])
+        ->assertUnprocessable();
+    expect($this->student->fresh()->name)->toBe($name)
+        ->and($this->profile->fresh()->profession)->toBeNull();
+})->with([
+    'missing profession' => [[]],
+    'empty profession' => [['profession' => '']],
+    'blank profession' => [['profession' => '   ']],
+    'long profession' => [['profession' => str_repeat('a', 192)]],
+    'long expertise' => [['profession' => 'Guru', 'expertise' => str_repeat('a', 1001)]],
+    'invalid expertise type' => [['profession' => 'Guru', 'expertise' => ['not a string']]],
+]);
+
+it('saves own profession and expertise and allows expertise to be retained or cleared', function () {
+    $payload = ['name' => 'Nama Peserta', 'phone' => '081234567890', 'address' => 'Alamat peserta', 'profession' => 'Wiraswasta'];
+    $this->putJson('/api/v1/academy/profile', [...$payload, 'expertise' => 'Akuntansi dan desain grafis'])->assertOk()
+        ->assertHeader('Cache-Control', 'no-store, private')->assertJsonPath('data.profession', 'Wiraswasta')
+        ->assertJsonPath('data.expertise', 'Akuntansi dan desain grafis');
+    $this->getJson('/api/v1/academy/profile')->assertJsonPath('data.profession', 'Wiraswasta')->assertJsonPath('data.expertise', 'Akuntansi dan desain grafis');
+    $this->putJson('/api/v1/academy/profile', $payload)->assertOk()->assertJsonPath('data.expertise', 'Akuntansi dan desain grafis');
+    $this->putJson('/api/v1/academy/profile', [...$payload, 'expertise' => ''])->assertOk()->assertJsonPath('data.expertise', null);
+    expect($this->profile->fresh()->profession)->toBe('Wiraswasta')->and($this->profile->fresh()->expertise)->toBeNull();
+});
+
+it('keeps preexisting accounts and questions readable with empty added fields', function () {
+    $this->getJson('/api/v1/academy/profile')->assertOk()->assertJsonPath('data.profession', null)->assertJsonPath('data.expertise', null);
+    $enrollment = ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->firstOrFail();
+    $discussion = new AcademyDiscussion;
+    $discussion->forceFill(['profileId' => $this->profile->id, 'courseId' => $enrollment->courseId, 'question' => 'Pertanyaan lama tetap tersimpan.'])->save();
+    $this->getJson('/api/v1/academy/learning/discussions/'.$discussion->id)->assertOk()->assertJsonPath('data.title', null)
+        ->assertJsonPath('data.question', 'Pertanyaan lama tetap tersimpan.');
+});
+
+it('requires a bounded title for new participant questions', function (array $title) {
+    $enrollment = ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->firstOrFail();
+    $before = AcademyDiscussion::count();
+    $this->postJson('/api/v1/academy/courses/'.$enrollment->courseId.'/questions', ['question' => 'Bagaimana menghitung zakat penghasilan?', ...$title])
+        ->assertUnprocessable()->assertJsonStructure(['error' => ['details' => ['title']]]);
+    expect(AcademyDiscussion::count())->toBe($before);
+})->with([
+    'missing title' => [[]], 'empty title' => [['title' => '']], 'blank title' => [['title' => '  ']],
+    'short title' => [['title' => 'AB']], 'long title' => [['title' => str_repeat('a', 192)]],
+]);
+
+it('shows a saved title to its participant and admin but keeps it private from other participants', function () {
+    $enrollment = ZakatAcademyEnrollment::where('profile_id', $this->profile->id)->firstOrFail();
+    $title = 'Zakat penghasilan dokter';
+    $this->postJson('/api/v1/academy/courses/'.$enrollment->courseId.'/questions', ['title' => '  '.$title.'  ', 'question' => 'Bagaimana cara menghitung zakat penghasilan?', 'profileId' => 'foreign-profile'])
+        ->assertSuccessful();
+    $question = AcademyDiscussion::where('profile_id', $this->profile->id)->firstOrFail();
+    expect($question->title)->toBe($title);
+    $this->getJson('/api/v1/academy/learning/discussions?view=table')->assertJsonPath('data.questions.items.0.title', $title);
+    $this->getJson('/api/v1/academy/learning/discussions/'.$question->id)->assertJsonPath('data.title', $title);
+    Sanctum::actingAs($this->admin);
+    $this->getJson('/api/v1/academy/teacher/questions?view=table')->assertOk()->assertJsonPath('data.items.0.title', $title);
+    $this->getJson('/api/v1/academy/teacher/questions')->assertOk()->assertJsonPath('data.0.title', $title);
+    $this->getJson('/api/v1/academy/teacher/questions/'.$question->id)->assertOk()->assertJsonPath('data.title', $title);
+    $other = new User;
+    $other->forceFill(['name' => 'Other participant', 'password_hash' => bcrypt('test-only-password'), 'is_active' => true])->save();
+    $profile = new ZakatAcademyProfile;
+    $profile->forceFill(['userId' => $other->id, 'nis' => 'PAZ-OTHER-TITLE'])->save();
+    Sanctum::actingAs($other);
+    $this->getJson('/api/v1/academy/learning/discussions/'.$question->id)->assertNotFound()->assertDontSee($title);
+    $this->getJson('/api/v1/academy/teacher/questions/'.$question->id)->assertForbidden()->assertDontSee($title);
 });
