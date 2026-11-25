@@ -1,4 +1,6 @@
 "use client";
+import styles from "./Admin.module.css";
+import { describeApiProblem } from "@/lib/api-problem";
 import { RupiahNumberInput } from "@/components/ui/RupiahNumberInput";
 
 import { GalleryEditor } from "./GalleryEditor";
@@ -16,7 +18,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
-  const field = "mt-2 w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground";
+  const field = styles.input;
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy || galleryBusy) return;
     const form = new FormData(event.currentTarget);
@@ -30,7 +32,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
         const upload = new FormData(); upload.append("file", file);
         const response = await fetch("/api/sarsip/upload", { method: "POST", body: upload });
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error ?? "Gagal mengunggah foto.");
+        if (!response.ok) throw new Error(describeApiProblem(result,response.status,"Gagal mengunggah foto."));
         image = result.url;
       }
       delete values.photo; delete values.removeImage;
@@ -38,7 +40,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
       values.isPublished = form.has("isPublished") ? "on" : "";
       const response = await fetch(editing ? `/api/sarsip/beneficiaries/${editing.id}` : "/api/sarsip/beneficiaries", { method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...values, isPublished: form.has("isPublished"), gallery }) });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Gagal menyimpan data.");
+      if (!response.ok) throw new Error(describeApiProblem(result,response.status,"Gagal menyimpan data."));
       setEditing(null); setGallery([]); setVersion((v) => v + 1); router.refresh();
     } catch (err) { setError((err as Error).message); }
     finally { setBusy(false); }
@@ -55,7 +57,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
     finally { setBusy(false); }
   }
   return <div className="space-y-6">
-    <form key={`${editing?.id ?? "new"}-${version}`} onSubmit={save} className="rounded-2xl border border-border bg-surface p-6 text-foreground">
+    <form key={`${editing?.id ?? "new"}-${version}`} onSubmit={save} className={styles.legacyForm}>
       <h2 className="mb-5 text-lg font-bold">{editing ? "Edit penerima manfaat" : "Tambah penerima manfaat"}</h2>
       <fieldset disabled={busy} className="grid gap-5 sm:grid-cols-2">
         <label className="text-sm"><span>Nama penerima<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><input name="name" required maxLength={191} defaultValue={editing?.name} className={field}/></label>

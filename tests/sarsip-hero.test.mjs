@@ -36,6 +36,7 @@ function component(path, name, extras = {}) {
       'next/navigation': { useRouter: () => ({ refresh() {} }) },
       '@/modules/sarsip/brand': brand,
       './Landing.module.css': { default: new Proxy({}, { get: (_, name) => name }) },
+      './Admin.module.css': { default: new Proxy({}, { get: (_, name) => name }) },
       '@/modules/sarsip/api/data': { money: value => `Rp ${value}` },
       '@/modules/sarsip/components/admin/HeroImageField': { HeroImageField: 'HeroImageField' },
     })[name] ?? {},

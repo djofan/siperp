@@ -265,3 +265,10 @@
 @media(max-width:540px) { .applicantHistory { padding: 16px; } .applicantHistoryHeading h3 { font-size: 15px; } .historyFacts { gap: 12px; } .historyCardTop { flex-wrap: wrap; } }
 
 @media(max-width:760px){.applicantHistoryItem>span.historyCardFoot{display:flex}}
+
+/* Keep amount correction beside the approved amount, before funding submission. */
+.caseSummary>.amountEditable{background:#edf6e8;border:1px solid #c8dfbe;border-radius:14px;padding:12px;min-width:0}
+.amountEditHint{font-size:11px;line-height:1.5;color:#496744;margin:7px 0 10px}
+.amountEditButton{display:inline-flex;align-items:center;justify-content:center;gap:8px;max-width:100%;min-height:42px;padding:10px 13px;border:0;border-radius:10px;background:#226c45;color:#fff;font-size:12px;font-weight:700;line-height:1.4;cursor:pointer;box-shadow:0 3px 8px #226c451f;text-align:left}
+.amountEditButton:hover{background:#195837}.amountEditButton:focus-visible{outline:3px solid #8dbb77;outline-offset:3px}
+@media(max-width:760px){.amountEditButton{font-size:11px;padding:9px 10px;gap:5px}.amountEditHint{font-size:10px}.caseSummary>.amountEditable{padding:10px}}

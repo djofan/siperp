@@ -10,7 +10,6 @@ import { SarsipMark } from "@/modules/sarsip/components/SarsipMark";
 const links = [
   ["Beranda", "/sarsip"],
   ["Campaign", "/sarsip#campaign"],
-  ["Kegiatan", "/sarsip#kegiatan"],
   ["Berita", "/sarsip#berita"],
   ["Tentang", "/sarsip#tentang"],
 ];
