@@ -35,7 +35,7 @@ export function QuestionFields({ initial, pending = false, namePrefix }: { initi
     <input type="hidden" name={fieldName("weight")} value={initial?.weight ?? 1} />
     <FormField label="Pertanyaan *" htmlFor={prefix + "-question"}><textarea id={prefix + "-question"} name={fieldName("question")} required maxLength={10000} rows={4} value={question} onChange={event => setQuestion(event.target.value)} className="w-full rounded-xl border border-border bg-surface p-3 text-sm text-foreground" /></FormField>
     {!namePrefix && <section className="space-y-3 rounded-xl border border-border p-4">
-      <div><h3 className="font-semibold text-foreground">Media pendukung <span className="font-normal text-foreground/60">(opsional)</span></h3><p className="mt-1 text-xs text-foreground/60">Gambar JPG/PNG/WebP maksimal 5 MB atau audio MP3/WAV/OGG/M4A/WebM maksimal 15 MB.</p></div>
+      <div><h3 className="font-semibold text-foreground">Media pendukung <span className="font-normal text-foreground/60">(opsional)</span></h3><p className="mt-1 text-xs text-foreground/60">Gambar JPG/PNG/WebP maksimal 10 MB atau audio MP3/WAV/OGG/M4A/WebM maksimal 15 MB.</p></div>
       {initial?.id && initial.mediaMime && (
         <QuestionMedia question={{ id: initial.id, mediaMime: initial.mediaMime, mediaName: initial.mediaName, mediaAlt: initial.mediaAlt }}/>
       )}

@@ -112,7 +112,7 @@ class ContentController
                 'documentationPhotos' => 'sometimes|nullable|array|max:50',
                 'documentationPhotos.*' => 'array:id,image,caption,isDemo',
                 'documentationPhotos.*.id' => 'required|string|max:64|distinct',
-                'documentationPhotos.*.image' => ['required', 'string', 'max:191', 'regex:~^/(?:uploads/lazsip/[a-f0-9-]{36}\.(?:jpg|png|webp)|aid/[a-z0-9-]+\.(?:jpg|png|webp))$~D'],
+                'documentationPhotos.*.image' => ['required', 'string', 'max:191', 'regex:~^/(?:uploads/lazsip/[a-f0-9-]{36}\.(?:jpg|png|webp|gif|bmp|avif)|aid/[a-z0-9-]+\.(?:jpg|png|webp|gif|bmp|avif))$~D'],
                 'documentationPhotos.*.caption' => 'present|nullable|string|max:500',
                 'documentationPhotos.*.isDemo' => 'sometimes|boolean',
             ];

@@ -18,8 +18,8 @@ export function HeroImageField({ value, disabled, onChange, onUploadingChange }:
   async function upload(file?: File) {
     setError("");
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size === 0 || file.size > 2 * 1024 * 1024) {
-      setError("Pilih gambar JPG, PNG, atau WebP, maksimal 2 MB.");
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/avif"].includes(file.type) || file.size === 0 || file.size > 10 * 1024 * 1024) {
+      setError("Pilih gambar JPG, PNG, WebP, GIF, BMP, atau AVIF, maksimal 10 MB.");
       return;
     }
     const objectUrl = URL.createObjectURL(file);
@@ -57,7 +57,7 @@ export function HeroImageField({ value, disabled, onChange, onUploadingChange }:
         ref={input}
         id="sarsip-hero-image"
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif"
         disabled={disabled || uploading}
         aria-describedby="sarsip-hero-hint"
         className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-orange-600 file:px-4 file:py-2 file:font-semibold file:text-white disabled:opacity-50"
@@ -68,7 +68,7 @@ export function HeroImageField({ value, disabled, onChange, onUploadingChange }:
         }}
       />
       <p id="sarsip-hero-hint" className="text-xs leading-relaxed text-foreground/60">
-        JPG, PNG, atau WebP, maksimal 2 MB. Gunakan foto kegiatan dengan subjek di tengah agar tetap terlihat saat dipotong. Klik Simpan profil untuk menerapkan foto ke beranda.
+        JPG, PNG, WebP, GIF, BMP, atau AVIF, maksimal 10 MB. Gunakan foto kegiatan dengan subjek di tengah agar tetap terlihat saat dipotong. Klik Simpan profil untuk menerapkan foto ke beranda.
       </p>
       {value && <button type="button" disabled={disabled || uploading} className="text-sm font-medium text-orange-600 disabled:opacity-50" onClick={() => {
         setError("");

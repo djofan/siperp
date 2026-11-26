@@ -15,10 +15,10 @@ abstract class ModuleUploadController
 
     public function store(Request $request): JsonResponse
     {
-        $types = 'image/jpeg,image/png,image/webp'.($this->allowPdf ? ',application/pdf' : '');
-        $request->validate(['file' => 'required|file|max:2048|mimetypes:'.$types]);
+        $types = 'image/jpeg,image/png,image/webp,image/gif,image/bmp,image/x-ms-bmp,image/avif'.($this->allowPdf ? ',application/pdf' : '');
+        $request->validate(['file' => 'required|file|max:10240|mimetypes:'.$types]);
         $file = $request->file('file');
-        $extension = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'application/pdf' => 'pdf'][$file->getMimeType()];
+        $extension = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif', 'image/bmp' => 'bmp', 'image/x-ms-bmp' => 'bmp', 'image/avif' => 'avif', 'application/pdf' => 'pdf'][$file->getMimeType()];
         $filename = Str::uuid().'.'.$extension;
         $file->storeAs('uploads/'.$this->module, $filename, 'public');
 
@@ -27,7 +27,7 @@ abstract class ModuleUploadController
 
     public function show(string $filename)
     {
-        abort_unless(preg_match('/^[a-f0-9-]{36}\.(jpg|png|webp|pdf)$/D', $filename), 404);
+        abort_unless(preg_match('/^[a-f0-9-]{36}\.(jpg|png|webp|gif|bmp|avif|pdf)$/D', $filename), 404);
         $path = Storage::disk('public')->path('uploads/'.$this->module.'/'.$filename);
         abort_unless(is_file($path), 404);
 

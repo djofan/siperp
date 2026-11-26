@@ -7,7 +7,7 @@ export type QuizOption = "a" | "b" | "c" | "d";
 
 export const QUIZ_OPTIONS: readonly QuizOption[] = ["a", "b", "c", "d"];
 export const MAX_SUBMISSION_BYTES = 50 * 1024 * 1024;
-export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+export const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
 export const EXTEND_HOURS_MIN = 1;
 export const EXTEND_HOURS_MAX = 72;
 

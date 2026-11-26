@@ -2196,8 +2196,12 @@ it('accepts private PDF Word and text attachments over the former 2 MB limit', f
     foreach (['script.php', 'script.html', 'script.pdf'] as $name) {
         $source = UploadedFile::fake()->createWithContent($name, '<html><script>alert(1)</script></html>');
         $actual = new UploadedFile($source->getRealPath(), $name, null, null, true);
-        $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting',
-            'file' => $actual], ['Accept' => 'application/json'])->assertUnprocessable();
+        $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', ['kind' => 'supporting',
+            'file' => $actual], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+        $download = $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff');
+        expect($download->headers->get('Content-Disposition'))->toStartWith('attachment;');
+        expect($download->headers->get('Content-Security-Policy'))->toContain('sandbox');
     }
 });
 
@@ -2648,3 +2652,29 @@ it('restricts rejected stage-one correction and reconsideration to independent a
     $this->putJson('/api/v1/bantuan/applications/'.$id, [...bantuanInput(),'version'=>1])->assertForbidden();
     expect(Application::findOrFail($id)->version)->toBe(1);
 });
+
+
+it('lets Call Center attach supporting PDF while correcting an active intake', function (string $status) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => $status])->save();
+    $pdf = "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF";
+    $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind' => 'supporting', 'file' => UploadedFile::fake()->createWithContent('pendukung.pdf', $pdf),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertContent($pdf);
+    expect(Application::findOrFail($id)->status)->toBe($status);
+})->with(['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'bypass_review', 'rejected_t1']);
+
+
+it('keeps supporting PDF uploads restricted outside Call Center intake corrections', function (string $status, string $role) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::findOrFail($id)->forceFill(['status' => $status])->save();
+    $actor = $role === 'call_center' ? $this->cc : bantuanUser($role);
+    $this->actingAs($actor, 'sanctum')->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind' => 'supporting', 'file' => UploadedFile::fake()->createWithContent('pendukung.pdf', "%PDF-1.4\n%%EOF"),
+    ], ['Accept' => 'application/json'])->assertForbidden();
+    expect(DB::table('bantuan_documents')->where('application_id', $id)->count())->toBe(0);
+})->with([
+    ['completed', 'call_center'], ['cancelled', 'call_center'], ['returned', 'call_center'],
+    ['review1', 'observer'], ['review1', 'approver'],
+]);

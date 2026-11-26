@@ -97,7 +97,7 @@ class ErpFinanceController
 
     public function import(Request $request)
     {
-        $data = $request->validate(['accountId' => 'required|string', 'file' => 'required|file|max:1024']);
+        $data = $request->validate(['accountId' => 'required|string', 'file' => 'required|file|max:10240']);
         Account::findOrFail($data['accountId']);
         $stream = fopen($request->file('file')->getRealPath(), 'rb');
         $header = fgetcsv($stream, null, ',', '"', '');

@@ -85,3 +85,24 @@ it('rejects documents disguised as hero images', function () {
         ['Accept' => 'application/json'])->assertUnprocessable();
     expect(Storage::disk('public')->allFiles())->toBe([]);
 });
+
+
+it('accepts a public raster image above 2 MB and rejects more than 10 MB', function () {
+    sarsipHeroUser();
+    Storage::fake('public');
+    $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
+    $photo = UploadedFile::fake()->createWithContent('large.png', $png.str_repeat(' ', 3 * 1024 * 1024));
+    $url = $this->post('/api/v1/sarsip/upload', ['file' => $photo], ['Accept' => 'application/json'])->assertCreated()->json('url');
+    $this->get('/api/v1/sarsip/files/'.basename($url))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
+    $this->post('/api/v1/sarsip/upload', ['file' => UploadedFile::fake()->createWithContent('oversize.png', $png.str_repeat(' ', 10 * 1024 * 1024))], ['Accept' => 'application/json'])->assertUnprocessable();
+});
+
+it('accepts GIF uploads and preserves the reference in the public hero', function () {
+    sarsipHeroUser();
+    Storage::fake('public');
+    $gif = base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7');
+    $url = $this->post('/api/v1/sarsip/upload', ['file' => UploadedFile::fake()->createWithContent('hero.gif', $gif)], ['Accept' => 'application/json'])->assertCreated()->json('url');
+    expect($url)->toEndWith('.gif');
+    $this->putJson('/api/v1/sarsip/profile', sarsipHeroInput(['heroImage' => $url]))->assertOk();
+    $this->getJson('/api/v1/sarsip/profile')->assertJsonPath('data.heroImage', $url);
+});

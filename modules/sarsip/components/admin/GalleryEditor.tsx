@@ -13,7 +13,7 @@ export function GalleryEditor({ value, onChange, disabled, onUploadingChange }: 
   async function upload(files: File[]) {
     if (!files.length || uploading || disabled) return;
     if (value.length + files.length > 12) { setError("Maksimal 12 foto galeri."); return; }
-    if (files.some(file => !["image/jpeg", "image/png", "image/webp"].includes(file.type) || !file.size || file.size > 2 * 1024 * 1024)) { setError("Gunakan JPG, PNG, atau WebP, maksimal 2 MB per foto."); return; }
+    if (files.some(file => !["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/avif"].includes(file.type) || !file.size || file.size > 10 * 1024 * 1024)) { setError("Gunakan JPG, PNG, WebP, GIF, BMP, atau AVIF, maksimal 10 MB per foto."); return; }
     setUploading(true); onUploadingChange(true); setError("");
     const next = [...value];
     try {
@@ -30,8 +30,8 @@ export function GalleryEditor({ value, onChange, disabled, onUploadingChange }: 
   }
   return <fieldset disabled={disabled || uploading} className={`${styles.gallery} space-y-3`}>
     <legend className="px-2 text-sm font-semibold">Galeri dokumentasi</legend>
-    <p className="text-xs text-foreground/60">Maksimal 12 foto. JPG, PNG, WebP hingga 2 MB per foto. Semua foto dan keterangannya akan tampil publik saat konten dipublikasikan.</p>
-    <input type="file" multiple accept="image/jpeg,image/png,image/webp" aria-label="Tambah foto galeri" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ""; void upload(files); }}/>
+    <p className="text-xs text-foreground/60">Maksimal 12 foto. JPG, PNG, WebP, GIF, BMP, AVIF hingga 10 MB per foto. Semua foto dan keterangannya akan tampil publik saat konten dipublikasikan.</p>
+    <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif" aria-label="Tambah foto galeri" onChange={event => { const files = Array.from(event.target.files ?? []); event.target.value = ""; void upload(files); }}/>
     {uploading && <p role="status" className="text-sm">Mengunggah foto…</p>}
     <div className="grid gap-4 sm:grid-cols-2">{value.map((photo, index) => <div key={photo.id} className="space-y-2">
       <Image src={photo.image} alt={`Pratinjau foto galeri ${index + 1}`} width={320} height={200} unoptimized className="aspect-video w-full rounded-xl object-cover"/>

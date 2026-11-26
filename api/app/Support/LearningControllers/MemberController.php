@@ -192,7 +192,7 @@ class MemberController extends BaseController
         $photo = null;
         $before = $member->photo;
         if ($request->hasFile('photo')) {
-            $request->validate(['photo' => 'file|max:5120']);
+            $request->validate(['photo' => 'file|max:10240']);
             $detected = $files->detect($request->file('photo'));
             abort_unless($detected['kind'] === 'image', 422, 'Foto harus JPG, PNG, atau WEBP.');
             $photo = $files->save($this->module($request), 'photos/'.$member->id, $request->file('photo'), $detected['ext']);

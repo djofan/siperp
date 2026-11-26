@@ -28,7 +28,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
       let image = values.removeImage === "on" ? "" : editing?.image ?? "";
       const file = form.get("photo");
       if (file instanceof File && file.size) {
-        if (file.size > 2 * 1024 * 1024) throw new Error("Ukuran gambar maksimal 2 MB.");
+        if (file.size > 10 * 1024 * 1024) throw new Error("Ukuran gambar maksimal 10 MB.");
         const upload = new FormData(); upload.append("file", file);
         const response = await fetch("/api/sarsip/upload", { method: "POST", body: upload });
         const result = await response.json();
@@ -68,7 +68,7 @@ export function BeneficiaryManager({ rows }: { rows: Row[] }) {
         <label className="text-sm">Kategori bantuan<select name="category" defaultValue={editing?.category ?? "Lainnya"} className={field}>{BENEFICIARY_CATEGORIES.map((category) => <option key={category}>{category}</option>)}</select></label>
         <label className="text-sm"><span>Nominal bantuan tersalurkan (Rp)<span aria-hidden="true" className="ml-1 text-red-600 dark:text-red-400">*</span></span><RupiahNumberInput name="amount" type="number" min={0} max={2147483647} step={1} required defaultValue={editing?.amount ?? 0} className={field}/></label>
         <label className="text-sm">Nama tampilan publik<input name="publicName" maxLength={191} defaultValue={editing?.publicName ?? ""} placeholder="Nama yang diizinkan atau nama samaran" className={field}/></label>
-        <div className="text-sm sm:col-span-2"><label>Foto dokumentasi<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" className={field}/></label><p className="mt-2 text-xs text-foreground/60">JPG, PNG, atau WebP, maksimal 2 MB. Foto baru menggantikan foto sebelumnya.</p>{editing?.image && <div className="mt-3"><Image unoptimized src={editing.image} width={200} height={160} alt="Foto penerima manfaat" className="max-h-40 rounded-lg object-contain"/><label className="mt-2 flex items-center gap-2"><input type="checkbox" name="removeImage"/>Hapus foto lama</label></div>}</div>
+        <div className="text-sm sm:col-span-2"><label>Foto dokumentasi<input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif" className={field}/></label><p className="mt-2 text-xs text-foreground/60">JPG, PNG, WebP, GIF, BMP, atau AVIF, maksimal 10 MB. Foto baru menggantikan foto sebelumnya.</p>{editing?.image && <div className="mt-3"><Image unoptimized src={editing.image} width={200} height={160} alt="Foto penerima manfaat" className="max-h-40 rounded-lg object-contain"/><label className="mt-2 flex items-center gap-2"><input type="checkbox" name="removeImage"/>Hapus foto lama</label></div>}</div>
         <div className="sm:col-span-2"><GalleryEditor value={gallery} onChange={setGallery} disabled={busy} onUploadingChange={setGalleryBusy}/></div>
         <label className="flex items-start gap-3 text-sm sm:col-span-2"><input name="isPublished" type="checkbox" defaultChecked={editing?.isPublished} className="mt-1"/><span>Tampilkan di daftar penerima manfaat publik. Pastikan nama tampilan, foto, kategori, dan nominal boleh dipublikasikan. Telepon, lokasi, serta catatan internal tidak ditampilkan.</span></label>
         <label className="text-sm sm:col-span-2">Catatan (opsional)<textarea name="notes" rows={3} maxLength={5000} defaultValue={editing?.notes ?? ""} className={field}/></label>

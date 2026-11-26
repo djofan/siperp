@@ -93,7 +93,7 @@ test('photo upload accepts an image URL, validates file size, and supports clear
   });
   const props = { value: photo, disabled: false, onChange: value => changed.push(value), onUploadingChange() {} };
   const select = file => find(render(props), node => node.type === 'input')[0].props.onChange({ target: { files: [file], value: '' } });
-  select(new File([new Uint8Array(2 * 1024 * 1024 + 1)], 'large.jpg', { type: 'image/jpeg' }));
+  select(new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'large.jpg', { type: 'image/jpeg' }));
   assert.equal(requests, 0);
   select(new File(['photo'], 'hero.jpg', { type: 'image/jpeg' }));
   await flush();

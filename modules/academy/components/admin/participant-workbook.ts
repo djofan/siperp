@@ -2,7 +2,7 @@ import type { CellValue, Workbook } from "exceljs";
 import type { ParticipantImportCredential, ParticipantImportRow } from "../../api/participant-import-contracts";
 
 export const MAX_IMPORT_ROWS = 200;
-export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+export const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
 
 function text(value: CellValue, row: number): string {
   if (value === null || value === undefined) return "";
