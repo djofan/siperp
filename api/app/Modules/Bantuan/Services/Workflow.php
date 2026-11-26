@@ -78,8 +78,9 @@ class Workflow
             };
             $role = $access->allow($request, $manual !== null ? ['call_center'] : $roles);
             if ($action === 'reopen') {
-                abort_if($role === 'survey_approver' && $from !== 'rejected_t1', 403);
-                abort_if($from === 'rejected_t1' && $role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');
+                $stageOne = $from === 'rejected_t1' || ($from === 'cancelled' && $row->source !== 'bypass' && !$other);
+                abort_if($role === 'survey_approver' && !$stageOne, 403, 'Penyetuju survei hanya dapat membuka kembali pengajuan untuk pemeriksaan tahap 1.');
+                abort_if($stageOne && $role !== 'admin' && ($row->created_by === $request->user()->id || $row->verifier_id === $request->user()->id), 403, 'Tidak boleh memutuskan pengajuan sendiri atau yang Anda survei.');
             }
             if ($manual !== null) $role = 'admin'; // Authorization above; executor identity is never changed.
             FundingRequests::guardIndividualAction($request, $row, $action);
@@ -237,7 +238,7 @@ class Workflow
                 $next = 'rejected_bypass';
             }
             if ($action === 'reopen') {
-                $next = $from === 'rejected_t1' ? 'review1' : $this->intakeStage($row);
+                $next = $from === 'rejected_t1' || ($from === 'cancelled' && $row->source !== 'bypass' && !$other) ? 'review1' : $this->intakeStage($row);
                 $row->amount = null;
                 $row->verifier_id = null;
                 $row->distributor_id = null;

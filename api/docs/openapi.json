@@ -18639,6 +18639,11 @@
     },
     "behavior": "Missing create/null/blank disables suffix; omitted update preserves current value. Nonempty codes remain unique two-digit strings. Configured codes are enforced server-side, regardless of donor input. Deploy only after all serving payment readers and rollback targets support absent codes; migration remains unchanged."
   },
+  "x-bantuan-intake-document-removal": {
+    "method": "DELETE",
+    "path": "/api/v1/bantuan/documents/{id}",
+    "policy": "Call Center intake correction stages share upload/removal eligibility. Only uploader/admin may remove; used evidence retains existing locks and survey-revision exceptions. Removal is audited soft-delete preserving encrypted bytes. Role and application visibility checks remain enforced."
+  },
   "x-upload-policy": {
     "minimumLimitMiB": 10,
     "publicImages": {
@@ -18667,7 +18672,7 @@
       "review1"
     ],
     "edit": "Existing applications PUT allows independent approver/chair/survey_approver to correct intake data in these states. Creation, source/type restrictions and other-stage permissions remain unchanged. Version required; before/after audit retained.",
-    "reopen": "POST applications/{id}/actions/reopen requires version and reason (5–5000 characters). Independent approver/chair/survey_approver may reopen rejected_t1 directly to review1; survey_approver cannot reopen other states. Then review1_approve follows normal authorization. Existing rejection events/documents are retained."
+    "reopen": "POST applications/{id}/actions/reopen requires version and reason (5–5000 characters). Independent approver/chair/survey_approver may reopen rejected_t1 or cancelled ordinary intake (not bypass/other) directly to review1, including legacy walk-in records without intake_role; any currently authorized stage-one reviewer may decide, without requiring the previous decision actor; survey_approver cannot reopen other states. Then review1_approve follows normal authorization. Existing rejection events/documents are retained."
   },
   "x-user-facing-errors": {
     "message": "Indonesian field-specific explanation; no diagnostic suffix",

@@ -105,6 +105,13 @@ class Access
             || (($row->applicant['intakeType'] ?? null) === 'other' && $this->has($request, ['volunteer']) && $row->distributor_id === $userId);
     }
 
+    public function canCorrectIntakeDocuments(Request $request, Application $row, string $kind): bool
+    {
+        return $this->has($request, ['call_center'])
+            && in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true)
+            && in_array($row->status, ['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'bypass_review', 'rejected_t1'], true);
+    }
+
     public function documentRole(Request $request, Application $row, string $kind): string
     {
         if (($row->applicant['intakeType'] ?? null) === 'other' && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true)) {
@@ -113,9 +120,7 @@ class Access
         $own = $row->created_by === $request->user()->id;
         // Call Center can correct intake data during early review; its supporting
         // documents must remain uploadable in the same form after submission.
-        if ($this->has($request, ['call_center'])
-            && in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true)
-            && in_array($row->status, ['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'bypass_review', 'rejected_t1'], true)) {
+        if ($this->canCorrectIntakeDocuments($request, $row, $kind)) {
             return $this->allow($request, ['call_center']);
         }
         if ($this->has($request, ['call_center']) && (($row->status === 'disbursed' && in_array($kind, ['handover','certificate','receipt','education_other','handover_supporting'], true)) || (in_array($row->status, ['fund_approved','delivery_failed'], true) && in_array($kind, ['transfer','return'], true)))) return 'call_center';

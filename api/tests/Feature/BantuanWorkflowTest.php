@@ -2654,16 +2654,25 @@ it('restricts rejected stage-one correction and reconsideration to independent a
 });
 
 
-it('lets Call Center attach supporting PDF while correcting an active intake', function (string $status) {
+it('lets Call Center upload delete and replace intake documents while correcting an active intake', function (string $status, string $kind) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
     Application::findOrFail($id)->forceFill(['status' => $status])->save();
     $pdf = "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n%%EOF";
     $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
-        'kind' => 'supporting', 'file' => UploadedFile::fake()->createWithContent('pendukung.pdf', $pdf),
+        'kind' => $kind, 'file' => UploadedFile::fake()->createWithContent('pendukung.pdf', $pdf),
     ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
     $this->get('/api/v1/bantuan/documents/'.$doc)->assertOk()->assertContent($pdf);
+    $path = DB::table('bantuan_documents')->where('id', $doc)->value('path');
+    $this->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertOk();
+    $this->get('/api/v1/bantuan/documents/'.$doc)->assertNotFound();
+    expect(DB::table('bantuan_documents')->where('id', $doc)->value('deleted_at'))->not->toBeNull();
+    expect(Storage::disk('local')->exists($path))->toBeTrue();
+    $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind' => $kind, 'file' => UploadedFile::fake()->createWithContent('pengganti.pdf', $pdf),
+    ], ['Accept' => 'application/json'])->assertCreated();
+    expect(DB::table('bantuan_events')->where('application_id', $id)->where('action', 'remove_document')->exists())->toBeTrue();
     expect(Application::findOrFail($id)->status)->toBe($status);
-})->with(['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'bypass_review', 'rejected_t1']);
+})->with(['draft', 'needs_data', 'screening', 'review1', 'survey_assignment', 'survey_assigned', 'survey_cc_review', 'bypass_review', 'rejected_t1'])->with(['face', 'ktp', 'kk', 'supporting']);
 
 
 it('keeps supporting PDF uploads restricted outside Call Center intake corrections', function (string $status, string $role) {
@@ -2678,3 +2687,63 @@ it('keeps supporting PDF uploads restricted outside Call Center intake correctio
     ['completed', 'call_center'], ['cancelled', 'call_center'], ['returned', 'call_center'],
     ['review1', 'observer'], ['review1', 'approver'],
 ]);
+
+
+it('lets another authorized stage-one decision maker reconsider a cancelled or rejected intake', function (string $state, string $role) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/submit', ['version'=>1])->assertOk();
+    $previous = bantuanUser('survey_approver');
+    $action = $state === 'cancelled' ? 'review1_approve' : 'review1_reject';
+    $this->actingAs($previous, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/'.$action, ['version'=>2,'reason'=>'Keputusan pemeriksa sebelumnya.'])->assertOk();
+    $version = 3;
+    if ($state === 'cancelled') {
+        $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/cancel', ['version'=>$version,'reason'=>'Pemohon belum dapat melanjutkan.'])->assertOk();
+        $version++;
+    }
+    $replacement = bantuanUser($role);
+    $this->actingAs($replacement, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>$version,'reason'=>'Pemohon melanjutkan dan data siap diperiksa.'])->assertOk()->assertJsonPath('data.status','review1');
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/review1_approve', ['version'=>$version+1])->assertOk()->assertJsonPath('data.status','survey_assignment');
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','reopen')->value('actor_id'))->toBe($replacement->id);
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('actor_id',$previous->id)->exists())->toBeTrue();
+    $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/assign_survey', ['version'=>$version+2,'verifierId'=>$this->verifier->id,'surveyAddress'=>'Jalan Pengujian Nomor 10, Bandung'])->assertOk()->assertJsonPath('data.status','survey_assigned');
+})->with(['cancelled','rejected_t1'])->with(['approver','chair','survey_approver']);
+
+it('does not grant cancelled stage-one reconsideration to non-decision roles', function (string $role) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>'cancelled']);
+    $response = $this->actingAs(bantuanUser($role), 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka kembali.']);
+    expect($response->status())->toBeIn([403,404]);
+    expect(Application::findOrFail($id)->status)->toBe('cancelled');
+})->with(['call_center','observer','requester','verifier','treasurer','fund_requester']);
+
+
+it('returns legacy cancelled walk-in intake to stage-one review for an authorized replacement', function () {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>'cancelled','source'=>'walk_in','intake_role'=>null]);
+    $this->actingAs(bantuanUser('survey_approver'), 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Pengajuan perlu diperiksa kembali.'])->assertOk()->assertJsonPath('data.status','review1');
+});
+
+it('keeps self reconsideration and non-stage-one reopening restricted', function () {
+    $actor = bantuanUser('survey_approver');
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>'cancelled','created_by'=>$actor->id]);
+    $this->actingAs($actor, 'sanctum')->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka pengajuan sendiri.'])->assertForbidden();
+    Application::whereKey($id)->update(['created_by'=>$this->cc->id,'source'=>'bypass']);
+    $this->postJson('/api/v1/bantuan/applications/'.$id.'/actions/reopen', ['version'=>1,'reason'=>'Mencoba membuka jalur khusus.'])->assertForbidden();
+    expect(Application::findOrFail($id)->status)->toBe('cancelled');
+});
+
+
+it('keeps used or foreign intake evidence protected during Call Center correction', function (bool $used) {
+    $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>'review1']);
+    $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind'=>'supporting', 'file'=>UploadedFile::fake()->createWithContent('proof.pdf', "%PDF-1.4\n%%EOF"),
+    ], ['Accept'=>'application/json'])->assertCreated()->json('data.id');
+    if ($used) DB::table('bantuan_documents')->where('id',$doc)->update(['used_at'=>now()]);
+    else $this->actingAs(bantuanUser('call_center'), 'sanctum');
+    $response = $this->deleteJson('/api/v1/bantuan/documents/'.$doc);
+    expect($response->status())->toBe($used ? 409 : 403);
+    expect(DB::table('bantuan_documents')->where('id',$doc)->value('deleted_at'))->toBeNull();
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','remove_document')->count())->toBe(0);
+})->with([true,false]);

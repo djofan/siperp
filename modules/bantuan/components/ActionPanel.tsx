@@ -99,7 +99,9 @@ function actionsForRole(row:AidDetail,viewer:BantuanViewer){
   return actions.filter(a=>a.key!=="other_report"||row.intakeType==="other")
     .filter(a=>row.intakeType!=="other"||!["survey_again"].includes(a.key))
     .filter(a=>a.states.includes(row.status)&&(viewer.role==="admin"||a.roles.includes(viewer.role)))
-    .filter(a=>a.key!=="reopen"||(viewer.role!=="survey_approver"||row.status==="rejected_t1")&&(row.status!=="rejected_t1"||viewer.role==="admin"||row.createdBy!==viewer.id&&row.verifierId!==viewer.id))
+    .filter(a=>a.key!=="reopen"||
+      (viewer.role!=="survey_approver"||row.status==="rejected_t1"||row.status==="cancelled"&&row.source!=="bypass"&&row.intakeType!=="other")&&
+      (!(row.status==="rejected_t1"||row.status==="cancelled"&&row.source!=="bypass"&&row.intakeType!=="other")||viewer.role==="admin"||row.createdBy!==viewer.id&&row.verifierId!==viewer.id))
     .filter(a=>!row.fundingRequest||!["fund_approve","fund_reject","assign_distributor","revise_amount"].includes(a.key))
     .filter(a=>viewer.role!=="verifier"||!["submit","cancel"].includes(a.key)||row.createdBy===viewer.id&&row.source==="bypass"&&["draft","needs_data"].includes(row.status))
     .filter(a=>a.key!=="request_data"||viewer.role==="admin"||(row.status==="screening"?viewer.role==="call_center":["approver","chair","survey_approver"].includes(viewer.role)))
@@ -296,7 +298,7 @@ export function ActionPanel({ row, viewer, staff, reload, initialAction, ref }: 
   return <section className={s.card}><div className={s.cardHeader}><div><h2>{getActionSectionLabel(row,viewer)}</h2><p>{rolesOf(viewer).every(role=>role==="observer")?"Akses baca saja. Sampaikan catatan atau pertanyaan untuk tim tanpa mengubah pengajuan.":"Keputusan dicatat beserta petugas dan waktunya."}</p></div></div><div className={s.cardBody}>
     <ManualProcessPanel row={row} viewer={viewer} staff={staff} reload={reload} onOpenChange={setManualOpen}/>
     <div hidden={manualOpen}>
-    {row.status==="rejected_t1"&&allowed.some(action=>action.key==="reopen")&&<div className={s.notice}><strong>Keputusan tahap 1 dapat ditinjau ulang</strong><p>Gunakan Edit data untuk memperbaiki isian bila perlu. Pilih Buka kembali pengajuan, isi alasannya, lalu tinjau dan setujui dari tahap 1. Riwayat penolakan tetap tersimpan.</p></div>}
+    {(row.status==="rejected_t1"||row.status==="cancelled"&&row.source!=="bypass"&&row.intakeType!=="other")&&allowed.some(action=>action.key==="reopen")&&<div className={s.notice}><strong>Keputusan tahap 1 dapat ditinjau ulang</strong><p>Buka kembali pengajuan dan isi alasannya. Pengajuan kembali ke pemeriksaan tahap 1; petugas dengan role yang berwenang dapat menerima atau menolak, tidak harus petugas yang memutuskan sebelumnya. Riwayat keputusan tetap tersimpan.</p></div>}
     {row.fundingRequest&&<div className={s.notice}><strong>Termasuk kartu dana {row.fundingRequest.number}</strong><p>Keputusan dana dicatat dari kartu agar seluruh bantuan dalam kartu tetap konsisten.</p>{rolesOf(viewer).some(role=>["admin","fund_requester","treasurer","chair"].includes(role))&&<Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buka kartu pengajuan dana →</Link>}</div>}
     {row.status==="fund_ready"&&rolesOf(viewer).some(role=>["admin","fund_requester"].includes(role))&&<div className={s.notice}><strong>Ajukan bersama bantuan lainnya</strong><p>Buka Pengajuan dana, buat kartu, lalu centang bantuan yang ingin diajukan. Total nominal dihitung otomatis.</p><Link className={s.link} href="/admin/bantuan/pengajuan-dana">Buat kartu pengajuan dana →</Link></div>}
     {savedNotice&&<p className={`${s.notice} ${s.success}`} role="status">{savedNotice}</p>}
