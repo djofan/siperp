@@ -38,7 +38,7 @@ export function ParticipantExcelImport({ cohorts, initialCohort = "" }: { cohort
     setReading(false);
     if (!file) return;
     if (!/\.xlsx$/i.test(file.name)) { setError("Pilih file Excel .xlsx. Untuk file .xls, simpan ulang sebagai .xlsx terlebih dahulu."); return; }
-    if (file.size > MAX_IMPORT_BYTES) { setError("Ukuran file maksimal 5 MB."); return; }
+    if (file.size > MAX_IMPORT_BYTES) { setError("Ukuran file maksimal 10 MB."); return; }
     setReading(true);
     try {
       const data = await readParticipantWorkbook(await file.arrayBuffer());
@@ -69,7 +69,7 @@ export function ParticipantExcelImport({ cohorts, initialCohort = "" }: { cohort
         <FormField label="Grup peserta impor" htmlFor="import-gender" hint="Satu grup per file. Pisahkan file Ikhwan dan Akhwat."><Select id="import-gender" name="gender" required value={gender} onChange={event => setGender(event.target.value)} disabled={pending}><option value="" disabled>Pilih grup</option><option value="IKHWAN">Ikhwan</option><option value="AKHWAT">Akhwat</option></Select></FormField>
       </div>
       {!cohorts.length && <p className="text-sm">Buat angkatan terlebih dahulu di <Link className="font-semibold underline" href="/admin/academy/angkatan">panel Angkatan</Link>.</p>}
-      <FormField label="File peserta (.xlsx)" htmlFor="import-file" hint="Maksimal 5 MB. Nomor HP boleh diawali 08, 628, atau +628; angka 8 dari Excel juga dikenali."><Input id="import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="h-auto py-2" disabled={pending} onChange={event => void read(event.target.files?.[0])} /></FormField>
+      <FormField label="File peserta (.xlsx)" htmlFor="import-file" hint="Maksimal 10 MB. Nomor HP boleh diawali 08, 628, atau +628; angka 8 dari Excel juga dikenali."><Input id="import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="h-auto py-2" disabled={pending} onChange={event => void read(event.target.files?.[0])} /></FormField>
       <input type="hidden" name="rows" value={JSON.stringify(rows)} />
       {reading && <p role="status" className="text-sm">Membaca file Excel…</p>}
       {rows.length > 0 && <div className="space-y-2"><p className="text-sm font-semibold">Pratinjau: {formatNumericText(rows.length)} peserta</p><div className="max-h-72 overflow-auto rounded-lg border border-border"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-surface-muted"><tr>{["Baris", "Nama", "No HP", "Alamat"].map(title => <th key={title} scope="col" className="px-3 py-2">{title}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row.rowNumber} className="border-t border-border"><td className="px-3 py-2">{formatNumericText(row.rowNumber)}</td><td className="min-w-32 px-3 py-2">{row.name}</td><td className="whitespace-nowrap px-3 py-2">{row.phone}</td><td className="min-w-40 break-words px-3 py-2">{row.address}</td></tr>)}</tbody></table></div></div>}

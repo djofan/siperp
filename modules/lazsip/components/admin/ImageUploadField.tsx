@@ -6,8 +6,8 @@ import { formatNumericText } from "@/lib/number-format";
 
 import { useState } from "react";
 
-const MAX_SIZE_MB = 2;
-const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_SIZE_MB = 10;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/bmp", "image/avif"];
 
 export function ImageUploadField({
   initialUrl,
@@ -31,7 +31,7 @@ export function ImageUploadField({
     if (!file) return;
 
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError("Format tidak didukung. Gunakan JPG, PNG, atau WEBP.");
+      setError("Format tidak didukung. Gunakan JPG, PNG, WebP, GIF, BMP, atau AVIF.");
       return;
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
@@ -96,14 +96,14 @@ export function ImageUploadField({
             {uploading ? "Mengunggah..." : "Pilih File"}
             <input
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/avif"
               className="hidden"
               disabled={uploading}
               aria-label={label}
               onChange={(e) => { void handleFile(e.target.files?.[0] ?? null); e.target.value = ""; }}
             />
           </label>
-          <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {formatNumericText(MAX_SIZE_MB)}MB — JPG, PNG, atau WEBP.</p>
+          <p className="text-xs text-lazsip-primary-800/50 dark:text-white/45">Maks {formatNumericText(MAX_SIZE_MB)}MB — JPG, PNG, WebP, GIF, BMP, atau AVIF.</p>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>
       </div>

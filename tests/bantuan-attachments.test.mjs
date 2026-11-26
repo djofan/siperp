@@ -18,9 +18,9 @@ test('PDF Word and spreadsheets preserve original bytes and do not enter photo c
   assert.equal(result.file,file);assert.equal(result.file.size,file.size);assert.equal(result.location,null);
  }
 });
-test('the 10 MiB limit is enforced before queueing without accepting executable extensions',()=>{
+test('the 10 MiB limit is enforced before queueing while allowing any private attachment format',()=>{
  assert.doesNotThrow(()=>attachments.validateAttachment(new File([new Uint8Array(10*1024*1024)],'ukuran-pas.pdf')));
  assert.throws(()=>attachments.validateAttachment(new File([new Uint8Array(10*1024*1024+1)],'besar.pdf')),/10 MB/);
- for(const name of ['script.php','page.html','script.svg','macro.docm','program.exe'])assert.throws(()=>attachments.validateAttachment(new File(['test'],name)),/format/);
+ for(const name of ['archive.zip','notes.json','spreadsheet.xlsm','drawing.svg','data.bin'])assert.doesNotThrow(()=>attachments.validateAttachment(new File(['test'],name)));
  assert.throws(()=>attachments.validateAttachment(new File([],'kosong.pdf')),/kosong/);
 });

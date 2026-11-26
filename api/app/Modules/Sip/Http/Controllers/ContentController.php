@@ -65,7 +65,7 @@ class ContentController
     {
         $resource = $request->route('resource');
         $id = $request->route('id');
-        $image = ['sometimes', 'nullable', 'string', 'max:191', 'regex:~^(?:/uploads/sip/[a-f0-9-]{36}\.(?:jpg|png|webp)|https?://[^\s]+)$~i'];
+        $image = ['sometimes', 'nullable', 'string', 'max:191', 'regex:~^(?:/uploads/sip/[a-f0-9-]{36}\.(?:jpg|png|webp|gif|bmp|avif)|https?://[^\s]+)$~i'];
         $rules = match ($resource) {
             'news' => ['newsDate' => 'sometimes|nullable|date_format:Y-m-d', 'title' => 'required|string|max:191', 'content' => 'required|string|max:1000000', 'image' => $image, 'isPinned' => 'required|boolean', 'status' => 'required|in:draft,published'],
             'program-bantuan' => ['title' => 'required|string|max:191', 'description' => 'required|string|max:1000000', 'slug' => ['required', 'string', 'max:191', Rule::unique('sip_program_bantuan', 'slug')->ignore($id)], 'image' => $image, 'campaignUrl' => 'sometimes|nullable|url:http,https|max:191', 'isPinned' => 'required|boolean'],

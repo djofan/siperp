@@ -18,7 +18,7 @@ class QuestionMedia
     {
         $mime = (string) $file->getMimeType();
         abort_unless(isset(self::TYPES[$mime]), 422, 'Gunakan gambar JPG, PNG, WebP atau audio MP3, WAV, OGG, M4A, WebM.');
-        $limit = str_starts_with($mime, 'image/') ? 5 : 15;
+        $limit = str_starts_with($mime, 'image/') ? 10 : 15;
         abort_if($file->getSize() > $limit * 1024 * 1024, 422, "Ukuran media maksimal {$limit} MB.");
         if (str_starts_with($mime, 'image/')) {
             abort_unless(@getimagesize($file->getRealPath()), 422, 'Isi file gambar tidak valid.');

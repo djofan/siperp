@@ -29,7 +29,7 @@ class WorkflowController
 
     private function photoRules(string $field, bool $required = true): array
     {
-        return [$field => ($required ? 'required' : 'nullable').'|file|image|mimes:jpg,jpeg,png,webp|max:4096'];
+        return [$field => ($required ? 'required' : 'nullable').'|file|mimes:jpg,jpeg,png,webp,gif,bmp,avif|max:10240'];
     }
 
     private function photo(Request $request, string $field, string $stage, TeknisiTicket $ticket, array &$stored): void

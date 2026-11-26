@@ -728,3 +728,23 @@ label dan nomor baris. Kode diagnosis dan request ID tetap berada pada metadata,
 header dan log; jangan digabungkan ke pesan yang ditampilkan pada form. Payload
 error tetap kompatibel. Client menerima pesan lama dengan menghapus suffix kode
 teknis dan menerjemahkan validasi Laravel bila diperlukan.
+
+
+Bantuan: Call Center dapat mengunggah dokumen intake (face/ktp/kk/supporting,
+termasuk PDF) pada draft, needs_data, screening, review1, survey_assignment,
+survey_assigned, survey_cc_review, bypass_review, dan rejected_t1 agar sesuai
+form koreksi intake. Peran lain, bukti operasional, status selesai/batal/dikembalikan,
+serta larangan menghapus bukti yang sudah digunakan tetap mengikuti aturan sebelumnya.
+Tidak ada field atau schema baru; endpoint dan format respons tetap sama.
+
+
+Upload: batas field yang sebelumnya 1/2/4/5 MiB dinaikkan menjadi 10 MiB
+(unggahan konten publik lintas modul, foto teknisi/profil, media gambar soal,
+serta impor). Batas audio/materi yang lebih besar tetap. Gambar publik menerima
+JPEG/PNG/WebP/GIF/BMP/AVIF; PDF tetap hanya pada endpoint yang mengizinkannya.
+Dokumen privat Bantuan menerima semua format hingga 10 MiB, disimpan terenkripsi,
+akses modul/peran/tahap tetap diperiksa. Format selain raster/PDF diunduh sebagai
+attachment dengan nosniff dan CSP sandbox; tidak disajikan sebagai halaman aktif.
+Kolom impor Excel/CSV dan media khusus tetap mengikuti parsernya. Tidak ada migration.
+Server VPS perlu menerapkan backend dan frontend terbaru; PHP/Nginx tetap harus
+mengizinkan request di atas 10 MiB (konfigurasi repo sudah 50/51 MiB dan 60m).

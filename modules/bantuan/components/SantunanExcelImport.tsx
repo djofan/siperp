@@ -19,7 +19,7 @@ export function SantunanExcelImport({ volunteers, onImported }: { volunteers: Ba
     const current = ++version.current;
     setRows([]); setError(""); setReading(false);
     if (!file) return;
-    if (!/\.xlsx$/i.test(file.name) || file.size > 5 * 1024 * 1024) { setError("Pilih file .xlsx maksimal 5 MB. Simpan ulang file .xls sebagai .xlsx."); return; }
+    if (!/\.xlsx$/i.test(file.name) || file.size > 10 * 1024 * 1024) { setError("Pilih file .xlsx maksimal 10 MB. Simpan ulang file .xls sebagai .xlsx."); return; }
     setReading(true);
     try { const result = await readSantunanWorkbook(await file.arrayBuffer()); if (current === version.current) setRows(result.map(row => {
       const exact = volunteers.filter(person => person.name.trim().replace(/\s+/g, " ").toLowerCase() === row.verifierName.trim().replace(/\s+/g, " ").toLowerCase());
