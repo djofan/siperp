@@ -761,8 +761,16 @@ Tidak ada migration atau field baru.
 
 
 Dokumen intake Call Center: upload dan hapus memakai kebijakan tahap koreksi
-bersama. Berkas milik pengunggah yang belum digunakan dapat dihapus dan diganti
+bersama. Berkas yang belum digunakan dapat dihapus/diganti oleh Call Center, pembuat
+pengajuan pada tahap koreksi yang diizinkan, pengunggah yang berwenang, atau Admin
 pada tahap koreksi yang sama, termasuk review1/survey_assignment/bypass_review/
 rejected_t1. Hapus bersifat soft-delete dengan audit; ciphertext tetap disimpan.
-Bukti used_at dan milik pengunggah lain tetap terkunci kecuali aturan admin atau
+Bukti used_at tetap terkunci kecuali aturan admin atau
 revisi survei yang sudah berlaku. Dokumen operasional/tahap tertutup tidak diperluas.
+
+
+Hak koreksi dokumen intake juga mengikuti pembuat pengajuan: requester pada
+draft/needs_data (bukan bypass), verifier pada draft/needs_data/screening/review1/
+survey_assignment/survey_assigned/bypass_review untuk pengajuan sendiri. Call Center
+atau pembuat yang berwenang tidak harus menjadi uploaded_by untuk menghapus berkas
+intake yang belum dipakai. Pengunggah operasional tetap mengikuti aturan sebelumnya.
