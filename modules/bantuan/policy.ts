@@ -182,6 +182,8 @@ export function nextStep(status:string, source="online", intakeRole?:string|null
     disbursed:["Serahkan bantuan & lengkapi bukti","Foto penyerahan dan sertifikat wajib sebelum pengajuan dapat diselesaikan.","Penyalur bantuan"],
     completed:["Bantuan selesai diserahkan","Penyerahan dan bukti telah tercatat. Tidak ada tindakan lanjutan.","Selesai"],
     delivery_failed:["Catat pengembalian dana","Koordinasikan pengembalian ke Bendahara dan unggah bukti pengembaliannya.","Bendahara LAZSIP"],
+    cancelled:["Pengajuan dibatalkan","Pengajuan biasa dapat dibuka kembali ke pemeriksaan tahap 1 oleh penyetuju yang berwenang.","Penyetuju Survei / Approver / Ketua Yayasan"],
+    rejected_t1:["Pengajuan ditolak tahap 1","Penyetuju tahap 1 yang berwenang dapat membuka dan meninjau kembali keputusan ini.","Penyetuju Survei / Approver / Ketua Yayasan"],
     returned:["Dana telah dikembalikan","Riwayat pengembalian tersimpan. Pembukaan kembali memerlukan keputusan penyetuju.","Approver / Ketua Yayasan"],
   };
   const [title,description,owner]=values[status]??["Pengajuan ditutup","Baca alasan keputusan pada tab riwayat. Hanya penyetuju dapat membuka kembali.","Approver / Ketua Yayasan"];

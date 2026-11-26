@@ -276,3 +276,34 @@ test('amount summary shortcut opens the existing correction form only while auth
  }
  const editorRef={current:null};const app=mount({status:'fund_submitted',role:'approver',editorRef});editorRef.current.openAmountEditor(target());app.render();assert.equal(app.actionForm(),undefined);
 });
+
+
+test('all stage-one roles can reopen cancelled standard intakes and decide after reopening',()=>{
+ for(const role of ['approver','chair','survey_approver']){
+  const app=mount({status:'cancelled',role,detail:{source:'online',intakeType:'new',verifierId:null}});
+  app.click('Buka kembali pengajuan');assert.ok(app.actionForm());
+  const next=mount({status:'review1',role,detail:{source:'online',verifierId:null}});
+  next.click('Setujui untuk survei');assert.ok(next.actionForm());
+ }
+ for(const detail of [{source:'bypass'},{intakeType:'other'},{createdBy:'actor'},{verifierId:'actor'}]){
+  const app=mount({status:'cancelled',role:'survey_approver',detail:{source:'online',verifierId:null,...detail}});
+  assert.equal(app.find(n=>n.type==='button'&&text(n).startsWith('Buka kembali pengajuan')),undefined);
+ }
+});
+
+
+test('cancelled ordinary intake exposes stage-one reconsideration to every authorized role', () => {
+  for (const role of ['approver','chair','survey_approver']) {
+    const app=mount({status:'cancelled',role,detail:{verifierId:null,createdBy:'other'}});
+    app.click('Buka kembali pengajuan');
+    assert.ok(app.actionForm());
+    assert.match(text(app.tree), /tidak harus petugas/);
+  }
+  const app=mount();
+  const {getAvailableActions}=app.load(root);
+  const row={status:'cancelled',source:'online',createdBy:'other',verifierId:null};
+  assert.ok(getAvailableActions(row,{id:'actor',role:'call_center',roles:['call_center','survey_approver']}).some(a=>a.key==='reopen'));
+  for (const detail of [{source:'bypass'},{intakeType:'other'},{createdBy:'actor'},{verifierId:'actor'}]) {
+    assert.equal(getAvailableActions({...row,...detail},{id:'actor',role:'survey_approver'}).some(a=>a.key==='reopen'),false);
+  }
+});

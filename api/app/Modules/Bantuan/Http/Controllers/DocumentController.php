@@ -21,6 +21,7 @@ class DocumentController
             $stage = match (true) {
                 ($row->applicant['intakeType'] ?? null) === 'other' && $row->status === 'completed' && in_array($kind, ['supporting', 'receipt'], true) => true,
                 $surveyRevision => true,
+                $access->canCorrectIntakeDocuments($request, $row, $kind) => true,
                 in_array($kind, ['face', 'ktp', 'kk', 'supporting'], true) => in_array($row->status, ['draft', 'needs_data', 'screening'], true),
                 str_starts_with($kind, 'survey_') || $kind === 'sktm' => $row->status === 'survey_assigned',
                 $kind === 'transfer' => $row->status === 'fund_approved',

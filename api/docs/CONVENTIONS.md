@@ -748,3 +748,21 @@ attachment dengan nosniff dan CSP sandbox; tidak disajikan sebagai halaman aktif
 Kolom impor Excel/CSV dan media khusus tetap mengikuti parsernya. Tidak ada migration.
 Server VPS perlu menerapkan backend dan frontend terbaru; PHP/Nginx tetap harus
 mengizinkan request di atas 10 MiB (konfigurasi repo sudah 50/51 MiB dan 60m).
+
+
+Pemeriksaan tahap 1: pengajuan biasa yang cancelled dapat dibuka kembali oleh
+approver/chair/survey_approver yang independen ke review1, termasuk data lama
+walk_in tanpa intake_role. Pemeriksa yang membuka/menyetujui/menolak tidak harus
+aktor keputusan sebelumnya. Rejected_t1 tetap langsung review1. Sumber bypass dan
+intakeType other mengikuti jalur semula; survey_approver tidak memperoleh izin
+keputusan tahap 2. Version dan alasan tetap wajib, riwayat keputusan/notifikasi
+tersimpan, pembatasan pengajuan sendiri/survei sendiri tetap diperiksa.
+Tidak ada migration atau field baru.
+
+
+Dokumen intake Call Center: upload dan hapus memakai kebijakan tahap koreksi
+bersama. Berkas milik pengunggah yang belum digunakan dapat dihapus dan diganti
+pada tahap koreksi yang sama, termasuk review1/survey_assignment/bypass_review/
+rejected_t1. Hapus bersifat soft-delete dengan audit; ciphertext tetap disimpan.
+Bukti used_at dan milik pengunggah lain tetap terkunci kecuali aturan admin atau
+revisi survei yang sudah berlaku. Dokumen operasional/tahap tertutup tidak diperluas.
