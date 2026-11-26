@@ -18642,7 +18642,7 @@
   "x-bantuan-intake-document-removal": {
     "method": "DELETE",
     "path": "/api/v1/bantuan/documents/{id}",
-    "policy": "Call Center intake correction stages share upload/removal eligibility. Only uploader/admin may remove; used evidence retains existing locks and survey-revision exceptions. Removal is audited soft-delete preserving encrypted bytes. Role and application visibility checks remain enforced."
+    "policy": "Call Center intake correction stages share upload/removal eligibility. Admin, eligible Call Center/intake creator or authorized uploader may remove; creator upload/removal stages follow own intake-edit permissions; used evidence retains existing locks and survey-revision exceptions. Removal is audited soft-delete preserving encrypted bytes. Role and application visibility checks remain enforced."
   },
   "x-upload-policy": {
     "minimumLimitMiB": 10,

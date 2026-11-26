@@ -2734,16 +2734,39 @@ it('keeps self reconsideration and non-stage-one reopening restricted', function
 });
 
 
-it('keeps used or foreign intake evidence protected during Call Center correction', function (bool $used) {
+it('keeps used intake evidence and unauthorized deletion protected during correction', function (bool $used) {
     $id = $this->actingAs($this->cc, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
-    Application::whereKey($id)->update(['status'=>'review1']);
+    Application::whereKey($id)->update(['status'=>$used ? 'review1' : 'draft']);
     $doc = $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
         'kind'=>'supporting', 'file'=>UploadedFile::fake()->createWithContent('proof.pdf', "%PDF-1.4\n%%EOF"),
     ], ['Accept'=>'application/json'])->assertCreated()->json('data.id');
     if ($used) DB::table('bantuan_documents')->where('id',$doc)->update(['used_at'=>now()]);
-    else $this->actingAs(bantuanUser('call_center'), 'sanctum');
+    else $this->actingAs(bantuanUser('observer'), 'sanctum');
     $response = $this->deleteJson('/api/v1/bantuan/documents/'.$doc);
     expect($response->status())->toBe($used ? 409 : 403);
     expect(DB::table('bantuan_documents')->where('id',$doc)->value('deleted_at'))->toBeNull();
     expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','remove_document')->count())->toBe(0);
 })->with([true,false]);
+
+
+it('allows Call Center and intake creator to delete and replace a document uploaded by someone else', function (string $role, string $state) {
+    $creator = bantuanUser('requester');
+    if ($role === 'verifier') bantuanRoles($creator, ['requester','verifier']);
+    $id = $this->actingAs($creator, 'sanctum')->postJson('/api/v1/bantuan/applications', bantuanInput())->assertCreated()->json('data.id');
+    Application::whereKey($id)->update(['status'=>$state]);
+    $pdf = "%PDF-1.4\n%%EOF";
+    $doc = $this->actingAs($this->cc, 'sanctum')->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind'=>'ktp', 'file'=>UploadedFile::fake()->createWithContent('ktp.pdf', $pdf),
+    ], ['Accept'=>'application/json'])->assertCreated()->json('data.id');
+    $actor = $role === 'call_center' ? bantuanUser('call_center') : $creator;
+    $this->actingAs($actor, 'sanctum')->deleteJson('/api/v1/bantuan/documents/'.$doc)->assertOk();
+    $this->post('/api/v1/bantuan/applications/'.$id.'/documents', [
+        'kind'=>'ktp', 'file'=>UploadedFile::fake()->createWithContent('ktp-baru.pdf', $pdf),
+    ], ['Accept'=>'application/json'])->assertCreated();
+    expect(DB::table('bantuan_documents')->where('id',$doc)->value('deleted_at'))->not->toBeNull();
+    expect(DB::table('bantuan_events')->where('application_id',$id)->where('action','remove_document')->value('actor_id'))->toBe($actor->id);
+})->with([
+    ['call_center','review1'], ['call_center','rejected_t1'],
+    ['requester','draft'], ['requester','needs_data'],
+    ['verifier','review1'], ['verifier','survey_assignment'],
+]);

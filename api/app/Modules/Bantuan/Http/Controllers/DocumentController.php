@@ -29,7 +29,8 @@ class DocumentController
                 default => $row->status === 'disbursed',
             };
             abort_unless($stage || $access->has($request, ['admin']), 409, 'Foto sudah terkunci pada tahap ini.');
-            abort_unless($access->has($request, ['admin']) || $doc->uploaded_by === $request->user()->id, 403, 'Hanya pengunggah atau Admin dapat menghapus foto.');
+            $intakeEditor = $access->canCorrectIntakeDocuments($request, $row, $kind);
+            abort_unless($access->has($request, ['admin']) || $intakeEditor || $doc->uploaded_by === $request->user()->id, 403, 'Dokumen ini hanya dapat dihapus oleh Admin, Call Center atau pembuat pengajuan yang berwenang mengoreksi dokumen, atau pengunggah pada tahap yang diizinkan.');
             $access->documentRole($request, $row, $kind);
             // Retain encrypted bytes for audit/recovery; never erase evidence in a UI action.
             DB::table('bantuan_documents')->where('id', $id)->update(['deleted_at' => now()]);
